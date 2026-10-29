@@ -3,7 +3,7 @@
  "order": 0,
  "title": "/books choices for every page",
  "owner": "Claude",
- "status": "todo",
- "evidence": "",
+ "status": "done",
+ "evidence": "8bd11e6: /books <page or card>, /books choices list the pages (tickets); chat_cards test",
  "updated": "2026-10-29"
 }

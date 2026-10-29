@@ -3,7 +3,7 @@
  "order": 2,
  "title": "BIR pair cards and quiet cards",
  "owner": "Claude",
- "status": "todo",
- "evidence": "",
+ "status": "done",
+ "evidence": "8bd11e6: pair card (return OK, Ready, hand over, Out of date) and quiet cards (counts only; quiet app reaches books_nudge alone); shots m8-07, m8-08",
  "updated": "2026-10-29"
 }

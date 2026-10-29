@@ -3,7 +3,7 @@
  "order": 1,
  "title": "Answer cards and action cards",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Amounts per decision",
+ "status": "done",
+ "evidence": "8bd11e6: answer, report and action cards render at size in the test Rox (shots m8-01..06); person card not yet seen in Rox (needs the assistant)",
  "updated": "2026-10-29"
 }

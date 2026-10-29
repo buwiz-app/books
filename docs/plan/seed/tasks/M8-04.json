@@ -3,7 +3,7 @@
  "order": 3,
  "title": "Six @books: scopes",
  "owner": "Claude",
- "status": "todo",
- "evidence": "person, account, period, entry, form, tag",
+ "status": "done",
+ "evidence": "8bd11e6: person, account, period, entry, form, tag: choices with ticket values, neutral tokens; form token feeds books_form_proposal",
  "updated": "2026-10-29"
 }

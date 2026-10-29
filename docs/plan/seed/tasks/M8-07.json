@@ -3,7 +3,7 @@
  "order": 6,
  "title": "App-only guard tests: the assistant cannot post or hand over",
  "owner": "Claude",
- "status": "todo",
- "evidence": "",
+ "status": "done",
+ "evidence": "8bd11e6: every app-only tool refused for the assistant; routine turns cannot post, close or hand over (chat_cards)",
  "updated": "2026-10-29"
 }

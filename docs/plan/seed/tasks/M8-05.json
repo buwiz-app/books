@@ -3,7 +3,7 @@
  "order": 4,
  "title": "Templates",
  "owner": "Claude",
- "status": "todo",
- "evidence": "How Rox runs templates: ask rox",
+ "status": "done",
+ "evidence": "8bd11e6: protocol v1 has no template field (rox): five commands open their cards; a template field is on the Rox owner list",
  "updated": "2026-10-29"
 }

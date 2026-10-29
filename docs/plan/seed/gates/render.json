@@ -2,7 +2,7 @@
  "order": 8,
  "name": "Card renders in a test Rox app",
  "result": "pass",
- "value": "13 pages",
+ "value": "13 pages, 14 of 15 cards",
  "at": "2026-10-29",
- "note": "+ Forms hand-off states and Rox attach consent in Rox 016f63c"
+ "note": "person card and wheel pass-through unchecked: GUI driving paused at the owner request"
 }

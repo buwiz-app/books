@@ -2,6 +2,18 @@
  "entries": [
   {
    "at": "2026-10-29",
+   "text": "Found: Books window had no pick_file grant since M4 (fixed in 8bd11e6)"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "M8 GUI checks paused: the owner asked to stop driving the test Rox (focus); person card and wheel pass-through wait"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "M8 built (8bd11e6): 5 inline card apps, books_show, /books pages and cards, 5 template commands, 6 scopes, 3 routines that draft only"
+  },
+  {
+   "at": "2026-10-29",
    "text": "M8 started"
   },
   {

@@ -3,7 +3,7 @@
  "order": 5,
  "title": "Three routines; routines may draft only",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Change jsonrpc.rs authorize()",
+ "status": "done",
+ "evidence": "8bd11e6: 3 routines on books_nudge; only weekly-tidy writes, books_entry_draft only; authorize() checks routine writes; BIR reads wait on the BIR owner",
  "updated": "2026-10-29"
 }
