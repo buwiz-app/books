@@ -63,12 +63,15 @@ Rules for Decision cards: a choice the action depends on (a category, the accoun
 picked in the body and named in the primary button ("Post as Utilities"); a money account is never a silent
 default. Row-level actions (a return's "It's correct") stay on their row.
 
-## What Rox owns (asked of the rox session, 2026-10-30)
+## What Rox owns
 
-1. One card: the Show/Hide row folds into the frame header as a chevron; collapsed means the header only. A card
-   that does not auto-mount starts collapsed, and expanding it is the consent to mount (9.7).
-2. The frame never scrolls; a wheel over a card whose content cannot scroll reaches the chat (nsh events.rs).
-3. Inline width up to the column (560).
+1. **Done** (Rox branch `inline-card-one`, 569c41b, at the owner's word): one card. The Show/Hide row is gone; the
+   frame header carries the app's tile and title, Refresh, a Collapse/Expand chevron and maximize, and collapsed
+   means the header only. A card that does not auto-mount (a third party's, or an aged one) starts collapsed with
+   the plugin's name, and expanding it is the consent to mount (9.7). Checked in a test Rox; mini_v1 tests 104/104.
+2. In progress (rox session, an nsh topic branch): the frame never scrolls; a wheel over a card whose content
+   cannot scroll reaches the chat (nsh events.rs).
+3. **Done**: inline width up to the column (560); Books declares 560.
 4. Proposed: `inline.class` in the manifest (height ranges by class), `rox.actions([...])` so Rox draws a decision
    card's footer with its own `btn`, `rox.settle(text)` to collapse an answered card to `outcome_line`, and
    `rox.meta({text, pill})` for a status in the header. Until then Books mirrors Rox's tokens itself.
