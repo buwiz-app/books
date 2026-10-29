@@ -14,7 +14,7 @@ These cannot be inferred from the file tree.
 2. Rounding is half away from zero, once, at output. Banker's rounding is wrong here. Golden cases: ₱1.50 at 3% is ₱0.05; ₱1.49 is ₱0.04; −₱1.50 is −₱0.05.
 3. Never put a raw TIN, a BIR ticket value (`tkt_...`), a key or a memo into a link, log, title, Rox prop, store file, fixture or doc. Use synthetic values only.
 4. Books stores no TIN in any phase. The cloud link is the opaque tax-profile `id` only. Never join on a TIN.
-5. Read the cloud tax-profile response as `id`, `display` and `permissions`. Refuse any response with TIN-shaped fields. Never rely on `filing.submit`. The live cloud code (9f5ee16) returns `tin`, `tin_masked` and no `display` (`docs/00-findings.md` F-29), so Books must refuse that shape until the cloud owner aligns it (`docs/07` B1).
+5. Read the cloud tax-profile response as `id`, `tin_masked`, `registered_name` and `permissions`. Refuse any response with a `tin` field or other TIN-shaped fields. Never rely on `filing.submit`. Sign in only as the `buwiz-books` client, whose `books` scope gets `profile.view` and no `tin` once buwiz-server PR #4 is merged (`docs/07` B1).
 6. Values Books gives to BIR use fill source `document` (label pending owner decision D3). Never `user`, never `from_card`. BIR keeps provenance only for the session.
 7. Books never sends, submits, files, queues or pays. Never call `bir_form_send`. Never call a tool whose name contains submit, queue, pay, paid, file or send.
 8. The chart of accounts is not tax meaning. Tax meaning lives on the line attribute (treatment, ATC, person scope, component, contribution side) and in versioned mapping rules. Never infer a form field from an account number or subtype.
@@ -64,4 +64,4 @@ Do not edit these. Re-check HEAD and state before you rely on a citation. HEADs 
 - Import or edit BK-TS or any other source repo. Its defects are not ported.
 - Commit, push or deploy unless the owner asks.
 - Print a TIN, a ticket value, a key or a real amount into a log, a file or a reply.
-- Use a cloud agent (`mcp`-scope) token from Books. Such a token can read full TINs through `GET /api/tax-profiles` and the MCP `list_tax_profiles` tool (`docs/00-findings.md` F-50).
+- Use a cloud agent (`mcp`-scope) token from Books. Books has its own `buwiz-books` client and `books` scope; agent tokens belong to AI agents, not to Books (`docs/00-findings.md` F-50).

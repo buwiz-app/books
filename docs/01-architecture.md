@@ -298,9 +298,9 @@ Notes: the `commands`, `scopes` and `apps` entries follow the shapes CONFIRMED i
 - Rox has no user identity. The plugin key is one ed25519 seed per install. Each app open gets a session certificate and each call is signed by the session key `[rox §5 stage 2-3; identity §2.1]`.
 - BIR's identity is a Buwiz account signed in through device flow. Every BIR data verb is refused while signed out `[identity §1 item 3]`.
 - buwiz-cloud v1: one account, no organizations, no workspaces `[decisions.md, cloud]`. A tax profile is an approved TIN. "Approved" means non-empty `permissions` `[decisions.md, cloud]`.
-- Live buwiz-cloud `GET /api/tax-profiles` returns, per profile: `id`, `tin`, `tin_masked`, `registered_name`, `activated_at`, `permissions` (`src/claims.rs:410-433`; fields at 427-433, at 9f5ee16) [V]. The decisions contract is `id`, `display`, `permissions`. See B1.
+- At 9f5ee16, buwiz-cloud `GET /api/tax-profiles` returned, per profile: `id`, `tin`, `tin_masked`, `registered_name`, `activated_at`, `permissions` (`src/claims.rs:410-433`) [V]. buwiz-server PR #4 (head `42190a5`, open, CI running on 2026-10-29) changes a `books`-scope token's response to `{id, tin_masked, registered_name, activated_at, permissions:["profile.view"]}`. See B1.
 - The live permission list is shared by all clients and includes `filing.submit` (`src/claims.rs:27`) [V].
-- Live buwiz-cloud at 9f5ee16 also has grant scopes `app` (the Buwiz apps, including `buwiz-books`) and `mcp` (AI agents), and a `POST /mcp` endpoint with read-only tools (`src/oauth.rs:213-214`; `src/agents.rs`; `src/mcp.rs`). `mcp` tokens reach `GET /api/tax-profiles` and `list_tax_profiles`, and both return `tin` (`src/claims.rs:410-433`; `src/mcp.rs:156-158`). The decisions contract does not cover this (`docs/00-findings.md` F-50, `docs/07` Q-9).
+- Live buwiz-cloud at 9f5ee16 also has grant scopes `app` (the Buwiz apps, including `buwiz-books`) and `mcp` (AI agents), and a `POST /mcp` endpoint with read-only tools (`src/oauth.rs:213-214`; `src/agents.rs`; `src/mcp.rs`). `mcp` tokens reach `GET /api/tax-profiles` and `list_tax_profiles`, and both return `tin` (`src/claims.rs:410-433`; `src/mcp.rs:156-158`). The decisions contract does not cover this (`docs/00-findings.md` F-50). Fixed in buwiz-server PR #4 (head `42190a5`, open, CI running on 2026-10-29): `mcp` tokens get `tin_masked` only, and `buwiz-books` gets its own `books` scope instead of `app`.
 
 ### 5.2 Human identity in Books MVP
 
@@ -325,8 +325,8 @@ The local OS user, plus an optional buwiz cloud account from P5 (D19). There is 
 | Device code and user code | Cloud | Memory | User (display) | Any store | CONFIRMED `[cloud README: device flow]` |
 | Cloud `user_id` (from `/me`) | Cloud | Optional, hashed | None | Model, props | PROPOSAL |
 | Cloud tax-profile `id` (opaque UUID, never reused) | Cloud, on approval | `business.cloud_tax_profile_id` | Cloud API only | Links, model output, anything derived from TIN | Contract `[decisions.md, cloud]` |
-| Cloud `display` (masked) | Cloud | UI cache only | UI; model may see the masked form | n/a | Contract `[decisions.md]`; live field is `tin_masked` [V] |
-| Cloud `permissions[]` | Cloud | Boolean "approved" only | n/a | Books never relies on `filing.submit` | Contract; B1 |
+| Cloud `tin_masked` | Cloud | UI cache only | UI; model may see the masked form | n/a | Contract (P-C3, revised 2026-10-29) |
+| Cloud `permissions[]` | Cloud | Boolean "approved" only | n/a | Books never relies on `filing.submit`; a `books` token gets `profile.view` only | Contract; B1 |
 | TIN (9-digit root, 5-digit branch) | User, with BIR and cloud | BIR encrypted DB; cloud `tin_claims.tin_root` plaintext `migrations/0001_init.sql:79` [V] | BIR only, through ticket expansion | Books store, logs, props, links, model context, titles | CONFIRMED remnants `[identity §2.4]` |
 | BIR tickets (`tkt_`: taxprofile, return) | BIR only | BIR settings row (`tickets.rs:28`) | Chat; model args to BIR tools | Books store and outputs | CONFIRMED `[bir-shell §3]` |
 | BIR draft identity (code, year, period, TIN) | BIR | BIR `form_drafts` | BIR tools | Books (Books keeps `fill_args_sha256` only) | CONFIRMED `[forms §5]` |
@@ -373,9 +373,9 @@ Because inline cards mount without a click, Books shows only counts and status o
 
 - Device sign-in as client `buwiz-books` (registered at `src/oauth.rs:21` [V]).
 - `GET /me` for the user id, if needed.
-- `GET /api/tax-profiles`: Books reads `id`, `display` and `permissions` only. It refuses any response that carries TIN-shaped fields. It never relies on `filing.submit`.
+- `GET /api/tax-profiles`: Books reads `id`, `tin_masked`, `registered_name` and `permissions` only. It refuses any response that carries a `tin` field or other TIN-shaped fields. It never relies on `filing.submit`.
 - The link is stored by `id`. If an approval is withdrawn, the id leaves the list (the query filters `status = 'approved'`, `src/claims.rs:418` [V]). Books then marks the link inactive and refuses fills.
-- Blocker B1 must close first. Live code returns `tin`, `tin_masked`, `registered_name` and `activated_at`, and gives every client `filing.submit`.
+- Blocker B1 must close first. At 9f5ee16 the code returned `tin` to every token and gave `buwiz-books` the `app` scope. Fix pending merge: buwiz-server PR #4 (head `42190a5`, open, CI running on 2026-10-29).
 
 ---
 

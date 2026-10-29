@@ -31,7 +31,7 @@ Sources: [decisions.md](../research/traces/decisions.md), "From the rox session"
 | P-R2 | Rox | A new plugin must be added to the broker's `approved_plugins` trust list. That is a Rox-side change. | `server/src/v1/trust.json:11-23` [V]. [05 P0](05-implementation-plan.md#p0-plumbing-s). |
 | P-C1 | buwiz-cloud | v1 has one account and no organizations or workspaces. Do not contradict. | [01 section 10.3](01-architecture.md#103-consistency-with-buwiz-cloud-v1-no-organizations). |
 | P-C2 | buwiz-cloud | A tax profile is a TIN: 9-digit root and 5-digit branch. Active only after claim, Form 2303, ID and manual review. | [01 section 5.1](01-architecture.md#51-observed-identity-facts). |
-| P-C3 | buwiz-cloud | `GET /api/tax-profiles` returns `{"profiles":[{id, display, permissions[]}]}`. `id` is a stable opaque UUID, never reused. Approved means non-empty `permissions`. | Contract. Live drift is B1. |
+| P-C3 | buwiz-cloud | `GET /api/tax-profiles` for a `books`-scope token returns `{"profiles":[...]}` with `{id, tin_masked, registered_name, activated_at, permissions:["profile.view"]}` per profile and no `tin` field. `id` is a stable opaque UUID, never reused. Approved means non-empty `permissions`. (Superseded the earlier `display` wording on 2026-10-29; the cloud session's buwiz-server PR #4 (head `42190a5`, open, CI running on 2026-10-29).) | Contract. B1 fix pending merge. |
 | P-C4 | buwiz-cloud | Device-code sign-in, rotating refresh, `/me`. A sibling public client `buwiz-books`. | `src/oauth.rs:21` [V] registers it. |
 | P-C5 | buwiz-cloud | Books links a business to a tax profile by the opaque `id`, never by TIN. | [ADR 0003](adr/0003-tax-profile-link-by-opaque-id.md). |
 | P-C6 | buwiz-cloud | Accountant-for-client delegation is not in v1. | [01 section 10.2](01-architecture.md#102-accountants-for-clients-d15). |
@@ -61,7 +61,7 @@ These follow the canonical design's final decisions, numbered as in that design.
 | DD-16 | Locks are per tax period, not the org-wide `closedThrough`. Closed entries are immutable. Reopen needs a reason, writes `period_event`, and marks proposals stale. | T-PER-01 to T-PER-08 |
 | DD-17 | Every write takes `client_request_id`. A repeat returns the stored result. | [06 section 6](06-testing-plan.md#6-idempotency-and-retry-tests) |
 | DD-18 | Certificates credit only status `received`. Period fields are DATE. One certificate feeds one form. WB084 is final and never credited. | T-P4-01 to T-P4-04 |
-| DD-19 | Cloud contract: Books reads `id`, `display`, `permissions`. Non-empty `permissions` means approved. Books refuses TIN-shaped fields and never relies on `filing.submit`. | [01 section 5.7](01-architecture.md#57-cloud-link-p5-proposal); B1 |
+| DD-19 | Cloud contract: Books reads `id`, `tin_masked`, `registered_name` and `permissions`. Non-empty `permissions` means approved. Books refuses any response with a `tin` field or other TIN-shaped fields, and never relies on `filing.submit` (a `books` token gets only `profile.view`). | [01 section 5.7](01-architecture.md#57-cloud-link-p5-proposal); B1 |
 | DD-20 | The assistant may create drafts. Posting, voiding, closing, reopening, fact acknowledgement and hand-off confirmation are app-only, behind a user click. | [01 section 5.5](01-architecture.md#55-who-may-do-what) |
 | DD-21 | Titles and cards carry no amounts, TINs or legal names by default | [01 section 5.3](01-architecture.md#53-identity-and-secret-table-proposal-unless-marked); T-PRIV-02 |
 | DD-22 | Inline cards show counts and status only, until the owner accepts more | [01 section 5.6](01-architecture.md#56-consent-points) |
@@ -95,7 +95,7 @@ Each entry gives the options, the recommendation, and what it blocks. The defaul
 | D15 | Accountant access | (a) pass-based; (b) owner-signed delegation | (a). Timeline P9. | P9 |
 | D16 | Assistant may create drafts (`books_entry_draft`) | Yes / no | Yes. Posting is app-only. | P1 |
 | D17 | Node tooling in a Rust repo | Exempt Rox tools / no | Exempt Rox signing and conformance tools | P0 |
-| D18 | Cloud contract drift (B1) | Per-field decisions | Yes to all: drop `tin`, `tin_masked` (provide `display`), `registered_name`, `activated_at`; drop `filing.submit` for `buwiz-books`; hash or encrypt stored TINs | P5 |
+| D18 | Cloud contract drift (B1) | Per-field decisions | Mostly settled by the cloud session in buwiz-server PR #4 (head `42190a5`, open, CI running on 2026-10-29): `tin` dropped for `books` and `mcp` tokens; `tin_masked`, `registered_name`, `activated_at` kept; `buwiz-books` gets scope `books` with `profile.view` only. Still open: hash or encrypt stored TINs (`tin_claims.tin_root`). | P5 |
 | D19 | Sign-in at first run | Required / optional | Optional. Books works offline. | P5 |
 | D20 | Sales returns and credit notes in the 2551Q base | (a) block until acknowledged; (b) gross with a provisional flag | (a). Use (b) once the rule is verified. | P2 |
 | D21 | Trust release timing | Before or after stage A | After A0 to A15 and B0 to B8 pass in stage A | Installed users |
@@ -116,7 +116,7 @@ These are not in the canonical design. Each needs an owner's call.
 | Q-6 | Is `tax_type` one value per line, or a set? A sales line can be a percentage-tax sale (2551Q) and an income-tax sale (1701-MS IV.5, IV.6, IV.13) at once. | (a) make `tax_type` a set; (b) keep one value and add a second attribute for the income-tax family | (a), which the PoC already models. Owner or W2 decision. | P2 and P7 attribute schema |
 | Q-7 | What covers PT rate rows before 2020-07-01? The rate table has none, so a 2019 quarter fails closed (`pt_rate_row_missing`). | (a) leave it failing closed until a cited source row is read; (b) add a row now from a cited source | (a). Not needed for Q3 2026 or the MVP. | P2 coverage |
 | Q-8 | How is a credit note or sales return classified on its line? The `refunds_and_discounts` default has treatment `none` and no ATC, so it cannot classify a return. | (a) explicit line classification before posting (`sale_pt`, PT010, `contra_sales`); (b) classification from the category default | (a). An unclassified sales-class line blocks (`unclassified_sales_line`). | P2 exit; D20 |
-| Q-9 | Should cloud agent (`mcp`) tokens be able to read `tin`? Today `GET /api/tax-profiles` and MCP `list_tax_profiles` return it to any token (F-50). | (a) remove `tin` from every response and keep only the masked field (contract D18); (b) keep `tin` for agents that the person approved | (a). Books itself never uses `mcp` tokens. | P5; cloud contract (D18) |
+| Q-9 | Should cloud agent (`mcp`) tokens be able to read `tin`? | Answered by the cloud session in buwiz-server PR #4 (head `42190a5`, open, CI running on 2026-10-29): no. `mcp` and `books` tokens get `tin_masked` only; only the `app` scope (`buwiz-desktop`) sees full TINs and can file. Close when merged. | (a), as implemented. | P5 |
 
 ---
 
@@ -126,7 +126,7 @@ These blocker IDs (B1 to B11) are separate from the Slice B acceptance criteria 
 
 | ID | Blocker | Phase | Owner | What unblocks it | Status |
 |---|---|---|---|---|---|
-| B1 | Cloud contract drift. Live `GET /api/tax-profiles` returns `tin`, `tin_masked`, `registered_name`, `activated_at`. `PROFILE_PERMISSIONS` includes `filing.submit` for every client. | P5 | Cloud session | D18 applied. Response carries `id`, `display`, `permissions` only. `filing.submit` not given to `buwiz-books`. `README.md:74` updated. | OPEN. Confirmed on disk [V] at 9f5ee16: `src/claims.rs:27, 410-433`; `README.md:74`. Agent (`mcp`) tokens reach the same response (F-50). |
+| B1 | Cloud contract drift. At 9f5ee16, `GET /api/tax-profiles` returned `tin` to every token, and `buwiz-books` got scope `app` (so a Books token could create submissions). | P5 | Cloud session | Merged fix: `books` token gets `{id, tin_masked, registered_name, activated_at, permissions:["profile.view"]}`, 403 `insufficient_scope` on `POST /api/submissions` and the relay. | FIX PENDING MERGE: buwiz-server PR #4 (head `42190a5`, open, CI running on 2026-10-29). The diff adds `SCOPE_BOOKS`, `VIEW_PERMISSIONS = ["profile.view"]` and the `insufficient_scope` refusal [V, `gh pr diff 4`]. Close once merged. |
 | B2 | Scratch BIR isolation for Slice B. The installed BIR plugin's env does not set `BIR_DATABASE_PATH`, so the default path is the live database `[rox §6]`. | P3 | BIR owner, Rox owner | A documented scratch install (second broker, own data folder, own trust file, or BIR's harness) that cannot reach the live database. Account and licence gates passing for a scratch profile. | UNKNOWN. Not tried. [06 section 14] |
 | B3 | D3 (hand-off label) confirmed with the Forms owner | P3 | Forms owner | Written confirmation of the label | OPEN |
 | B4 | Schema digests for 63267ca | P3 | Forms owner | Hash computed here (see 01 section 9.1) and recorded in `data/crosswalk/*.json` (`schema_sha256`). Owner confirms it. | PARTLY CLOSED. Hash computed and recorded. Owner sign-off OPEN. |
@@ -136,7 +136,7 @@ These blocker IDs (B1 to B11) are separate from the Slice B acceptance criteria 
 | B8 | Trust release | Installed users | Rox owner | D21 gate passed | OPEN |
 | B9 | Record correction: `decisions.md` says the local buwiz-cloud clone is "not yet created". It exists at `/Volumes/goldcoders/buwiz-cloud` [V]. | None (record only) | Decisions owner | Update the record | OPEN (record) |
 | B10 | Tax review of rule sets before P2 and P6 release | P2, P6 release | Tax adviser, via owner | Written review of the PT rule set, the 1601-C item 19 statute text, the PT date basis (D4), the VAT threshold CPI status | OPEN |
-| B11 | Cloud agent (`mcp`) tokens can read full TINs (F-50) | Before any cloud change that relies on the contract, and before any agent use | Cloud session; owner | Decide Q-9. Drop `tin` from every response, or limit it to `app` tokens. | OPEN |
+| B11 | Cloud agent (`mcp`) tokens can read full TINs (F-50) | Before any agent use | Cloud session | `tin` limited to `app` tokens; MCP `list_tin_claims` returns `tin_masked` only. | FIX PENDING MERGE: buwiz-server PR #4 (head `42190a5`, open, CI running on 2026-10-29). |
 
 ---
 
@@ -152,16 +152,14 @@ These blocker IDs (B1 to B11) are separate from the Slice B acceptance criteria 
 
 ### 4.2 buwiz-cloud session
 
-1. Align `GET /api/tax-profiles` with the decisions contract (B1, D18):
-   - drop `tin` (`src/claims.rs:429`);
-   - rename `tin_masked` to `display` (`src/claims.rs:430`);
-   - drop `registered_name` (`src/claims.rs:431`) and `activated_at` (`src/claims.rs:432`);
-   - give `buwiz-books` no `filing.submit` (`src/claims.rs:27`; the list is shared by all clients today).
-2. Update the contract row at `README.md:74`.
-3. Confirm the `buwiz-books` client at `src/oauth.rs:21` is the one Books uses, and confirm its device-flow endpoints.
-4. Decide hashing or encryption for `tin_claims.tin_root` (`migrations/0001_init.sql:79`) (D18).
-5. Note: `/api/tax-profiles` filters on `status = 'approved'` (`src/claims.rs:418`). Books relies on that.
-6. Decide Q-9 with the owner: stop returning `tin` to `mcp`-scope tokens (F-50), or confirm that the current behaviour is intended.
+Status 2026-10-29: items 1, 2, 3 and 6 are addressed by buwiz-server PR #4 ("Only the BIR app sees full TINs and files returns", head `42190a5`, open, CI running). The cloud session reports it verified the fix live with real `buwiz-books` and `buwiz-desktop` device-flow tokens; this repo has read the diff but not run it.
+
+1. ~~Align `GET /api/tax-profiles` with the decisions contract (B1, D18).~~ PR #4: a `books` token gets `{id, tin_masked, registered_name, activated_at, permissions:["profile.view"]}` and no `tin`. A unit test asserts neither the raw nor the dashed TIN appears. The contract keeps `tin_masked` (not `display`), `registered_name` and `activated_at`; Books accepts that.
+2. Update the contract row at `README.md:74` to match PR #4.
+3. ~~Confirm the `buwiz-books` client.~~ PR #4: device-flow clients get their own scopes (`buwiz-desktop` → `app`, `buwiz-books` → `books`). Before PR #4, `buwiz-books` had scope `app` and could create submissions; `books` and `mcp` tokens now get 403 `insufficient_scope` on `POST /api/submissions` and on the relay.
+4. Still open: decide hashing or encryption for `tin_claims.tin_root` (`migrations/0001_init.sql:79`) (D18).
+5. Note: `/api/tax-profiles` filters on `status = 'approved'` (`src/claims.rs:418` at 9f5ee16). Books relies on that.
+6. ~~Decide Q-9.~~ PR #4: MCP `list_tin_claims` returns `tin_masked` only.
 
 ### 4.3 Forms owner
 
@@ -213,10 +211,10 @@ The canonical design is the input to this write-up. This section records every p
 | C13 | "R-1 to R-24 register grafted from correctness" | The full register text was not supplied to this writer | [05 section 5](05-implementation-plan.md#5-risk-register) uses the R-IDs the design cites, and RK-n for new risks. A reviewer should merge the full register. |
 | C14 | Cents helper at `form_2551q.rs:1259` (buwiz-forms checkout) | Live tree at `form_2551q.rs:1467` [V] | Cite 1467 |
 | C15 | Slice B expects computed item 14 in `bir_form_fields` (implied) | UNKNOWN (canonical's own open discrepancy) | Fall back to validate or preview ([01 section 9.2](01-architecture.md#92-mvp-mechanism-p3-model-mediated-proposal) step 6) |
-| C16 | Cloud profile field `display` | Live field is `tin_masked` [V] | Noted in [01 section 5.1](01-architecture.md#51-observed-identity-facts); B1 |
+| C16 | Cloud profile field `display` | Live field is `tin_masked` [V] | Resolved 2026-10-29: the contract now names `tin_masked` (P-C3). |
 | C17 | A4 "voiding posts a reversal" does not say what the base does with the original | Gap, not a contradiction | Q-1 added. Both readings tested. |
 | C18 | Canonical treats Books' gate as `bun check` (BK-TS `CLAUDE.md`) | Books is Rust. BK-TS gates do not apply here. | [05 section 7](05-implementation-plan.md#7-definition-of-done-per-phase) and [06 section 11](06-testing-plan.md#11-test-tiers) use Rust gates |
-| C19 | Decisions: "no extra scope in v1"; the contract returns a masked `display` only | 9f5ee16 (`085c36d`): grant scopes `app` and `mcp`. `mcp` tokens reach `GET /api/tax-profiles` and MCP `list_tax_profiles`, and both return `tin` (`src/claims.rs:429`; `src/mcp.rs:156-158`) | Recorded as a deviation (F-50). Q-9 asks the owner. Books never uses `mcp` tokens (AGENTS.md "Do not"). |
+| C19 | Decisions: "no extra scope in v1"; the contract returns a masked `display` only | 9f5ee16 (`085c36d`): grant scopes `app` and `mcp`. `mcp` tokens reach `GET /api/tax-profiles` and MCP `list_tax_profiles`, and both return `tin` (`src/claims.rs:429`; `src/mcp.rs:156-158`) | Recorded as a deviation (F-50). Fixed in buwiz-server PR #4 (pending merge): `mcp` and `books` tokens get `tin_masked` only. Books never uses `mcp` tokens (AGENTS.md "Do not"). |
 | C20 | 1701-MS printed rounding ("49 centavos") is CONFIRMED | [verify] #83: UNCONFIRMED (image only) | Set to UNCONFIRMED (docs/03 D-14). Not in code until the printed rule is read. |
 | C21 | 1701-MS 15 October installment is CONFIRMED ([bir] D-4) | [verify] #83: UNCONFIRMED | Set to UNCONFIRMED (docs/03 D-15; `data/rules/rates.v1.json` status_detail). |
 | C22 | 1601-C printed due-date text is CONFIRMED ([bir] D-3) | [verify] #83: UNCONFIRMED. The code rule (P6) is CONFIRMED in code only | Printed text UNCONFIRMED (docs/03 D-16). The code rule stays. |
@@ -256,5 +254,5 @@ The canonical design is the input to this write-up. This section records every p
 | Record | Owner | Change |
 |---|---|---|
 | `research/traces/decisions.md` | Decisions owner | Note that buwiz-cloud exists and has moved since 2887e50 (B9) |
-| buwiz-cloud `README.md:74` | Cloud session | Contract row fixed (B1) |
+| buwiz-cloud `README.md:74` | Cloud session | Contract row matches PR #4 once merged (B1) |
 | Live BIR `crates/bir-mcp/src/tools.rs` comment for `document` | BIR owner | Clarify the label (R-4, D3) |

@@ -30,7 +30,7 @@ Design decisions (proposed; the full list and open items are in `docs/07-decisio
 - Rules and rate rows are versioned and effective-dated. A proposal records its rule set, the Forms schema hash and an inputs hash.
 - Hand-off is model-mediated. The BIR fill source is `document`, never `user` and never `from_card`.
 - Tax-period locks, not one org-wide date. Closed entries are immutable.
-- The cloud contract is read as `id`, `display` and `permissions`. Books never relies on `filing.submit`. The live cloud code still returns `tin` and `tin_masked` (`docs/00-findings.md` F-29).
+- The cloud contract is read as `id`, `tin_masked`, `registered_name` and `permissions`. Books never relies on `filing.submit`. The cloud's full-TIN exposure (F-29, F-50) is fixed in buwiz-server PR #4, which was open and awaiting CI on 2026-10-29.
 
 ## Map
 
@@ -74,4 +74,4 @@ The proof of concept in `poc/` is TypeScript and runs on Bun. Use `bun`, not npm
 - Live checks: none. No live Rox, BIR or cloud call was made, and the live BIR database was not opened.
 - Tests: the source repos' test suites were not run. Last PoC run (2026-10-29, `cd poc && bun test`): 187 pass, 0 fail, 1341 expect() calls, 10 files. The verbatim output is in `poc/README.md`.
 - Git: the first commit holds this research, design and PoC. Pushing to `github.com/buwiz-corp/buwiz-books` is the owner's call.
-- Open questions that block parts of the build: the 8% election and 2551Q (D5), the 1% PT extension (D6), the BIR source label (D3), and the cloud repo of record (D13), and whether cloud agent tokens may read full TINs (Q-9, F-50). See `docs/07-decisions-and-blockers.md`.
+- Open questions that block parts of the build: the 8% election and 2551Q (D5), the 1% PT extension (D6), the BIR source label (D3), and the cloud repo of record (D13). Cloud blocker B1 closes when buwiz-server PR #4 merges. See `docs/07-decisions-and-blockers.md`.

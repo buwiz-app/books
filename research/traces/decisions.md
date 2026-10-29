@@ -28,3 +28,13 @@ Date: 2026-10-29. Sources: the owner (via AskUserQuestion in the buwiz-books ses
 - Accountant-for-client delegation: NOT in v1 (buwiz-oss internal/PLAN.md §5.4 sketches owner-signed revocable delegation later). Submission tickets per buwiz-oss internal/PLAN.md §5 not built.
 - Server decisions: BIR secrets only on server; mini app submits to BIR directly over SFTP today; buwiz-oss internal/DECISIONS.md D2/D3 (server = TIN ownership + submission relay).
 - Rox `tkt_…` tickets are Rox/plugin-local capabilities; nothing on the server maps them.
+
+## Update 2026-10-29 (later): buwiz-cloud contract revised
+
+Source: the `buwiz-cloud` session, after this repo reported F-50. Fix in `github.com/buwiz-corp/buwiz-server/pull/4` (head `42190a5`; open with CI running when recorded).
+
+- Device-flow clients get their own scope: `buwiz-desktop` → `app`, `buwiz-books` → `books`. (Before the fix, `buwiz-books` had `app` and could create submissions.)
+- `GET /api/tax-profiles` for a `books` or `mcp` token returns `{id, tin_masked, registered_name, activated_at, permissions:["profile.view"]}` with no `tin` field. The field is `tin_masked`, not `display` as worded above.
+- `books` and `mcp` tokens get 403 `insufficient_scope` on `POST /api/submissions` and the relay.
+- MCP `list_tin_claims` returns `tin_masked` only.
+- Link business profiles by `id`. Close F-50 and B1 once PR #4 is merged.

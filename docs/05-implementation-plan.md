@@ -117,13 +117,13 @@ Parallel work that is safe now: P0 with the design of P5, and P2 rules for gradu
 ### P5 Cloud link (M)
 
 - **Goal.** Link a business to an approved tax profile by opaque `id`. The link survives restart.
-- **Deliverables.** Device sign-in as client `buwiz-books`. `/me` (if needed). `GET /api/tax-profiles` read of `id`, `display` and `permissions` only. Link stored by `id`. Refresh-token rotation in the Books process. Refusal of TIN-shaped fields.
+- **Deliverables.** Device sign-in as client `buwiz-books`. `/me` (if needed). `GET /api/tax-profiles` read of `id`, `tin_masked`, `registered_name` and `permissions` only. Link stored by `id`. Refresh-token rotation in the Books process. Refusal of TIN-shaped fields.
 - **Files (this repo).** `crates/books-mini-app/src/cloud.rs`; `crates/books-store/src/session.rs`; `apps/home.tsx` (link UI).
 - **Files (buwiz-cloud, owned by the cloud session).** `src/claims.rs:27` (`PROFILE_PERMISSIONS`: `filing.submit` must not reach `buwiz-books`). `src/claims.rs:410-433` (`tax_profiles` handler and `active_profiles`, at 9f5ee16: drop `tin` at line 429, `tin_masked` at 430, `registered_name` at 431 and `activated_at` at 432; `permissions` at 433 must match the contract; the approved filter is at 418). `README.md:74` (contract row). Also stop returning `tin` to `mcp`-scope tokens (F-50, Q-9). `src/oauth.rs:21` already registers `buwiz-books` `[V]`. `migrations/0001_init.sql:79` (`tin_claims.tin_root` plaintext: hash or encrypt, D18).
 - **Depends on.** B1 (cloud contract drift). D13 (repo naming). D19 (sign-in optional).
 - **Exit.** Link survives restart. No TIN in any Books store or output. B1 closed (the live response matches the decisions contract).
 - **Risks.** RK-3 (live response has `tin`, `tin_masked`, `registered_name`, `activated_at`, and `filing.submit` for every client). Refresh token storage: Books process only, 0600 file or Keychain (decision Q-3 in 07). Approval withdrawn: id leaves the list, so the link must show inactive (`src/claims.rs:413` [V]).
-- **Contract drift to record.** The decisions contract names the field `display`. The live code returns `tin_masked` `[V, README.md:74; claims.rs:430]`.
+- **Contract drift, resolved.** The earlier decisions wording named the field `display`; the contract now names `tin_masked` (P-C3). The cloud-side fixes listed above are in buwiz-server PR #4 (head `42190a5`, open, CI running on 2026-10-29); check it is merged before starting P5.
 
 ### P6 Payroll and 1601-C (L)
 
@@ -181,7 +181,7 @@ Two ID families appear in these docs:
 |---|---|---|---|---|---|
 | RK-1 | Installed BIR reads the live database by default. `BIR_DATABASE_PATH` is not in the installed env. | P3 | Rox owner, BIR owner | Second broker with its own data folder and trust file. Assert the scratch path before any call (B0). | `[rox §6]` env keys; `crates/bir-core/src/db/mod.rs:355-370` [V] |
 | RK-2 | A second broker on another port and data folder may not be a supported setup. | P3 | Rox owner | Test it on a clean path first. If unsupported, use BIR's own harness (D12 option 2). | UNKNOWN (no test run) |
-| RK-3 | Cloud contract drift. Live response has `tin`, `tin_masked`, `registered_name`, `activated_at`. Every client gets `filing.submit`. | P5 | Cloud session | Fix per D18 before P5. | `src/claims.rs:27, 410-433` [V]; `README.md:74` [V] |
+| RK-3 | Cloud contract drift. Live response has `tin`, `tin_masked`, `registered_name`, `activated_at`. Every client gets `filing.submit`. | P5 | Cloud session | Fix pending merge: buwiz-server PR #4 (head `42190a5`, open, CI running on 2026-10-29). | `src/claims.rs:27, 410-433` [V]; `README.md:74` [V] |
 | RK-4 | Refusal codes differ by path (`permission_denied` at Rox, `tool_error` from a plugin). | P1, P3 | Books | Treat all refusals the same. Test both (A12). | `bridge.rs:457` [V]; `sessions.mjs:300` [V] |
 | RK-5 | Tool names that do not start with `books_` or that collide are skipped silently. | P0 | Books | Check names against the installed set. Test the list. | `server/src/v1/agent.mjs:65` [V] |
 | RK-6 | Void semantics are unclear (original `posted` or `voided`). | P1 | Books, owner | Decide Q-1 before P1 exit. Test A4 under the chosen reading. | [01 section 7.6](01-architecture.md#76-void-rule-proposal-open-question-q-1) |
