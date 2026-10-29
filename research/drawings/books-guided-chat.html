@@ -1,0 +1,356 @@
+<title>Books Guided Chat</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: three ways in (slash, @, plain question), then templates that start a guided chat you can play,
+   then the @books: scopes, routines and guardrails. Chat pictures keep Rox's dark look in both themes. */
+:root {
+  --paper: #f4f7f4;
+  --ink: #13201a;
+  --muted: #5a6b62;
+  --line: #d8e1db;
+  --accent: #12804a;
+  --accent-soft: #e2f2e9;
+  --chip: #eaf0ec;
+  --card: #ffffff;
+  --birc: #7a4fd6;
+  --birc-soft: #efe8fd;
+  --stop: #b4471f;
+  --stop-soft: #f9e6de;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --w-bg: #151515; --w-panel: #1e1e1e; --w-raise: #282828; --w-hover: #303030; --w-line: #2d2d2d; --w-ink: #f0f0f0; --w-mute: #a3a3a3; --w-dim: #707070;
+  --w-green: #3fcf89; --w-green-bg: #123423; --w-red: #ff7d75; --w-red-bg: #3a1a17; --w-amber: #f3b64c; --w-amber-bg: #3a2e12;
+  --w-blue: #7fb2ff; --w-blue-bg: #15253f; --w-violet: #b79bff; --w-violet-bg: #2a2142; --w-books: #157a48; --w-bir: #6a46c9;
+  --w-ui: -apple-system, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #0e1411; --ink: #e7efe9; --muted: #96a79d; --line: #26322c; --accent: #43c584; --accent-soft: #15301f; --chip: #18221d; --card: #121a16; --birc: #b79bff; --birc-soft: #241b3b; --stop: #ff9a73; --stop-soft: #3a1d12; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --paper: #0e1411; --ink: #e7efe9; --muted: #96a79d; --line: #26322c; --accent: #43c584; --accent-soft: #15301f; --chip: #18221d; --card: #121a16; --birc: #b79bff; --birc-soft: #241b3b; --stop: #ff9a73; --stop-soft: #3a1d12; color-scheme: dark; }
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--paper); }
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 36px 72px; }
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.1rem, 5.6vw, 3.4rem); font-weight: 800; line-height: 1.02; }
+h2 { font-size: clamp(1.45rem, 3.4vw, 2rem); font-weight: 800; line-height: 1.1; }
+h3 { font-size: 1.15rem; }
+p { margin: 0; max-width: 64ch; }
+.kicker { font-family: var(--mono); font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lead { font-size: 1.12rem; color: var(--muted); }
+.mono { font-family: var(--mono); }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--w-blue); outline-offset: 2px; border-radius: 6px; }
+section { display: flex; flex-direction: column; gap: 14px; }
+.scroller { overflow-x: auto; border-radius: 16px; }
+
+/* three ways in */
+.ways { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 900px) { .ways { grid-template-columns: minmax(0, 1fr); } }
+.way { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.way .cap b { font-family: var(--display); font-size: 1.2rem; display: block; } .way .cap span { color: var(--muted); font-size: 0.95rem; }
+.pane { background: var(--w-bg); color: var(--w-ink); font-family: var(--w-ui); font-size: 13px; line-height: 1.4; border-radius: 14px; border: 1px solid var(--w-line); padding: 14px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; min-height: 330px; }
+.pop { border: 1px solid var(--w-line); background: var(--w-panel); border-radius: 12px; overflow: hidden; }
+.pop .row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 10px; border-top: 1px solid var(--w-line); width: 100%; text-align: left; }
+.pop .row:first-child { border-top: 0; }
+.pop .row:hover, .pop .row.on { background: var(--w-raise); }
+.pop .ic { width: 20px; height: 20px; border-radius: 5px; background: var(--w-books); display: grid; place-items: center; font-size: 10px; color: #fff; font-weight: 800; }
+.pop .row small { color: var(--w-dim); display: block; font-size: 11px; }
+.pop .row .k { color: var(--w-dim); font-size: 11px; font-family: var(--mono); }
+.pop .hd { padding: 6px 10px; color: var(--w-dim); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid var(--w-line); }
+.composer { display: flex; align-items: center; gap: 8px; border: 1px solid var(--w-line); background: var(--w-panel); border-radius: 14px; padding: 8px 10px; flex-wrap: wrap; }
+.composer .plus { width: 24px; height: 24px; border-radius: 50%; background: var(--w-raise); display: grid; place-items: center; color: var(--w-mute); flex: none; }
+.composer .typed { flex: 1; min-width: 0; }
+.composer .send { width: 24px; height: 24px; border-radius: 50%; background: var(--w-ink); color: var(--w-bg); display: grid; place-items: center; font-weight: 800; flex: none; }
+.caret { display: inline-block; width: 1.5px; height: 14px; background: var(--w-ink); vertical-align: -2px; margin-left: 1px; animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
+.att { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px 2px 3px; border-radius: 999px; background: #123e28; color: #bff0d6; font-size: 12px; margin-right: 4px; white-space: nowrap; }
+.att i { font-style: normal; width: 16px; height: 16px; border-radius: 50%; background: var(--w-books); display: grid; place-items: center; font-size: 9px; color: #fff; font-weight: 800; }
+.me { align-self: flex-end; background: var(--w-raise); padding: 8px 12px; border-radius: 14px 14px 4px 14px; max-width: 85%; }
+.as { color: var(--w-ink); }
+.card { background: var(--w-panel); border: 1px solid var(--w-line); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 360px; }
+.card.bir { border-color: #3d2f66; }
+.ch { display: flex; align-items: center; gap: 8px; color: var(--w-mute); font-size: 12px; }
+.ch i { width: 18px; height: 18px; border-radius: 5px; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: 9px; color: #fff; background: var(--w-books); flex: none; }
+.card.bir .ch i { background: var(--w-bir); }
+.ch .sp { flex: 1; }
+.big { font-family: var(--mono); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sub { color: var(--w-mute); font-size: 12px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rows { display: flex; flex-direction: column; border: 1px solid var(--w-line); border-radius: 10px; overflow: hidden; }
+.rw { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 10px; border-top: 1px solid var(--w-line); }
+.rw:first-child { border-top: 0; }
+.rw small { color: var(--w-dim); display: block; font-size: 11px; }
+.rw.tot { background: var(--w-raise); font-weight: 700; }
+.st { font-size: 11px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.st.ok { background: var(--w-green-bg); color: var(--w-green); } .st.draft { background: var(--w-amber-bg); color: var(--w-amber); }
+.st.rev { background: var(--w-red-bg); color: var(--w-red); } .st.bir { background: var(--w-violet-bg); color: var(--w-violet); }
+.btn { padding: 6px 12px; border-radius: 8px; background: var(--w-raise); color: var(--w-ink); font-weight: 600; font-size: 12.5px; border: 1px solid var(--w-line); white-space: nowrap; }
+.btn.go { background: var(--w-green); color: #06281a; border-color: var(--w-green); }
+.btn.vi { background: var(--w-violet); color: #1a1033; border-color: var(--w-violet); }
+.acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.done { color: var(--w-green); font-weight: 600; }
+
+/* templates + player */
+.player { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 14px; align-items: stretch; }
+@media (max-width: 860px) { .player { grid-template-columns: minmax(0, 1fr); } }
+.tpls { display: flex; flex-direction: column; gap: 8px; }
+.tpl { text-align: left; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--card); display: flex; flex-direction: column; gap: 2px; }
+.tpl:hover { border-color: var(--accent); }
+.tpl[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.tpl b { font-family: var(--display); font-size: 1.05rem; } .tpl span { color: var(--muted); font-size: 0.9rem; }
+.tpl .pair { color: var(--birc); font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.stage { background: var(--w-bg); color: var(--w-ink); font-family: var(--w-ui); font-size: 13px; line-height: 1.4; border-radius: 14px; border: 1px solid var(--w-line); display: flex; flex-direction: column; min-height: 560px; min-width: 0; }
+.stage .top { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--w-line); color: var(--w-mute); }
+.stage .top b { color: var(--w-ink); }
+.stage .top .sp { flex: 1; }
+.stage .top button { color: var(--w-blue); font-size: 12.5px; }
+.log { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; max-height: 560px; }
+.empty { margin: auto; text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center; color: var(--w-mute); }
+.empty b { font-size: 20px; color: var(--w-ink); font-family: var(--w-ui); }
+.empty .row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 520px; }
+.empty .row button { padding: 7px 12px; border-radius: 999px; background: var(--w-panel); border: 1px solid var(--w-line); font-size: 12.5px; color: var(--w-ink); }
+.choices { display: flex; gap: 6px; flex-wrap: wrap; }
+.choices button { padding: 6px 11px; border-radius: 999px; background: var(--w-panel); border: 1px solid var(--w-line); font-size: 12.5px; color: var(--w-ink); }
+.choices button.best { border-color: var(--w-green); color: var(--w-green); }
+.thinking { color: var(--w-dim); font-size: 12px; }
+.tool { font-family: var(--mono); font-size: 11px; color: var(--w-dim); }
+
+/* scopes table */
+.tbl { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 14px; overflow: hidden; border: 1.5px solid var(--line); font-size: 0.95rem; }
+.tbl th { text-align: left; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 10px 14px; border-bottom: 1.5px solid var(--line); }
+.tbl td { padding: 10px 14px; border-top: 1px solid var(--line); vertical-align: top; }
+.tbl code { font-family: var(--mono); font-size: 0.8rem; background: var(--chip); padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
+.tblwrap { overflow-x: auto; border-radius: 14px; }
+
+/* routines */
+.routs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 900px) { .routs { grid-template-columns: minmax(0, 1fr); } }
+.rout { border-radius: 16px; border: 1.5px solid var(--line); background: var(--card); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.rout .when { font-family: var(--mono); font-size: 0.78rem; color: var(--accent); letter-spacing: 0.04em; }
+.rout b { font-family: var(--display); font-size: 1.15rem; }
+.rout .can { font-size: 0.9rem; color: var(--muted); }
+.rout .review { font-family: var(--w-ui); font-size: 12.5px; background: var(--w-bg); color: var(--w-ink); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--w-line); }
+.rout.pair { border-color: var(--birc); } .rout.pair .when { color: var(--birc); }
+
+/* guardrails */
+.guard { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 720px) { .guard { grid-template-columns: minmax(0, 1fr); } }
+.gcol { border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 8px; border: 2px solid var(--line); background: var(--card); }
+.gcol.yes { border-color: var(--accent); } .gcol.yes h3 { color: var(--accent); }
+.gcol.no { border-color: var(--stop); } .gcol.no h3 { color: var(--stop); }
+.gcol ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <span class="kicker">Explained simply · play the templates · example data</span>
+    <h1>Talking to Books in the chat</h1>
+    <p class="lead">Three ways in, templates that walk you through a job, and routines that work while you are away. Books and the BIR app talk to each other through the same chat.</p>
+  </header>
+
+  <section aria-labelledby="w">
+    <h2 id="w">Three ways in</h2>
+    <div class="ways">
+      <div class="way">
+        <div class="cap"><b>/books opens a screen</b><span>Type a slash. Pick where to go.</span></div>
+        <div class="pane">
+          <div class="pop">
+            <button class="row on"><span class="ic">B</span><span>Today<small>cash, month, what needs you</small></span><span class="k">⌘1</span></button>
+            <button class="row"><span class="ic">B</span><span>Ledger<small>transactions by account</small></span><span class="k">⌘2</span></button>
+            <button class="row"><span class="ic">B</span><span>Unpaid<small>to collect, to pay</small></span><span class="k">⌘3</span></button>
+            <button class="row"><span class="ic">B</span><span>Reconcile<small>match the bank</small></span><span class="k">⌘4</span></button>
+            <button class="row"><span class="ic">B</span><span>Forms<small>totals for the BIR app</small></span><span class="k">⌘5</span></button>
+          </div>
+          <div class="composer"><span class="plus">+</span><span class="typed">/books<span class="caret"></span></span><span class="send">↑</span></div>
+        </div>
+      </div>
+      <div class="way">
+        <div class="cap"><b>@books: points at a thing</b><span>Click a scope, then pick one.</span></div>
+        <div class="pane" id="scopePane"></div>
+      </div>
+      <div class="way">
+        <div class="cap"><b>Or just ask</b><span>The assistant reads Books and answers with a card.</span></div>
+        <div class="pane">
+          <div class="me">Who still owes us money?</div>
+          <div class="tool">books_unpaid_list · read only</div>
+          <div class="card"><div class="ch"><i>B</i><span>Books · To collect</span><span class="sp"></span><span class="st draft">2</span></div>
+            <div class="rows"><div class="rw"><span>Isla Café <small>Invoice 0143 · due Nov 15</small></span><span class="num">60,000.00</span></div><div class="rw"><span>Bayani Foods <small>Invoice 0144 · due Nov 20</small></span><span class="num">45,000.00</span></div><div class="rw tot"><span>Total</span><span class="num">105,000.00</span></div></div></div>
+          <div class="composer"><span class="plus">+</span><span class="typed" style="color:var(--w-dim)">Message Rox</span><span class="send">↑</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t">
+    <h2 id="t">Templates: start a job with one tap</h2>
+    <p class="lead">Pick a template. The assistant asks one thing at a time, with tap-able answers, and ends with a card you confirm. Grey lines name the tool it used; Books tool names are proposals.</p>
+    <div class="player">
+      <div class="tpls" id="tpls"></div>
+      <div class="scroller"><div class="stage"><div class="top"><b id="ftitle">New chat</b><span class="sp"></span><button id="restart">Start over</button></div><div class="log" id="log"></div></div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="s">
+    <h2 id="s">What <span class="mono">@books:</span> can point at</h2>
+    <div class="tblwrap"><table class="tbl">
+      <thead><tr><th>Scope</th><th>Looks like</th><th>The assistant then…</th></tr></thead>
+      <tbody>
+        <tr><td><b>person</b></td><td><code>@books:person Lumen Power Co.</code></td><td>Answers about that vendor, customer, employee or bank.</td></tr>
+        <tr><td><b>account</b></td><td><code>@books:account 66000 Facilities</code></td><td>Reads that account's lines and balance.</td></tr>
+        <tr><td><b>period</b></td><td><code>@books:period October 2026</code></td><td>Limits answers to that month, quarter or year.</td></tr>
+        <tr><td><b>entry</b></td><td><code>@books:entry Oct 25 · Rent</code></td><td>Explains one transaction, or drafts a fix for you to post.</td></tr>
+        <tr><td><b>form</b></td><td><code>@books:form 2551Q Q3 2026</code></td><td>Shows the totals Books hands to BIR, and where each comes from.</td></tr>
+        <tr><td><b>tag</b></td><td><code>@books:tag Makati office</code></td><td>Filters by department or location.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="lead">Each scope carries a short hint to the assistant: read from Books, draft at most, never post. Rox allows up to 16 scopes per app.</p>
+  </section>
+
+  <section aria-labelledby="r">
+    <h2 id="r">Routines: Books works while you are away</h2>
+    <div class="routs">
+      <div class="rout"><span class="when">Every Monday · 9:00</span><b>Weekly tidy-up</b><span class="can">Reads new bank lines and drafts a category for each. Posts nothing.</span><div class="review">Routine 'Weekly tidy-up' may change Books data without asking: <b>books_entry_draft</b></div></div>
+      <div class="rout"><span class="when">1st of each month</span><b>Month-end nudge</b><span class="can">Checks what is left before closing last month and leaves a quiet card. Changes nothing.</span><div class="review">Routine 'Month-end nudge' reads Books only.</div></div>
+      <div class="rout pair"><span class="when">Daily · with the BIR app</span><b>BIR pair check</b><span class="can">Reads the BIR draft (tax option, what was handed over) and flags hand-offs that went out of date.</span><div class="review">Routine 'BIR pair check' reads the BIR app's read-only tools, approved once. Changes nothing.</div></div>
+    </div>
+    <p class="lead">Rox allows 8 routines per app. A routine can change Books only through tools it names at install, and you see that list before you approve.</p>
+  </section>
+
+  <section aria-labelledby="g">
+    <h2 id="g">What the assistant can and cannot do with Books</h2>
+    <div class="guard">
+      <div class="gcol yes"><h3>Can</h3><ul><li>Read anything in Books to answer you</li><li>Draft an entry from a receipt or a bank line</li><li>Suggest categories and matches</li><li>Show amounts on cards you asked for</li><li>Read the BIR draft's tax option</li></ul></div>
+      <div class="gcol no"><h3>Cannot, without your click</h3><ul><li>Post, void, or change a posted entry</li><li>Close or reopen a month</li><li>Hand totals to the BIR app</li><li>Set your 8% or graduated choice (that lives in BIR)</li><li>See any TIN (Books does not store them)</li></ul></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  const B = (t, r, body, bir) => '<div class="card' + (bir ? " bir" : "") + '"><div class="ch"><i>' + (bir ? "BIR" : "B") + "</i><span>" + t + '</span><span class="sp"></span>' + (r || "") + "</div>" + body + "</div>";
+
+  /* ---------- @books: scope picker ---------- */
+  const SCOPES = { person: ["Lumen Power Co.", "Isla Café", "Santos Hardware", "Isla Office Rentals"], account: ["11000 Bank Accounts", "66000 Facilities", "41000 Sales Revenue"], period: ["October 2026", "Q3 2026", "2026"], form: ["2551Q Q3 2026", "1601-C Sep 2026", "1701-MS 2026"] };
+  let sc = { scope: null, pick: null };
+  function scope() {
+    let pop = "";
+    if (!sc.scope) pop = '<div class="pop"><div class="hd">Books scopes</div>' + Object.keys(SCOPES).map((k) => '<button class="row" data-scope="' + k + '"><span class="ic">B</span><span>' + k + "<small>" + SCOPES[k].length + ' items</small></span><span class="k">›</span></button>').join("") + "</div>";
+    else if (!sc.pick) pop = '<div class="pop"><div class="hd">@books:' + sc.scope + "</div>" + SCOPES[sc.scope].map((v) => '<button class="row" data-pick="' + v + '"><span class="ic">B</span><span>' + v + '</span><span class="k">↵</span></button>').join("") + "</div>";
+    const Q = { person: "how much this year?", account: "how much this year?", period: "how did we do?", form: "what is ready?" };
+    const A = {
+      "Lumen Power Co.": [["Paid this year", "24,990.00"], ["Payments", "10"], ["To review", "1"]],
+      "Isla Café": [["Received this year", "480,000.00"], ["Unpaid", "60,000.00"], ["Last paid", "Oct 05"]],
+      "Santos Hardware": [["Received this year", "400,000.00"], ["2307s received", "4"], ["Last paid", "Oct 20"]],
+      "Isla Office Rentals": [["Paid this year", "250,000.00"], ["Payments", "10"], ["Last paid", "Oct 25"]],
+      "11000 Bank Accounts": [["Balance today", "412,350.00"], ["In this year", "1,190,000.00"], ["Matched to", "Sep"]],
+      "66000 Facilities": [["This year", "250,000.00"], ["This month", "25,000.00"], ["Entries", "10"]],
+      "41000 Sales Revenue": [["This year", "1,200,000.00"], ["This month", "300,000.00"], ["Entries", "12"]],
+      "October 2026": [["Money in", "300,000.00"], ["Money out", "48,849.00"], ["Net", "251,151.00"]],
+      "Q3 2026": [["Sales", "300,000.00"], ["Returns", "10,000.00"], ["Net sales", "290,000.00"]],
+      "2026": [["Sales", "1,200,000.00"], ["Net income", "480,361.00"], ["Months closed", "9"]],
+      "2551Q Q3 2026": [["Boxes ready", "2 of 2"], ["Row 1", "290,000.00"], ["Item 15", "3,000.00"]],
+      "1601-C Sep 2026": [["Boxes ready", "7 of 8"], ["Held", "item 16"], ["Item 14", "42,000.00"]],
+      "1701-MS 2026": [["Status", "Preview"], ["Tax option (BIR)", "Graduated"], ["IV.5", "1,200,000.00"]],
+    };
+    const typed = sc.pick ? '<span class="att"><i>B</i>' + sc.pick + "</span>" + Q[sc.scope] : "@books:" + (sc.scope ? sc.scope + " " : "");
+    const ans = sc.pick ? '<div class="me"><span class="att"><i>B</i>' + sc.pick + "</span>" + Q[sc.scope] + '</div><div class="tool">books_' + sc.scope + "_summary · read only</div>" + B("Books · " + sc.pick, '<span class="st ok">' + sc.scope + "</span>", '<div class="rows">' + A[sc.pick].map(([k, v]) => '<div class="rw"><span>' + k + '</span><span class="num">' + v + "</span></div>").join("") + '</div><div class="acts"><button class="btn" data-reset-scope="1">Try another</button></div>') : "";
+    document.getElementById("scopePane").innerHTML = (ans || pop) + '<div class="composer"><span class="plus">+</span><span class="typed">' + typed + '<span class="caret"></span></span><span class="send">↑</span></div>';
+  }
+
+  /* ---------- templates and guided flows ---------- */
+  const FLOWS = {
+    receipt: { t: "Record a receipt", d: "Photo or PDF, posted in four taps", steps: [
+      { me: '<span class="att"><i>+</i>receipt-1018.jpg</span> Record this', say: "I read it in Rox's document viewer: <b>Pixel Print Shop</b>, <b>1,350.00</b>, Oct 18. What did you pay with?", tool: "rox document viewer → books_entry_draft", choices: [["Bank •••• 4021", 1], ["Card •••• 7713", 1], ["Cash box", 1]] },
+      { say: "Which category?", choices: [["Supplies & Materials · likely", 2, 1], ["Software & Subscriptions", 2], ["Something else", 2]] },
+      { say: "Here is the draft. Post it?", card: () => B("Books · Draft", '<span class="st draft">Draft</span>', '<div class="rows"><div class="rw"><span>Pixel Print Shop <small>Oct 18 · paid from your pick</small></span><span class="num">1,350.00</span></div><div class="rw"><span>Supplies &amp; Materials <small>Receipt attached</small></span><span class="st draft">Draft</span></div></div><div class="acts"><button class="btn go" data-next="3">Post</button><button class="btn">Edit</button></div>') },
+      { card: () => B("Books · Pixel Print Shop", '<span class="st ok">Posted</span>', '<div class="done">✓ Posted 1,350.00</div><div class="sub">Shows in the Ledger and the October P&amp;L.</div>'), end: true },
+    ]},
+    tidy: { t: "Tidy up the bank lines", d: "Categorize what came in from the statement", steps: [
+      { me: "Tidy up this week's bank lines", say: "2 new lines. First: <b>Oct 15 · Lumen Power Co. · 2,499.00</b>. Category?", tool: "books_ledger_list · read only", choices: [["Utilities · likely", 1, 1], ["Facilities", 1]] },
+      { say: "Next: <b>Oct 08 · Bank service fee · 150.00</b>. Category?", choices: [["Bank Fees · likely", 2, 1], ["General Operations", 2]] },
+      { say: "Both drafted. Post them?", card: () => B("Books · 2 drafts", '<span class="st draft">Drafts</span>', '<div class="rows"><div class="rw"><span>Lumen Power Co. <small>Utilities</small></span><span class="num">2,499.00</span></div><div class="rw"><span>Bank service fee <small>Bank Fees</small></span><span class="num">150.00</span></div></div><div class="acts"><button class="btn go" data-next="3">Post both</button></div>') },
+      { card: () => B("Books · Bank lines", '<span class="st ok">Done</span>', '<div class="done">✓ 2 lines posted</div><div class="sub">Nothing left to review this week.</div>'), end: true },
+    ]},
+    close: { t: "Close last month", d: "Review, match, close October", steps: [
+      { me: "Close October", say: "Three checks first. <b>Bank lines:</b> 2 still need a category. Do them now?", tool: "books_period_checklist · read only", choices: [["Yes, use the likely ones", 1, 1], ["Show me first", 1]] },
+      { say: "Done. <b>Bank match:</b> October's statement has 2 suggested matches and 1 missing line (interest 42.18).", card: () => B("Books · Reconcile Bank •••• 4021", '<span class="st rev">Difference 42.18</span>', '<div class="acts"><button class="btn go" data-next="2">Accept and add interest</button></div>') },
+      { say: "Matched. <b>Drafts:</b> 1 receipt draft left (Pixel Print Shop, 1,350.00).", choices: [["Post it", 3, 1], ["Delete it", 3]] },
+      { say: "Everything is ready.", card: () => B("Books · Close October", '<span class="st ok">3 of 3</span>', '<div class="sub">After closing, October cannot change. Reopening asks for a reason.</div><div class="acts"><button class="btn go" data-next="4">Close October</button></div>') },
+      { card: () => B("Books · October", '<span class="st ok">Closed</span>', '<div class="done">✓ October is closed</div>'), end: true },
+    ]},
+    bir: { t: "Get the quarter ready for BIR", d: "Books totals into the BIR draft", pair: true, steps: [
+      { me: "Get Q3 ready for BIR", say: "Which form?", tool: "books_form_list · read only", choices: [["2551Q · Q3 2026", 1, 1], ["1601-C · September", 1]] },
+      { say: "One September return needs your OK before I hand over sales.", card: () => B("Books · Return to confirm", '<span class="st rev">Needs your OK</span>', '<div class="rows"><div class="rw"><span>Sep 10 · Bayani Foods <small>Credit note 0007</small></span><span class="num">−10,000.00</span></div></div><div class="acts"><button class="btn go" data-next="2">It\'s correct</button></div>') },
+      { say: "Here is what Books fills on the 2551Q:", card: () => B("Books · 2551Q · Q3 2026", '<span class="st ok">Ready</span>', '<div class="rows"><div class="rw"><span>Net sales <small>Schedule 1 row 1</small></span><span class="num">290,000.00</span></div><div class="rw"><span>2307s received <small>Item 15</small></span><span class="num">3,000.00</span></div></div><div class="acts"><button class="btn vi" data-next="3">Hand to BIR draft</button></div>') },
+      { say: "Handed over. The BIR app did the rest:", tool: "bir_form_fill (source: document) · BIR computes", card: () => B("BIR · 2551Q draft", '<span class="st bir">Draft</span>', '<div class="rows"><div class="rw"><span>Tax due <small>PT010 at 3%, computed by BIR</small></span><span class="num">8,700.00</span></div><div class="rw"><span>Less 2307s</span><span class="num">−3,000.00</span></div><div class="rw tot"><span>Still due</span><span class="num">5,700.00</span></div></div><div class="acts"><button class="btn vi">Open in BIR to submit</button></div>', true), end: true },
+    ]},
+    ask: { t: "How did we do?", d: "A quick answer with a card", steps: [
+      { me: "How did we do in October?", tool: "books_report · read only", card: () => B("Books · October", '<span class="st ok">Cash basis</span>', '<div class="rows"><div class="rw"><span>Money in</span><span class="num">300,000.00</span></div><div class="rw"><span>Money out</span><span class="num">48,849.00</span></div><div class="rw tot"><span>Net</span><span class="num">251,151.00</span></div></div><div class="sub">Better than September (217,801.00). Payroll is half posted.</div>'), say: "", choices: [["Compare with last year", 1], ["Open the P&L", 1]] },
+      { say: "That would open in Reports. Ask anything else, or pick another template.", end: true },
+    ]},
+  };
+  let cur = null, transcript = [];
+  function tpls() {
+    document.getElementById("tpls").innerHTML = Object.entries(FLOWS).map(([k, f]) => '<button class="tpl" data-tpl="' + k + '" aria-pressed="' + (cur === k) + '">' + (f.pair ? '<span class="pair">Books + BIR</span>' : "") + "<b>" + f.t + "</b><span>" + f.d + "</span></button>").join("");
+  }
+  function stepHtml(s) {
+    let h = "";
+    if (s.me) h += '<div class="me">' + s.me + "</div>";
+    if (s.tool) h += '<div class="tool">' + s.tool + "</div>";
+    if (s.say) h += '<div class="as">' + s.say + "</div>";
+    if (s.card) h += s.card();
+    return h;
+  }
+  function draw() {
+    tpls();
+    const log = document.getElementById("log");
+    document.getElementById("ftitle").textContent = cur ? FLOWS[cur].t : "New chat";
+    if (!cur) {
+      log.innerHTML = '<div class="empty"><b>What do you want to do?</b><span>Templates start a guided chat</span><div class="row">' + Object.entries(FLOWS).map(([k, f]) => '<button data-tpl="' + k + '">' + f.t + "</button>").join("") + "</div></div>";
+      return;
+    }
+    const f = FLOWS[cur];
+    let h = transcript.map((t) => t.html).join("");
+    const last = transcript[transcript.length - 1];
+    const s = f.steps[last.i];
+    if (s.choices && !last.answered) h += '<div class="choices">' + s.choices.map(([l, n, best]) => '<button class="' + (best ? "best" : "") + '" data-choice="' + n + '" data-label="' + l.replace(/"/g, "&quot;") + '">' + l + "</button>").join("") + "</div>";
+    if (s.end) h += '<div class="thinking">Done. Pick another template on the left.</div>';
+    log.innerHTML = h;
+    log.scrollTop = log.scrollHeight;
+  }
+  function start(k) { cur = k; transcript = [{ i: 0, html: stepHtml(FLOWS[k].steps[0]) }]; draw(); }
+  function go(n, label) {
+    const f = FLOWS[cur];
+    const last = transcript[transcript.length - 1];
+    last.answered = true;
+    let html = label ? '<div class="me">' + label + "</div>" : "";
+    // the card that asked is replaced by its answer: keep it, but drop its buttons
+    last.html = last.html.replace(/<div class="acts">[\s\S]*?<\/div>(?=<\/div>$)/, "");
+    html += stepHtml(f.steps[n]);
+    transcript.push({ i: n, html });
+    draw();
+  }
+
+  document.addEventListener("click", (e) => {
+    const el = e.target.closest("button");
+    if (!el) return;
+    const d = el.dataset;
+    if (d.scope) { sc = { scope: d.scope, pick: null }; scope(); return; }
+    if (d.pick) { sc.pick = d.pick; scope(); return; }
+    if (d.resetScope) { sc = { scope: null, pick: null }; scope(); return; }
+    if (d.tpl) { start(d.tpl); return; }
+    if (d.choice) { go(Number(d.choice), d.label); return; }
+    if (d.next) { go(Number(d.next), ""); return; }
+  });
+  document.getElementById("restart").addEventListener("click", () => { cur = null; transcript = []; draw(); });
+  scope();
+  draw();
+})();
+</script>

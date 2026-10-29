@@ -1,0 +1,321 @@
+<title>Books Inline Cards</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: four groups of cards (answers, actions, BIR pair, quiet status). Each group is a Rox chat column in Rox's dark look,
+   with the cards at their real inline widths and a live height tag. Click the buttons on a card to move it to its next state. */
+:root {
+  --paper: #f4f7f4;
+  --ink: #13201a;
+  --muted: #5a6b62;
+  --line: #d8e1db;
+  --accent: #12804a;
+  --accent-soft: #e2f2e9;
+  --chip: #eaf0ec;
+  --card: #ffffff;
+  --birc: #7a4fd6;
+  --birc-soft: #efe8fd;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --w-bg: #151515;
+  --w-panel: #1e1e1e;
+  --w-raise: #282828;
+  --w-hover: #303030;
+  --w-line: #2d2d2d;
+  --w-ink: #f0f0f0;
+  --w-mute: #a3a3a3;
+  --w-dim: #707070;
+  --w-green: #3fcf89;
+  --w-green-bg: #123423;
+  --w-red: #ff7d75;
+  --w-red-bg: #3a1a17;
+  --w-amber: #f3b64c;
+  --w-amber-bg: #3a2e12;
+  --w-blue: #7fb2ff;
+  --w-blue-bg: #15253f;
+  --w-violet: #b79bff;
+  --w-violet-bg: #2a2142;
+  --w-books: #157a48;
+  --w-bir: #6a46c9;
+  --w-ui: -apple-system, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #0e1411; --ink: #e7efe9; --muted: #96a79d; --line: #26322c; --accent: #43c584; --accent-soft: #15301f; --chip: #18221d; --card: #121a16; --birc: #b79bff; --birc-soft: #241b3b; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --paper: #0e1411; --ink: #e7efe9; --muted: #96a79d; --line: #26322c; --accent: #43c584; --accent-soft: #15301f; --chip: #18221d; --card: #121a16; --birc: #b79bff; --birc-soft: #241b3b; color-scheme: dark; }
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--paper); }
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 36px 72px; }
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 44px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.1rem, 5.6vw, 3.4rem); font-weight: 800; line-height: 1.02; }
+h2 { font-size: clamp(1.45rem, 3.4vw, 2rem); font-weight: 800; line-height: 1.1; }
+p { margin: 0; max-width: 64ch; }
+.kicker { font-family: var(--mono); font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lead { font-size: 1.15rem; color: var(--muted); }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--w-blue); outline-offset: 2px; border-radius: 6px; }
+section { display: flex; flex-direction: column; gap: 14px; }
+.rules { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 860px) { .rules { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 460px) { .rules { grid-template-columns: minmax(0, 1fr); } }
+.rule { border-radius: 14px; border: 1.5px solid var(--line); background: var(--card); padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+.rule b { font-family: var(--display); font-size: 1.05rem; }
+.rule span { color: var(--muted); font-size: 0.93rem; }
+.rule .big { font-family: var(--mono); font-size: 1.3rem; color: var(--accent); }
+.rule.warn { border-color: var(--birc); } .rule.warn .big { color: var(--birc); }
+
+/* chat column */
+.scroller { overflow-x: auto; border-radius: 16px; }
+.chat { min-width: 640px; background: var(--w-bg); color: var(--w-ink); font-family: var(--w-ui); font-size: 13px; line-height: 1.4; border-radius: 14px; border: 1px solid var(--w-line);
+  padding: 22px 26px 26px; display: flex; flex-direction: column; gap: 14px; }
+.me { align-self: flex-end; background: var(--w-raise); padding: 9px 13px; border-radius: 14px 14px 4px 14px; max-width: 70%; }
+.as { color: var(--w-ink); max-width: 72ch; }
+.turn { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.slot { display: flex; align-items: flex-start; gap: 12px; }
+.size { font-family: var(--mono); font-size: 11px; color: var(--w-dim); padding-top: 6px; white-space: nowrap; }
+.size.bad { color: var(--w-red); }
+.where { font-family: var(--mono); font-size: 10.5px; color: var(--w-dim); letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* the card */
+.card { width: 360px; background: var(--w-panel); border: 1px solid var(--w-line); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.card.wide { width: 480px; }
+.card.bir { border-color: #3d2f66; }
+.ch { display: flex; align-items: center; gap: 8px; color: var(--w-mute); font-size: 12px; }
+.ch i { width: 18px; height: 18px; border-radius: 5px; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: 10px; color: #fff; background: var(--w-books); flex: none; }
+.card.bir .ch i { background: var(--w-bir); }
+.ch .sp { flex: 1; }
+.big { font-family: var(--mono); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.sub { color: var(--w-mute); font-size: 12px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pos { color: var(--w-green); }
+.rows { display: flex; flex-direction: column; border: 1px solid var(--w-line); border-radius: 10px; overflow: hidden; }
+.rw { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 10px; border-top: 1px solid var(--w-line); }
+.rw:first-child { border-top: 0; }
+.rw small { color: var(--w-dim); display: block; font-size: 11px; }
+.rw code { font-family: var(--mono); font-size: 10.5px; color: var(--w-violet); }
+.rw.tot { background: var(--w-raise); font-weight: 700; }
+.bar { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11.5px; color: var(--w-mute); }
+.bar .tr { height: 6px; border-radius: 3px; background: var(--w-raise); overflow: hidden; } .bar .tr i { display: block; height: 100%; border-radius: 3px; background: var(--w-green); }
+.acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn { padding: 6px 12px; border-radius: 8px; background: var(--w-raise); color: var(--w-ink); font-weight: 600; font-size: 12.5px; border: 1px solid var(--w-line); white-space: nowrap; }
+.btn:hover { background: var(--w-hover); }
+.btn.go { background: var(--w-green); color: #06281a; border-color: var(--w-green); }
+.btn.vi { background: var(--w-violet); color: #1a1033; border-color: var(--w-violet); }
+.link { color: var(--w-blue); font-size: 12.5px; }
+.st { font-size: 11px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.st.ok { background: var(--w-green-bg); color: var(--w-green); } .st.draft { background: var(--w-amber-bg); color: var(--w-amber); }
+.st.rev { background: var(--w-red-bg); color: var(--w-red); } .st.bir { background: var(--w-violet-bg); color: var(--w-violet); } .st.info { background: var(--w-blue-bg); color: var(--w-blue); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { padding: 5px 10px; border-radius: 999px; background: var(--w-raise); border: 1px solid var(--w-line); font-size: 12px; }
+.chip.best { border-color: var(--w-green); color: var(--w-green); }
+.field { display: grid; grid-template-columns: 86px minmax(0, 1fr); gap: 4px 10px; font-size: 12.5px; }
+.field span { color: var(--w-dim); }
+.thumb { display: flex; gap: 10px; align-items: center; }
+.thumb i { width: 34px; height: 44px; border-radius: 5px; background: #f2f2f2; color: #444; display: grid; place-items: center; font-style: normal; font-size: 9px; font-weight: 700; flex: none; }
+.thumb small { color: var(--w-dim); display: block; }
+.done { display: flex; align-items: center; gap: 8px; color: var(--w-green); font-weight: 600; }
+.check { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+.check .bx { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--w-dim); display: grid; place-items: center; font-size: 11px; flex: none; }
+.check.on .bx { background: var(--w-green); border-color: var(--w-green); color: #06281a; }
+.check.on span { color: var(--w-mute); text-decoration: line-through; }
+.mini { display: flex; gap: 6px; }
+.mini > div { flex: 1; padding: 8px; border-radius: 9px; background: var(--w-raise); }
+.mini span { color: var(--w-dim); font-size: 10.5px; display: block; } .mini b { font-family: var(--mono); font-size: 14px; }
+.spark { display: flex; align-items: flex-end; gap: 3px; height: 34px; }
+.spark i { flex: 1; background: var(--w-green); border-radius: 2px 2px 0 0; }
+.spark i.now { background: var(--w-blue); }
+.handoff { display: flex; align-items: center; gap: 8px; color: var(--w-dim); font-size: 11.5px; }
+.pill { padding: 3px 9px; border-radius: 999px; background: var(--w-raise); color: var(--w-mute); font-size: 11.5px; white-space: nowrap; }
+
+/* status strip (quiet cards) */
+.quiet { display: flex; gap: 14px; flex-wrap: wrap; }
+.strip { width: 300px; background: var(--w-panel); border: 1px solid var(--w-line); border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+.strip i { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; font-style: normal; font-weight: 800; color: #fff; background: var(--w-books); flex: none; }
+.strip b { display: block; font-size: 12.5px; } .strip small { color: var(--w-dim); font-size: 11.5px; }
+.strip .n { margin-left: auto; font-family: var(--mono); font-size: 18px; font-weight: 600; }
+.reset { align-self: flex-start; font-size: 0.9rem; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <span class="kicker">Explained simply · click the buttons on each card · example data</span>
+    <h1>Books cards in the chat</h1>
+    <p class="lead">Small Books cards answer a question or ask for one click, right in the Rox chat. Each one is drawn at its real width, with its measured height.</p>
+  </header>
+
+  <section aria-labelledby="rh">
+    <h2 id="rh">Four rules every card follows</h2>
+    <div class="rules">
+      <div class="rule"><span class="big">360 / 480</span><b>Two widths</b><span>Small or main. Rox allows 240 to 960 px.</span></div>
+      <div class="rule"><span class="big">96–640</span><b>Grows to fit</b><span>The card reports its height with <span class="mono">rox.fit</span>. Long lists scroll inside.</span></div>
+      <div class="rule"><span class="big">1 click</span><b>You post, not the AI</b><span>The assistant may draft. Posting, closing and handing to BIR need your click.</span></div>
+      <div class="rule warn"><span class="big">₱ or #</span><b>Amounts only when asked</b><span>Answer cards show amounts. Cards that appear on their own show counts only.</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="ah">
+    <h2 id="ah">Answers: you asked, Books shows</h2>
+    <div class="scroller"><div class="chat" data-group="answers"></div></div>
+  </section>
+
+  <section aria-labelledby="xh">
+    <h2 id="xh">Actions: one click to finish</h2>
+    <div class="scroller"><div class="chat" data-group="actions"></div></div>
+  </section>
+
+  <section aria-labelledby="bh">
+    <h2 id="bh">The BIR pair: Books hands totals over</h2>
+    <p class="lead">Books cards are green. BIR cards are violet. Books never shows a tax due; BIR does.</p>
+    <div class="scroller"><div class="chat" data-group="pair"></div></div>
+  </section>
+
+  <section aria-labelledby="qh">
+    <h2 id="qh">Quiet cards: they appear on their own</h2>
+    <p class="lead">From a routine or when Books opens. Counts and status, no amounts, because nobody asked yet.</p>
+    <div class="scroller"><div class="chat" data-group="quiet"></div></div>
+    <button class="reset" id="reset">Reset all cards</button>
+  </section>
+</div>
+
+<script>
+(function () {
+  const peso = (n) => (n < 0 ? "−" : "") + Math.abs(n).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const H = (title, right, bir) => '<div class="ch"><i>' + (bir ? "BIR" : "B") + "</i><span>" + title + '</span><span class="sp"></span>' + (right || "") + "</div>";
+  const init = () => ({ receipt: 0, review: 0, paid: 0, recon: 0, close: [true, false, false], closed: false, ack: 0, sent: 0, cert: 0, taxopt: "graduated" });
+  let S = init();
+
+  const CARDS = {
+    answers: [
+      { me: "How much cash do we have?", say: "Across your bank, cash box and card:", w: "", card: () => '<div class="card">' + H("Books · Cash now", '<span class="pill">Oct 29</span>') +
+        '<div class="big">₱ 417,350.00</div>' +
+        '<div class="bar"><span>Bank •••• 4021</span><span class="tr"><i style="width:99%"></i></span><span class="num">412,350.00</span></div>' +
+        '<div class="bar"><span>Cash box</span><span class="tr"><i style="width:2%"></i></span><span class="num">5,000.00</span></div>' +
+        '<div class="bar"><span>Card owed</span><span class="tr"><i style="width:5%;background:var(--w-red)"></i></span><span class="num">−18,240.00</span></div>' +
+        '<div class="acts"><button class="link">Open Ledger</button></div></div>' },
+      { me: "How did we do in October?", say: "October so far, cash basis:", w: "", card: () => '<div class="card">' + H("Books · October", '<span class="st info">Cash basis</span>') +
+        '<div class="mini"><div><span>In</span><b class="pos">300,000.00</b></div><div><span>Out</span><b>48,849.00</b></div><div><span>Net</span><b>251,151.00</b></div></div>' +
+        '<div class="spark">' + [62, 70, 58, 74, 66, 80, 71, 69, 76, 100].map((h, i) => '<i class="' + (i === 9 ? "now" : "") + '" style="height:' + h + '%"></i>').join("") + '</div><div class="sub">Net by month, Jan–Oct · October is best so far</div>' +
+        '<div class="acts"><button class="link">Open the P&amp;L</button></div></div>' },
+      { me: "@books:person Lumen Power Co. how much this year?", say: "Here is Lumen Power Co. this year:", w: "", card: () => '<div class="card">' + H("Books · Lumen Power Co.", '<span class="pill">Vendor</span>') +
+        '<div class="big">₱ 24,990.00</div><div class="sub">10 payments, Jan–Oct · usually 2,499.00 on the 15th</div>' +
+        '<div class="rows"><div class="rw"><span>Oct 15 · Electricity <small>From the bank statement</small></span><span class="st rev">To review</span></div><div class="rw"><span>Sep 15 · Electricity</span><span class="num">2,499.00</span></div><div class="rw"><span>Aug 15 · Electricity</span><span class="num">2,499.00</span></div></div>' +
+        '<div class="acts"><button class="link">Open in People</button></div></div>' },
+      { me: "Show me the P&L for October vs September", say: "", w: "wide", card: () => '<div class="card wide">' + H("Books · P&amp;L", '<span class="pill">Oct vs Sep</span>') +
+        '<div class="rows"><div class="rw"><span>Sales</span><span class="num">300,000.00 · 290,000.00</span></div><div class="rw"><span>Facilities</span><span class="num">25,000.00 · 25,000.00</span></div><div class="rw"><span>Salaries &amp; wages</span><span class="num">20,000.00 · 43,500.00</span></div><div class="rw"><span>Software</span><span class="num">1,200.00 · 1,200.00</span></div><div class="rw"><span>Uncategorized <small>2 to review</small></span><span class="num">2,649.00 · 0.00</span></div><div class="rw tot"><span>Net income</span><span class="num">251,151.00 · 217,801.00</span></div></div>' +
+        '<div class="sub">October payroll is half posted, so salaries look low.</div><div class="acts"><button class="link">Open Reports</button></div></div>' },
+    ],
+    actions: [
+      { me: '<span class="pill">receipt-1018.jpg</span> Record this', say: "I read the receipt and drafted it. Check and post:", w: "", card: () => S.receipt === 0 ? '<div class="card">' + H("Books · Draft from a receipt", '<span class="st draft">Draft</span>') +
+        '<div class="thumb"><i>JPG</i><div><b>Pixel Print Shop</b><small>Opened in Rox\'s document viewer</small></div></div>' +
+        '<div class="field"><span>Amount</span><b class="num">1,350.00</b><span>Date</span><b>Oct 18, 2026</b><span>Paid from</span><b>Bank •••• 4021</b><span>Category</span><b>67000 Supplies &amp; Materials</b></div>' +
+        '<div class="acts"><button class="btn go" data-a="receipt">Post</button><button class="btn">Edit</button><button class="link">Discard</button></div></div>'
+        : '<div class="card">' + H("Books · Pixel Print Shop", '<span class="st ok">Posted</span>') + '<div class="done">✓ Posted 1,350.00 to Supplies &amp; Materials</div><div class="sub">Oct 18 · paid from Bank •••• 4021 · receipt attached</div><div class="acts"><button class="link">Undo (adds a reversal)</button></div></div>' },
+      { me: "Categorize the new bank lines", say: "", w: "", card: () => {
+        const items = [["Oct 15 · Lumen Power Co.", "2,499.00", ["Utilities", "Facilities"]], ["Oct 08 · Bank service fee", "150.00", ["Bank Fees", "General Operations"]]];
+        if (S.review >= items.length) return '<div class="card">' + H("Books · Bank lines", '<span class="st ok">All done</span>') + '<div class="done">✓ 2 lines categorized and posted</div><div class="sub">Utilities 2,499.00 · Bank Fees 150.00</div></div>';
+        const [t, a, s] = items[S.review];
+        return '<div class="card">' + H("Books · Bank lines to categorize", '<span class="pill">' + (S.review + 1) + " of 2</span>") +
+          '<div class="rows"><div class="rw"><span><b>' + t + '</b><small>From the October statement</small></span><span class="num">−' + a + "</span></div></div>" +
+          '<div class="chips">' + s.map((c, i) => '<button class="chip' + (i === 0 ? " best" : "") + '" data-a="review">' + c + (i === 0 ? " · likely" : "") + "</button>").join("") + '<button class="chip">Other…</button></div>' +
+          '<div class="sub">Picking a category posts it.</div></div>';
+      } },
+      { me: "Isla Café paid invoice 0143", say: "", w: "", card: () => S.paid === 0 ? '<div class="card">' + H("Books · Unpaid invoice", '<span class="pill">Due Nov 15</span>') +
+        '<div class="field"><span>Customer</span><b>Isla Café</b><span>Invoice</span><b>0143</b><span>Amount</span><b class="num">60,000.00</b><span>Into</span><b>Bank •••• 4021</b></div>' +
+        '<div class="acts"><button class="btn go" data-a="paid">Mark paid today</button><button class="btn">Different date</button></div></div>'
+        : '<div class="card">' + H("Books · Isla Café", '<span class="st ok">Paid</span>') + '<div class="done">✓ Money in 60,000.00 recorded</div><div class="sub">Oct 29 · counts in October sales (cash basis)</div></div>' },
+      { me: "Match October to the bank", say: "I compared the statement you imported with the books:", w: "", card: () => S.recon === 0 ? '<div class="card">' + H("Books · Reconcile Bank •••• 4021", '<span class="pill">October</span>') +
+        '<div class="mini"><div><span>Matched</span><b>8</b></div><div><span>Suggested</span><b style="color:var(--w-amber)">2</b></div><div><span>Missing</span><b style="color:var(--w-red)">1</b></div></div>' +
+        '<div class="rows"><div class="rw"><span>Oct 31 · Interest earned <small>On the statement, not in Books</small></span><span class="num pos">+42.18</span></div></div>' +
+        '<div class="acts"><button class="btn go" data-a="recon">Accept suggestions, add interest, finish</button></div></div>'
+        : '<div class="card">' + H("Books · Reconcile Bank •••• 4021", '<span class="st ok">Matched</span>') + '<div class="done">✓ October matches the bank</div><div class="sub">Difference 0.00 · ending balance 412,392.18</div></div>' },
+      { me: "Close October", say: "", w: "", card: () => {
+        if (S.closed) return '<div class="card">' + H("Books · October", '<span class="st ok">Closed</span>') + '<div class="done">✓ October is closed</div><div class="sub">Nothing in October can change now. Reopening asks for a reason.</div></div>';
+        const L = ["Bank lines reviewed", "Bank matched for October", "No drafts left"];
+        const all = S.close.every(Boolean);
+        return '<div class="card">' + H("Books · Close October", '<span class="pill">' + S.close.filter(Boolean).length + " of 3</span>") +
+          '<div>' + L.map((l, i) => '<button class="check' + (S.close[i] ? " on" : "") + '" data-a="close" data-i="' + i + '"><span class="bx">' + (S.close[i] ? "✓" : "") + "</span><span>" + l + "</span></button>").join("") + "</div>" +
+          '<div class="acts"><button class="btn go" data-a="closeit"' + (all ? "" : " disabled style=\"opacity:.4\"") + ">Close October</button><span class=\"sub\">" + (all ? "Ready" : "Tick each one") + "</span></div></div>";
+      } },
+    ],
+    pair: [
+      { me: "Get Q3 ready for BIR", say: "", w: "wide", card: () => S.ack === 0 ? '<div class="card wide">' + H("Books · 2551Q · Q3 2026", '<span class="st rev">Needs your OK</span>') +
+        '<div class="sub">One return was posted in September. Confirm it before Books hands over sales totals.</div>' +
+        '<div class="rows"><div class="rw"><span>Sep 10 · Bayani Foods · return <small>Credit note 0007</small></span><span class="num">−10,000.00</span></div></div>' +
+        '<div class="acts"><button class="btn go" data-a="ack">It\'s correct</button><button class="btn">Open in Ledger</button></div></div>'
+        : '<div class="card wide">' + H("Books · 2551Q · Q3 2026", S.sent ? '<span class="st bir">In BIR draft</span>' : '<span class="st ok">Ready</span>') +
+        '<div class="rows"><div class="rw"><span>Net sales <small>Schedule 1 row 1 · <code>txtATCAmt1</code></small></span><span class="num">290,000.00</span></div><div class="rw"><span>Percentage tax withheld, 2307s received <small>Item 15 · <code>frm2551Qv2018:txt15</code></small></span><span class="num">3,000.00</span></div></div>' +
+        '<div class="handoff">2 boxes from Books · 26 BIR computes · 9 from your profile · 33 you type</div>' +
+        (S.sent ? '<div class="sub">Handed over Oct 29. If a September line changes, this goes out of date.</div>' : '<div class="acts"><button class="btn vi" data-a="send">Hand to BIR draft</button><button class="link">Where do these come from?</button></div>') + "</div>",
+        after: () => S.sent ? '<div class="card bir wide">' + H("BIR · 2551Q draft · Q3 2026", '<span class="st bir">Draft</span>', true) +
+          '<div class="rows"><div class="rw"><span>Row 1 · PT010 · 3% <small>From Books: 290,000.00</small></span><span class="num">8,700.00</span></div><div class="rw"><span>Less: 2307s received <small>From Books</small></span><span class="num">−3,000.00</span></div><div class="rw tot"><span>Tax still due</span><span class="num">5,700.00</span></div></div>' +
+          '<div class="sub">BIR computed this. Review and submit in the BIR app.</div><div class="acts"><button class="btn vi">Open in BIR</button></div></div>' : "" },
+      { me: "What can Books fill on my 1701-MS?", say: "Books read your income tax option from the BIR draft:", w: "wide", card: () => {
+        const g = S.taxopt === "graduated";
+        return '<div class="card wide">' + H("Books · 1701-MS · 2026", '<span class="st info">Preview · year open</span>') +
+          '<div class="handoff">From BIR: <button class="pill" data-a="taxopt" style="' + (g ? "background:var(--w-violet-bg);color:var(--w-violet)" : "") + '">Graduated</button><button class="pill" data-a="taxopt" style="' + (!g ? "background:var(--w-violet-bg);color:var(--w-violet)" : "") + '">8%</button><span>(Books reads it, never sets it)</span></div>' +
+          '<div class="rows">' + (g
+            ? '<div class="rw"><span>Gross sales <small>IV.5 · <code>txtSalesRevenueNo5a</code></small></span><span class="num">1,200,000.00</span></div><div class="rw"><span>Returns and discounts <small>IV.6 · <code>txtSalesReturnsNo6a</code></small></span><span class="num">10,000.00</span></div><div class="rw"><span>Cost of sales <small>IV.8 · only if itemized; BIR says OSD</small></span><span class="st info">Not sent</span></div>'
+            : '<div class="rw"><span>Net sales <small>IV.19 · <code>txtSalesRevenuesFeesANo19a</code></small></span><span class="num">1,190,000.00</span></div>') +
+          '<div class="rw"><span>2307 income tax, Q1–Q3 and Q4 <small>V.3 and V.4 · for BIR to check</small></span><span class="num">8,900.00 · 3,000.00</span></div></div>' +
+          '<div class="sub">Can be handed over once 2026 is closed.</div></div>';
+      } },
+      { me: "Santos Hardware sent a 2307", say: "I read the PDF:", w: "", card: () => S.cert === 0 ? '<div class="card">' + H("Books · 2307 received", '<span class="st draft">Pending</span>') +
+        '<div class="thumb"><i>PDF</i><div><b>Santos Hardware · Q3 2026</b><small>ATC on the paper: WB082 (percentage tax)</small></div></div>' +
+        '<div class="field"><span>Withheld</span><b class="num">3,000.00</b><span>Counts to</span><b>2551Q item 15</b></div>' +
+        '<div class="acts"><button class="btn go" data-a="cert">Mark received</button><button class="btn">Not ours</button></div></div>'
+        : '<div class="card">' + H("Books · 2307 received", '<span class="st ok">Received</span>') + '<div class="done">✓ Counts toward 2551Q Q3 item 15</div><div class="sub">The payor\'s TIN stays in the BIR app.</div></div>' },
+    ],
+    quiet: [
+      { me: null, say: "", w: "", where: "When Books opens", card: () => '<div class="quiet"><div class="strip"><i>B</i><div><b>Books</b><small>Buwiz Trading · cash basis</small></div><span class="n">3</span></div></div><div class="sub" style="margin-top:6px">3 things need you</div>' },
+      { me: null, say: "Weekly tidy-up (a Rox routine) ran this morning:", w: "", where: "Routine · Mondays 9:00", card: () => '<div class="card">' + H("Books · Weekly tidy-up", '<span class="pill">Mon 9:00</span>') +
+        '<div class="mini"><div><span>New bank lines</span><b>2</b></div><div><span>Drafted</span><b>2</b></div><div><span>Posted</span><b>0</b></div></div>' +
+        '<div class="sub">The routine drafts only. Open the Ledger to post.</div><div class="acts"><button class="btn">Review 2</button></div></div>' },
+      { me: null, say: "", w: "", where: "Routine · 1st of the month", card: () => '<div class="card">' + H("Books · Month end", '<span class="pill">Nov 1</span>') +
+        '<div class="sub">October is still open. 3 steps left before closing.</div><div class="acts"><button class="btn">Start closing</button></div></div>' },
+      { me: null, say: "", w: "", where: "When BIR totals change", card: () => '<div class="card">' + H("Books · BIR hand-off", '<span class="st rev">Out of date</span>') +
+        '<div class="sub">A September line changed after 2551Q Q3 was handed over. 1 form to refresh.</div><div class="acts"><button class="btn vi">Refresh for BIR</button></div></div>' },
+    ],
+  };
+
+  function draw() {
+    document.querySelectorAll(".chat").forEach((col) => {
+      const g = col.dataset.group;
+      col.innerHTML = CARDS[g].map((c, i) =>
+        '<div class="turn">' + (c.where ? '<span class="where">' + c.where + "</span>" : "") + (c.me ? '<div class="me">' + c.me + "</div>" : "") + (c.say ? '<div class="as">' + c.say + "</div>" : "") +
+        '<div class="slot"><div data-card="' + g + i + '">' + c.card() + '</div><span class="size" data-size="' + g + i + '"></span></div>' +
+        (c.after && c.after() ? '<div class="slot"><div data-card="' + g + i + 'b">' + c.after() + '</div><span class="size" data-size="' + g + i + 'b"></span></div>' : "") + "</div>").join("");
+    });
+    document.querySelectorAll("[data-card]").forEach((el) => {
+      const card = el.firstElementChild; if (!card) return;
+      const h = Math.ceil(card.getBoundingClientRect().height), w = Math.round(card.getBoundingClientRect().width);
+      const tag = document.querySelector('[data-size="' + el.dataset.card + '"]');
+      if (tag) { tag.textContent = w + " × " + h + (h > 640 ? " · too tall" : h < 96 ? " · min 96" : " · fits"); tag.classList.toggle("bad", h > 640); }
+    });
+  }
+
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-a]");
+    if (!b) return;
+    const a = b.dataset.a;
+    if (a === "receipt") S.receipt = 1;
+    if (a === "review") S.review += 1;
+    if (a === "paid") S.paid = 1;
+    if (a === "recon") S.recon = 1;
+    if (a === "close") { const i = Number(b.dataset.i); S.close[i] = !S.close[i]; }
+    if (a === "closeit" && S.close.every(Boolean)) S.closed = true;
+    if (a === "ack") S.ack = 1;
+    if (a === "send") S.sent = 1;
+    if (a === "cert") S.cert = 1;
+    if (a === "taxopt") S.taxopt = S.taxopt === "graduated" ? "eight" : "graduated";
+    draw();
+  });
+  document.getElementById("reset").addEventListener("click", () => { S = init(); draw(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+  draw();
+})();
+</script>

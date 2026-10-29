@@ -1,0 +1,939 @@
+<title>Books Mini App</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a clickable Rox window holding the whole Books mini app, with a short "what this page replaces" strip under it,
+   then the log of web features that do not come along. The window keeps Rox's dark look in both page themes. */
+:root {
+  --paper: #f4f7f4;
+  --ink: #13201a;
+  --muted: #5a6b62;
+  --line: #d8e1db;
+  --accent: #12804a;
+  --accent-soft: #e2f2e9;
+  --chip: #eaf0ec;
+  --card: #ffffff;
+  --rox: #1b2620;
+  --birc: #7a4fd6;
+  --birc-soft: #efe8fd;
+  --later: #a2650f;
+  --later-soft: #fbf0dc;
+  --drop: #b4471f;
+  --drop-soft: #f9e6de;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  /* The Rox window */
+  --w-bg: #151515;
+  --w-rail: #0f0f0f;
+  --w-panel: #1d1d1d;
+  --w-raise: #262626;
+  --w-hover: #2d2d2d;
+  --w-line: #2b2b2b;
+  --w-ink: #f0f0f0;
+  --w-mute: #a0a0a0;
+  --w-dim: #6e6e6e;
+  --w-green: #3fcf89;
+  --w-green-bg: #123423;
+  --w-red: #ff7d75;
+  --w-red-bg: #3a1a17;
+  --w-amber: #f3b64c;
+  --w-amber-bg: #3a2e12;
+  --w-blue: #7fb2ff;
+  --w-blue-bg: #15253f;
+  --w-violet: #b79bff;
+  --w-violet-bg: #2a2142;
+  --w-head1: #0d4f2f;
+  --w-head2: #157a48;
+  --w-ui: -apple-system, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0e1411; --ink: #e7efe9; --muted: #96a79d; --line: #26322c; --accent: #43c584; --accent-soft: #15301f;
+    --chip: #18221d; --card: #121a16; --rox: #e7efe9; --birc: #b79bff; --birc-soft: #241b3b; --later: #f0b553;
+    --later-soft: #33270f; --drop: #ff9a73; --drop-soft: #3a1d12; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0e1411; --ink: #e7efe9; --muted: #96a79d; --line: #26322c; --accent: #43c584; --accent-soft: #15301f;
+  --chip: #18221d; --card: #121a16; --rox: #e7efe9; --birc: #b79bff; --birc-soft: #241b3b; --later: #f0b553;
+  --later-soft: #33270f; --drop: #ff9a73; --drop-soft: #3a1d12; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--paper); }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 36px 72px;
+}
+.wrap { max-width: 1220px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.1rem, 5.6vw, 3.4rem); font-weight: 800; line-height: 1.02; }
+h2 { font-size: clamp(1.45rem, 3.4vw, 2rem); font-weight: 800; line-height: 1.1; }
+p { margin: 0; max-width: 64ch; }
+.kicker { font-family: var(--mono); font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lead { font-size: 1.15rem; color: var(--muted); }
+.mono { font-family: var(--mono); }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--w-blue); outline-offset: 2px; border-radius: 6px; }
+
+/* page jump chips (outside the window) */
+.jump { display: flex; flex-wrap: wrap; gap: 8px; }
+.jump button { padding: 6px 12px; border-radius: 999px; background: var(--chip); color: var(--ink); font-size: 0.92rem; border: 1.5px solid transparent; }
+.jump button[aria-current="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+
+/* ---------- the Rox window ---------- */
+.scroller { overflow-x: auto; border-radius: 16px; }
+.rox { min-width: 1000px; height: 660px; background: var(--w-bg); color: var(--w-ink); font-family: var(--w-ui); font-size: 13px; line-height: 1.4;
+  border-radius: 14px; border: 1px solid var(--w-line); box-shadow: 0 24px 60px -30px rgb(0 0 0 / 0.6); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+.tb { display: flex; align-items: center; gap: 10px; padding: 9px 14px; background: var(--w-rail); border-bottom: 1px solid var(--w-line); flex: none; }
+.tb .dots { display: flex; gap: 6px; } .tb .dots i { width: 11px; height: 11px; border-radius: 50%; background: var(--w-raise); display: block; }
+.tb .ttl { flex: 1; text-align: center; font-weight: 600; }
+.tb .ttl span { color: var(--w-mute); font-weight: 400; }
+.tb .pin, .tb .x { padding: 4px 10px; border-radius: 999px; background: var(--w-raise); color: var(--w-mute); font-size: 12px; }
+.body { flex: 1; display: grid; grid-template-columns: 186px minmax(0, 1fr); min-height: 0; position: relative; }
+.rail { background: var(--w-rail); border-right: 1px solid var(--w-line); padding: 10px 8px; display: flex; flex-direction: column; gap: 1px; overflow-y: auto; }
+.rail .book { display: flex; align-items: center; gap: 8px; padding: 4px 6px 10px; border-bottom: 1px solid var(--w-line); margin-bottom: 6px; }
+.rail .book i { width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(135deg, var(--w-head2), var(--w-head1)); display: grid; place-items: center; font-style: normal; font-weight: 800; color: #fff; }
+.rail .book b { display: block; font-size: 12.5px; } .rail .book small { color: var(--w-dim); font-size: 11px; }
+.rail .grp { color: var(--w-dim); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; padding: 10px 8px 4px; }
+.rail .nav { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 8px; color: var(--w-mute); text-align: left; width: 100%; }
+.rail .nav:hover { background: var(--w-hover); color: var(--w-ink); }
+.rail .nav[aria-current="page"] { background: var(--w-raise); color: var(--w-ink); font-weight: 600; }
+.rail .nav svg { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.rail .nav .ct { margin-left: auto; font-size: 11px; padding: 0 6px; border-radius: 999px; background: var(--w-amber-bg); color: var(--w-amber); }
+.rail .nav .bir { margin-left: auto; font-size: 10px; padding: 1px 6px; border-radius: 5px; background: var(--w-violet-bg); color: var(--w-violet); font-weight: 700; letter-spacing: 0.04em; }
+.rail .spacer { flex: 1; }
+.main { overflow-y: auto; min-width: 0; position: relative; }
+#over { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+#over > * { pointer-events: auto; }
+.pg { padding: 16px 18px 28px; display: flex; flex-direction: column; gap: 14px; }
+.ph { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ph h3 { font-family: var(--w-ui); font-size: 18px; font-weight: 700; letter-spacing: 0; }
+.ph .sub { color: var(--w-mute); }
+.ph .grow { flex: 1; }
+.btn { padding: 6px 12px; border-radius: 8px; background: var(--w-raise); color: var(--w-ink); font-weight: 600; font-size: 12.5px; white-space: nowrap; border: 1px solid var(--w-line); }
+.btn:hover { background: var(--w-hover); }
+.btn.go { background: var(--w-green); color: #06281a; border-color: var(--w-green); }
+.btn.go:hover { filter: brightness(1.06); }
+.btn.vi { background: var(--w-violet); color: #1a1033; border-color: var(--w-violet); }
+.btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+.seg { display: inline-flex; background: var(--w-panel); border: 1px solid var(--w-line); border-radius: 9px; padding: 2px; gap: 2px; }
+.seg button { padding: 4px 10px; border-radius: 7px; color: var(--w-mute); font-size: 12.5px; white-space: nowrap; }
+.seg button[aria-pressed="true"] { background: var(--w-raise); color: var(--w-ink); font-weight: 600; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.fchip { padding: 4px 10px; border-radius: 999px; background: var(--w-panel); color: var(--w-mute); border: 1px solid var(--w-line); font-size: 12px; white-space: nowrap; }
+.fchip[aria-pressed="true"] { background: var(--w-ink); color: #111; border-color: var(--w-ink); font-weight: 600; }
+.fchip .n { opacity: 0.7; margin-left: 4px; }
+.search { flex: 1; min-width: 160px; padding: 6px 10px; border-radius: 8px; background: var(--w-panel); border: 1px solid var(--w-line); color: var(--w-dim); }
+.panel { background: var(--w-panel); border: 1px solid var(--w-line); border-radius: 12px; }
+.panel.pad { padding: 14px; }
+.hint { color: var(--w-dim); font-size: 12px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pos { color: var(--w-green); }
+.neg { color: var(--w-ink); }
+.st { font-size: 11px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; display: inline-block; }
+.st.ok { background: var(--w-green-bg); color: var(--w-green); }
+.st.draft { background: var(--w-amber-bg); color: var(--w-amber); }
+.st.rev { background: var(--w-red-bg); color: var(--w-red); }
+.st.info { background: var(--w-blue-bg); color: var(--w-blue); }
+.st.bir { background: var(--w-violet-bg); color: var(--w-violet); }
+.st.mute { background: var(--w-raise); color: var(--w-mute); }
+
+table.t { width: 100%; border-collapse: collapse; }
+table.t th { text-align: left; color: var(--w-dim); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px; border-bottom: 1px solid var(--w-line); white-space: nowrap; }
+table.t td { padding: 9px 12px; border-bottom: 1px solid var(--w-line); vertical-align: middle; }
+table.t tr:last-child td { border-bottom: 0; }
+table.t .r { text-align: right; }
+table.t tbody tr.click { cursor: pointer; }
+table.t tbody tr.click:hover td { background: var(--w-hover); }
+table.t tr.sel td { background: var(--w-raise); }
+table.t td b { font-weight: 600; }
+table.t td small { color: var(--w-dim); display: block; font-size: 11.5px; }
+table.t tr.total td { font-weight: 700; background: var(--w-raise); }
+table.t tr.sec td { color: var(--w-dim); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; padding-top: 12px; }
+table.t tr.dim td { color: var(--w-dim); }
+
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.kpi { padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.kpi .lab { color: var(--w-mute); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; }
+.kpi .val { font-family: var(--mono); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.kpi .bars { display: flex; flex-direction: column; gap: 5px; margin-top: 4px; }
+.bar { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11.5px; color: var(--w-mute); }
+.bar .tr { height: 6px; border-radius: 3px; background: var(--w-raise); overflow: hidden; } .bar .tr i { display: block; height: 100%; background: var(--w-green); border-radius: 3px; }
+.split2 { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px; }
+.todo { display: flex; flex-direction: column; }
+.todo .it { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--w-line); text-align: left; width: 100%; }
+.todo .it:first-of-type { border-top: 0; }
+.todo .it:hover { background: var(--w-hover); }
+.todo .it .ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex: none; font-weight: 700; font-size: 12px; }
+.todo .it .tx { flex: 1; min-width: 0; } .todo .it .tx b { display: block; font-weight: 600; } .todo .it .tx small { color: var(--w-dim); }
+.todo .it .go { color: var(--w-dim); }
+.qa { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 12px 14px; }
+.qa button { padding: 10px; border-radius: 10px; background: var(--w-raise); text-align: left; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--w-line); }
+.qa button:hover { background: var(--w-hover); }
+.qa button b { font-size: 13px; } .qa button small { color: var(--w-dim); font-size: 11px; }
+.ptitle { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px 4px; }
+.ptitle b { font-size: 13px; } .ptitle span { color: var(--w-dim); font-size: 12px; }
+
+/* ledger */
+.ledger { display: grid; grid-template-columns: 196px minmax(0, 1fr); gap: 12px; align-items: start; }
+.acctlist { padding: 6px; display: flex; flex-direction: column; gap: 1px; }
+.acctlist .g { color: var(--w-dim); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 8px 3px; }
+.acctlist button { display: flex; justify-content: space-between; gap: 6px; padding: 6px 8px; border-radius: 7px; color: var(--w-mute); text-align: left; width: 100%; }
+.acctlist button:hover { background: var(--w-hover); }
+.acctlist button[aria-pressed="true"] { background: var(--w-raise); color: var(--w-ink); font-weight: 600; }
+.acctlist button .num { font-size: 11px; color: var(--w-dim); }
+.lhead { background: linear-gradient(120deg, var(--w-head1), var(--w-head2)); border-radius: 12px 12px 0 0; padding: 12px 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.lhead b { font-size: 15px; color: #fff; }
+.lhead .glass { padding: 4px 9px; border-radius: 7px; background: rgb(255 255 255 / 0.14); color: #fff; font-size: 12px; white-space: nowrap; }
+.lhead .grow { flex: 1; }
+.cat { display: inline-flex; align-items: center; gap: 6px; }
+.cat i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+/* drawer + sheet */
+.drawer { position: absolute; top: 0; right: 0; bottom: 0; width: 340px; background: var(--w-panel); border-left: 1px solid var(--w-line); box-shadow: -18px 0 40px -20px rgb(0 0 0 / 0.6); display: flex; flex-direction: column; z-index: 5; }
+.drawer .dh { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--w-line); }
+.drawer .dh b { flex: 1; font-size: 14px; }
+.drawer .db { padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+.drawer .df { padding: 12px 14px; border-top: 1px solid var(--w-line); display: flex; gap: 8px; flex-wrap: wrap; }
+.kv { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 6px 10px; font-size: 12.5px; }
+.kv span { color: var(--w-dim); }
+.big { font-family: var(--mono); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.lines { border: 1px solid var(--w-line); border-radius: 10px; overflow: hidden; }
+.lines .ln { display: grid; grid-template-columns: minmax(0, 1fr) 84px 84px; gap: 6px; padding: 7px 10px; border-top: 1px solid var(--w-line); font-size: 12px; }
+.lines .ln:first-child { border-top: 0; color: var(--w-dim); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; }
+.lines .ln span:not(:first-child) { text-align: right; font-family: var(--mono); }
+.att { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; background: var(--w-raise); }
+.att i { width: 30px; height: 36px; border-radius: 4px; background: #f2f2f2; color: #444; display: grid; place-items: center; font-style: normal; font-size: 9px; font-weight: 700; flex: none; }
+.att small { color: var(--w-dim); display: block; }
+.sugg { display: flex; gap: 6px; flex-wrap: wrap; }
+.sugg button { padding: 5px 10px; border-radius: 999px; background: var(--w-raise); border: 1px solid var(--w-line); font-size: 12px; }
+.sugg button.best { border-color: var(--w-green); color: var(--w-green); }
+.veil { position: absolute; inset: 0; background: rgb(0 0 0 / 0.5); z-index: 6; display: grid; place-items: center; }
+.sheet { width: 560px; max-width: calc(100% - 40px); max-height: calc(100% - 40px); overflow-y: auto; background: var(--w-panel); border: 1px solid var(--w-line); border-radius: 14px; box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.7); display: flex; flex-direction: column; }
+.sheet .sh { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--w-line); }
+.sheet .sh b { flex: 1; font-size: 14px; }
+.sheet .sb { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.sheet .sf { padding: 12px 14px; border-top: 1px solid var(--w-line); display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+.sheet .sf .hint { margin-right: auto; }
+.fld { display: flex; flex-direction: column; gap: 4px; }
+.fld label { color: var(--w-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+.fld .in { padding: 8px 10px; border-radius: 8px; background: var(--w-bg); border: 1px solid var(--w-line); color: var(--w-ink); display: flex; justify-content: space-between; gap: 8px; }
+.fld .in.amt { font-family: var(--mono); font-size: 18px; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.behind { border: 1px dashed var(--w-line); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.behind .hint b { color: var(--w-mute); }
+.toast { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--w-ink); color: #111; padding: 8px 14px; border-radius: 10px; font-weight: 600; font-size: 12.5px; z-index: 9; box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.6); }
+
+/* reconcile */
+.rgrid { display: grid; grid-template-columns: 180px repeat(4, minmax(0, 1fr)); }
+.rgrid > div { padding: 10px 12px; border-top: 1px solid var(--w-line); display: flex; align-items: center; gap: 8px; }
+.rgrid .h { color: var(--w-dim); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; border-top: 0; }
+.rcell { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12px; }
+.rcell.done { background: var(--w-green-bg); color: var(--w-green); }
+.rcell.todo { background: var(--w-red-bg); color: var(--w-red); }
+.rcell.draft { background: var(--w-amber-bg); color: var(--w-amber); }
+.match { display: grid; grid-template-columns: minmax(0, 1fr) 46px minmax(0, 1fr); gap: 0; }
+.match .col h4 { margin: 0; padding: 10px 12px; font-size: 11px; color: var(--w-dim); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--w-ui); border-bottom: 1px solid var(--w-line); }
+.mrow { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--w-line); align-items: center; min-height: 38px; }
+.mrow small { color: var(--w-dim); }
+.mrow.miss { background: var(--w-red-bg); }
+.mrow.sugg { background: var(--w-amber-bg); }
+.mlink { display: flex; flex-direction: column; }
+.mlink div { min-height: 38px; border-bottom: 1px solid var(--w-line); display: grid; place-items: center; color: var(--w-green); font-weight: 700; }
+.mlink div.s { color: var(--w-amber); } .mlink div.m { color: var(--w-red); }
+.mlink .hd { min-height: 37px; }
+.diff { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.diff .grow { flex: 1; }
+
+/* reports */
+.rep { overflow: hidden; }
+
+/* forms (BIR pairing) */
+.fcards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.fcard { padding: 12px 14px; text-align: left; display: flex; flex-direction: column; gap: 6px; border-radius: 12px; background: var(--w-panel); border: 1px solid var(--w-line); }
+.fcard:hover { background: var(--w-hover); }
+.fcard[aria-pressed="true"] { border-color: var(--w-violet); box-shadow: inset 0 0 0 1px var(--w-violet); }
+.fcard .code { font-family: var(--mono); font-weight: 600; font-size: 15px; }
+.fcard small { color: var(--w-dim); }
+.pair { display: grid; grid-template-columns: minmax(0, 1.1fr) 26px minmax(0, 1fr) 110px; align-items: center; gap: 0; }
+.pair > div { padding: 9px 12px; border-top: 1px solid var(--w-line); min-height: 44px; display: flex; flex-direction: column; justify-content: center; }
+.pair .hh { color: var(--w-dim); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; border-top: 0; min-height: 0; }
+.pair .arrow { color: var(--w-dim); align-items: center; padding: 9px 0; }
+.pair .meas b { font-weight: 600; }
+.pair .meas small, .pair .box small { color: var(--w-dim); font-size: 11.5px; }
+.pair .box code { font-family: var(--mono); font-size: 11.5px; color: var(--w-violet); overflow-wrap: anywhere; }
+.pair .val { align-items: flex-end; }
+.pair .val button { font-family: var(--mono); font-variant-numeric: tabular-nums; text-decoration: underline dotted var(--w-dim); text-underline-offset: 3px; }
+.pair .held { opacity: 0.55; }
+.owners { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.own { padding: 10px; border-radius: 10px; background: var(--w-raise); display: flex; flex-direction: column; gap: 2px; }
+.own b { font-family: var(--mono); font-size: 18px; } .own span { color: var(--w-mute); font-size: 11.5px; }
+.own.books { box-shadow: inset 0 0 0 1px var(--w-green); } .own.books b { color: var(--w-green); }
+.ctx { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; background: var(--w-violet-bg); color: var(--w-violet); flex-wrap: wrap; }
+.ctx .seg { background: transparent; border-color: rgb(183 155 255 / 0.35); }
+.ctx .seg button { color: var(--w-violet); }
+.ctx .seg button[aria-pressed="true"] { background: rgb(183 155 255 / 0.18); color: #fff; }
+
+/* people / accounts master-detail */
+.md { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 12px; align-items: start; }
+.plist { display: flex; flex-direction: column; }
+.plist button { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-top: 1px solid var(--w-line); text-align: left; width: 100%; }
+.plist button:first-child { border-top: 0; }
+.plist button:hover { background: var(--w-hover); }
+.plist button[aria-pressed="true"] { background: var(--w-raise); }
+.av { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 11px; flex: none; color: #fff; }
+.plist .tx { flex: 1; min-width: 0; } .plist .tx b { display: block; font-weight: 600; } .plist .tx small { color: var(--w-dim); }
+.dcard { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.dtop { display: flex; align-items: center; gap: 12px; }
+.dtop .av { width: 40px; height: 40px; font-size: 14px; }
+.dtop b { font-size: 16px; display: block; } .dtop small { color: var(--w-dim); }
+.mini3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.mini3 > div { padding: 10px; border-radius: 10px; background: var(--w-raise); }
+.mini3 span { color: var(--w-dim); font-size: 11px; display: block; } .mini3 b { font-family: var(--mono); font-size: 15px; }
+.spark { display: flex; align-items: flex-end; gap: 4px; height: 42px; }
+.spark i { flex: 1; background: var(--w-green); border-radius: 2px 2px 0 0; opacity: 0.85; }
+.spark i.o { background: var(--w-red); }
+.note-tin { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 8px; background: var(--w-violet-bg); color: var(--w-violet); font-size: 12px; }
+
+/* settings */
+.set { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 14px; align-items: start; }
+.setnav { display: flex; flex-direction: column; gap: 2px; padding: 6px; }
+.setnav button { padding: 7px 10px; border-radius: 7px; text-align: left; color: var(--w-mute); }
+.setnav button[aria-pressed="true"] { background: var(--w-raise); color: var(--w-ink); font-weight: 600; }
+.opt { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.opt button { padding: 12px; border-radius: 10px; border: 1px solid var(--w-line); background: var(--w-bg); text-align: left; display: flex; flex-direction: column; gap: 4px; }
+.opt button[aria-pressed="true"] { border-color: var(--w-green); box-shadow: inset 0 0 0 1px var(--w-green); }
+.opt button b { font-size: 13.5px; } .opt button small { color: var(--w-mute); font-size: 12px; }
+.maprow { display: grid; grid-template-columns: minmax(0, 0.9fr) 20px minmax(0, 1.3fr) 82px; gap: 8px; align-items: center; padding: 9px 12px; border-top: 1px solid var(--w-line); }
+.maprow:first-child { border-top: 0; }
+.maprow .sel { padding: 6px 9px; border-radius: 8px; background: var(--w-bg); border: 1px solid var(--w-line); display: flex; justify-content: space-between; gap: 6px; }
+.maprow .sel .num { color: var(--w-dim); }
+.maprow.off { opacity: 0.45; }
+.tagk { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; text-align: center; }
+.tagk.as { background: var(--w-blue-bg); color: var(--w-blue); } .tagk.li { background: var(--w-amber-bg); color: var(--w-amber); }
+.tagk.re { background: var(--w-green-bg); color: var(--w-green); } .tagk.ex { background: var(--w-red-bg); color: var(--w-red); }
+.months { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.mo { padding: 10px; border-radius: 10px; background: var(--w-raise); display: flex; flex-direction: column; gap: 6px; }
+.mo b { font-size: 13px; }
+
+/* notes strip under the window */
+.notes { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px; }
+@media (max-width: 860px) { .notes { grid-template-columns: minmax(0, 1fr); } }
+.note { border-radius: 14px; padding: 14px 16px; background: var(--card); border: 1.5px solid var(--line); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.note h3 { font-size: 1.05rem; }
+.note ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 0.95rem; }
+.note code { font-family: var(--mono); font-size: 0.82rem; background: var(--chip); padding: 1px 6px; border-radius: 5px; overflow-wrap: anywhere; }
+.note .routes { display: flex; flex-wrap: wrap; gap: 6px; }
+.note.pair { border-color: var(--birc); }
+.note.pair h3 { color: var(--birc); }
+
+/* log */
+.log { display: flex; flex-direction: column; gap: 14px; }
+.lgroups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .lgroups { grid-template-columns: minmax(0, 1fr); } }
+.lg { border-radius: 16px; border: 2px solid var(--line); background: var(--card); overflow: hidden; display: flex; flex-direction: column; }
+.lg header { padding: 12px 16px; display: flex; align-items: baseline; gap: 10px; }
+.lg header h3 { font-size: 1.15rem; } .lg header span { color: var(--muted); font-size: 0.9rem; }
+.lg.rox { border-color: var(--accent); } .lg.rox header { background: var(--accent-soft); } .lg.rox h3 { color: var(--accent); }
+.lg.bir { border-color: var(--birc); } .lg.bir header { background: var(--birc-soft); } .lg.bir h3 { color: var(--birc); }
+.lg.later { border-color: var(--later); } .lg.later header { background: var(--later-soft); } .lg.later h3 { color: var(--later); }
+.lg.drop { border-color: var(--drop); } .lg.drop header { background: var(--drop-soft); } .lg.drop h3 { color: var(--drop); }
+.lrow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 12px; padding: 9px 16px; border-top: 1px solid var(--line); font-size: 0.93rem; }
+.lrow b { display: block; } .lrow code { font-family: var(--mono); font-size: 0.76rem; color: var(--muted); overflow-wrap: anywhere; }
+.lrow span { color: var(--muted); }
+@media (max-width: 520px) { .lrow { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
+@media (prefers-reduced-motion: no-preference) { .drawer, .sheet { animation: rise 0.18s ease-out; } }
+@keyframes rise { from { transform: translateY(6px); opacity: 0.6; } to { transform: none; opacity: 1; } }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <span class="kicker">Explained simply · click anything · example data</span>
+    <h1>Every Books page, drawn</h1>
+    <p class="lead">The Books mini app inside Rox, redesigned for a small window and paired with the BIR app. Fewer pages than the web app, because Rox and BIR already do the rest.</p>
+  </header>
+
+  <nav class="jump" id="jump" aria-label="Jump to a page"></nav>
+
+  <div class="scroller">
+    <div class="rox" id="app">
+      <div class="tb"><div class="dots"><i></i><i></i><i></i></div><div class="ttl">Books <span id="ttlsub">· Today</span></div><span class="pin">Pin</span><span class="x">✕</span></div>
+      <div class="body">
+        <aside class="rail" id="rail"></aside>
+        <main class="main" id="main"></main>
+        <div id="over"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes" id="notes"></div>
+
+  <section class="log" aria-labelledby="logh">
+    <h2 id="logh">What does not come along, and where it went</h2>
+    <p class="lead">The web app has 52 pages. Books in Rox keeps 12. The rest is already in Rox, belongs to the BIR app, or waits.</p>
+    <div class="lgroups" id="log"></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  const peso = (n) => (n < 0 ? "−" : "") + Math.abs(n).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const sgn = (n) => (n > 0 ? "+" : "") + peso(n);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  const ICON = {
+    home: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    check: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 12l3 3 5-6"/>',
+    chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    form: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+    people: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2c3 .2 5.5 2.6 5.5 5.8"/>',
+    tree: '<rect x="3" y="3" width="7" height="5" rx="1"/><rect x="14" y="10" width="7" height="5" rx="1"/><rect x="14" y="17" width="7" height="4" rx="1"/><path d="M6.5 8v11H14M6.5 12.5H14"/>',
+    tag: '<path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8" r="1.4"/>',
+    pay: '<rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.8"/><path d="M6 10v5M18 10v5"/>',
+    cert: '<rect x="4" y="3" width="16" height="13" rx="2"/><path d="M8 7h8M8 10.5h5"/><circle cx="15" cy="17" r="2.6"/><path d="M13.6 19.2L13 22l2-1 2 1-.6-2.8"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+  };
+  const svg = (k) => '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICON[k] + "</svg>";
+
+  const PAGES = [
+    { id: "today", label: "Today", icon: "home" },
+    { id: "ledger", label: "Ledger", icon: "list", group: "Money", count: 3 },
+    { id: "unpaid", label: "Unpaid", icon: "clock", group: "Money", count: 4 },
+    { id: "reconcile", label: "Reconcile", icon: "check", group: "Money", count: 1 },
+    { id: "reports", label: "Reports", icon: "chart", group: "Results" },
+    { id: "forms", label: "Forms", icon: "form", group: "Results", bir: true },
+    { id: "people", label: "People", icon: "people", group: "Records" },
+    { id: "accounts", label: "Accounts", icon: "tree", group: "Records" },
+    { id: "tags", label: "Tags", icon: "tag", group: "Records" },
+    { id: "payroll", label: "Payroll", icon: "pay", group: "Records" },
+    { id: "certificates", label: "Certificates", icon: "cert", group: "Records" },
+    { id: "settings", label: "Settings", icon: "gear", group: "end" },
+  ];
+
+  /* ---------------- example data (cash-basis book, October 2026) ---------------- */
+  const ACCTS = [
+    { g: "Assets", n: "11000", name: "Bank Accounts", bal: 412350, type: "as" },
+    { g: "Assets", n: "11100", name: "Cash Box", bal: 5000, type: "as" },
+    { g: "Assets", n: "12800", name: "Creditable Tax Withheld", bal: 11900, type: "as" },
+    { g: "Assets", n: "12000", name: "Accounts Receivable", bal: null, type: "as", accrual: true },
+    { g: "Liabilities", n: "22000", name: "Credit Cards", bal: 18240, type: "li" },
+    { g: "Liabilities", n: "21800", name: "Payroll Liabilities", bal: 6308.4, type: "li" },
+    { g: "Liabilities", n: "21000", name: "Accounts Payable", bal: null, type: "li", accrual: true },
+    { g: "Equity", n: "32000", name: "Owner's Equity", bal: -75659.4, type: "eq" },
+    { g: "Revenue", n: "41000", name: "Sales Revenue", bal: 1200000, type: "re" },
+    { g: "Revenue", n: "49000", name: "Refunds & Discounts", bal: 10000, type: "re" },
+    { g: "Expenses", n: "62000", name: "Salaries & Wages", bal: 420000, type: "ex" },
+    { g: "Expenses", n: "65000", name: "Software & Subscriptions", bal: 12000, type: "ex" },
+    { g: "Expenses", n: "66000", name: "Facilities", bal: 250000, type: "ex" },
+    { g: "Expenses", n: "66100", name: "Utilities", bal: 24990, type: "ex" },
+    { g: "Expenses", n: "69999", name: "Uncategorized Expense", bal: 2649, type: "ex" },
+  ];
+  const CATCOLOR = { "Sales Revenue": "#3fcf89", Facilities: "#7fb2ff", "Salaries & Wages": "#b79bff", "Software & Subscriptions": "#5fd0d6", Utilities: "#f3b64c", "Uncategorized Expense": "#ff7d75", "Supplies & Materials": "#e89b6c", "Credit Cards": "#a0a0a0" };
+
+  let TX = [
+    { id: "t1", d: "Oct 28", who: "Bayani Foods", what: "Sale", ref: "Invoice 0142", cat: "Sales Revenue", amt: 80000, st: "ok", dept: "Sales", loc: "Makati office", doc: "invoice-0142.pdf" },
+    { id: "t2", d: "Oct 25", who: "Isla Office Rentals", what: "Rent · October", ref: "Lease", cat: "Facilities", amt: -25000, st: "ok", dept: "Operations", loc: "Makati office", doc: "lease-oct.pdf" },
+    { id: "t3", d: "Oct 20", who: "Santos Hardware", what: "Sale", ref: "Invoice 0139", cat: "Sales Revenue", amt: 100000, st: "ok", dept: "Sales", loc: "Warehouse", doc: "invoice-0139.pdf" },
+    { id: "t4", d: "Oct 18", who: "Pixel Print Shop", what: "Office supplies", ref: "Photo of receipt", cat: "Supplies & Materials", amt: -1350, st: "draft", dept: "Operations", loc: "Makati office", doc: "receipt-1018.jpg" },
+    { id: "t5", d: "Oct 15", who: "Lumen Power Co.", what: "Electricity · October", ref: "From bank statement", cat: "Uncategorized Expense", amt: -2499, st: "rev", sugg: ["Utilities", "Facilities"], dept: "", loc: "" },
+    { id: "t6", d: "Oct 12", who: "Ledgerline", what: "Accounting software", ref: "Monthly plan", cat: "Software & Subscriptions", amt: -1200, st: "ok", dept: "Operations", loc: "", doc: "" },
+    { id: "t7", d: "Oct 10", who: "Payroll", what: "Payroll · Oct 1–15", ref: "2 employees", cat: "Salaries & Wages", amt: -20000, st: "ok", dept: "Operations", loc: "", doc: "" },
+    { id: "t8", d: "Oct 08", who: "Bank", what: "Bank service fee", ref: "From bank statement", cat: "Uncategorized Expense", amt: -150, st: "rev", sugg: ["Bank Fees", "General Operations"], dept: "", loc: "" },
+    { id: "t9", d: "Oct 05", who: "Isla Café", what: "Sale", ref: "Invoice 0136", cat: "Sales Revenue", amt: 120000, st: "ok", dept: "Sales", loc: "Makati office", doc: "invoice-0136.pdf" },
+    { id: "t10", d: "Oct 03", who: "Card •••• 7713", what: "Transfer · pay the card", ref: "Transfer", cat: "Credit Cards", amt: -10000, st: "ok", dept: "", loc: "", doc: "" },
+  ];
+  const STL = { ok: ["ok", "Posted"], draft: ["draft", "Draft"], rev: ["rev", "Needs review"] };
+
+  const PEOPLE = {
+    banks: [
+      { n: "Bank •••• 4021", s: "Checking · reconciled to Sep", c: "#157a48", a: 412350, kpi: [["Balance", 412350], ["In this month", 300000], ["Out this month", -58849]] },
+      { n: "Card •••• 7713", s: "Credit card · Oct draft", c: "#7a4fd6", a: -18240, kpi: [["Owed", 18240], ["Spent this month", 4120], ["Paid this month", 10000]] },
+      { n: "Cash Box", s: "Petty cash · all reconciled", c: "#a2650f", a: 5000, kpi: [["Balance", 5000], ["In this month", 0], ["Out this month", 0]] },
+    ],
+    vendors: [
+      { n: "Isla Office Rentals", s: "Facilities · monthly", c: "#2f6fd6", a: -250000, kpi: [["Paid this year", 250000], ["Payments", 10], ["Last", "Oct 25"]] },
+      { n: "Lumen Power Co.", s: "Utilities · 1 to review", c: "#c98a1a", a: -24990, kpi: [["Paid this year", 24990], ["Payments", 10], ["Last", "Oct 15"]] },
+      { n: "Pixel Print Shop", s: "Supplies · 1 draft", c: "#c2603c", a: -6400, kpi: [["Paid this year", 6400], ["Payments", 5], ["Last", "Oct 18"]] },
+      { n: "Reyes & Co. CPAs", s: "Professional fees", c: "#5a6b62", a: -30000, kpi: [["Paid this year", 30000], ["Payments", 3], ["Last", "Sep 30"]] },
+    ],
+    customers: [
+      { n: "Isla Café", s: "Sales · 1 unpaid invoice", c: "#157a48", a: 480000, kpi: [["Received this year", 480000], ["Unpaid", 60000], ["Last", "Oct 05"]] },
+      { n: "Santos Hardware", s: "Sales · sends 2307s", c: "#2f6fd6", a: 400000, kpi: [["Received this year", 400000], ["Unpaid", 0], ["Last", "Oct 20"]] },
+      { n: "Bayani Foods", s: "Sales · 1 unpaid invoice", c: "#c2603c", a: 320000, kpi: [["Received this year", 320000], ["Unpaid", 45000], ["Last", "Oct 28"]] },
+    ],
+    employees: [
+      { n: "Ana Cruz", s: "Operations · monthly", c: "#7a4fd6", a: -420000, kpi: [["Paid this year", 380000], ["13th month so far", 0], ["Last run", "Oct 10"]] },
+      { n: "Ben Dizon", s: "Sales · from Oct", c: "#157a48", a: -10000, kpi: [["Paid this year", 10000], ["13th month so far", 0], ["Last run", "Oct 10"]] },
+    ],
+    shareholders: [{ n: "Owner", s: "Sole proprietor", c: "#13201a", a: 0, kpi: [["Put in", 0], ["Took out this year", 75659.4], ["Last", "Oct 02"]] }],
+    lenders: [{ n: "Rural Bank loan", s: "Business loan · none yet", c: "#5a6b62", a: 0, kpi: [["Owed", 0], ["Paid this year", 0], ["Last", "—"]] }],
+    government: [
+      { n: "BIR", s: "Taxes paid", c: "#7a4fd6", a: -33700.8, kpi: [["Paid this year", 33700.8], ["Payments", 9], ["Last", "Oct 09"]] },
+      { n: "SSS", s: "Contributions", c: "#2f6fd6", a: -35000, kpi: [["Paid this year", 35000], ["Payments", 9], ["Last", "Oct 09"]] },
+      { n: "PhilHealth", s: "Contributions", c: "#157a48", a: -8000, kpi: [["Paid this year", 8000], ["Payments", 9], ["Last", "Oct 09"]] },
+      { n: "Pag-IBIG", s: "Contributions", c: "#c98a1a", a: -1800, kpi: [["Paid this year", 1800], ["Payments", 9], ["Last", "Oct 09"]] },
+    ],
+  };
+  const KINDS = [["banks", "Banks & cards"], ["vendors", "Vendors"], ["customers", "Customers"], ["employees", "Employees"], ["shareholders", "Owners"], ["lenders", "Lenders"], ["government", "Government"]];
+
+  const UNPAID = {
+    collect: [
+      { id: "u1", who: "Isla Café", doc: "Invoice 0143", due: "Nov 15", amt: 60000, late: false },
+      { id: "u2", who: "Bayani Foods", doc: "Invoice 0144", due: "Nov 20", amt: 45000, late: false },
+    ],
+    pay: [
+      { id: "u3", who: "Pixel Print Shop", doc: "Bill PP-0381", due: "Nov 05", amt: 3200, late: false },
+      { id: "u4", who: "Lumen Power Co.", doc: "November bill", due: "Nov 12", amt: 2600, late: false },
+    ],
+  };
+
+  const FORMS = {
+    "2551Q": {
+      title: "Percentage tax", period: "Q3 2026 · Jul–Sep", status: ["ok", "Ready"], owners: { books: 2, bir: 26, profile: 9, past: 1, you: 33 },
+      rows: [
+        { m: "Net sales", sub: "Sales 300,000.00 − returns 10,000.00", item: "Schedule 1 row 1 · taxable amount", key: "txtATCAmt1", v: 290000, flag: "Review open: net or gross sales", lineage: [["Jul 01", "Isla Café · Invoice 0124", 120000], ["Jul 15", "Santos Hardware · Invoice 0127", 100000], ["Aug 20", "Bayani Foods · Invoice 0131", 80000], ["Sep 10", "Bayani Foods · return (acknowledged)", -10000]] },
+        { m: "Percentage tax withheld, 2307s received", sub: "1 received · 1 pending and 1 final (2306) left out", item: "15 · creditable percentage tax withheld", key: "frm2551Qv2018:txt15", v: 3000, lineage: [["Sep 30", "Santos Hardware · 2307 WB082 · received", 3000]] },
+      ],
+      bir: "BIR picks the ATC, applies the rate, computes the tax due and keeps the due date.",
+    },
+    "1601C": {
+      title: "Withholding on compensation", period: "September 2026", status: ["ok", "Ready · 1 held"], owners: { books: 8, bir: 16, profile: 8, past: 19, you: 27 },
+      rows: [
+        { m: "Any tax withheld?", sub: "Payroll recorded tax withheld", item: "3 · any taxes withheld", key: "frm1601c:TaxWithheld", v: "Yes", lineage: [["Sep 30", "Payroll · Ana Cruz · tax withheld", 2808.4]] },
+        { m: "Gross compensation", sub: "Basic 40,000.00 + de minimis 2,000.00", item: "14 · total compensation", key: "frm1601c:txtTax14", v: 42000, lineage: [["Sep 30", "Payroll · Ana Cruz · basic pay", 40000], ["Sep 30", "Payroll · Ana Cruz · de minimis", 2000]] },
+        { m: "Minimum wage pay", sub: "No minimum-wage earners", item: "15 · statutory minimum wage", key: "frm1601c:txtTax15", v: 0, lineage: [] },
+        { m: "Holiday, overtime, night shift", sub: "Waiting for a tax review", item: "16 · MWE holiday and overtime pay", key: "frm1601c:txtTax16", v: null, held: true, flag: "Held: not sent until reviewed" },
+        { m: "13th month and other benefits", sub: "Non-taxable part, ₱90,000 yearly cap per employee", item: "17 · 13th month and other benefits", key: "frm1601c:txtTax17", v: 0, flag: "The one tax rule in the bridge", lineage: [] },
+        { m: "De minimis benefits", sub: "Rice and clothing allowance", item: "18 · de minimis", key: "frm1601c:txtTax18", v: 2000, lineage: [["Sep 30", "Payroll · Ana Cruz · de minimis", 2000]] },
+        { m: "Employee share of SSS, PhilHealth, Pag-IBIG", sub: "Employer share 1,500.00 kept out", item: "19 · mandatory contributions", key: "frm1601c:txtTax19", v: 2000, lineage: [["Sep 30", "Payroll · Ana Cruz · employee contributions", 2000]] },
+        { m: "Tax withheld, as payroll recorded it", sub: "Books records it; it does not compute it", item: "25 · total taxes withheld", key: "frm1601c:txtTax25", v: 2808.4, lineage: [["Sep 30", "Payroll · Ana Cruz · tax withheld", 2808.4]] },
+      ],
+      bir: "BIR adds up non-taxable and taxable pay, applies last month's adjustments, penalties and the due date.",
+    },
+    "1701MS": {
+      title: "Annual income tax", period: "Year 2026 · preview, year still open", status: ["info", "Preview"], owners: { books: 8, bir: 36, profile: 6, past: 4, you: 40 },
+      ctx: true,
+      graduated: [
+        { m: "Gross sales", sub: "Before returns, allowances and discounts", item: "IV.5 · sales, revenues and fees", key: "frm1701MS:txtSalesRevenueNo5a", v: 1200000, lineage: [["Jan–Oct", "12 sales invoices, all paid", 1200000]] },
+        { m: "Returns, allowances, discounts", sub: "Counted once", item: "IV.6 · sales returns and allowances", key: "frm1701MS:txtSalesReturnsNo6a", v: 10000, lineage: [["Sep 10", "Bayani Foods · return (acknowledged)", 10000]] },
+        { m: "Cost of sales", sub: "Only when BIR says itemized (it says OSD)", item: "IV.8 · cost of sales", key: "frm1701MS:txtCostofSalesNo8a", v: null, held: true, flag: "Not sent: deduction is OSD" },
+        { m: "Other non-operating income", sub: "Waiting for a tax review", item: "IV.13 · other non-operating income", key: "frm1701MS:txtNonOperatingIncomeNo13a", v: null, held: true, flag: "Held: not sent until reviewed" },
+        { m: "Income tax withheld, Q1–Q3 (2307s)", sub: "Shown for BIR to check; not typed in", item: "V.3 · creditable tax withheld", key: "frm1701MS:txtCreditableTaxNo3a", v: 8900, ref: true, lineage: [["Mar 31", "Santos Hardware · 2307 WI010", 3000], ["Jun 30", "Santos Hardware · 2307 WI010", 3000], ["Sep 30", "Santos Hardware · 2307 WI010", 2900]] },
+        { m: "Income tax withheld, Q4 (2307s)", sub: "Shown for BIR to check; not typed in", item: "V.4 · creditable tax withheld Q4", key: "frm1701MS:txtCreditableFourthQuarterNo4a", v: 3000, ref: true, lineage: [["Oct 28", "Santos Hardware · 2307 WI010", 3000]] },
+      ],
+      eight: [
+        { m: "Net sales", sub: "Sales 1,200,000.00 − returns 10,000.00", item: "IV.19 · sales, revenues and fees (8%)", key: "frm1701MS:txtSalesRevenuesFeesANo19a", v: 1190000, lineage: [["Jan–Oct", "12 sales invoices, all paid", 1200000], ["Sep 10", "Bayani Foods · return (acknowledged)", -10000]] },
+        { m: "Other non-operating income", sub: "Waiting for a tax review", item: "IV.20 · other non-operating income (8%)", key: "frm1701MS:txtOtherNonOperatingIncomeNo20a", v: null, held: true, flag: "Held: not sent until reviewed" },
+        { m: "Income tax withheld, Q1–Q3 (2307s)", sub: "Shown for BIR to check; not typed in", item: "V.3 · creditable tax withheld", key: "frm1701MS:txtCreditableTaxNo3a", v: 8900, ref: true, lineage: [["Mar 31", "Santos Hardware · 2307 WI010", 3000], ["Jun 30", "Santos Hardware · 2307 WI010", 3000], ["Sep 30", "Santos Hardware · 2307 WI010", 2900]] },
+        { m: "Income tax withheld, Q4 (2307s)", sub: "Shown for BIR to check; not typed in", item: "V.4 · creditable tax withheld Q4", key: "frm1701MS:txtCreditableFourthQuarterNo4a", v: 3000, ref: true, lineage: [["Oct 28", "Santos Hardware · 2307 WI010", 3000]] },
+      ],
+      bir: "BIR keeps the yearly 8% or graduated choice, OSD or itemized, computes taxable income, the tax and the payable.",
+    },
+  };
+
+  const CERTS = [
+    { who: "Santos Hardware", period: "Q3 2026", kind: "Percentage tax", atc: "WB082", amt: 3000, st: "received", counts: "2551Q item 15" },
+    { who: "Bayani Foods", period: "Q3 2026", kind: "Percentage tax", atc: "WB082", amt: 2000, st: "pending", counts: "Not counted until received" },
+    { who: "Isla Café", period: "Q3 2026", kind: "Final tax (2306)", atc: "WB084", amt: 1500, st: "received", counts: "Never counted: final" },
+    { who: "Santos Hardware", period: "Q3 2026", kind: "Income tax", atc: "WI010", amt: 2900, st: "received", counts: "1701-MS V.3" },
+    { who: "Santos Hardware", period: "Q2 2026", kind: "Income tax", atc: "WI010", amt: 3000, st: "received", counts: "1701-MS V.3" },
+    { who: "Santos Hardware", period: "Q1 2026", kind: "Income tax", atc: "WI010", amt: 3000, st: "received", counts: "1701-MS V.3" },
+  ];
+
+  const NOTES = {
+    today: { replaces: ["/", "/inbox"], simpler: ["One screen answers: how much cash, what came in and went out, and what needs me.", "The web inbox becomes the Needs-you list. Rox chat and agents bring the items in."], pair: "Shows when BIR form totals are ready, and opens Forms." },
+    ledger: { replaces: ["/transactions", "/transactions/:id", "/inbox", "/ai-proposals"], simpler: ["Filters instead of separate pages: Needs review, Drafts, Posted.", "Click a row: details open beside the list, with the receipt in Rox's document viewer.", "The assistant can draft. Only your click posts."], pair: "Every number on the Forms page links back to rows here." },
+    unpaid: { replaces: ["/bills", "/bills/create", "/invoices", "/invoices/draft/*"], simpler: ["Two lists, To collect and To pay, instead of two four-column boards.", "Cash basis: an unpaid invoice or bill is a reminder, not an entry. Marking it paid records the money on that day."], pair: "Paid sales flow into the sales totals that 2551Q and 1701-MS read." },
+    reconcile: { replaces: ["/reconciliations", "/reconciliations/:id"], simpler: ["One grid: accounts down, months across. Red means to do.", "Matching shows the bank statement next to the ledger, with suggested matches."], pair: "BIR trusts totals more when the month is matched to the bank." },
+    reports: { replaces: ["/financials (P&L, balance sheet, cash flow, trial balance, aging)"], simpler: ["Same reports, one tab row. Aging appears only on accrual books.", "Click any line to see its transactions in the Ledger."], pair: "Reports are for you. Forms is what goes to BIR." },
+    forms: { replaces: ["New page: the mapping we built (data/rules, data/crosswalk)"], simpler: ["Pick a form and period. See exactly which boxes Books fills, with which numbers.", "Click a number to see the ledger lines that add up to it.", "Held boxes say why they are not sent."], pair: "Books fills only input boxes. BIR reads them into its draft and does the tax. For 1701-MS, Books reads the 8% or graduated choice from BIR and never sets it." },
+    people: { replaces: ["/entities/banks", "/entities/vendors", "/entities/customers", "/entities/employees", "/entities/shareholders", "/entities/lenders", "/entities/government", "/entities/:type/:id"], simpler: ["Seven look-alike pages become one, with a kind switch.", "Each person shows what you paid them or received, and their last transactions."], pair: "No TINs in Books. The BIR app keeps them." },
+    accounts: { replaces: ["/accounts (Category Manager)", "/accounts/category/:id"], simpler: ["Your chart of accounts with balances, grouped by type.", "Receivable and payable accounts show as accrual-only on a cash book."], pair: "An account never decides a form box. Line facts and measures do." },
+    tags: { replaces: ["/departments", "/locations", "and their detail pages"], simpler: ["Departments and locations are both just tags on a transaction, so one page."], pair: "None. Tags are for your own reports." },
+    payroll: { replaces: ["/payroll", "/payroll/:runId (amounts only)"], simpler: ["Pay runs and each employee's lines: basic, overtime, 13th month, de minimis, contributions, tax withheld.", "No TINs, no 2316 forms here."], pair: "Pay-run totals feed 1601-C. Employee TINs, 2316s and the filing are in the BIR app." },
+    certificates: { replaces: ["/tax/certificates (the received list)"], simpler: ["The 2307s customers sent you, with status. Only received ones count.", "A 2306 (final tax) never counts."], pair: "Received 2307s feed 2551Q item 15 and 1701-MS V.3 and V.4. Building SAWT stays in BIR." },
+    settings: { replaces: ["/organization/:id/settings", "/organization/:id/mappings", "/organization/:id/connections (bank part)"], simpler: ["Book: name, basis (cash by default), fiscal year.", "Months: close and reopen with a reason.", "Defaults: your Category Mappings, shorter. Cash books hide receivable and payable rows."], pair: "Link to your BIR tax profile by ID only, through buwiz-cloud sign-in." },
+  };
+
+  const LOG = [
+    { k: "rox", h: "Rox already does it", sub: "Do not rebuild", rows: [
+      ["Review agents", "/review-agents", "Rox AI agents and routines run Books' checks (missing vendor, duplicate, uncategorized). Results land as Needs review in the Ledger."],
+      ["AI proposals", "/ai-proposals", "The assistant drafts in chat. Drafts sit in the Ledger until you post."],
+      ["Documents", "/documents, /documents/:id", "Rox document viewer. Books keeps a link to each receipt."],
+      ["Inbox triage queue", "/inbox", "Rox chat and agents bring items in. Books shows Needs review and Drafts."],
+      ["Sign-in, profile, theme, sign out", "/login, /profile, /onboarding, create/join organization", "Rox owns the window and the account. Books shows a first-run card instead of onboarding."],
+      ["AI credentials", "Settings › AI Credentials", "Rox picks and pays for the models."],
+      ["Documentation link", "sidebar", "Rox help and the /books menu."],
+    ]},
+    { k: "bir", h: "The BIR app does it", sub: "Forms owns compliance", rows: [
+      ["Tax compute", "/tax/compute", "EWT, VAT split, the 8% threshold, tax due."],
+      ["Expanded withholding", "/tax/ewt", "0619-E, 1601-EQ, QAP. Books records the money paid."],
+      ["Tax parties", "/tax/parties", "Payee TINs, VAT registration. Books stores no TIN."],
+      ["Tax settings and year election", "/tax/settings", "TIN, RDO, classification, 8% or graduated each year."],
+      ["Filing deadlines", "/tax/deadlines", "Due dates, overdue, penalties."],
+      ["Payroll filing parts", "/payroll (employer TIN, employee TINs, 2316)", "Books keeps only the pay-run amounts."],
+      ["SAWT building", "/tax/certificates › Build SAWT", "Books keeps the received 2307 list."],
+    ]},
+    { k: "later", h: "Later, not in the first version", sub: "Needs sync or many users", rows: [
+      ["Business groups", "/business-groups (Enterprise)", "Many companies at once needs cloud sync first."],
+      ["Members and roles", "Settings › Members", "One person per book on this Mac for now. Accountant access comes with sync."],
+      ["Live bank and payment connections", "Connections › Stripe, PayPal, bank feeds", "First version imports bank statements through Rox."],
+      ["Sending invoices and payment links", "/invoices/pay/:id, public invoice view", "Books records invoices; sending and online payment come later."],
+      ["Inbound email address", "/inbox › Inbound email", "Forward to Rox for now."],
+    ]},
+    { k: "drop", h: "Dropped", sub: "Simpler without it", rows: [
+      ["Bill approval board", "/bills (In review, Pending approval, Scheduled)", "One person approves by marking paid."],
+      ["Invoice draft review step", "/invoices/draft/:id/review", "Save, then mark paid. Fewer screens."],
+      ["Separate entity pages", "7 /entities/* pages", "One People page with a kind switch."],
+      ["Separate departments and locations pages", "/departments, /locations", "One Tags page."],
+      ["Per-category party read/create matrix", "Mappings › Parties", "Defaults per category instead; rarely changed."],
+      ["Org URL slug, logo, email settings", "Settings › General, Email", "A local book has a name, nothing more."],
+    ]},
+  ];
+
+  /* ---------------- state ---------------- */
+  const S = { page: "today", drawer: null, sheet: null, toast: "", lf: "all", acct: "11000", unpaidTab: "collect", recon: null, recMatched: false, recAdded: false, rep: "pl", form: "2551Q", taxopt: "graduated", sent: {}, kind: "vendors", person: 0, acctType: "all", tag: "dept", payrun: null, certf: "all", setTab: "book", basis: "cash", closed: { Jul: true, Aug: true, Sep: true, Oct: false } };
+  const $ = (id) => document.getElementById(id);
+
+  function rail() {
+    let h = '<div class="book"><i>B</i><div><b>Buwiz Trading</b><small>Cash basis · 2026</small></div></div>';
+    let g = null;
+    for (const p of PAGES) {
+      if (p.group === "end") h += '<div class="spacer"></div>';
+      else if (p.group && p.group !== g) { h += '<div class="grp">' + p.group + "</div>"; g = p.group; }
+      const extra = p.bir ? '<span class="bir">BIR</span>' : p.count ? '<span class="ct">' + p.count + "</span>" : "";
+      h += '<button class="nav" data-go="' + p.id + '"' + (S.page === p.id ? ' aria-current="page"' : "") + ">" + svg(p.icon) + "<span>" + p.label + "</span>" + extra + "</button>";
+    }
+    $("rail").innerHTML = h;
+    $("jump").innerHTML = PAGES.map((p) => '<button data-go="' + p.id + '" aria-current="' + (S.page === p.id) + '">' + p.label + "</button>").join("");
+    $("ttlsub").textContent = "· " + PAGES.find((p) => p.id === S.page).label;
+  }
+
+  const head = (title, sub, right) => '<div class="ph"><h3>' + title + "</h3>" + (sub ? '<span class="sub">' + sub + "</span>" : "") + '<span class="grow"></span>' + (right || "") + "</div>";
+
+  /* ---------------- pages ---------------- */
+  function pToday() {
+    const rev = TX.filter((t) => t.st === "rev").length, dr = TX.filter((t) => t.st === "draft").length;
+    return '<div class="pg">' + head("Today", "Thursday, Oct 29", '<button class="btn" data-sheet="out">+ Money out</button><button class="btn go" data-sheet="in">+ Money in</button>') +
+      '<div class="kpis">' +
+      '<div class="panel kpi"><span class="lab">Cash now</span><span class="val">₱ ' + peso(417350) + '</span><div class="bars">' +
+      '<div class="bar"><span>Bank •••• 4021</span><span class="tr"><i style="width:99%"></i></span><span class="num">' + peso(412350) + "</span></div>" +
+      '<div class="bar"><span>Cash box</span><span class="tr"><i style="width:2%"></i></span><span class="num">' + peso(5000) + "</span></div>" +
+      '<div class="bar"><span>Card owed</span><span class="tr"><i style="width:5%;background:var(--w-red)"></i></span><span class="num">' + peso(-18240) + "</span></div></div></div>" +
+      '<div class="panel kpi"><span class="lab">October so far</span><span class="val pos">+ ' + peso(251151) + '</span><div class="bars">' +
+      '<div class="bar"><span>Money in</span><span class="tr"><i style="width:100%"></i></span><span class="num">' + peso(300000) + "</span></div>" +
+      '<div class="bar"><span>Money out</span><span class="tr"><i style="width:16%;background:var(--w-red)"></i></span><span class="num">' + peso(-48849) + "</span></div>" +
+      '<div class="bar"><span>vs September</span><span class="tr"><i style="width:87%;background:var(--w-blue)"></i></span><span class="num">' + peso(217801) + "</span></div></div></div>" +
+      '<div class="panel kpi"><span class="lab">Unpaid</span><span class="val">₱ ' + peso(105000) + '</span><div class="bars">' +
+      '<div class="bar"><span>To collect · 2</span><span class="tr"><i style="width:100%"></i></span><span class="num">' + peso(105000) + "</span></div>" +
+      '<div class="bar"><span>To pay · 2</span><span class="tr"><i style="width:6%;background:var(--w-red)"></i></span><span class="num">' + peso(-5800) + "</span></div>" +
+      '<div class="bar"><span>Next due</span><span class="tr"><i style="width:0"></i></span><span class="num">Nov 05</span></div></div></div></div>' +
+      '<div class="split2"><div class="panel todo"><div class="ptitle"><b>Needs you</b><span>' + (rev + dr + 2) + " things</span></div>" +
+      '<button class="it" data-go="ledger" data-lf="rev"><span class="ic" style="background:var(--w-red-bg);color:var(--w-red)">' + rev + '</span><span class="tx"><b>Bank lines to categorize</b><small>Electricity, bank fee · from the October statement</small></span><span class="go">›</span></button>' +
+      '<button class="it" data-go="ledger" data-lf="draft"><span class="ic" style="background:var(--w-amber-bg);color:var(--w-amber)">' + dr + '</span><span class="tx"><b>Draft from a receipt photo</b><small>Pixel Print Shop · 1,350.00 · post or edit</small></span><span class="go">›</span></button>' +
+      '<button class="it" data-go="reconcile"><span class="ic" style="background:var(--w-blue-bg);color:var(--w-blue)">1</span><span class="tx"><b>Match October to the bank</b><small>Bank •••• 4021 · statement imported</small></span><span class="go">›</span></button>' +
+      '<button class="it" data-go="forms"><span class="ic" style="background:var(--w-violet-bg);color:var(--w-violet)">2</span><span class="tx"><b>Totals ready for the BIR app</b><small>2551Q Q3 · 1601-C September</small></span><span class="go">›</span></button></div>' +
+      '<div class="panel"><div class="ptitle"><b>Quick</b><span>also in chat as /books</span></div><div class="qa">' +
+      '<button data-sheet="in"><b>Money in</b><small>A customer paid you</small></button><button data-sheet="out"><b>Money out</b><small>You paid someone</small></button>' +
+      '<button data-sheet="transfer"><b>Transfer</b><small>Between your accounts</small></button><button data-go="reconcile"><b>Import a statement</b><small>PDF or CSV from your bank</small></button>' +
+      '<button data-go="settings" data-set="months"><b>Close September</b><small>Already closed ✓</small></button><button data-go="reports"><b>October P&amp;L</b><small>Net + 251,151.00</small></button></div></div></div></div>';
+  }
+
+  function txRows(list) {
+    return list.map((t) => '<tr class="click' + (S.drawer && S.drawer.tx === t.id ? " sel" : "") + '" data-tx="' + t.id + '"><td class="num">' + t.d + "</td><td><b>" + esc(t.what) + " · " + esc(t.who) + "</b><small>" + esc(t.ref) + '</small></td><td><span class="cat"><i style="background:' + (CATCOLOR[t.cat] || "#888") + '"></i>' + esc(t.cat) + '</span></td><td><span class="st ' + STL[t.st][0] + '">' + STL[t.st][1] + '</span></td><td class="r num ' + (t.amt > 0 ? "pos" : "neg") + '">' + sgn(t.amt) + "</td></tr>").join("");
+  }
+
+  function pLedger() {
+    const cnt = { all: TX.length, rev: TX.filter((t) => t.st === "rev").length, draft: TX.filter((t) => t.st === "draft").length, ok: TX.filter((t) => t.st === "ok").length };
+    const acctSel = ACCTS.find((a) => a.n === S.acct) || ACCTS[0];
+    const list = TX.filter((t) => (S.lf === "all" || t.st === S.lf) && (acctSel.n === "11000" || t.cat === acctSel.name));
+    const groups = {};
+    for (const a of ACCTS) { if (a.accrual && S.basis === "cash") continue; (groups[a.g] = groups[a.g] || []).push(a); }
+    let al = "";
+    for (const g of ["Assets", "Liabilities", "Equity", "Revenue", "Expenses"]) {
+      if (!groups[g]) continue;
+      al += '<div class="g">' + g + "</div>" + groups[g].map((a) => '<button data-acct="' + a.n + '" aria-pressed="' + (S.acct === a.n) + '"><span>' + a.name + '</span><span class="num">' + a.n + "</span></button>").join("");
+    }
+    const acct = acctSel;
+    return '<div class="pg">' + head("Ledger", "October 2026", '<button class="btn" data-go="reconcile">Import statement</button><button class="btn go" data-sheet="out">+ New</button>') +
+      '<div class="ledger"><div class="panel acctlist">' + al + "</div><div>" +
+      '<div class="lhead"><b>' + acct.name + '</b><span class="glass">' + acct.n + '</span><span class="glass">‹ Oct 1 – Oct 31 ›</span><span class="grow"></span><span class="glass">Balance <span class="num">₱ ' + peso(acct.bal || 0) + "</span></span></div>" +
+      '<div class="panel" style="border-radius:0 0 12px 12px;border-top:0"><div style="display:flex;gap:8px;padding:10px 12px;flex-wrap:wrap;align-items:center"><span class="search">Search payee, memo, amount…</span><div class="chips">' +
+      [["all", "All"], ["rev", "Needs review"], ["draft", "Drafts"], ["ok", "Posted"]].map(([k, l]) => '<button class="fchip" data-lf="' + k + '" aria-pressed="' + (S.lf === k) + '">' + l + '<span class="n">' + cnt[k] + "</span></button>").join("") +
+      '</div></div><table class="t"><thead><tr><th>Date</th><th>What</th><th>Category</th><th>Status</th><th class="r">Amount</th></tr></thead><tbody>' + (list.length ? txRows(list) : '<tr><td colspan="5" class="hint" style="padding:18px">No ' + (S.lf === "all" ? "" : "matching ") + 'transactions in ' + acct.name + ' this month.</td></tr>') + "</tbody></table></div></div></div></div>";
+  }
+
+  function pUnpaid() {
+    const rows = UNPAID[S.unpaidTab];
+    const tot = rows.reduce((s, r) => s + r.amt, 0);
+    return '<div class="pg">' + head("Unpaid", "invoices and bills waiting for money", '<button class="btn">Upload a bill</button><button class="btn go">+ New invoice</button>') +
+      '<div class="seg"><button data-ut="collect" aria-pressed="' + (S.unpaidTab === "collect") + '">To collect · ' + UNPAID.collect.length + '</button><button data-ut="pay" aria-pressed="' + (S.unpaidTab === "pay") + '">To pay · ' + UNPAID.pay.length + "</button></div>" +
+      '<div class="panel"><table class="t"><thead><tr><th>' + (S.unpaidTab === "collect" ? "Customer" : "Vendor") + '</th><th>Document</th><th>Due</th><th class="r">Amount</th><th></th></tr></thead><tbody>' +
+      (rows.length ? rows.map((r) => "<tr><td><b>" + r.who + "</b></td><td>" + r.doc + '</td><td class="num">' + r.due + '</td><td class="r num">' + peso(r.amt) + '</td><td class="r"><button class="btn" data-paid="' + r.id + '">Mark paid</button></td></tr>').join("") : '<tr><td colspan="5" class="hint" style="padding:18px">Nothing waiting. Paid items are in the Ledger.</td></tr>') +
+      '</tbody></table></div><div class="panel pad" style="display:flex;gap:12px;align-items:center"><span class="st info">Cash basis</span><span class="hint">These are reminders, not entries. <b>Mark paid</b> records the money in the Ledger on the day it moves. Total ' + (S.unpaidTab === "collect" ? "to collect" : "to pay") + ': <span class="num">' + peso(tot) + "</span>.</span></div></div>";
+  }
+
+  function pReconcile() {
+    if (S.recon) return pMatch();
+    const M = ["Jul", "Aug", "Sep", "Oct"];
+    const R = [["Bank •••• 4021", ["done", "done", "done", "todo"]], ["Card •••• 7713", ["done", "done", "draft", "todo"]], ["Cash Box", ["done", "done", "done", "done"]]];
+    const lab = { done: "✓ Matched", todo: "To do", draft: "Draft" };
+    let g = '<div class="h">Account</div>' + M.map((m) => '<div class="h">' + m + "</div>").join("");
+    for (const [a, st] of R) g += "<div><b>" + a + "</b></div>" + st.map((s, i) => "<div>" + (s === "done" ? '<span class="rcell done">' + lab[s] + "</span>" : '<button class="rcell ' + s + '" data-recon="' + a + "|" + M[i] + '">' + lab[s] + " ›</button>") + "</div>").join("");
+    return '<div class="pg">' + head("Reconcile", "2026", '<button class="btn go">Import statement</button>') +
+      '<div class="kpis" style="grid-template-columns:repeat(4,minmax(0,1fr))">' + [["Matched", "9 of 12"], ["To do", "2"], ["Drafts", "1"], ["Oldest open", "Sep · card"]].map(([l, v]) => '<div class="panel kpi"><span class="lab">' + l + '</span><span class="val" style="font-size:18px">' + v + "</span></div>").join("") + "</div>" +
+      '<div class="panel" style="padding:4px 4px"><div class="rgrid">' + g + "</div></div><p class=\"hint\">Click a red or yellow month to match it.</p></div>";
+  }
+
+  function pMatch() {
+    const [acct, mo] = S.recon.split("|");
+    const stm = [
+      ["Oct 03", "TRANSFER TO CARD 7713", -10000, "m"], ["Oct 05", "DEPOSIT ISLA CAFE", 120000, "m"], ["Oct 08", "SERVICE CHARGE", -150, S.recMatched ? "m" : "s"],
+      ["Oct 10", "PAYROLL BATCH", -20000, "m"], ["Oct 12", "LEDGERLINE SUBSCR", -1200, "m"], ["Oct 15", "LUMEN POWER CO", -2499, S.recMatched ? "m" : "s"],
+      ["Oct 20", "DEPOSIT SANTOS HW", 100000, "m"], ["Oct 25", "ISLA OFFICE RENTALS", -25000, "m"], ["Oct 28", "DEPOSIT BAYANI", 80000, "m"], ["Oct 31", "INTEREST EARNED", 42.18, S.recAdded ? "m" : "x"],
+    ];
+    const book = (r) => (r[3] === "x" ? '<div class="mrow miss"><span class="num">—</span><span><b>Not in Books</b><small>Add it as money in</small></span><button class="btn" data-recadd="1">+ Add</button></div>' : '<div class="mrow ' + (r[3] === "s" ? "sugg" : "") + '"><span class="num">' + r[0] + "</span><span>" + (r[3] === "s" ? "<b>Suggested match</b><small>Needs review in Ledger</small>" : "<b>Posted</b><small>Same amount and date</small>") + '</span><span class="num">' + sgn(r[2]) + "</span></div>");
+    const diff = S.recAdded ? 0 : 42.18;
+    const done = S.recMatched && S.recAdded;
+    return '<div class="pg">' + head("Match " + mo + " · " + acct, "statement vs Books", '<button class="btn" data-recback="1">‹ Back</button><button class="btn" data-recall="1"' + (S.recMatched ? " disabled" : "") + ">Accept 2 suggestions</button>") +
+      '<div class="panel match"><div class="col"><h4>Bank statement</h4>' + stm.map((r) => '<div class="mrow"><span class="num">' + r[0] + "</span><span>" + r[1] + '</span><span class="num">' + sgn(r[2]) + "</span></div>").join("") + '</div><div class="mlink"><div class="hd"></div>' + stm.map((r) => '<div class="' + r[3] + '">' + (r[3] === "m" ? "=" : r[3] === "s" ? "≈" : "?") + "</div>").join("") + '</div><div class="col"><h4>Books</h4>' + stm.map(book).join("") + "</div></div>" +
+      '<div class="panel diff"><span>Statement ending <b class="num">412,392.18</b></span><span>Books <b class="num">' + (S.recAdded ? "412,392.18" : "412,350.00") + '</b></span><span class="grow"></span><span>Difference <b class="num ' + (diff ? "" : "pos") + '">' + peso(diff) + '</b></span><button class="btn go" data-recdone="1"' + (done ? "" : " disabled") + ">Finish " + mo + "</button></div></div>";
+  }
+
+  function pReports() {
+    const tabs = [["pl", "P&L"], ["bs", "Balance sheet"], ["cf", "Cash flow"], ["tb", "Trial balance"], ["ag", "Aging"]];
+    let body = "";
+    if (S.rep === "pl") body = '<table class="t"><thead><tr><th>Account</th><th class="r">October</th><th class="r">September</th></tr></thead><tbody>' +
+      '<tr class="sec"><td colspan="3">Revenue</td></tr><tr class="click" data-go="ledger" data-acct2="41000"><td>Sales Revenue</td><td class="r num">300,000.00</td><td class="r num">300,000.00</td></tr><tr class="click" data-go="ledger" data-acct2="49000"><td>Refunds &amp; Discounts</td><td class="r num">0.00</td><td class="r num">−10,000.00</td></tr>' +
+      '<tr class="sec"><td colspan="3">Expenses</td></tr><tr class="click" data-go="ledger" data-acct2="66000"><td>Facilities</td><td class="r num">25,000.00</td><td class="r num">25,000.00</td></tr><tr class="click" data-go="ledger" data-acct2="62000"><td>Salaries &amp; Wages</td><td class="r num">20,000.00</td><td class="r num">43,500.00</td></tr><tr class="click" data-go="ledger" data-acct2="65000"><td>Software &amp; Subscriptions</td><td class="r num">1,200.00</td><td class="r num">1,200.00</td></tr><tr class="click" data-go="ledger" data-acct2="66100"><td>Utilities</td><td class="r num">0.00</td><td class="r num">2,499.00</td></tr><tr class="click" data-go="ledger" data-lf="rev"><td>Uncategorized <span class="st rev">2 to review</span></td><td class="r num">2,649.00</td><td class="r num">0.00</td></tr>' +
+      '<tr class="total"><td>Net income</td><td class="r num">251,151.00</td><td class="r num">217,801.00</td></tr></tbody></table>';
+    if (S.rep === "bs") body = '<table class="t"><thead><tr><th>As of Oct 31, 2026</th><th class="r">Balance</th></tr></thead><tbody>' +
+      '<tr class="sec"><td colspan="2">Assets</td></tr><tr><td>Bank Accounts</td><td class="r num">412,350.00</td></tr><tr><td>Cash Box</td><td class="r num">5,000.00</td></tr><tr><td>Creditable Tax Withheld</td><td class="r num">11,900.00</td></tr><tr class="total"><td>Total assets</td><td class="r num">429,250.00</td></tr>' +
+      '<tr class="sec"><td colspan="2">Liabilities</td></tr><tr><td>Credit Cards</td><td class="r num">18,240.00</td></tr><tr><td>Payroll Liabilities</td><td class="r num">6,308.40</td></tr><tr class="total"><td>Total liabilities</td><td class="r num">24,548.40</td></tr>' +
+      '<tr class="sec"><td colspan="2">Equity</td></tr><tr><td>Net income this year</td><td class="r num">480,361.00</td></tr><tr><td>Owner took out</td><td class="r num">−75,659.40</td></tr><tr class="total"><td>Liabilities + equity</td><td class="r num">429,250.00</td></tr></tbody></table>';
+    if (S.rep === "cf") body = '<table class="t"><thead><tr><th>October 2026</th><th class="r">Amount</th></tr></thead><tbody><tr><td>Cash at Oct 1</td><td class="r num">176,199.00</td></tr><tr><td>Money in from customers</td><td class="r num pos">+300,000.00</td></tr><tr><td>Money out for running the business</td><td class="r num">−48,849.00</td></tr><tr><td>Paid the credit card</td><td class="r num">−10,000.00</td></tr><tr class="total"><td>Cash at Oct 31</td><td class="r num">417,350.00</td></tr></tbody></table>';
+    if (S.rep === "tb") body = '<table class="t"><thead><tr><th>Jan 1 – Oct 31, 2026</th><th class="r">Debit</th><th class="r">Credit</th></tr></thead><tbody>' +
+      [["Bank Accounts", 412350, 0], ["Cash Box", 5000, 0], ["Creditable Tax Withheld", 11900, 0], ["Credit Cards", 0, 18240], ["Payroll Liabilities", 0, 6308.4], ["Owner took out", 75659.4, 0], ["Sales Revenue", 0, 1200000], ["Refunds & Discounts", 10000, 0], ["Salaries & Wages", 420000, 0], ["Software & Subscriptions", 12000, 0], ["Facilities", 250000, 0], ["Utilities", 24990, 0], ["Uncategorized Expense", 2649, 0]]
+        .map(([a, d, c]) => "<tr><td>" + esc(a) + '</td><td class="r num">' + (d ? peso(d) : "") + '</td><td class="r num">' + (c ? peso(c) : "") + "</td></tr>").join("") +
+      '<tr class="total"><td>Totals · balanced ✓</td><td class="r num">1,224,548.40</td><td class="r num">1,224,548.40</td></tr></tbody></table>';
+    if (S.rep === "ag") body = S.basis === "cash" ? '<div class="pad" style="padding:22px;display:flex;flex-direction:column;gap:8px"><span class="st info" style="align-self:flex-start">Cash basis</span><b>Aging is for accrual books.</b><span class="hint">On a cash book, unpaid invoices and bills are reminders. See them on the Unpaid page, sorted by due date.</span><button class="btn" style="align-self:flex-start" data-go="unpaid">Open Unpaid</button></div>' :
+      '<table class="t"><thead><tr><th>Receivables</th><th class="r">Current</th><th class="r">1–30</th><th class="r">31–60</th><th class="r">61+</th></tr></thead><tbody><tr><td>Isla Café</td><td class="r num">60,000.00</td><td></td><td></td><td></td></tr><tr><td>Bayani Foods</td><td class="r num">45,000.00</td><td></td><td></td><td></td></tr></tbody></table>';
+    return '<div class="pg">' + head("Reports", S.basis === "cash" ? "Cash basis" : "Accrual basis", '<span class="seg"><button aria-pressed="true">Month</button><button>Quarter</button><button>Year</button></span><button class="btn">Export CSV</button>') +
+      '<div class="seg">' + tabs.map(([k, l]) => '<button data-rep="' + k + '" aria-pressed="' + (S.rep === k) + '">' + l + "</button>").join("") + '</div><div class="panel rep">' + body + '</div><p class="hint">Click a line to see its transactions in the Ledger.</p></div>';
+  }
+
+  function pForms() {
+    const F = FORMS[S.form];
+    const rows = F.ctx ? (S.taxopt === "graduated" ? F.graduated : F.eight) : F.rows;
+    const sent = S.sent[S.form + (F.ctx ? S.taxopt : "")];
+    const cards = Object.entries(FORMS).map(([k, f]) => '<button class="fcard" data-form="' + k + '" aria-pressed="' + (S.form === k) + '"><span style="display:flex;justify-content:space-between;align-items:center"><span class="code">' + (k === "1601C" ? "1601-C" : k === "1701MS" ? "1701-MS" : k) + '</span><span class="st ' + (S.sent[k + (f.ctx ? S.taxopt : "")] ? "bir" : f.status[0]) + '">' + (S.sent[k + (f.ctx ? S.taxopt : "")] ? "In BIR draft" : f.status[1]) + "</span></span><b>" + f.title + "</b><small>" + f.period + "</small></button>").join("");
+    const ctx = F.ctx ? '<div class="ctx"><b>Read from the BIR draft:</b><span>income tax option</span><span class="seg"><button data-taxopt="graduated" aria-pressed="' + (S.taxopt === "graduated") + '">Graduated</button><button data-taxopt="eight" aria-pressed="' + (S.taxopt === "eight") + '">8%</button></span><span class="hint" style="color:inherit;opacity:0.8">Books never sets this. Switch it to see which boxes change.</span></div>' : "";
+    const pr = rows.map((r, i) => {
+      const val = r.v === null ? '<span class="st mute">Not sent</span>' : typeof r.v === "string" ? '<button data-lin="' + i + '">' + r.v + "</button>" : '<button data-lin="' + i + '">' + peso(r.v) + "</button>";
+      return '<div class="meas' + (r.held ? " held" : "") + '"><b>' + esc(r.m) + "</b><small>" + esc(r.sub) + (r.flag ? ' · <span style="color:var(--w-amber)">' + esc(r.flag) + "</span>" : "") + (r.ref ? ' · <span style="color:var(--w-blue)">reference only</span>' : "") + '</small></div><div class="arrow">→</div><div class="box' + (r.held ? " held" : "") + '"><small>' + esc(r.item) + "</small><code>" + esc(r.key) + '</code></div><div class="val">' + val + "</div>";
+    }).join("");
+    const o = F.owners;
+    return '<div class="pg">' + head("Forms", "Books totals for the BIR app", '<button class="btn" data-go="certificates">2307s</button><button class="btn" data-go="payroll">Payroll</button>') +
+      '<div class="fcards">' + cards + "</div>" + ctx +
+      '<div class="panel"><div class="ptitle"><b>' + (S.form === "1601C" ? "1601-C" : S.form === "1701MS" ? "1701-MS" : S.form) + " · " + F.period + "</b><span>click a number to see where it comes from</span></div>" +
+      '<div class="pair"><div class="hh">Books total</div><div class="hh"></div><div class="hh">BIR box</div><div class="hh" style="align-items:flex-end">Value</div>' + pr + "</div></div>" +
+      '<div class="owners"><div class="own books"><b>' + o.books + '</b><span>boxes Books fills</span></div><div class="own"><b>' + o.bir + '</b><span>BIR computes</span></div><div class="own"><b>' + o.profile + '</b><span>from your BIR profile</span></div><div class="own"><b>' + o.past + '</b><span>from past returns</span></div><div class="own"><b>' + o.you + '</b><span>you type in BIR</span></div></div>' +
+      '<div class="panel diff"><span class="hint">' + esc(F.bir) + '</span><span class="grow"></span>' + (sent ? '<span class="st bir">Sent · open the BIR app to review</span>' : '<button class="btn vi" data-send="1"' + (S.form === "1701MS" ? " disabled" : "") + ">Hand to BIR draft</button>") + "</div>" +
+      (S.form === "1701MS" ? '<p class="hint">1701-MS can be handed over once 2026 is closed. Until then it is a preview.</p>' : "") + "</div>";
+  }
+
+  function pPeople() {
+    const list = PEOPLE[S.kind];
+    const p = list[Math.min(S.person, list.length - 1)];
+    const recent = TX.filter((t) => t.who === p.n).slice(0, 4);
+    return '<div class="pg">' + head("People", "", '<button class="btn go">+ New</button>') +
+      '<div class="chips">' + KINDS.map(([k, l]) => '<button class="fchip" data-kind="' + k + '" aria-pressed="' + (S.kind === k) + '">' + l + '<span class="n">' + PEOPLE[k].length + "</span></button>").join("") + "</div>" +
+      '<div class="md"><div class="panel plist">' + list.map((x, i) => '<button data-person="' + i + '" aria-pressed="' + (x === p) + '"><span class="av" style="background:' + x.c + '">' + x.n.replace(/[^A-Za-z]/g, "").slice(0, 2).toUpperCase() + '</span><span class="tx"><b>' + esc(x.n) + "</b><small>" + esc(x.s) + "</small></span></button>").join("") + "</div>" +
+      '<div class="panel dcard"><div class="dtop"><span class="av" style="background:' + p.c + '">' + p.n.replace(/[^A-Za-z]/g, "").slice(0, 2).toUpperCase() + "</span><div><b>" + esc(p.n) + "</b><small>" + esc(p.s) + '</small></div><span style="flex:1"></span><button class="btn">Edit</button></div>' +
+      '<div class="mini3">' + p.kpi.map(([l, v]) => "<div><span>" + l + "</span><b>" + (typeof v === "number" ? peso(v) : v) + "</b></div>").join("") + "</div>" +
+      '<div><div class="hint" style="margin-bottom:6px">Last 10 months</div><div class="spark">' + [6, 7, 5, 8, 7, 9, 6, 8, 7, 9].map((h) => '<i class="' + (p.a < 0 ? "o" : "") + '" style="height:' + h * 10 + '%"></i>').join("") + "</div></div>" +
+      (recent.length ? '<table class="t"><thead><tr><th>Date</th><th>What</th><th class="r">Amount</th></tr></thead><tbody>' + recent.map((t) => '<tr class="click" data-tx="' + t.id + '"><td class="num">' + t.d + "</td><td>" + esc(t.what) + '</td><td class="r num">' + sgn(t.amt) + "</td></tr>").join("") + "</tbody></table>" : '<span class="hint">No transactions this month.</span>') +
+      (S.kind !== "banks" ? '<div class="note-tin">TIN and registration live in the BIR app. Books links by name only.</div>' : "") + "</div></div></div>";
+  }
+
+  function pAccounts() {
+    const types = [["all", "All"], ["as", "Assets"], ["li", "Liabilities"], ["eq", "Equity"], ["re", "Revenue"], ["ex", "Expenses"]];
+    const list = ACCTS.filter((a) => S.acctType === "all" || a.type === S.acctType);
+    const tg = { as: ["as", "Asset"], li: ["li", "Liability"], eq: ["as", "Equity"], re: ["re", "Revenue"], ex: ["ex", "Expense"] };
+    return '<div class="pg">' + head("Accounts", "chart of accounts · Philippines small business", '<button class="btn go">+ New account</button>') +
+      '<div class="chips">' + types.map(([k, l]) => '<button class="fchip" data-atype="' + k + '" aria-pressed="' + (S.acctType === k) + '">' + l + "</button>").join("") + "</div>" +
+      '<div class="panel"><table class="t"><thead><tr><th>No.</th><th>Account</th><th>Type</th><th class="r">Balance</th><th></th></tr></thead><tbody>' +
+      list.map((a) => {
+        const off = a.accrual && S.basis === "cash";
+        return '<tr class="' + (off ? "dim" : "click") + '"' + (off ? "" : ' data-go="ledger" data-acct2="' + a.n + '"') + '><td class="num">' + a.n + "</td><td><b>" + a.name + "</b>" + (off ? "<small>Accrual books only</small>" : "") + '</td><td><span class="tagk ' + tg[a.type][0] + '">' + tg[a.type][1] + '</span></td><td class="r num">' + (a.bal === null ? "—" : peso(a.bal)) + '</td><td class="r hint">' + (off ? "" : "›") + "</td></tr>";
+      }).join("") + "</tbody></table></div></div>";
+  }
+
+  function pTags() {
+    const D = S.tag === "dept" ? [["Operations", 48849, 6], ["Sales", 0, 3], ["Admin", 0, 0]] : [["Makati office", 26350, 5], ["Warehouse", 0, 1]];
+    return '<div class="pg">' + head("Tags", "departments and locations", '<button class="btn go">+ New ' + (S.tag === "dept" ? "department" : "location") + "</button>") +
+      '<div class="seg"><button data-tag="dept" aria-pressed="' + (S.tag === "dept") + '">Departments</button><button data-tag="loc" aria-pressed="' + (S.tag === "loc") + '">Locations</button></div>' +
+      '<div class="panel"><table class="t"><thead><tr><th>Name</th><th class="r">Spent in October</th><th class="r">Transactions</th><th></th></tr></thead><tbody>' +
+      D.map(([n, s, c]) => '<tr class="click" data-go="ledger"><td><b>' + n + '</b></td><td class="r num">' + peso(s) + '</td><td class="r num">' + c + '</td><td class="r hint">›</td></tr>').join("") +
+      '</tbody></table></div><p class="hint">Tags ride on each transaction. Reports can filter by them.</p></div>';
+  }
+
+  function pPayroll() {
+    const runs = [["sep", "September 2026", "1 employee", 42000, "ok", "Posted"], ["oct1", "October 1–15", "2 employees", 20000, "ok", "Posted"], ["oct2", "October 16–31", "2 employees", 22000, "draft", "Draft"]];
+    return '<div class="pg">' + head("Payroll", "pay runs", '<button class="btn go">+ New pay run</button>') +
+      '<div class="panel"><table class="t"><thead><tr><th>Run</th><th>People</th><th class="r">Gross pay</th><th>Status</th><th>For the BIR app</th></tr></thead><tbody>' +
+      runs.map(([id, n, p, g, s, l]) => '<tr class="click' + (S.payrun === id ? " sel" : "") + '" data-run="' + id + '"><td><b>' + n + "</b></td><td>" + p + '</td><td class="r num">' + peso(g) + '</td><td><span class="st ' + s + '">' + l + "</span></td><td>" + (id === "sep" ? '<span class="st bir">1601-C Sep ready</span>' : id === "oct2" ? '<span class="st mute">Waiting for this run</span>' : '<span class="st mute">Part of 1601-C Oct</span>') + "</td></tr>").join("") +
+      '</tbody></table></div><div class="panel pad" style="display:flex;gap:10px;align-items:center"><span class="st bir">BIR</span><span class="hint">Books records each line of pay. Employee TINs, 2316s, the tax table and the 1601-C filing are in the BIR app.</span></div></div>';
+  }
+
+  function pCertificates() {
+    const f = [["all", "All"], ["received", "Received"], ["pending", "Pending"]];
+    const list = CERTS.filter((c) => S.certf === "all" || c.st === S.certf);
+    const stc = { received: "ok", pending: "draft", lost: "rev", disputed: "rev" };
+    return '<div class="pg">' + head("Certificates", "2307s your customers sent you", '<button class="btn go">+ Add from a PDF</button>') +
+      '<div class="chips">' + f.map(([k, l]) => '<button class="fchip" data-certf="' + k + '" aria-pressed="' + (S.certf === k) + '">' + l + "</button>").join("") + "</div>" +
+      '<div class="panel"><table class="t"><thead><tr><th>From</th><th>Quarter</th><th>Kind</th><th class="r">Withheld</th><th>Status</th><th>Counts toward</th></tr></thead><tbody>' +
+      list.map((c) => "<tr><td><b>" + c.who + "</b><small>ATC on the paper: " + c.atc + '</small></td><td class="num">' + c.period + "</td><td>" + c.kind + '</td><td class="r num">' + peso(c.amt) + '</td><td><span class="st ' + stc[c.st] + '">' + c.st + "</span></td><td>" + (c.counts.startsWith("2551Q") || c.counts.startsWith("1701") ? '<span class="st bir">' + c.counts + "</span>" : '<span class="hint">' + c.counts + "</span>") + "</td></tr>").join("") +
+      '</tbody></table></div><p class="hint">Only received 2307s count. A pending one waits; a 2306 is final tax and never counts.</p></div>';
+  }
+
+  function pSettings() {
+    const nav = [["book", "Book"], ["months", "Months"], ["defaults", "Defaults"], ["link", "Link & data"]];
+    let b = "";
+    if (S.setTab === "book") b = '<div class="panel pad" style="display:flex;flex-direction:column;gap:14px"><div class="grid2"><div class="fld"><label>Name shown in Rox</label><div class="in">Buwiz Trading</div></div><div class="fld"><label>Fiscal year starts</label><div class="in">January</div></div></div>' +
+      '<div class="fld"><label>Accounting basis</label><div class="opt"><button data-basis="cash" aria-pressed="' + (S.basis === "cash") + '"><b>Cash (default)</b><small>Money counts when it moves. Simplest.</small></button><button data-basis="accrual" aria-pressed="' + (S.basis === "accrual") + '"><b>Accrual</b><small>Counts at invoice and bill. Adds receivables, payables, aging.</small></button></div></div>' +
+      '<span class="hint">The basis changes only from the start of a year with nothing posted yet. Every BIR hand-off records it.</span></div>';
+    if (S.setTab === "months") b = '<div class="months">' + ["Jun", "Jul", "Aug", "Sep", "Oct"].map((m) => { const c = m === "Jun" || S.closed[m]; return '<div class="mo"><b>' + m + " 2026</b>" + (c ? '<span class="st ok">Closed</span><button class="btn" data-close="' + m + '">Reopen…</button>' : '<span class="st draft">Open</span><button class="btn go" data-close="' + m + '">Close</button>') + "</div>"; }).join("") + '</div><p class="hint">A closed month cannot change. Reopening asks for a reason and marks BIR hand-offs from that month as out of date.</p>';
+    if (S.setTab === "defaults") {
+      const rows = [["Banks & cards", [["Checking account", "11000", "Bank Accounts", "as"], ["Savings account", "11000", "Bank Accounts", "as"], ["Credit card", "22000", "Credit Cards", "li"], ["Cash box", "11100", "Cash Box", "as"]]],
+        ["Money out", [["Not sure yet", "69999", "Uncategorized Expense", "ex"], ["Rent and office", "66000", "Facilities", "ex"], ["Software", "65000", "Software & Subscriptions", "ex"], ["Unpaid bills", "21000", "Accounts Payable", "li", true]]],
+        ["Money in", [["Sales", "41000", "Sales Revenue", "re"], ["Refunds and discounts", "49000", "Refunds & Discounts", "re"], ["Unpaid invoices", "12000", "Accounts Receivable", "as", true]]]];
+      const tg = { as: "Asset", li: "Liability", re: "Revenue", ex: "Expense" };
+      b = rows.map(([g, rs]) => '<div class="panel" style="margin-bottom:10px"><div class="ptitle"><b>' + g + '</b><span>used when nothing else says</span></div>' + rs.map(([l, n, a, t, acc]) => { const off = acc && S.basis === "cash"; return '<div class="maprow' + (off ? " off" : "") + '"><span>' + l + (off ? '<small class="hint" style="display:block">accrual books only</small>' : "") + '</span><span class="hint">→</span><span class="sel"><span><span class="num">' + n + "</span> " + a + '</span><span class="hint">⌄</span></span><span class="tagk ' + t + '">' + tg[t] + "</span></div>"; }).join("") + "</div>").join("");
+    }
+    if (S.setTab === "link") b = '<div class="panel pad" style="display:flex;flex-direction:column;gap:12px"><div class="kv"><span>Tax profile</span><span><b>***-***-***-00000</b> · linked by ID through Buwiz sign-in</span><span>BIR app</span><span>Paired · reads Books totals, Books reads its tax option</span><span>Stored where</span><span>This Mac, encrypted</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn">Import from web Books</button><button class="btn">Export a copy</button><button class="btn">Unlink tax profile</button></div></div>';
+    return '<div class="pg">' + head("Settings", "", "") + '<div class="set"><div class="panel setnav">' + nav.map(([k, l]) => '<button data-set="' + k + '" aria-pressed="' + (S.setTab === k) + '">' + l + "</button>").join("") + "</div><div>" + b + "</div></div></div>";
+  }
+
+  /* ---------------- drawers and sheet ---------------- */
+  function drawerHtml() {
+    const d = S.drawer;
+    if (!d) return "";
+    if (d.tx) {
+      const t = TX.find((x) => x.id === d.tx);
+      if (!t) return "";
+      const bank = t.cat === "Credit Cards" ? "Bank Accounts" : "Bank Accounts";
+      const dr = t.amt < 0 ? t.cat : bank, cr = t.amt < 0 ? bank : t.cat;
+      const a = Math.abs(t.amt);
+      let actions = t.st === "ok" ? '<button class="btn">Void (adds a reversal)</button><button class="btn">Duplicate</button>' : t.st === "draft" ? '<button class="btn">Edit</button><button class="btn go" data-post="' + t.id + '">Post</button>' : '<button class="btn go" data-post="' + t.id + '" ' + (t.cat === "Uncategorized Expense" ? "disabled" : "") + ">Post</button>";
+      return '<div class="drawer"><div class="dh"><b>' + esc(t.what) + '</b><span class="st ' + STL[t.st][0] + '">' + STL[t.st][1] + '</span><button class="btn" data-close-drawer="1">✕</button></div><div class="db">' +
+        '<div class="big ' + (t.amt > 0 ? "pos" : "") + '">' + sgn(t.amt) + "</div>" +
+        '<div class="kv"><span>Date</span><span>' + t.d + ", 2026</span><span>" + (t.amt > 0 ? "From" : "To") + "</span><span>" + esc(t.who) + "</span><span>Category</span><span>" + esc(t.cat) + "</span><span>Department</span><span>" + (t.dept || "—") + "</span><span>Location</span><span>" + (t.loc || "—") + "</span></div>" +
+        (t.st === "rev" ? '<div><div class="hint" style="margin-bottom:6px">Pick a category</div><div class="sugg">' + t.sugg.map((s, i) => '<button class="' + (i === 0 ? "best" : "") + '" data-cat="' + t.id + "|" + s + '">' + s + (i === 0 ? " · likely" : "") + "</button>").join("") + "</div></div>" : "") +
+        '<div><div class="hint" style="margin-bottom:6px">Behind the scenes</div><div class="lines"><div class="ln"><span>Account</span><span>Debit</span><span>Credit</span></div><div class="ln"><span>' + dr + "</span><span>" + peso(a) + "</span><span></span></div><div class=\"ln\"><span>" + cr + "</span><span></span><span>" + peso(a) + "</span></div></div></div>" +
+        (t.doc ? '<div class="att"><i>' + (t.doc.endsWith(".jpg") ? "JPG" : "PDF") + "</i><div><b>" + t.doc + "</b><small>Opens in Rox's document viewer</small></div></div>" : "") +
+        '</div><div class="df">' + actions + "</div></div>";
+    }
+    if (d.lin !== undefined) {
+      const F = FORMS[S.form];
+      const rows = F.ctx ? (S.taxopt === "graduated" ? F.graduated : F.eight) : F.rows;
+      const r = rows[d.lin];
+      const sum = (r.lineage || []).reduce((s, x) => s + x[2], 0);
+      return '<div class="drawer"><div class="dh"><b>Where it comes from</b><button class="btn" data-close-drawer="1">✕</button></div><div class="db">' +
+        '<div class="kv"><span>BIR box</span><span><code class="mono" style="color:var(--w-violet);font-size:11.5px">' + esc(r.key) + "</code></span><span>Books total</span><span>" + esc(r.m) + "</span></div>" +
+        '<div class="lines"><div class="ln" style="grid-template-columns:52px minmax(0,1fr) 96px"><span>Date</span><span style="text-align:left">Ledger line</span><span>Amount</span></div>' +
+        (r.lineage || []).map((x) => '<div class="ln" style="grid-template-columns:52px minmax(0,1fr) 96px"><span style="text-align:left;font-family:var(--w-ui)">' + x[0] + '</span><span style="text-align:left;font-family:var(--w-ui)">' + esc(x[1]) + "</span><span>" + sgn(x[2]) + "</span></div>").join("") +
+        '<div class="ln" style="grid-template-columns:52px minmax(0,1fr) 96px;font-weight:700"><span></span><span style="text-align:left;font-family:var(--w-ui)">Total</span><span>' + peso(sum) + "</span></div></div>" +
+        '<span class="hint">Every value the BIR app receives carries these line references. If any line changes, the hand-off goes out of date.</span></div></div>';
+    }
+    if (d.run) {
+      return '<div class="drawer"><div class="dh"><b>September 2026 · Ana Cruz</b><button class="btn" data-close-drawer="1">✕</button></div><div class="db">' +
+        '<div class="lines"><div class="ln"><span>Line</span><span>Amount</span><span>1601-C</span></div>' +
+        [["Basic pay", "40,000.00", "14"], ["Holiday and overtime", "0.00", "16 held"], ["13th month", "0.00", "17"], ["De minimis", "2,000.00", "14, 18"], ["Employee SSS/PhilHealth/Pag-IBIG", "2,000.00", "19"], ["Employer share", "1,500.00", "not 19"], ["Tax withheld (from payroll)", "2,808.40", "25"], ["Net pay", "37,191.60", ""]].map(([a, b, c]) => "<div class=\"ln\"><span>" + a + "</span><span>" + b + '</span><span style="font-family:var(--w-ui);color:var(--w-violet)">' + c + "</span></div>").join("") +
+        '</div><span class="hint">The tax withheld comes from your payroll provider or the BIR app\'s calculator. Books records it as a fact.</span><button class="btn vi" data-go="forms" data-form2="1601C">See 1601-C September</button></div></div>';
+    }
+    return "";
+  }
+
+  function sheetHtml() {
+    if (!S.sheet) return "";
+    const m = S.sheet;
+    const modes = [["in", "Money in"], ["out", "Money out"], ["transfer", "Transfer"], ["journal", "Journal"]];
+    let body = "";
+    if (m === "in" || m === "out") body = '<div class="fld"><label>Amount</label><div class="in amt">₱ ' + (m === "in" ? "60,000.00" : "3,200.00") + '</div></div><div class="grid2"><div class="fld"><label>Date</label><div class="in">Oct 29, 2026</div></div><div class="fld"><label>' + (m === "in" ? "Into" : "Paid from") + '</label><div class="in">Bank •••• 4021 <span class="hint">⌄</span></div></div></div>' +
+      '<div class="grid2"><div class="fld"><label>' + (m === "in" ? "From" : "To") + '</label><div class="in">' + (m === "in" ? "Isla Café" : "Pixel Print Shop") + ' <span class="hint">⌄</span></div></div><div class="fld"><label>Category</label><div class="in">' + (m === "in" ? "41000 Sales Revenue" : "67000 Supplies & Materials") + ' <span class="hint">⌄</span></div></div></div>' +
+      '<div class="grid2"><div class="fld"><label>Department</label><div class="in">' + (m === "in" ? "Sales" : "Operations") + '</div></div><div class="fld"><label>Location</label><div class="in">Makati office</div></div></div>' +
+      '<div class="att"><i>' + (m === "in" ? "PDF" : "JPG") + "</i><div><b>" + (m === "in" ? "Invoice 0143" : "Drop a receipt") + "</b><small>" + (m === "in" ? "Marks the unpaid invoice as paid" : "Rox reads it and fills the fields") + "</small></div></div>" +
+      '<div class="behind"><span class="hint"><b>Behind the scenes</b></span><span class="num" style="font-size:12px">' + (m === "in" ? "Dr 11000 Bank Accounts 60,000.00 · Cr 41000 Sales Revenue 60,000.00" : "Dr 67000 Supplies &amp; Materials 3,200.00 · Cr 11000 Bank Accounts 3,200.00") + "</span></div>";
+    if (m === "transfer") body = '<div class="fld"><label>Amount</label><div class="in amt">₱ 10,000.00</div></div><div class="grid2"><div class="fld"><label>From</label><div class="in">Bank •••• 4021</div></div><div class="fld"><label>To</label><div class="in">Card •••• 7713</div></div></div><div class="behind"><span class="hint"><b>Behind the scenes</b></span><span class="num" style="font-size:12px">Dr 22000 Credit Cards 10,000.00 · Cr 11000 Bank Accounts 10,000.00</span></div><span class="hint">Not income, not an expense. Reports leave it out of the P&amp;L.</span>';
+    if (m === "journal") body = '<span class="hint">For accountants: any balanced set of lines.</span><div class="lines"><div class="ln"><span>Account</span><span>Debit</span><span>Credit</span></div><div class="ln"><span>65000 Software &amp; Subscriptions</span><span>12,000.00</span><span></span></div><div class="ln"><span>13000 Prepaid Expenses</span><span></span><span>12,000.00</span></div></div><div class="behind"><span class="hint"><b>Check</b></span><span class="num pos" style="font-size:12px">Debits 12,000.00 = Credits 12,000.00 ✓</span></div>';
+    return '<div class="veil" data-close-sheet="1"><div class="sheet" role="dialog" aria-label="New entry"><div class="sh"><b>New entry</b><span class="seg">' + modes.map(([k, l]) => '<button data-sheet="' + k + '" aria-pressed="' + (m === k) + '">' + l + "</button>").join("") + '</span><button class="btn" data-close-sheet="1">✕</button></div><div class="sb">' + body + '</div><div class="sf"><span class="hint">' + (m === "out" ? "Not paid yet? Save it to Unpaid instead." : "Cash basis · counts today") + '</span><button class="btn" data-close-sheet="1">Cancel</button><button class="btn">Save draft</button><button class="btn go" data-save="' + m + '">Save &amp; post</button></div></div></div>';
+  }
+
+  /* ---------------- render ---------------- */
+  const PAGEFN = { today: pToday, ledger: pLedger, unpaid: pUnpaid, reconcile: pReconcile, reports: pReports, forms: pForms, people: pPeople, accounts: pAccounts, tags: pTags, payroll: pPayroll, certificates: pCertificates, settings: pSettings };
+  function render() {
+    rail();
+    $("main").innerHTML = PAGEFN[S.page]();
+    $("over").innerHTML = drawerHtml() + sheetHtml() + (S.toast ? '<div class="toast" role="status">' + esc(S.toast) + "</div>" : "");
+    const n = NOTES[S.page];
+    $("notes").innerHTML = '<div class="note"><h3>Replaces in web Books</h3><div class="routes">' + n.replaces.map((r) => "<code>" + esc(r) + "</code>").join("") + '</div></div><div class="note"><h3>Why it is simpler</h3><ul>' + n.simpler.map((s) => "<li>" + esc(s) + "</li>").join("") + '</ul></div><div class="note pair"><h3>Pairs with the BIR app</h3><p>' + esc(n.pair) + "</p></div>";
+  }
+  function toast(msg) { S.toast = msg; render(); clearTimeout(toast.t); toast.t = setTimeout(() => { S.toast = ""; render(); }, 2200); }
+
+  document.addEventListener("click", (e) => {
+    const el = e.target.closest("button, tr[data-tx], tr[data-go], tr[data-run], .veil");
+    if (!el) return;
+    const ds = el.dataset;
+    if (el.classList.contains("veil") && e.target !== el) return;
+    if (ds.closeSheet) { S.sheet = null; render(); return; }
+    if (ds.go) {
+      S.page = ds.go; S.drawer = null; S.sheet = null; S.recon = null;
+      if (ds.lf) S.lf = ds.lf;
+      if (ds.acct2) { S.acct = ds.acct2; S.lf = "all"; }
+      if (ds.set) S.setTab = ds.set;
+      if (ds.form2) S.form = ds.form2;
+      render(); if (el.closest("#jump")) document.getElementById("app").scrollIntoView({ block: "nearest", behavior: "smooth" }); return;
+    }
+    if (ds.sheet) { S.sheet = ds.sheet; render(); return; }
+    if (ds.save) { const m = ds.save; if (m === "out") TX.unshift({ id: "n" + Date.now(), d: "Oct 29", who: "Pixel Print Shop", what: "Supplies", ref: "Saved just now", cat: "Supplies & Materials", amt: -3200, st: "ok", dept: "Operations", loc: "Makati office", doc: "" }); if (m === "in") TX.unshift({ id: "n" + Date.now(), d: "Oct 29", who: "Isla Café", what: "Sale", ref: "Invoice 0143, paid", cat: "Sales Revenue", amt: 60000, st: "ok", dept: "Sales", loc: "Makati office", doc: "invoice-0143.pdf" }); S.sheet = null; S.page = "ledger"; S.lf = "all"; toast("Posted to the Ledger"); return; }
+    if (ds.lf) { S.lf = ds.lf; S.drawer = null; render(); return; }
+    if (ds.acct) { S.acct = ds.acct; render(); return; }
+    if (ds.tx) { S.drawer = { tx: ds.tx }; render(); return; }
+    if (ds.closeDrawer) { S.drawer = null; render(); return; }
+    if (ds.cat) { const [id, c] = ds.cat.split("|"); const t = TX.find((x) => x.id === id); t.cat = c; CATCOLOR[c] = CATCOLOR[c] || "#f3b64c"; render(); return; }
+    if (ds.post) { const t = TX.find((x) => x.id === ds.post); t.st = "ok"; toast("Posted · " + t.what); return; }
+    if (ds.ut) { S.unpaidTab = ds.ut; render(); return; }
+    if (ds.paid) { for (const k of ["collect", "pay"]) { const i = UNPAID[k].findIndex((r) => r.id === ds.paid); if (i >= 0) { const r = UNPAID[k].splice(i, 1)[0]; TX.unshift({ id: "p" + r.id, d: "Oct 29", who: r.who, what: k === "collect" ? "Sale" : "Bill paid", ref: r.doc + ", paid", cat: k === "collect" ? "Sales Revenue" : "Utilities", amt: k === "collect" ? r.amt : -r.amt, st: "ok", dept: "", loc: "", doc: "" }); toast((k === "collect" ? "Money in" : "Money out") + " recorded on Oct 29"); } } return; }
+    if (ds.recon) { S.recon = ds.recon; S.recMatched = false; S.recAdded = false; render(); return; }
+    if (ds.recback) { S.recon = null; render(); return; }
+    if (ds.recall) { S.recMatched = true; render(); return; }
+    if (ds.recadd) { S.recAdded = true; toast("Interest 42.18 added as money in"); return; }
+    if (ds.recdone) { S.recon = null; toast("October matched to the bank"); return; }
+    if (ds.rep) { S.rep = ds.rep; render(); return; }
+    if (ds.form) { S.form = ds.form; S.drawer = null; render(); return; }
+    if (ds.taxopt) { S.taxopt = ds.taxopt; S.drawer = null; render(); return; }
+    if (ds.lin !== undefined) { S.drawer = { lin: Number(ds.lin) }; render(); return; }
+    if (ds.send) { S.sent[S.form] = true; toast("Handed to the BIR draft. BIR computes the tax."); return; }
+    if (ds.kind) { S.kind = ds.kind; S.person = 0; render(); return; }
+    if (ds.person) { S.person = Number(ds.person); render(); return; }
+    if (ds.atype) { S.acctType = ds.atype; render(); return; }
+    if (ds.tag) { S.tag = ds.tag; render(); return; }
+    if (ds.run) { S.payrun = ds.run; S.drawer = ds.run === "sep" ? { run: "sep" } : null; render(); return; }
+    if (ds.certf) { S.certf = ds.certf; render(); return; }
+    if (ds.set) { S.setTab = ds.set; render(); return; }
+    if (ds.basis) { S.basis = ds.basis; render(); return; }
+    if (ds.close) { const m = ds.close; S.closed[m] = !S.closed[m]; toast(S.closed[m] ? m + " closed" : m + " reopened · reason asked"); return; }
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && (S.sheet || S.drawer)) { S.sheet = null; S.drawer = null; render(); } });
+
+  $("log").innerHTML = LOG.map((g) => '<div class="lg ' + g.k + '"><header><h3>' + g.h + "</h3><span>" + g.sub + "</span></header>" + g.rows.map(([a, r, w]) => '<div class="lrow"><div><b>' + esc(a) + "</b><code>" + esc(r) + "</code></div><span>" + esc(w) + "</span></div>").join("") + "</div>").join("");
+  render();
+})();
+</script>
