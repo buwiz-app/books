@@ -436,6 +436,16 @@ four fields; the link takes a listed id and refuses an unlisted one. In a new pr
 (`REF-1` sent, `REF-2` saved) before the list is read with the new access token. A `tin` field or a TIN-shaped value
 refuses the list; an expired access token refreshes once; a refused refresh signs out and forgets the token.
 
+### The release kit
+
+`tools/release/prepare.sh` builds the release binary, writes the unsigned manifest (`publisher.key_id` `gc-2026-01`)
+and every app source to `dist/release/` (ignored by git), and prints the owners' three steps: the trust entry (Rox
+owner), the signature with `gc-2026-01` from the login Keychain, and the install as a local plugin
+(`books-mini-app mcp`, `BOOKS_V1_MANIFEST` naming the signed file). It never reads a key.
+
+Run the conformance gate with a Rox runner that has the pacing and INV-04 fixes (`ROX_DIR` at `9c106cc` or later, PR
+#13): the runner at older Rox commits hits the broker's 20 calls a second in BRG-03 and fails with `rate_limited`.
+
 ### Not done here, by design
 
 - A live sign-in: it needs the owner's Buwiz account and the cloud's address (U-20); the agent has neither.
