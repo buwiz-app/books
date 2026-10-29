@@ -2,6 +2,14 @@
  "entries": [
   {
    "at": "2026-10-29",
+   "text": "M9-04 waits on the Rox owner (trust entry); M9-05 waits on you (gc-2026-01 signing, install)"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "M9 built (811c22f): tools/check-all.sh, optional Buwiz device sign-in with refresh rotation, link by tax-profile id"
+  },
+  {
+   "at": "2026-10-29",
    "text": "Found: Books window had no pick_file grant since M4 (fixed in 8bd11e6)"
   },
   {

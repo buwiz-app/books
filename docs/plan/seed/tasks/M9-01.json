@@ -3,7 +3,7 @@
  "order": 0,
  "title": "tools/check-all.sh runs all gates",
  "owner": "Claude",
- "status": "todo",
- "evidence": "",
+ "status": "done",
+ "evidence": "811c22f: tools/check-all.sh runs the 7 gates, one line each; all passed (cargo test 117)",
  "updated": "2026-10-29"
 }

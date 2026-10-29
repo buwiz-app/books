@@ -2,7 +2,7 @@
  "order": 5,
  "name": "Rox conformance",
  "result": "pass",
- "value": "179 pass, 7 skipped",
+ "value": "182 pass, 7 skipped",
  "at": "2026-10-29",
  "note": "runner from rox 9c106cc"
 }

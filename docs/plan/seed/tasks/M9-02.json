@@ -3,7 +3,7 @@
  "order": 1,
  "title": "Sign-in (device code) and refresh rotation",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Save the new refresh token first",
+ "status": "done",
+ "evidence": "811c22f: device sign-in as buwiz-books/books, rotated refresh token saved before use, refused refresh signs out; tests/cloud_link.rs against a fake cloud. A live sign-in needs your account and the cloud URL",
  "updated": "2026-10-29"
 }

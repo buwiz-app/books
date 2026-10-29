@@ -3,7 +3,7 @@
  "order": 3,
  "title": "Trust entry for dev.goldcoders.books",
  "owner": "Rox owner",
- "status": "todo",
- "evidence": "server/src/v1/trust.json",
+ "status": "blocked",
+ "evidence": "Waiting on the Rox owner: add dev.goldcoders.books (gc-2026-01) to server/src/v1/trust.json",
  "updated": "2026-10-29"
 }

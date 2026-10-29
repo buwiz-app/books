@@ -3,7 +3,7 @@
  "order": 4,
  "title": "Sign with gc-2026-01 and install in your Rox",
  "owner": "You",
- "status": "todo",
- "evidence": "Keychain key; your click",
+ "status": "blocked",
+ "evidence": "Waiting on you: sign with gc-2026-01 (Keychain) and install in your Rox; I do not touch that key",
  "updated": "2026-10-29"
 }
