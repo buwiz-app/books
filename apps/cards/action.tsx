@@ -1,6 +1,6 @@
-// Action cards: one click to finish, and the click is the user's. The
-// assistant may draft; posting, categorizing, marking paid, matching and
-// closing happen here, behind a press (DD-20).
+// Action cards, the Decision class: what is decided, then its buttons in the footer, and the click is the
+// user's. The assistant may draft; posting, categorizing, marking paid, matching and closing happen here,
+// behind a press (DD-20). Once done, a card settles to one line.
 
 /** The entry a card is about: its prop, else the newest of a ledger filter. */
 function firstEntry(filter: string) {
@@ -8,6 +8,8 @@ function firstEntry(filter: string) {
     ? Promise.resolve(CP.entry)
     : rox.call("books_ledger_list", { filter }).then((r: Any) => (r.rows || [])[0]?.ticket || null);
 }
+
+const plain = (amount: Any) => String(amount || "").replace(/^[+−]\s?/, "");
 
 function DraftCard() {
   const done = signal(false);
@@ -18,36 +20,38 @@ function DraftCard() {
   const d = () => r() as Any;
   return (
     <View>
-      <CardWait res={r} title="Books · Draft to post" />
-      <If when={Boolean(d()?.none)}>
-        <Card title="Books · Draft from a receipt">
-          <Note text="Attach a receipt photo or PDF and say “Record this”. The assistant drafts it; you post it here." />
-        </Card>
+      <Wait res={r} />
+      <If when={Boolean(d()?.none) && !done()}>
+        <Empty text="No draft is waiting." sub="Attach a receipt and say “Record this”: the assistant drafts it, you post it here." open="Open Ledger" page="ledger" />
       </If>
-      <If when={Boolean(d()) && !d()?.none}>
-        <Card title={`Books · ${String(d()?.title || "Draft")}`} right={<Pill tone={done() ? "ok" : d()?.pill} label={done() ? "Posted" : d()?.status_label || ""} />}>
-          <If when={!done()}>
-            <Line label="Amount" value={String(d()?.amount_shown || "").replace(/^[+−]/, "")} />
-            <Line label="Date" value={d()?.date_short || ""} />
+      <If when={Boolean(d()) && !d()?.none && !done()}>
+        <Body
+          foot={
+            <Foot>
+              <Act label="Post" primary onPress={() => act("books_app_post_entry", { entry: d()?.ticket }).then(() => done.set(true)).catch(() => null)} />
+              <Act label="Edit in Books" onPress={() => openBooks("ledger")} />
+              <Act label="Discard" onPress={() => act("books_app_discard_entry", { entry: d()?.ticket }).catch(() => null)} />
+            </Foot>
+          }
+        >
+          <Meta text={`${String(d()?.date_short || "")} · ${String(d()?.title || "Draft")}`} right={<Pill tone={d()?.pill} label={d()?.status_label || ""} />} />
+          <Hero text={`₱ ${plain(d()?.amount_shown)}`} />
+          <List>
             <Each of={d()?.lines || []} key={rowKey}>
-              {(l: Any) => <Line label={l().account || ""} value={l().debit_shown || l().credit_shown || ""} />}
+              {(l: Any) => <Row label={l().account || ""} value={l().debit_shown || l().credit_shown || ""} />}
             </Each>
-            <Acts>
-              <Btn label="Post" tone="go" onPress={() => act("books_app_post_entry", { entry: d()?.ticket }).then(() => done.set(true)).catch(() => null)} />
-              <Btn label="Edit in Books" onPress={() => openBooks("ledger")} />
-              <LinkBtn label="Discard" onPress={() => act("books_app_discard_entry", { entry: d()?.ticket }).catch(() => null)} />
-            </Acts>
-          </If>
-          <If when={done()}>
-            <DoneLine text={`Posted ${String(d()?.amount_shown || "").replace(/^[+−]/, "")}`} sub={`${String(d()?.date_short || "")} · shows in the Ledger and the P&L`} />
-          </If>
-        </Card>
+          </List>
+        </Body>
+      </If>
+      <If when={done()}>
+        <Settled text={`Posted ${plain(d()?.amount_shown)} · ${String(d()?.title || "")}`} sub={`${String(d()?.date_short || "")} · in the Ledger and the P&L`} />
       </If>
     </View>
   );
 }
 
 function BankLinesCard() {
+  const pick = signal("");
   const r = resource(
     () => ({ v: ver() }),
     () =>
@@ -58,31 +62,40 @@ function BankLinesCard() {
       }),
   );
   const d = () => r() as Any;
+  const options = () => (d()?.first?.suggest || []) as Any[];
+  const chosen = () => options().find((s: Any) => s.ticket === pick()) || options().find((s: Any) => s.best) || null;
   return (
     <View>
-      <CardWait res={r} title="Books · Bank lines" />
+      <Wait res={r} />
       <If when={Boolean(d()) && !d()?.first}>
-        <Card title="Books · Bank lines" right={<Pill tone="ok" label="All done" />}>
-          <DoneLine text="Nothing left to categorize" sub="New statement lines show up here." />
-        </Card>
+        <Settled text="Nothing left to categorize" sub="New bank statement lines show up here." />
       </If>
       <If when={Boolean(d()?.first)}>
-        <Card title="Books · Bank lines to categorize" right={<Pill tone="mute" label={`${String(d()?.count)} left`} />}>
-          <Line label={`${String(d()?.first.date_short)} · ${String(d()?.first.title || "")}`} sub="From the bank statement" value={d()?.first.amount_shown} />
+        <Body
+          foot={
+            <Foot>
+              <Act
+                label={chosen() ? `Post as ${String(chosen().name)}` : "Pick a category"}
+                primary
+                disabled={!chosen()}
+                onPress={() =>
+                  act("books_app_recategorize", { entry: d()?.first.ticket, category: chosen().ticket })
+                    .then(() => pick.set(""))
+                    .catch(() => null)
+                }
+              />
+              <Act label="Other…" onPress={() => openBooks("ledger")} />
+            </Foot>
+          }
+        >
+          <Meta text={`${String(d()?.count)} bank line${d()?.count === 1 ? "" : "s"} to categorize`} />
+          <Row label={`${String(d()?.first.date_short)} · ${String(d()?.first.title || "")}`} sub="From the bank statement" value={d()?.first.amount_shown} />
           <View class="flex-row gap-1.5 flex-wrap">
-            <Each of={d()?.first.suggest || []} key={rowKey}>
-              {(s: Any) => (
-                <Chip
-                  label={`${String(s().name)}${s().best ? " · likely" : ""}`}
-                  on={Boolean(s().best)}
-                  onPress={() => act("books_app_recategorize", { entry: d()?.first.ticket, category: s().ticket }).catch(() => null)}
-                />
-              )}
+            <Each of={options()} key={rowKey}>
+              {(s: Any) => <Chip label={`${String(s().name)}${s().best ? " · likely" : ""}`} on={chosen()?.ticket === s().ticket} onPress={() => pick.set(s().ticket)} />}
             </Each>
-            <Chip label="Other…" on={false} onPress={() => openBooks("ledger")} />
           </View>
-          <Note text="Picking a category posts it." />
-        </Card>
+        </Body>
       </If>
     </View>
   );
@@ -90,48 +103,56 @@ function BankLinesCard() {
 
 function OwedCard() {
   const paid = signal("");
+  const into = signal("");
+  const pay = CP.side === "pay";
   const r = resource(
     () => ({ v: ver() }),
     () =>
-      Promise.all([rox.call("books_owed_list", { side: CP.side === "pay" ? "pay" : "collect" }), rox.call("books_owed_options", {})]).then(([l, o]: Any) => ({
+      Promise.all([rox.call("books_owed_list", { side: pay ? "pay" : "collect" }), rox.call("books_owed_options", {})]).then(([l, o]: Any) => ({
         row: (l.rows || []).find((x: Any) => !CP.owed || x.ticket === CP.owed) || null,
-        money: (o.money || [])[0] || null,
+        money: o.money || [],
       })),
   );
   const d = () => r() as Any;
+  // the account the money moved through is the owner's pick, as on the Unpaid page: never a silent default
+  const account = () => (d()?.money || []).find((m: Any) => m.ticket === into()) || null;
   return (
     <View>
-      <CardWait res={r} title="Books · Mark paid" />
+      <Wait res={r} />
       <If when={Boolean(d()) && !d()?.row && !paid()}>
-        <Card title="Books · Unpaid">
-          <DoneLine text="Nothing waiting" />
-        </Card>
+        <Empty text={pay ? "No bill is waiting to be paid." : "Nobody owes you right now."} open="Open Unpaid" page="unpaid" />
       </If>
       <If when={Boolean(d()?.row) && !paid()}>
-        <Card title={CP.side === "pay" ? "Books · Unpaid bill" : "Books · Unpaid invoice"} right={<Pill tone="mute" label={`Due ${String(d()?.row.due_short || "")}`} />}>
-          <Line label={CP.side === "pay" ? "Vendor" : "Customer"} value={d()?.row.who || ""} />
-          <Line label="Document" value={d()?.row.doc || ""} />
-          <Line label="Amount" value={d()?.row.amount_shown || ""} />
-          <Line label={CP.side === "pay" ? "From" : "Into"} value={d()?.money?.label || d()?.money?.name || "—"} />
-          <Acts>
-            <Btn
-              label="Mark paid today"
-              tone="go"
-              disabled={!d()?.money}
-              onPress={() =>
-                act("books_app_owed_settle", { owed: d()?.row.ticket, account: d()?.money.ticket })
-                  .then(() => paid.set(String(d()?.row.amount_shown)))
-                  .catch(() => null)
-              }
-            />
-            <Btn label="Different date" onPress={() => openBooks("unpaid")} />
-          </Acts>
-        </Card>
+        <Body
+          foot={
+            <Foot status={(d()?.money || []).length ? (account() ? "" : pay ? "Pick where the money came from" : "Pick where the money went") : "Add a bank or cash account first"}>
+              <Act
+                label="Mark paid today"
+                primary
+                disabled={!account()}
+                onPress={() =>
+                  act("books_app_owed_settle", { owed: d()?.row.ticket, account: account().ticket })
+                    .then(() => paid.set(String(d()?.row.amount_shown)))
+                    .catch(() => null)
+                }
+              />
+              <Act label="Different date" onPress={() => openBooks("unpaid")} />
+            </Foot>
+          }
+        >
+          <Meta text={`${String(d()?.row.doc || "")} · due ${String(d()?.row.due_short || "")}`} right={<Pill tone="mute" label={pay ? "To pay" : "To collect"} />} />
+          <Hero text={`₱ ${String(d()?.row.amount_shown || "")}`} />
+          <Row label={pay ? "Vendor" : "Customer"} text={d()?.row.who || ""} />
+          <Text class={`text-[12px] ${C.mute}`}>{pay ? "Paid from" : "Paid into"}</Text>
+          <View class="flex-row gap-1.5 flex-wrap">
+            <Each of={(d()?.money || []).slice(0, 6)} key={rowKey}>
+              {(m: Any) => <Chip label={m().name || m().label} on={into() === m().ticket} onPress={() => into.set(m().ticket)} />}
+            </Each>
+          </View>
+        </Body>
       </If>
       <If when={Boolean(paid())}>
-        <Card title="Books · Paid" right={<Pill tone="ok" label="Paid" />}>
-          <DoneLine text={`Money ${CP.side === "pay" ? "out" : "in"} ${paid()} recorded`} sub="Today · cash basis: it counts on the day the money moves" />
-        </Card>
+        <Settled text={`Money ${pay ? "out" : "in"} ${paid()} recorded`} sub="Today · on a cash basis it counts on the day the money moves" />
       </If>
     </View>
   );
@@ -155,51 +176,42 @@ function ReconcileCard() {
       }),
   );
   const d = () => r() as Any;
-  const counts = () => {
-    const rows = d()?.s?.rows || [];
-    return [rows.filter((x: Any) => x.match === "m").length, rows.filter((x: Any) => x.match === "s").length, rows.filter((x: Any) => x.match === "x").length];
-  };
+  const count = (k: string) => (d()?.s?.rows || []).filter((x: Any) => x.match === k).length;
+  const finished = () => d()?.s?.status === "finished";
   return (
     <View>
-      <CardWait res={r} title="Books · Match the bank" />
+      <Wait res={r} />
       <If when={Boolean(d()?.none)}>
-        <Card title="Books · Match the bank">
-          <Note text="No statement waits. Import one on the Reconcile page." />
-          <Acts>
-            <LinkBtn label="Open Reconcile" onPress={() => openBooks("reconcile")} />
-          </Acts>
-        </Card>
+        <Empty text="No bank statement is waiting." sub="Import one on the Reconcile page." open="Open Reconcile" page="reconcile" />
       </If>
-      <If when={Boolean(d()?.s)}>
-        <Card title={`Books · Reconcile ${String(d()?.name || "")}`} right={<Pill tone={d()?.s.status === "finished" ? "ok" : "mute"} label={d()?.s.status === "finished" ? "Matched" : String(d()?.label || "")} />}>
-          <If when={d()?.s.status !== "finished"}>
-            <Strip
-              items={[
-                ["Matched", counts()[0], ""],
-                ["Suggested", counts()[1], "warn"],
-                ["Missing", counts()[2], "neg"],
-              ]}
-            />
-            <Each of={(d()?.s.rows || []).filter((x: Any) => x.match === "x")} key={rowKey}>
-              {(x: Any) => <Line label={`${String(x().date_short)} · ${String(x().description)}`} sub="On the statement, not in Books" value={x().amount_shown} />}
-            </Each>
-            <Note text={`Difference ${String(d()?.s.difference_shown || "")}`} />
-            <Acts>
-              <If when={counts()[1] > 0}>
-                <Btn label="Accept the suggestions" tone="go" onPress={() => act("books_app_statement_accept", { account: d()?.account, month: d()?.month }).catch(() => null)} />
-              </If>
+      <If when={Boolean(d()?.s) && finished()}>
+        <Settled text={`${String(d()?.label || "")} matches the bank`} sub={`Difference 0.00 · ending balance ${String(d()?.s.closing_shown || "")}`} />
+      </If>
+      <If when={Boolean(d()?.s) && !finished()}>
+        <Body
+          foot={
+            <Foot>
               <If when={Boolean(d()?.s.can_finish)}>
-                <Btn label="Finish" tone="go" onPress={() => act("books_app_statement_finish", { account: d()?.account, month: d()?.month }).catch(() => null)} />
+                <Act label="Finish" primary onPress={() => act("books_app_statement_finish", { account: d()?.account, month: d()?.month }).catch(() => null)} />
               </If>
-              <If when={counts()[2] > 0}>
-                <Btn label="Add the missing lines" onPress={() => openBooks("reconcile")} />
+              <If when={!d()?.s.can_finish && count("s") > 0}>
+                <Act label={`Accept ${count("s")} suggested`} primary onPress={() => act("books_app_statement_accept", { account: d()?.account, month: d()?.month }).catch(() => null)} />
               </If>
-            </Acts>
-          </If>
-          <If when={d()?.s.status === "finished"}>
-            <DoneLine text={`${String(d()?.label || "")} matches the bank`} sub={`Difference 0.00 · ending balance ${String(d()?.s.closing_shown || "")}`} />
-          </If>
-        </Card>
+              <If when={count("x") > 0}>
+                <Act label="Add the missing lines" onPress={() => openBooks("reconcile")} />
+              </If>
+            </Foot>
+          }
+        >
+          <Meta text={`${String(d()?.name || "")} · ${String(d()?.label || "")}`} />
+          <Say text={`${count("m")} matched · ${count("s")} suggested · ${count("x")} missing`} />
+          <List>
+            <Each of={(d()?.s.rows || []).filter((x: Any) => x.match === "x")} key={rowKey}>
+              {(x: Any) => <Row label={`${String(x().date_short)} · ${String(x().description)}`} sub="On the statement, not in Books" value={x().amount_shown} />}
+            </Each>
+          </List>
+          <Row label="Difference" value={d()?.s.difference_shown || ""} strong />
+        </Body>
       </If>
     </View>
   );
@@ -212,31 +224,28 @@ function CloseCard() {
   );
   const d = () => r() as Any;
   const name = () => String(d()?.month_label || "").split(" ")[0];
+  const left = () => Number(d()?.left || 0);
   return (
     <View>
-      <CardWait res={r} title="Books · Close the month" />
-      <If when={Boolean(d()) && !d()?.closed}>
-        <Card title={`Books · Close ${name()}`} right={<Pill tone="mute" label={`${String(3 - (d()?.left || 0))} of 3`} />}>
-          <Each of={d()?.checks || []} key={rowKey}>
-            {(c: Any) => (
-              <View class="flex-row items-center gap-2 py-1">
-                <View class={`w-[18px] h-[18px] rounded-md items-center justify-center border ${c().done ? `${C.greenBg} border-transparent` : C.line}`}>
-                  <Text class="text-[11px] font-bold text-white dark:text-[#0d0d0d]">{c().done ? "✓" : ""}</Text>
-                </View>
-                <Text class={`text-[12.5px] ${C.ink}`}>{c().label}</Text>
-              </View>
-            )}
-          </Each>
-          <Acts>
-            <Btn label={`Close ${name()}`} tone="go" disabled={(d()?.left || 0) > 0} onPress={() => act("books_app_month_close", { month: d()?.month }).catch(() => null)} />
-            <Text class={`text-[11.5px] ${C.mute}`}>{(d()?.left || 0) > 0 ? "Finish each one first" : "Ready"}</Text>
-          </Acts>
-        </Card>
-      </If>
+      <Wait res={r} />
       <If when={Boolean(d()?.closed)}>
-        <Card title={`Books · ${name()}`} right={<Pill tone="ok" label="Closed" />}>
-          <DoneLine text={`${name()} is closed`} sub="Nothing in it can change now. Reopening asks for a reason." />
-        </Card>
+        <Settled text={`${name()} is closed`} sub="Nothing in it can change now. Reopening asks for a reason." />
+      </If>
+      <If when={Boolean(d()) && !d()?.closed}>
+        <Body
+          foot={
+            <Foot status={left() > 0 ? `${left()} step${left() === 1 ? "" : "s"} left` : "Ready to close"}>
+              <Act label={`Close ${name()}`} primary disabled={left() > 0} onPress={() => act("books_app_month_close", { month: d()?.month }).catch(() => null)} />
+            </Foot>
+          }
+        >
+          <Meta text={String(d()?.month_label || "")} right={<Pill tone="mute" label={`${String((d()?.checks || []).length - left())} of ${String((d()?.checks || []).length)} done`} />} />
+          <View>
+            <Each of={d()?.checks || []} key={rowKey}>
+              {(c: Any) => <Check label={c().label} done={Boolean(c().done)} />}
+            </Each>
+          </View>
+        </Body>
       </If>
     </View>
   );
@@ -250,27 +259,29 @@ function CertCard() {
   const d = () => r() as Any;
   return (
     <View>
-      <CardWait res={r} title="Books · 2307 received" />
+      <Wait res={r} />
       <If when={r() === null}>
-        <Card title="Books · 2307s">
-          <DoneLine text="No 2307 is waiting" sub="Add one on the Certificates page." />
-        </Card>
+        <Empty text="No 2307 is waiting." sub="Add one on the Certificates page when a customer sends it." open="Open Certificates" page="certificates" />
       </If>
-      <If when={Boolean(d())}>
-        <Card title="Books · 2307 received" right={<Pill tone={d()?.status === "received" ? "ok" : "draft"} label={d()?.status === "received" ? "Received" : "Pending"} />}>
-          <Line label={`${String(d()?.from || "")} · ${String(d()?.quarter || "")}`} sub={`ATC on the paper: ${String(d()?.atc || "—")} (${String(d()?.kind || "").toLowerCase()})`} />
-          <Line label="Withheld" value={d()?.amount_shown || ""} />
-          <Line label="Counts to" value={d()?.status === "received" ? d()?.counts : "Not counted until received"} />
-          <If when={d()?.status !== "received"}>
-            <Acts>
-              <Btn label="Mark received" tone="go" onPress={() => act("books_app_certificate_set", { certificate: d()?.ticket, status: "received" }).catch(() => null)} />
-              <Btn label="Not ours" onPress={() => act("books_app_certificate_set", { certificate: d()?.ticket, status: "disputed" }).catch(() => null)} />
-            </Acts>
-          </If>
-          <If when={d()?.status === "received"}>
-            <Note text="The payor's TIN stays in the BIR app." />
-          </If>
-        </Card>
+      <If when={Boolean(d()) && d()?.status === "received"}>
+        <Settled text={`2307 from ${String(d()?.from || "")} received`} sub={`${String(d()?.quarter || "")} · ${String(d()?.amount_shown || "")} withheld · counts to ${String(d()?.counts || "")}`} />
+      </If>
+      <If when={Boolean(d()) && d()?.status !== "received"}>
+        <Body
+          foot={
+            <Foot>
+              <Act label="Mark received" primary onPress={() => act("books_app_certificate_set", { certificate: d()?.ticket, status: "received" }).catch(() => null)} />
+              <Act label="Not ours" onPress={() => act("books_app_certificate_set", { certificate: d()?.ticket, status: "disputed" }).catch(() => null)} />
+            </Foot>
+          }
+        >
+          <Meta text={`${String(d()?.from || "")} · ${String(d()?.quarter || "")}`} right={<Pill tone="draft" label="Pending" />} />
+          <Hero text={`₱ ${String(d()?.amount_shown || "")}`} />
+          <View>
+            <Row label="ATC on the paper" text={`${String(d()?.atc || "—")} · ${String(d()?.kind || "").toLowerCase()}`} />
+            <Row label="Counts to" text="Not counted until received" />
+          </View>
+        </Body>
       </If>
     </View>
   );
@@ -278,9 +289,8 @@ function CertCard() {
 
 export default function Action() {
   return (
-    // a Scroll lays the card out at its natural height whatever the frame, so
-    // it measures right for rox.fit; it never scrolls or bounces: it is a card
-    <Scroll class={`flex-1 ${C.bg}`} bounces={false} scrollable={false}>
+    // the card lays out at its natural height and reports it; it never scrolls or bounces
+    <Scroll class={`flex-1 ${K.surface}`} bounces={false} scrollable={false}>
       <If when={CARD === "draft"}>
         <DraftCard />
       </If>

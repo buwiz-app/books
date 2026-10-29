@@ -2,6 +2,10 @@
  "entries": [
   {
    "at": "2026-10-30",
+   "text": "Inline cards redesigned after the owner's review: one body in Rox's card language, four classes (Glance, List, Decision, Notice), footer actions, lists scroll inside 240, width 560 (docs/design/inline-cards.md); Rox's one-card header asked of the rox session"
+  },
+  {
+   "at": "2026-10-30",
    "text": "M9 closed (5bc6282): at the owner's word, Books 0.1.0 signed with gc-2026-01, trusted and installed in the owner's Rox; /books opens Books, books_status answered"
   },
   {

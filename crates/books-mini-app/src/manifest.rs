@@ -107,7 +107,7 @@ fn app_entry(app: &apps::App) -> Value {
             "permissions": permissions(app),
         }),
         id => {
-            let (title, description, width, height) = card_kind(id);
+            let (title, description, height, max_height) = card_kind(id);
             json!({
                 "id": id,
                 // neutral: no business name, amount or TIN (D1, RK-10)
@@ -136,46 +136,52 @@ fn app_entry(app: &apps::App) -> Value {
                     }
                 },
                 "placement": ["inline"],
-                "inline": { "width": width, "height": height, "min_height": 96, "max_height": 640, "resizable": false },
+                "inline": { "width": CARD_WIDTH, "height": height, "min_height": 96, "max_height": max_height, "resizable": false },
                 "permissions": permissions(app),
             })
         }
     }
 }
 
-/// A card app's title, description and inline size (Books uses two widths:
-/// 360 small, 480 main; the drawing's rule).
+/// Every inline card's width: Rox's agent column, the width of its own cards
+/// (rox app/src/cards/mod.rs `shell`), so the chat's cards line up.
+const CARD_WIDTH: u32 = 560;
+
+/// A card app's title, description, first height and max height
+/// (docs/design/inline-cards.md). The card reports its natural height with
+/// rox.fit; its parts are bounded (a list scrolls inside 240 points), so the
+/// height stays under the max and the footer is never cut off.
 fn card_kind(id: &str) -> (&'static str, &'static str, u32, u32) {
     match id {
         "answer" => (
             "Books answer",
             "A Books answer in the chat: cash, this month, a person, unpaid. Amounts only because you asked.",
-            360,
-            200,
+            180,
+            440,
         ),
         "report" => (
             "Books report",
             "A Books report card in the chat: profit and loss, this month against last.",
-            480,
-            240,
+            300,
+            460,
         ),
         "action" => (
             "Books action",
             "One click to finish in the chat: post a draft, categorize bank lines, mark paid, match the bank, close a month, a 2307 received.",
-            360,
             220,
+            460,
         ),
         "pair" => (
             "Books for BIR",
             "A form's Books totals for the BIR app: a return to confirm, ready, hand to the BIR draft.",
-            480,
-            240,
+            280,
+            500,
         ),
         "quiet" => (
             "Books note",
             "A quiet Books card from a routine: counts and status only.",
-            360,
-            170,
+            120,
+            200,
         ),
         other => unreachable!("no manifest entry for app {other}"),
     }

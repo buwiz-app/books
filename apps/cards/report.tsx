@@ -1,5 +1,5 @@
-// Report card (480): the P&L, this month against last, as the user asked
-// ("How did we do?"; the template /books-results).
+// Report card, a List card: the P&L, this period against the last, as the user asked ("How did we do?"; the
+// template /books-results). Two number columns: this period, and the last one dimmed.
 
 function PlCard() {
   const r = resource(
@@ -8,23 +8,31 @@ function PlCard() {
   );
   const d = () => r() as Any;
   const rows = () => (d()?.sections || []).flatMap((s: Any) => s.rows || []);
+  const cols = () => [String(d()?.columns?.[0] || ""), String(d()?.columns?.[1] || "")];
   return (
     <View>
-      <CardWait res={r} title="Books · P&L" />
+      <Wait res={r} />
       <If when={Boolean(d())}>
-        <Card title="Books · P&L" right={<Pill tone="mute" label={`${String(d()?.columns?.[0] || "")} vs ${String(d()?.columns?.[1] || "")}`} />}>
-          <Each of={rows()} key={rowKey}>
-            {(x: Any) => <Line label={x().name || ""} sub={x().review || ""} value={`${String(x().shown)} · ${String(x().prev_shown)}`} />}
-          </Each>
-          <View class={`flex-row items-center gap-2 py-1 border-t ${C.line}`}>
-            <Text class={`flex-1 text-[12.5px] font-bold ${C.ink}`}>{d()?.net.label || "Net income"}</Text>
-            <Text class={`text-[12.5px] font-mono font-bold ${C.ink}`}>{`${String(d()?.net.shown || "")} · ${String(d()?.net.prev_shown || "")}`}</Text>
+        <Body
+          foot={
+            <Foot>
+              <Act label="Open Reports" onPress={() => openBooks("reports")} />
+            </Foot>
+          }
+        >
+          <Meta text={`${cols()[0]} against ${cols()[1]}`} right={<Pill tone="mute" label={d()?.basis_label || ""} />} />
+          <View class="flex-row items-center gap-3">
+            <Text class={`flex-1 text-[11px] uppercase tracking-wider ${C.mute}`}>Account</Text>
+            <Text class={`w-[96px] text-right text-[11px] uppercase tracking-wider ${C.mute}`}>{cols()[0]}</Text>
+            <Text class={`w-[96px] text-right text-[11px] uppercase tracking-wider ${C.mute}`}>{cols()[1]}</Text>
           </View>
-          <Note text={`${String(d()?.basis_label || "")} · ${String(d()?.columns?.[0] || "")} first, then ${String(d()?.columns?.[1] || "")}`} />
-          <Acts>
-            <LinkBtn label="Open Reports" onPress={() => openBooks("reports")} />
-          </Acts>
-        </Card>
+          <List>
+            <Each of={rows()} key={rowKey}>
+              {(x: Any) => <Row label={x().name || ""} sub={x().review || ""} value={String(x().shown)} prev={String(x().prev_shown)} />}
+            </Each>
+          </List>
+          <Row label={d()?.net.label || "Net income"} value={String(d()?.net.shown || "")} prev={String(d()?.net.prev_shown || "")} strong />
+        </Body>
       </If>
     </View>
   );
@@ -32,9 +40,8 @@ function PlCard() {
 
 export default function Report() {
   return (
-    // a Scroll lays the card out at its natural height whatever the frame, so
-    // it measures right for rox.fit; it never scrolls or bounces: it is a card
-    <Scroll class={`flex-1 ${C.bg}`} bounces={false} scrollable={false}>
+    // the card lays out at its natural height and reports it; it never scrolls or bounces
+    <Scroll class={`flex-1 ${K.surface}`} bounces={false} scrollable={false}>
       <If when={CARD === "pl"}>
         <PlCard />
       </If>
