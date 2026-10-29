@@ -4,5 +4,5 @@
  "result": "pass",
  "value": "0 findings",
  "at": "2026-10-29",
- "note": "PoC scanner"
+ "note": "self-test 14, repo scan 151 files, Rust output scan"
 }

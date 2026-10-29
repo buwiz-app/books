@@ -3,7 +3,7 @@
  "order": 9,
  "title": "Command description that does not repeat the plugin title",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Rox shows 'description · plugin title'; today it reads 'Open Buwiz Books · Buwiz Books' (manifest.rs:83). Use e.g. 'Open your books'.",
+ "status": "done",
+ "evidence": "7e5f183 · command description 'Open your books' (manifest test)",
  "updated": "2026-10-29"
 }

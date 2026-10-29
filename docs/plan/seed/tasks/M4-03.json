@@ -3,7 +3,7 @@
  "order": 2,
  "title": "Finish a month; difference must be 0.00",
  "owner": "Claude",
- "status": "todo",
- "evidence": "",
+ "status": "done",
+ "evidence": "a73e0ae · Finish only at 0.00 with every line matched: October 412,392.18 matches the bank",
  "updated": "2026-10-29"
 }

@@ -3,7 +3,7 @@
  "order": 4,
  "title": "Settings page: book, months, defaults, link",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Defaults = your Category Mappings, shorter",
+ "status": "done",
+ "evidence": "a73e0ae · Settings: Book, Months, Defaults (accrual rows dim on cash), Link & data · docs/shots/m4",
  "updated": "2026-10-29"
 }

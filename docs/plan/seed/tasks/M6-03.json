@@ -3,7 +3,7 @@
  "order": 2,
  "title": "Port the bridge: BIR choices, held boxes, item 17, return OK",
  "owner": "Claude",
- "status": "todo",
- "evidence": "poc/src/bridge.ts",
+ "status": "done",
+ "evidence": "bf33be7 (verified, on main) · ported from the PoC; tests/vectors.rs",
  "updated": "2026-10-29"
 }

@@ -3,7 +3,7 @@
  "order": 3,
  "title": "Proposals with lineage, inputs hash and stale check",
  "owner": "Claude",
- "status": "todo",
- "evidence": "poc/src/proposal.ts",
+ "status": "done",
+ "evidence": "bf33be7 (verified, on main) · ported from the PoC; tests/vectors.rs",
  "updated": "2026-10-29"
 }

@@ -2,7 +2,7 @@
  "order": 2,
  "code": "M2",
  "title": "People, Tags, Unpaid",
- "status": "later",
+ "status": "done",
  "goal": "One People page, one Tags page, unpaid reminders.",
  "claim": "1.4",
  "exit": "Mark paid records the money on that day; People shows totals per person."

@@ -2,7 +2,7 @@
  "order": 1,
  "code": "M1",
  "title": "Book and Ledger",
- "status": "doing",
+ "status": "done",
  "goal": "Keep a book: post, void, see it in Ledger and Accounts.",
  "claim": "1.1, 1.2, 1.3",
  "exit": "In a test Rox: create a book, add money in, out and transfer, post, void; the encrypted file has no plain text."

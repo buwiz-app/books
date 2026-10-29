@@ -3,7 +3,7 @@
  "order": 0,
  "title": "Spike: SQLCipher build and a strings test",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Risk RK-7: a cipher mismatch could store plain text",
+ "status": "done",
+ "evidence": "7e5f183 · SQLCipher (vendored OpenSSL); strings test: no plain text, wrong key refused · books-store 13 pass",
  "updated": "2026-10-29"
 }

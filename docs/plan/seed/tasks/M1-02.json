@@ -3,7 +3,7 @@
  "order": 1,
  "title": "books-store: schema 0001, migrations, 0600 key file",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Plan › shared schema",
+ "status": "done",
+ "evidence": "7e5f183 · schema 0001, migrations, 0600 key file, cipher-version and plain-file refusals",
  "updated": "2026-10-29"
 }

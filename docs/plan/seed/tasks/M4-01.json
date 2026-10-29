@@ -3,7 +3,7 @@
  "order": 0,
  "title": "Bank statement import (CSV first)",
  "owner": "Claude",
- "status": "todo",
- "evidence": "PDF through the Rox document viewer later",
+ "status": "done",
+ "evidence": "a73e0ae · CSV statements (signed or debit/credit, balance, 4 date shapes); digit runs masked; pick_file .csv",
  "updated": "2026-10-29"
 }

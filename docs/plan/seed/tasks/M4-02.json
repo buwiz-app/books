@@ -3,7 +3,7 @@
  "order": 1,
  "title": "Matching: suggestions, accept, add missing lines",
  "owner": "Claude",
- "status": "todo",
- "evidence": "",
+ "status": "done",
+ "evidence": "a73e0ae · exact / suggested (±5 days) / missing; accept; + Add posts on its date",
  "updated": "2026-10-29"
 }

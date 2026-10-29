@@ -3,7 +3,7 @@
  "order": 10,
  "title": "Conformance uses the per-run trust store (--key-id books-test-01)",
  "owner": "Claude",
- "status": "todo",
- "evidence": "After rox PR #13 (branch sdk-cli-fixes) merges: rox-plugin-test honours ROX_TRUST_FILE and prints a trust: line. Until then keep physical paths.",
+ "status": "done",
+ "evidence": "rox 2023fa2 (PR #13 branch): runner prints 'trust: ROX_TRUST_FILE … key books-test-01 trusted' · conformance 65 / 65",
  "updated": "2026-10-29"
 }

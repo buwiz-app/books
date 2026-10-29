@@ -3,7 +3,7 @@
  "order": 0,
  "title": "P&L with compare and drill-down to the Ledger",
  "owner": "Claude",
- "status": "todo",
- "evidence": "",
+ "status": "done",
+ "evidence": "9d801a6 · P&L beside the previous period; every row opens its account in the Ledger",
  "updated": "2026-10-29"
 }

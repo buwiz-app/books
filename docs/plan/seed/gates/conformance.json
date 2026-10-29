@@ -2,7 +2,7 @@
  "order": 5,
  "name": "Rox conformance",
  "result": "pass",
- "value": "33 / 33",
+ "value": "77 / 77",
  "at": "2026-10-29",
- "note": ""
+ "note": "runner from rox 2023fa2 (PR #13)"
 }

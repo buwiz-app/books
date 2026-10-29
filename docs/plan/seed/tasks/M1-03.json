@@ -3,7 +3,7 @@
  "order": 2,
  "title": "books-core: centavos, entries, balance, void by reversal",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Port of poc/src/ledger.ts postLedger()",
+ "status": "done",
+ "evidence": "7e5f183 · books-core 19 pass: balance, one side per line, fact rules, void marks Voided + mirrored reversal",
  "updated": "2026-10-29"
 }

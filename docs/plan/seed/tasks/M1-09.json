@@ -3,7 +3,7 @@
  "order": 8,
  "title": "Check in a test Rox: post, void, see it in the Ledger",
  "owner": "Claude",
- "status": "todo",
- "evidence": "tools/rox/host-test.sh plus the app check",
+ "status": "done",
+ "evidence": "Test Rox 016f63c: /books opens the window; post and void by real presses; docs/shots/m1 · host 17/17",
  "updated": "2026-10-29"
 }

@@ -3,7 +3,7 @@
  "order": 4,
  "title": "Rust = PoC: 17 of 17 vectors byte for byte",
  "owner": "Claude",
- "status": "todo",
- "evidence": "fixtures/vectors",
+ "status": "done",
+ "evidence": "bf33be7 · 17 / 17 vectors byte for byte; a one-cent change fails the test",
  "updated": "2026-10-29"
 }

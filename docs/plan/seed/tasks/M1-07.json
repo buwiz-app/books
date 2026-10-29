@@ -3,7 +3,7 @@
  "order": 6,
  "title": "Apps: Today, Ledger (list, drawer, new-entry sheet), Accounts",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Drawing: Books Mini App",
+ "status": "done",
+ "evidence": "7e5f183 · apps/books: Today, Ledger (list, drawer, new-entry sheet), Accounts; conformance APP checks pass",
  "updated": "2026-10-29"
 }

@@ -1,8 +1,8 @@
 {
  "order": 4,
  "name": "Rust = PoC vectors",
- "result": "pending",
- "value": "0 / 17",
+ "result": "pass",
+ "value": "17 / 17",
  "at": "2026-10-29",
- "note": "until M6"
+ "note": "byte for byte (bf33be7)"
 }

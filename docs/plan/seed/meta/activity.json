@@ -2,6 +2,38 @@
  "entries": [
   {
    "at": "2026-10-29",
+   "text": "M4 pushed (a73e0ae): statements, matching, Finish at 0.00, close/reopen with reason, Settings; October matches the bank"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "Conformance 65 / 65 with the paced runner (rox 2023fa2); per-run trust store honoured (M1-11)"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "Conformance 61/65: runner rate-limits apps with >20 tools; asked rox to pace BRG-03"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "M6 port verified and merged (bf33be7): Rust = PoC, 17 / 17 vectors"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "M2 and M3 pushed (9d801a6): People, Tags, Unpaid, Reports; golden Oct net 251,151.00, TB 1,224,548.40"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "M1 closed: /books, post and void checked by presses in a test Rox (016f63c)"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "M6 port of the PoC bridge started in a worktree (branch m6-port)"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "M1 pushed (7e5f183): encrypted store, ledger rules, 14 tools, Today/Ledger/Accounts; conformance 53/53, host 17/17"
+  },
+  {
+   "at": "2026-10-29",
    "text": "Owner answered the seven plan decisions in the build goal; M1 started"
   },
   {

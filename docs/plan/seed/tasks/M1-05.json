@@ -3,7 +3,7 @@
  "order": 4,
  "title": "Philippines chart preset and 62 kinds with default facts",
  "owner": "Claude",
- "status": "todo",
- "evidence": "data/categories.v1.json",
+ "status": "done",
+ "evidence": "7e5f183 · data/presets/ph-small-business.v1.json: 66 accounts over the 62 kinds",
  "updated": "2026-10-29"
 }

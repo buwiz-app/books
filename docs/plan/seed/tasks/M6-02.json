@@ -3,7 +3,7 @@
  "order": 1,
  "title": "Load rule sets r2 and crosswalk pins",
  "owner": "Claude",
- "status": "todo",
- "evidence": "data/rules, data/crosswalk",
+ "status": "done",
+ "evidence": "bf33be7 (verified, on main) · ported from the PoC; tests/vectors.rs",
  "updated": "2026-10-29"
 }

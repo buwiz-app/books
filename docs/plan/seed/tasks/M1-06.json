@@ -3,7 +3,7 @@
  "order": 5,
  "title": "Tools: book, accounts, ledger list, entry draft, post, void",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Post and void are app only",
+ "status": "done",
+ "evidence": "7e5f183 · 14 tools; post, void, discard, book and account create app-only (rox/audience app) · ledger_tools test",
  "updated": "2026-10-29"
 }

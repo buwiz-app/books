@@ -3,7 +3,7 @@
  "order": 3,
  "title": "Golden report numbers from the drawing",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Net 251,151.00 Oct · balanced 1,224,548.40",
+ "status": "done",
+ "evidence": "9d801a6 · golden_reports: Oct net 251,151.00 · TB 1,224,548.40 a side · BS 429,250.00",
  "updated": "2026-10-29"
 }
