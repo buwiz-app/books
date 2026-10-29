@@ -2,6 +2,10 @@
  "entries": [
   {
    "at": "2026-10-29",
+   "text": "Wheel pass-through answered from nsh source: the app surface stops every wheel, so a scroll over any card never reaches the chat; Rox/nsh fix, told the rox session"
+  },
+  {
+   "at": "2026-10-29",
    "text": "Test Rox torn down: Rox app, broker 8810, rox/nsh/blaze/rox-sdk worktrees (removed + pruned), rox-target build; told the rox session"
   },
   {

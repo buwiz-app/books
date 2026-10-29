@@ -4,5 +4,5 @@
  "result": "pass",
  "value": "13 pages, 14 of 15 cards",
  "at": "2026-10-29",
- "note": "person card and the scroll pass-through unchecked: GUI driving stopped at the owner request; test Rox torn down"
+ "note": "person card unchecked in a test Rox (GUI driving stopped at the owner request). Wheel over a card: nsh swallows it (events.rs:301-326), told rox"
 }
