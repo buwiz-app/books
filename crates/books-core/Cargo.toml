@@ -9,6 +9,11 @@ publish.workspace = true
 
 [dependencies]
 serde_json = "1"
+sha2 = "0.10"
+
+[[test]]
+name = "vectors"
+path = "../../tests/vectors.rs"
 
 [lints]
 workspace = true
