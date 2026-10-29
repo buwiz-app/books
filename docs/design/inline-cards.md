@@ -87,3 +87,7 @@ default. Row-level actions (a return's "It's correct") stay on their row.
   return, check the totals, hand over.
 - **Accounts**: some 60 rows, most at zero; show the accounts in use first.
 - Everywhere: violet BIR footnotes on many pages, and 11-point grey text that is hard to read; 12 is the floor.
+
+## Next
+
+The stable card API for Rox, Books and other plugins, with its phases and the owner's decisions: [card-api-plan.md](card-api-plan.md).
