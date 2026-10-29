@@ -16,7 +16,7 @@ const PAGES: { id: string; label: string; group?: string; bir?: boolean }[] = [
   { id: "certificates", label: "Certificates", group: "Records" },
   { id: "settings", label: "Settings", group: "end" },
 ];
-const BUILT = ["today", "ledger", "accounts"];
+const BUILT = ["today", "ledger", "unpaid", "reports", "people", "accounts", "tags"];
 
 const page = signal(PAGES.some((x) => x.id === PROPS.page) ? String(PROPS.page) : "today");
 const sheetMode = signal("");
@@ -38,7 +38,8 @@ function Rail(p: { book: Any; counts: Any }) {
     }
     rows.push({ page: x });
   }
-  const count = (id: string) => (id === "ledger" ? (p.counts?.review || 0) + (p.counts?.drafts || 0) : 0);
+  const count = (id: string) =>
+    id === "ledger" ? (p.counts?.review || 0) + (p.counts?.drafts || 0) : id === "unpaid" ? (p.counts?.unpaid || 0) : 0;
   return (
     <View class={`w-[178px] border-r px-2 py-2.5 gap-px ${C.rail} ${C.line}`}>
       <View class={`flex-row items-center gap-2 px-1.5 pt-1 pb-2.5 mb-1.5 border-b ${C.line}`}>
@@ -90,7 +91,7 @@ function Later(p: { id: string }) {
     <View class="gap-3.5">
       <Head title={label} />
       <Panel pad>
-        <Text class={`text-[13px] ${C.mute}`}>{`${label} arrives in a later step of the build. Today, Ledger and Accounts work now.`}</Text>
+        <Text class={`text-[13px] ${C.mute}`}>{`${label} arrives in a later step of the build.`}</Text>
       </Panel>
     </View>
   );
@@ -176,7 +177,7 @@ export default function Books() {
       </If>
       <If when={ready()}>
         <View class="flex-1 flex-row">
-          <Rail book={b()} counts={{ review: b()?.to_review || 0, drafts: b()?.drafts || 0 }} />
+          <Rail book={b()} counts={{ review: b()?.to_review || 0, drafts: b()?.drafts || 0, unpaid: b()?.unpaid || 0 }} />
           <Scroll class="flex-1">
             <View class="p-4 gap-3.5">
               <If when={page() === "today"}>
@@ -185,8 +186,20 @@ export default function Books() {
               <If when={page() === "ledger"}>
                 <LedgerPage go={go} sheet={(m: string) => sheetMode.set(m)} />
               </If>
+              <If when={page() === "unpaid"}>
+                <UnpaidPage go={go} />
+              </If>
+              <If when={page() === "reports"}>
+                <ReportsPage go={go} />
+              </If>
+              <If when={page() === "people"}>
+                <PeoplePage go={go} />
+              </If>
               <If when={page() === "accounts"}>
                 <AccountsPage go={go} />
+              </If>
+              <If when={page() === "tags"}>
+                <TagsPage go={go} />
               </If>
               <If when={!BUILT.includes(page())}>
                 <Later id={page()} />

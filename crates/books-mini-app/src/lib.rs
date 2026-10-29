@@ -7,14 +7,17 @@
 //! - [`jcs`]: RFC 8785 canonical JSON and I-JSON parsing, integers only;
 //! - [`apps`]: the app sources served as `rox-app://<id>`;
 //! - [`tools`]: Books' own `books_*` tools, with [`service`] (the store,
-//!   tickets, idempotent audited writes), [`views`] (page data) and
-//!   [`writes`].
+//!   tickets, idempotent audited writes), [`views`] (page data),
+//!   [`writes`], [`records`] (people, tags, unpaid) and [`reports`].
 
 pub mod apps;
 pub mod b64;
+pub mod demo;
 pub mod jcs;
 pub mod jsonrpc;
 pub mod manifest;
+pub mod records;
+pub mod reports;
 pub mod reserved;
 pub mod service;
 pub mod tools;

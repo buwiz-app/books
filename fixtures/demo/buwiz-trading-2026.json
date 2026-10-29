@@ -1,0 +1,1747 @@
+{
+ "demo_format": "buwiz-books-demo/1",
+ "about": "Synthetic demo book for the drawings (Books Mini App). Every name, amount and memo is synthetic. Steps are Books tool calls made as the app.",
+ "today": "2026-10-29",
+ "golden": {
+  "pl_2026_10_net": "251151.00",
+  "tb_2026_10_31_each_side": "1224548.40",
+  "q3_net_sales": "290000.00",
+  "bank_2026_10_31": "412350.00"
+ },
+ "steps": [
+  {
+   "tool": "books_app_book_create",
+   "args": {
+    "label": "Buwiz Trading",
+    "basis": "cash",
+    "client_request_id": "demo-0001-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "11010",
+    "name": "Bank •••• 4021",
+    "kind": "bank_accounts",
+    "client_request_id": "demo-0002-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "customers",
+    "name": "Isla Café",
+    "client_request_id": "demo-0003-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "customers",
+    "name": "Santos Hardware",
+    "client_request_id": "demo-0004-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "customers",
+    "name": "Bayani Foods",
+    "client_request_id": "demo-0005-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "Isla Office Rentals",
+    "client_request_id": "demo-0006-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "Lumen Power Co.",
+    "client_request_id": "demo-0007-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "Pixel Print Shop",
+    "client_request_id": "demo-0008-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "Ledgerline",
+    "client_request_id": "demo-0009-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "Reyes & Co. CPAs",
+    "client_request_id": "demo-0010-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "employees",
+    "name": "Ana Cruz",
+    "client_request_id": "demo-0011-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "employees",
+    "name": "Ben Dizon",
+    "client_request_id": "demo-0012-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "owners",
+    "name": "Owner",
+    "client_request_id": "demo-0013-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "lenders",
+    "name": "Rural Bank loan",
+    "client_request_id": "demo-0014-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "government",
+    "name": "BIR",
+    "client_request_id": "demo-0015-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "government",
+    "name": "SSS",
+    "client_request_id": "demo-0016-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "government",
+    "name": "PhilHealth",
+    "client_request_id": "demo-0017-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "government",
+    "name": "Pag-IBIG",
+    "client_request_id": "demo-0018-create"
+   }
+  },
+  {
+   "tool": "books_app_tag_create",
+   "args": {
+    "kind": "department",
+    "name": "Operations",
+    "client_request_id": "demo-0019-create"
+   }
+  },
+  {
+   "tool": "books_app_tag_create",
+   "args": {
+    "kind": "department",
+    "name": "Sales",
+    "client_request_id": "demo-0020-create"
+   }
+  },
+  {
+   "tool": "books_app_tag_create",
+   "args": {
+    "kind": "department",
+    "name": "Admin",
+    "client_request_id": "demo-0021-create"
+   }
+  },
+  {
+   "tool": "books_app_tag_create",
+   "args": {
+    "kind": "location",
+    "name": "Makati office",
+    "client_request_id": "demo-0022-create"
+   }
+  },
+  {
+   "tool": "books_app_tag_create",
+   "args": {
+    "kind": "location",
+    "name": "Warehouse",
+    "client_request_id": "demo-0023-create"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "journal",
+    "date": "2026-01-20",
+    "lines": [
+     {
+      "account": "11010",
+      "debit": "100000.00"
+     },
+     {
+      "account": "41000",
+      "credit": "100000.00",
+      "facts": {
+       "document_kind": "sale_invoice"
+      }
+     }
+    ],
+    "memo": "Sale",
+    "payee": "Isla Café",
+    "reference": "Invoice 0101",
+    "person_kind": "customers",
+    "department": "Sales",
+    "client_request_id": "demo-0024-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "journal",
+    "date": "2026-02-20",
+    "lines": [
+     {
+      "account": "11010",
+      "debit": "100000.00"
+     },
+     {
+      "account": "41000",
+      "credit": "100000.00",
+      "facts": {
+       "document_kind": "sale_invoice"
+      }
+     }
+    ],
+    "memo": "Sale",
+    "payee": "Isla Café",
+    "reference": "Invoice 0102",
+    "person_kind": "customers",
+    "department": "Sales",
+    "client_request_id": "demo-0025-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "journal",
+    "date": "2026-03-20",
+    "lines": [
+     {
+      "account": "11010",
+      "debit": "97000.00"
+     },
+     {
+      "account": "12600",
+      "debit": "3000.00",
+      "facts": {
+       "document_kind": "certificate_2307",
+       "certificate_atc": "WI010",
+       "certificate_status": "received",
+       "period_start": "2026-01-01",
+       "period_end": "2026-03-31"
+      }
+     },
+     {
+      "account": "41000",
+      "credit": "100000.00",
+      "facts": {
+       "document_kind": "sale_invoice"
+      }
+     }
+    ],
+    "memo": "Sale",
+    "payee": "Santos Hardware",
+    "reference": "Invoice 0103",
+    "person_kind": "customers",
+    "department": "Sales",
+    "client_request_id": "demo-0026-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "journal",
+    "date": "2026-04-20",
+    "lines": [
+     {
+      "account": "11010",
+      "debit": "100000.00"
+     },
+     {
+      "account": "41000",
+      "credit": "100000.00",
+      "facts": {
+       "document_kind": "sale_invoice"
+      }
+     }
+    ],
+    "memo": "Sale",
+    "payee": "Isla Café",
+    "reference": "Invoice 0104",
+    "person_kind": "customers",
+    "department": "Sales",
+    "client_request_id": "demo-0027-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "journal",
+    "date": "2026-05-20",
+    "lines": [
+     {
+      "account": "11010",
+      "debit": "100000.00"
+     },
+     {
+      "account": "41000",
+      "credit": "100000.00",
+      "facts": {
+       "document_kind": "sale_invoice"
+      }
+     }
+    ],
+    "memo": "Sale",
+    "payee": "Isla Café",
+    "reference": "Invoice 0105",
+    "person_kind": "customers",
+    "department": "Sales",
+    "client_request_id": "demo-0028-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "journal",
+    "date": "2026-06-20",
+    "lines": [
+     {
+      "account": "11010",
+      "debit": "97000.00"
+     },
+     {
+      "account": "12600",
+      "debit": "3000.00",
+      "facts": {
+       "document_kind": "certificate_2307",
+       "certificate_atc": "WI010",
+       "certificate_status": "received",
+       "period_start": "2026-04-01",
+       "period_end": "2026-06-30"
+      }
+     },
+     {
+      "account": "41000",
+      "credit": "100000.00",
+      "facts": {
+       "document_kind": "sale_invoice"
+      }
+     }
+    ],
+    "memo": "Sale",
+    "payee": "Santos Hardware",
+    "reference": "Invoice 0106",
+    "person_kind": "customers",
+    "department": "Sales",
+    "client_request_id": "demo-0029-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "journal",
+    "date": "2026-07-01",
+    "lines": [
+     {
+      "account": "11010",
+      "debit": "120000.00"
+     },
+     {
+      "account": "41000",
+      "credit": "120000.00",
+      "facts": {
+       "document_kind": "sale_invoice"
+      }
+     }
+    ],
+    "memo": "Sale",
+    "payee": "Isla Café",
+    "reference": "Invoice 0124",
+    "person_kind": "customers",
+    "department": "Sales",
+    "client_request_id": "demo-0030-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "journal",
+    "date": "2026-07-15",
+    "lines": [
+     {
+      "account": "11010",
+      "debit": "97100.00"
+     },
+     {
+      "account": "12600",
+      "debit": "2900.00",
+      "facts": {
+       "document_kind": "certificate_2307",
+       "certificate_atc": "WI010",
+       "certificate_status": "received",
+       "period_start": "2026-07-01",
+       "period_end": "2026-09-30"
+      }
+     },
+     {
+      "account": "41000",
+      "credit": "100000.00",
+      "facts": {
+       "document_kind": "sale_invoice"
+      }
+     }
+    ],
+    "memo": "Sale",
+    "payee": "Santos Hardware",
+    "reference": "Invoice 0127",
+    "person_kind": "customers",
+    "department": "Sales",
+    "client_request_id": "demo-0031-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "journal",
+    "date": "2026-08-20",
+    "lines": [
+     {
+      "account": "11010",
+      "debit": "80000.00"
+     },
+     {
+      "account": "41000",
+      "credit": "80000.00",
+      "facts": {
+       "document_kind": "sale_invoice"
+      }
+     }
+    ],
+    "memo": "Sale",
+    "payee": "Bayani Foods",
+    "reference": "Invoice 0131",
+    "person_kind": "customers",
+    "department": "Sales",
+    "client_request_id": "demo-0032-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "journal",
+    "date": "2026-09-10",
+    "lines": [
+     {
+      "account": "49000",
+      "debit": "10000.00",
+      "facts": {
+       "document_kind": "credit_note",
+       "contra_kind": "return"
+      }
+     },
+     {
+      "account": "11010",
+      "credit": "10000.00"
+     }
+    ],
+    "memo": "Return",
+    "payee": "Bayani Foods",
+    "reference": "Credit note 0009",
+    "person_kind": "customers",
+    "client_request_id": "demo-0033-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "journal",
+    "date": "2026-10-05",
+    "lines": [
+     {
+      "account": "11010",
+      "debit": "120000.00"
+     },
+     {
+      "account": "41000",
+      "credit": "120000.00",
+      "facts": {
+       "document_kind": "sale_invoice"
+      }
+     }
+    ],
+    "memo": "Sale",
+    "payee": "Isla Café",
+    "reference": "Invoice 0136",
+    "person_kind": "customers",
+    "department": "Sales",
+    "client_request_id": "demo-0034-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "journal",
+    "date": "2026-10-20",
+    "lines": [
+     {
+      "account": "11010",
+      "debit": "97000.00"
+     },
+     {
+      "account": "12600",
+      "debit": "3000.00",
+      "facts": {
+       "document_kind": "certificate_2307",
+       "certificate_atc": "WI010",
+       "certificate_status": "received",
+       "period_start": "2026-10-01",
+       "period_end": "2026-12-31"
+      }
+     },
+     {
+      "account": "41000",
+      "credit": "100000.00",
+      "facts": {
+       "document_kind": "sale_invoice"
+      }
+     }
+    ],
+    "memo": "Sale",
+    "payee": "Santos Hardware",
+    "reference": "Invoice 0139",
+    "person_kind": "customers",
+    "department": "Sales",
+    "client_request_id": "demo-0035-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "journal",
+    "date": "2026-10-28",
+    "lines": [
+     {
+      "account": "11010",
+      "debit": "80000.00"
+     },
+     {
+      "account": "41000",
+      "credit": "80000.00",
+      "facts": {
+       "document_kind": "sale_invoice"
+      }
+     }
+    ],
+    "memo": "Sale",
+    "payee": "Bayani Foods",
+    "reference": "Invoice 0142",
+    "person_kind": "customers",
+    "department": "Sales",
+    "client_request_id": "demo-0036-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "transfer",
+    "date": "2026-01-05",
+    "amount": "5000.00",
+    "account": "11010",
+    "to_account": "11100",
+    "memo": "Fill the cash box",
+    "client_request_id": "demo-0037-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-01-25",
+    "amount": "25000.00",
+    "account": "11010",
+    "category": "66100",
+    "payee": "Isla Office Rentals",
+    "memo": "Rent · January",
+    "reference": "Lease",
+    "department": "Operations",
+    "location": "Makati office",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0038-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-01-12",
+    "amount": "1200.00",
+    "account": "22000",
+    "category": "65000",
+    "payee": "Ledgerline",
+    "memo": "Accounting software",
+    "reference": "Monthly plan",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0039-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-01-15",
+    "amount": "2180.00",
+    "account": "22000",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Electricity",
+    "reference": "January bill",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0040-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-01-16",
+    "amount": "631.00",
+    "account": "11010",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Water and internet",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0041-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-01-10",
+    "amount": "43000.00",
+    "account": "11010",
+    "category": "61100",
+    "payee": "Payroll",
+    "memo": "Payroll · January",
+    "reference": "1 employee",
+    "department": "Operations",
+    "client_request_id": "demo-0042-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-01-10",
+    "amount": "1500.00",
+    "account": "11010",
+    "category": "61600",
+    "payee": "SSS",
+    "memo": "Employer contributions",
+    "person_kind": "government",
+    "client_request_id": "demo-0043-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-01-02",
+    "amount": "7500.00",
+    "account": "11010",
+    "category": "32100",
+    "payee": "Owner",
+    "memo": "Owner took out",
+    "person_kind": "owners",
+    "client_request_id": "demo-0044-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-02-25",
+    "amount": "25000.00",
+    "account": "11010",
+    "category": "66100",
+    "payee": "Isla Office Rentals",
+    "memo": "Rent · February",
+    "reference": "Lease",
+    "department": "Operations",
+    "location": "Makati office",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0045-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-02-12",
+    "amount": "1200.00",
+    "account": "22000",
+    "category": "65000",
+    "payee": "Ledgerline",
+    "memo": "Accounting software",
+    "reference": "Monthly plan",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0046-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-02-15",
+    "amount": "2180.00",
+    "account": "22000",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Electricity",
+    "reference": "February bill",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0047-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-02-16",
+    "amount": "631.00",
+    "account": "11010",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Water and internet",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0048-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-02-10",
+    "amount": "43000.00",
+    "account": "11010",
+    "category": "61100",
+    "payee": "Payroll",
+    "memo": "Payroll · February",
+    "reference": "1 employee",
+    "department": "Operations",
+    "client_request_id": "demo-0049-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-02-10",
+    "amount": "1500.00",
+    "account": "11010",
+    "category": "61600",
+    "payee": "SSS",
+    "memo": "Employer contributions",
+    "person_kind": "government",
+    "client_request_id": "demo-0050-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-02-02",
+    "amount": "7500.00",
+    "account": "11010",
+    "category": "32100",
+    "payee": "Owner",
+    "memo": "Owner took out",
+    "person_kind": "owners",
+    "client_request_id": "demo-0051-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-03-25",
+    "amount": "25000.00",
+    "account": "11010",
+    "category": "66100",
+    "payee": "Isla Office Rentals",
+    "memo": "Rent · March",
+    "reference": "Lease",
+    "department": "Operations",
+    "location": "Makati office",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0052-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-03-12",
+    "amount": "1200.00",
+    "account": "22000",
+    "category": "65000",
+    "payee": "Ledgerline",
+    "memo": "Accounting software",
+    "reference": "Monthly plan",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0053-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-03-15",
+    "amount": "2180.00",
+    "account": "22000",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Electricity",
+    "reference": "March bill",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0054-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-03-16",
+    "amount": "631.00",
+    "account": "11010",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Water and internet",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0055-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-03-10",
+    "amount": "43000.00",
+    "account": "11010",
+    "category": "61100",
+    "payee": "Payroll",
+    "memo": "Payroll · March",
+    "reference": "1 employee",
+    "department": "Operations",
+    "client_request_id": "demo-0056-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-03-10",
+    "amount": "1500.00",
+    "account": "11010",
+    "category": "61600",
+    "payee": "SSS",
+    "memo": "Employer contributions",
+    "person_kind": "government",
+    "client_request_id": "demo-0057-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-03-02",
+    "amount": "7500.00",
+    "account": "11010",
+    "category": "32100",
+    "payee": "Owner",
+    "memo": "Owner took out",
+    "person_kind": "owners",
+    "client_request_id": "demo-0058-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-04-25",
+    "amount": "25000.00",
+    "account": "11010",
+    "category": "66100",
+    "payee": "Isla Office Rentals",
+    "memo": "Rent · April",
+    "reference": "Lease",
+    "department": "Operations",
+    "location": "Makati office",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0059-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-04-12",
+    "amount": "1200.00",
+    "account": "22000",
+    "category": "65000",
+    "payee": "Ledgerline",
+    "memo": "Accounting software",
+    "reference": "Monthly plan",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0060-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-04-15",
+    "amount": "2180.00",
+    "account": "22000",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Electricity",
+    "reference": "April bill",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0061-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-04-16",
+    "amount": "631.00",
+    "account": "11010",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Water and internet",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0062-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-04-10",
+    "amount": "43000.00",
+    "account": "11010",
+    "category": "61100",
+    "payee": "Payroll",
+    "memo": "Payroll · April",
+    "reference": "1 employee",
+    "department": "Operations",
+    "client_request_id": "demo-0063-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-04-10",
+    "amount": "1500.00",
+    "account": "11010",
+    "category": "61600",
+    "payee": "SSS",
+    "memo": "Employer contributions",
+    "person_kind": "government",
+    "client_request_id": "demo-0064-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-04-02",
+    "amount": "7500.00",
+    "account": "11010",
+    "category": "32100",
+    "payee": "Owner",
+    "memo": "Owner took out",
+    "person_kind": "owners",
+    "client_request_id": "demo-0065-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-05-25",
+    "amount": "25000.00",
+    "account": "11010",
+    "category": "66100",
+    "payee": "Isla Office Rentals",
+    "memo": "Rent · May",
+    "reference": "Lease",
+    "department": "Operations",
+    "location": "Makati office",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0066-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-05-12",
+    "amount": "1200.00",
+    "account": "22000",
+    "category": "65000",
+    "payee": "Ledgerline",
+    "memo": "Accounting software",
+    "reference": "Monthly plan",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0067-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-05-15",
+    "amount": "2180.00",
+    "account": "22000",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Electricity",
+    "reference": "May bill",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0068-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-05-16",
+    "amount": "631.00",
+    "account": "11010",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Water and internet",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0069-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-05-10",
+    "amount": "43000.00",
+    "account": "11010",
+    "category": "61100",
+    "payee": "Payroll",
+    "memo": "Payroll · May",
+    "reference": "1 employee",
+    "department": "Operations",
+    "client_request_id": "demo-0070-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-05-10",
+    "amount": "1500.00",
+    "account": "11010",
+    "category": "61600",
+    "payee": "SSS",
+    "memo": "Employer contributions",
+    "person_kind": "government",
+    "client_request_id": "demo-0071-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-05-02",
+    "amount": "7500.00",
+    "account": "11010",
+    "category": "32100",
+    "payee": "Owner",
+    "memo": "Owner took out",
+    "person_kind": "owners",
+    "client_request_id": "demo-0072-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-06-25",
+    "amount": "25000.00",
+    "account": "11010",
+    "category": "66100",
+    "payee": "Isla Office Rentals",
+    "memo": "Rent · June",
+    "reference": "Lease",
+    "department": "Operations",
+    "location": "Makati office",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0073-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-06-12",
+    "amount": "1200.00",
+    "account": "22000",
+    "category": "65000",
+    "payee": "Ledgerline",
+    "memo": "Accounting software",
+    "reference": "Monthly plan",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0074-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-06-15",
+    "amount": "2180.00",
+    "account": "22000",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Electricity",
+    "reference": "June bill",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0075-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-06-16",
+    "amount": "631.00",
+    "account": "11010",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Water and internet",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0076-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-06-10",
+    "amount": "43000.00",
+    "account": "11010",
+    "category": "61100",
+    "payee": "Payroll",
+    "memo": "Payroll · June",
+    "reference": "1 employee",
+    "department": "Operations",
+    "client_request_id": "demo-0077-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-06-10",
+    "amount": "1500.00",
+    "account": "11010",
+    "category": "61600",
+    "payee": "SSS",
+    "memo": "Employer contributions",
+    "person_kind": "government",
+    "client_request_id": "demo-0078-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-06-02",
+    "amount": "7500.00",
+    "account": "11010",
+    "category": "32100",
+    "payee": "Owner",
+    "memo": "Owner took out",
+    "person_kind": "owners",
+    "client_request_id": "demo-0079-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-07-25",
+    "amount": "25000.00",
+    "account": "11010",
+    "category": "66100",
+    "payee": "Isla Office Rentals",
+    "memo": "Rent · July",
+    "reference": "Lease",
+    "department": "Operations",
+    "location": "Makati office",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0080-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-07-12",
+    "amount": "1200.00",
+    "account": "22000",
+    "category": "65000",
+    "payee": "Ledgerline",
+    "memo": "Accounting software",
+    "reference": "Monthly plan",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0081-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-07-15",
+    "amount": "2180.00",
+    "account": "22000",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Electricity",
+    "reference": "July bill",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0082-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-07-16",
+    "amount": "631.00",
+    "account": "11010",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Water and internet",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0083-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-07-10",
+    "amount": "43000.00",
+    "account": "11010",
+    "category": "61100",
+    "payee": "Payroll",
+    "memo": "Payroll · July",
+    "reference": "1 employee",
+    "department": "Operations",
+    "client_request_id": "demo-0084-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-07-10",
+    "amount": "1500.00",
+    "account": "11010",
+    "category": "61600",
+    "payee": "SSS",
+    "memo": "Employer contributions",
+    "person_kind": "government",
+    "client_request_id": "demo-0085-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-07-02",
+    "amount": "7500.00",
+    "account": "11010",
+    "category": "32100",
+    "payee": "Owner",
+    "memo": "Owner took out",
+    "person_kind": "owners",
+    "client_request_id": "demo-0086-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-08-25",
+    "amount": "25000.00",
+    "account": "11010",
+    "category": "66100",
+    "payee": "Isla Office Rentals",
+    "memo": "Rent · August",
+    "reference": "Lease",
+    "department": "Operations",
+    "location": "Makati office",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0087-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-08-12",
+    "amount": "1200.00",
+    "account": "22000",
+    "category": "65000",
+    "payee": "Ledgerline",
+    "memo": "Accounting software",
+    "reference": "Monthly plan",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0088-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-08-15",
+    "amount": "2180.00",
+    "account": "22000",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Electricity",
+    "reference": "August bill",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0089-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-08-16",
+    "amount": "634.00",
+    "account": "11010",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Water and internet",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0090-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-08-10",
+    "amount": "43500.00",
+    "account": "11010",
+    "category": "61100",
+    "payee": "Payroll",
+    "memo": "Payroll · August",
+    "reference": "1 employee",
+    "department": "Operations",
+    "client_request_id": "demo-0091-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-08-10",
+    "amount": "1500.00",
+    "account": "11010",
+    "category": "61600",
+    "payee": "SSS",
+    "memo": "Employer contributions",
+    "person_kind": "government",
+    "client_request_id": "demo-0092-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-08-02",
+    "amount": "7500.00",
+    "account": "11010",
+    "category": "32100",
+    "payee": "Owner",
+    "memo": "Owner took out",
+    "person_kind": "owners",
+    "client_request_id": "demo-0093-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-09-25",
+    "amount": "25000.00",
+    "account": "11010",
+    "category": "66100",
+    "payee": "Isla Office Rentals",
+    "memo": "Rent · September",
+    "reference": "Lease",
+    "department": "Operations",
+    "location": "Makati office",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0094-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-09-12",
+    "amount": "1200.00",
+    "account": "22000",
+    "category": "65000",
+    "payee": "Ledgerline",
+    "memo": "Accounting software",
+    "reference": "Monthly plan",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0095-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-09-02",
+    "amount": "7500.00",
+    "account": "11010",
+    "category": "32100",
+    "payee": "Owner",
+    "memo": "Owner took out",
+    "person_kind": "owners",
+    "client_request_id": "demo-0096-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-10-25",
+    "amount": "25000.00",
+    "account": "11010",
+    "category": "66100",
+    "payee": "Isla Office Rentals",
+    "memo": "Rent · October",
+    "reference": "Lease",
+    "department": "Operations",
+    "location": "Makati office",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0097-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-10-12",
+    "amount": "1200.00",
+    "account": "11010",
+    "category": "65000",
+    "payee": "Ledgerline",
+    "memo": "Accounting software",
+    "reference": "Monthly plan",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0098-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-09-15",
+    "amount": "2499.00",
+    "account": "11010",
+    "category": "66200",
+    "payee": "Lumen Power Co.",
+    "memo": "Electricity · September",
+    "reference": "September bill",
+    "department": "Operations",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0099-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "journal",
+    "date": "2026-09-30",
+    "lines": [
+     {
+      "account": "61100",
+      "debit": "40000.00",
+      "facts": {
+       "comp_component": "basic_pay",
+       "party_ref": "emp-ana"
+      }
+     },
+     {
+      "account": "61100",
+      "debit": "2000.00",
+      "facts": {
+       "comp_component": "de_minimis",
+       "party_ref": "emp-ana"
+      }
+     },
+     {
+      "account": "61600",
+      "debit": "1500.00",
+      "facts": {
+       "party_ref": "emp-ana"
+      }
+     },
+     {
+      "account": "25110",
+      "credit": "2808.40",
+      "facts": {
+       "party_ref": "emp-ana"
+      }
+     },
+     {
+      "account": "25120",
+      "credit": "2000.00",
+      "facts": {
+       "party_ref": "emp-ana"
+      }
+     },
+     {
+      "account": "25120",
+      "credit": "1500.00",
+      "facts": {
+       "contribution_side": "employer",
+       "party_ref": "emp-ana"
+      }
+     },
+     {
+      "account": "11010",
+      "credit": "37191.60"
+     }
+    ],
+    "memo": "Payroll · September",
+    "payee": "Ana Cruz",
+    "reference": "1 employee",
+    "person_kind": "employees",
+    "department": "Operations",
+    "client_request_id": "demo-0100-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-10-02",
+    "amount": "8159.40",
+    "account": "11010",
+    "category": "32100",
+    "payee": "Owner",
+    "memo": "Owner took out",
+    "person_kind": "owners",
+    "client_request_id": "demo-0101-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "transfer",
+    "date": "2026-10-03",
+    "amount": "10000.00",
+    "account": "11010",
+    "to_account": "22000",
+    "memo": "Transfer · pay the card",
+    "client_request_id": "demo-0102-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-10-10",
+    "amount": "20000.00",
+    "account": "11010",
+    "category": "61100",
+    "payee": "Payroll",
+    "memo": "Payroll · Oct 1–15",
+    "reference": "2 employees",
+    "department": "Operations",
+    "client_request_id": "demo-0103-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-10-08",
+    "amount": "150.00",
+    "account": "11010",
+    "category": "69999",
+    "payee": "Bank",
+    "memo": "Bank service fee",
+    "reference": "From bank statement",
+    "client_request_id": "demo-0104-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "form": "money_out",
+    "date": "2026-10-15",
+    "amount": "2499.00",
+    "account": "11010",
+    "category": "69999",
+    "payee": "Lumen Power Co.",
+    "memo": "Electricity · October",
+    "reference": "From bank statement",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0105-entry"
+   }
+  },
+  {
+   "tool": "books_entry_draft",
+   "args": {
+    "form": "money_out",
+    "date": "2026-10-18",
+    "amount": "1350.00",
+    "account": "11010",
+    "category": "67200",
+    "payee": "Pixel Print Shop",
+    "memo": "Office supplies",
+    "reference": "Photo of receipt",
+    "department": "Operations",
+    "location": "Makati office",
+    "person_kind": "vendors",
+    "client_request_id": "demo-0106-draft"
+   }
+  },
+  {
+   "tool": "books_app_owed_create",
+   "args": {
+    "side": "collect",
+    "person_name": "Isla Café",
+    "reference": "Invoice 0143",
+    "issued": "2026-10-29",
+    "due": "2026-11-15",
+    "amount": "60000.00",
+    "category": "41000",
+    "client_request_id": "demo-0107-create"
+   }
+  },
+  {
+   "tool": "books_app_owed_create",
+   "args": {
+    "side": "collect",
+    "person_name": "Bayani Foods",
+    "reference": "Invoice 0144",
+    "issued": "2026-10-29",
+    "due": "2026-11-20",
+    "amount": "45000.00",
+    "category": "41000",
+    "client_request_id": "demo-0108-create"
+   }
+  },
+  {
+   "tool": "books_app_owed_create",
+   "args": {
+    "side": "pay",
+    "person_name": "Pixel Print Shop",
+    "reference": "Bill PP-0381",
+    "issued": "2026-10-29",
+    "due": "2026-11-05",
+    "amount": "3200.00",
+    "category": "67200",
+    "client_request_id": "demo-0109-create"
+   }
+  },
+  {
+   "tool": "books_app_owed_create",
+   "args": {
+    "side": "pay",
+    "person_name": "Lumen Power Co.",
+    "reference": "November bill",
+    "issued": "2026-10-29",
+    "due": "2026-11-12",
+    "amount": "2600.00",
+    "category": "66200",
+    "client_request_id": "demo-0110-create"
+   }
+  }
+ ]
+}

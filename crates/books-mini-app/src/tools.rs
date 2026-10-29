@@ -14,7 +14,7 @@ use serde_json::{Map, Value, json};
 use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
-use crate::{views, writes};
+use crate::{records, reports, views, writes};
 
 pub const STATUS: &str = "books_status";
 pub const RESOLVE: &str = "books_resolve";
@@ -30,6 +30,18 @@ pub const VOID_ENTRY: &str = "books_app_void_entry";
 pub const DISCARD_ENTRY: &str = "books_app_discard_entry";
 pub const BOOK_CREATE: &str = "books_app_book_create";
 pub const ACCOUNT_CREATE: &str = "books_app_account_create";
+pub const PEOPLE_LIST: &str = "books_people_list";
+pub const PERSON_GET: &str = "books_person_get";
+pub const TAGS_LIST: &str = "books_tags_list";
+pub const OWED_LIST: &str = "books_owed_list";
+pub const OWED_OPTIONS: &str = "books_owed_options";
+pub const REPORT: &str = "books_report";
+pub const REPORT_CSV: &str = "books_report_csv";
+pub const PERSON_CREATE: &str = "books_app_person_create";
+pub const TAG_CREATE: &str = "books_app_tag_create";
+pub const OWED_CREATE: &str = "books_app_owed_create";
+pub const OWED_SETTLE: &str = "books_app_owed_settle";
+pub const OWED_CANCEL: &str = "books_app_owed_cancel";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -118,8 +130,86 @@ fn draft_schema() -> Value {
             "memo": { "type": "string", "description": "What it was for. Never a TIN." },
             "reference": { "type": "string", "description": "An invoice or receipt number." },
             "facts": { "type": "object", "description": "Line facts for the category line, e.g. {\"document_kind\": \"sale_invoice\"}." },
-            "lines": { "type": "array", "description": "Journal only: [{account, debit, credit, facts}]." }
+            "lines": { "type": "array", "description": "Journal only: [{account, debit, credit, facts}]." },
+            "person": { "type": "string", "description": "A person ticket." },
+            "person_kind": { "type": "string", "description": "With payee: the kind of person to link or make (vendors, customers, employees, owners, lenders, government)." },
+            "department": { "type": "string" },
+            "location": { "type": "string" }
         }
+    })
+}
+
+fn people_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "book": { "type": "string" },
+            "kind": { "type": "string", "enum": ["banks", "vendors", "customers", "employees", "owners", "lenders", "government"] }
+        }
+    })
+}
+
+fn person_ref() -> Value {
+    json!({ "type": "object", "required": ["person"], "properties": { "book": { "type": "string" }, "person": { "type": "string", "description": "A person or bank account ticket." } } })
+}
+
+fn tags_schema() -> Value {
+    json!({ "type": "object", "properties": { "book": { "type": "string" }, "kind": { "type": "string", "enum": ["department", "location"] }, "month": { "type": "string" } } })
+}
+
+fn owed_schema() -> Value {
+    json!({ "type": "object", "properties": { "book": { "type": "string" }, "side": { "type": "string", "enum": ["collect", "pay"] } } })
+}
+
+fn report_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "book": { "type": "string" },
+            "kind": { "type": "string", "enum": ["pl", "bs", "cf", "tb", "ag"] },
+            "period_kind": { "type": "string", "enum": ["month", "quarter", "year"] },
+            "period": { "type": "string", "description": "2026-10, 2026-Q3 or 2026; this period when absent." },
+            "side": { "type": "string", "enum": ["collect", "pay"], "description": "Aging only." }
+        }
+    })
+}
+
+fn person_create_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "kind", "name"],
+        "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "kind": { "type": "string" }, "name": { "type": "string", "description": "A name, never a TIN." }, "note": { "type": "string" } }
+    })
+}
+
+fn tag_create_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "kind", "name"],
+        "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "kind": { "type": "string", "enum": ["department", "location"] }, "name": { "type": "string" } }
+    })
+}
+
+fn owed_create_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "side", "amount", "category"],
+        "properties": {
+            "client_request_id": { "type": "string" }, "book": { "type": "string" },
+            "side": { "type": "string", "enum": ["collect", "pay"] },
+            "person": { "type": "string" }, "person_name": { "type": "string" },
+            "amount": { "type": "string" }, "category": { "type": "string" },
+            "issued": { "type": "string" }, "due": { "type": "string" },
+            "reference": { "type": "string" }, "memo": { "type": "string" }
+        }
+    })
+}
+
+fn owed_ref() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "owed"],
+        "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "owed": { "type": "string" }, "account": { "type": "string" }, "date": { "type": "string" } }
     })
 }
 
@@ -259,6 +349,90 @@ pub const TOOLS: &[Tool] = &[
         schema: account_create_schema,
         description: "Add an account to the chart under one kind, or as not sure yet.",
     },
+    Tool {
+        name: PEOPLE_LIST,
+        reach: Reach::Everyone,
+        write: false,
+        schema: people_schema,
+        description: "People of one kind (banks and cards, vendors, customers, employees, owners, lenders, government) with counts per kind. No TINs: the BIR app keeps them.",
+    },
+    Tool {
+        name: PERSON_GET,
+        reach: Reach::Everyone,
+        write: false,
+        schema: person_ref,
+        description: "One person or bank account: what was paid or received this year, ten months of totals and the last entries.",
+    },
+    Tool {
+        name: TAGS_LIST,
+        reach: Reach::Everyone,
+        write: false,
+        schema: tags_schema,
+        description: "Departments or locations, with the month's money out and entry counts.",
+    },
+    Tool {
+        name: OWED_LIST,
+        reach: Reach::Everyone,
+        write: false,
+        schema: owed_schema,
+        description: "Unpaid invoices to collect or bills to pay, by due date, with totals. On a cash book they are reminders, not entries.",
+    },
+    Tool {
+        name: OWED_OPTIONS,
+        reach: Reach::Everyone,
+        write: false,
+        schema: book_only,
+        description: "What a new invoice or bill can use: customers, vendors, categories and money accounts.",
+    },
+    Tool {
+        name: REPORT,
+        reach: Reach::Everyone,
+        write: false,
+        schema: report_schema,
+        description: "A report on the book's basis: P&L with the previous period, balance sheet, cash flow, trial balance, or aging (accrual books only).",
+    },
+    Tool {
+        name: REPORT_CSV,
+        reach: Reach::Everyone,
+        write: false,
+        schema: report_schema,
+        description: "The same report as CSV text, amounts as two-place decimal text.",
+    },
+    Tool {
+        name: PERSON_CREATE,
+        reach: Reach::App,
+        write: true,
+        schema: person_create_schema,
+        description: "Add a person of one kind by name. Never a TIN.",
+    },
+    Tool {
+        name: TAG_CREATE,
+        reach: Reach::App,
+        write: true,
+        schema: tag_create_schema,
+        description: "Add a department or a location.",
+    },
+    Tool {
+        name: OWED_CREATE,
+        reach: Reach::App,
+        write: true,
+        schema: owed_create_schema,
+        description: "Save an invoice to collect or a bill to pay. On a cash book it is a reminder; on an accrual book it posts the receivable or payable.",
+    },
+    Tool {
+        name: OWED_SETTLE,
+        reach: Reach::App,
+        write: true,
+        schema: owed_ref,
+        description: "Mark an invoice or bill paid after the user's click: posts the money on that day.",
+    },
+    Tool {
+        name: OWED_CANCEL,
+        reach: Reach::App,
+        write: true,
+        schema: owed_ref,
+        description: "Cancel an open invoice or bill after the user's click.",
+    },
 ];
 
 pub fn find(name: &str) -> Option<&'static Tool> {
@@ -322,8 +496,16 @@ pub fn call(
             out["drafts"] = json!(count(
                 "SELECT count(*) FROM entry WHERE book_id = ?1 AND status = 'draft' AND needs_review = 0"
             )?);
+            // drafts from a statement, and posted lines on "not sure yet" accounts
             out["to_review"] = json!(count(
-                "SELECT count(*) FROM entry WHERE book_id = ?1 AND status = 'draft' AND needs_review = 1"
+                "SELECT count(*) FROM entry e WHERE e.book_id = ?1 AND (
+                   (e.status = 'draft' AND e.needs_review = 1)
+                   OR (e.status = 'posted' AND e.form <> 'reversal' AND EXISTS (
+                     SELECT 1 FROM line l JOIN account a ON a.account_id = l.account_id
+                     WHERE l.entry_id = e.entry_id AND a.kind = 'unsure')))"
+            )?);
+            out["unpaid"] = json!(count(
+                "SELECT count(*) FROM unpaid WHERE book_id = ?1 AND status = 'open'"
             )?);
             Ok(out)
         }),
@@ -359,6 +541,42 @@ pub fn call(
         }),
         ACCOUNT_CREATE => write(books, name, origin, arguments, |tx| {
             writes::account_create(tx, arguments)
+        }),
+        PEOPLE_LIST => read(books, arguments, |store, book, args| {
+            records::people_list(store, book, args)
+        }),
+        PERSON_GET => read(books, arguments, |store, book, args| {
+            records::person_get(store, book, args, origin)
+        }),
+        TAGS_LIST => read(books, arguments, |store, book, args| {
+            records::tags_list(store, book, args)
+        }),
+        OWED_LIST => read(books, arguments, |store, book, args| {
+            records::owed_list(store, book, args, origin)
+        }),
+        OWED_OPTIONS => read(books, arguments, |store, book, _| {
+            records::owed_options(store, book)
+        }),
+        REPORT => read(books, arguments, |store, book, args| {
+            reports::report(store, book, args)
+        }),
+        REPORT_CSV => read(books, arguments, |store, book, args| {
+            reports::report_csv(store, book, args)
+        }),
+        PERSON_CREATE => write(books, name, origin, arguments, |tx| {
+            records::person_create(tx, arguments)
+        }),
+        TAG_CREATE => write(books, name, origin, arguments, |tx| {
+            records::tag_create(tx, arguments)
+        }),
+        OWED_CREATE => write(books, name, origin, arguments, |tx| {
+            records::owed_create(tx, arguments)
+        }),
+        OWED_SETTLE => write(books, name, origin, arguments, |tx| {
+            records::owed_settle(tx, arguments)
+        }),
+        OWED_CANCEL => write(books, name, origin, arguments, |tx| {
+            records::owed_cancel(tx, arguments)
         }),
         _ => fail("internal", "Books has no handler for that tool."),
     })

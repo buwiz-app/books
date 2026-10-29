@@ -8,6 +8,7 @@
 //!   `BOOKS_DB_KEY_FILE`);
 //! - [`Store`]: open, migrate, and one transaction per tool call;
 //! - [`books`], [`entries`]: the book, its chart and the ledger;
+//! - [`people`]: people, tags and unpaid documents;
 //! - [`plumbing`]: idempotency, audit rows and tickets.
 
 use std::fmt;
@@ -20,12 +21,16 @@ use rusqlite::{Connection, OptionalExtension as _, params};
 
 pub mod books;
 pub mod entries;
+pub mod people;
 pub mod plumbing;
 
 pub use rusqlite;
 
 /// Migrations, applied in order; `meta.schema_version` is the last applied.
-const MIGRATIONS: &[(i64, &str)] = &[(1, include_str!("../migrations/0001_init.sql"))];
+const MIGRATIONS: &[(i64, &str)] = &[
+    (1, include_str!("../migrations/0001_init.sql")),
+    (2, include_str!("../migrations/0002_people_tags_unpaid.sql")),
+];
 
 pub const DATA_DIR_ENV: &str = "BOOKS_DATA_DIR";
 pub const KEY_FILE_ENV: &str = "BOOKS_DB_KEY_FILE";
@@ -404,7 +409,7 @@ mod tests {
         assert_eq!(mode, 0o700);
         let store = Store::open(&paths).unwrap();
         assert_eq!(store.meta("canary").unwrap().as_deref(), Some(CANARY));
-        assert_eq!(store.meta("schema_version").unwrap().as_deref(), Some("1"));
+        assert_eq!(store.meta("schema_version").unwrap().as_deref(), Some("2"));
         drop(store);
         let other = Paths {
             dir: paths.dir.clone(),

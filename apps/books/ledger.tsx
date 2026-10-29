@@ -72,11 +72,11 @@ function LedgerPage(p: { go: (page: string, filter?: string) => void; sheet: (mo
             <View class={`flex-row justify-between px-2 py-1.5 rounded-[7px] ${ledgerAccount() === "" ? C.raise : ""}`} onPress={() => ledgerAccount.set("")}>
               <Text class={`text-[12.5px] ${ledgerAccount() === "" ? `font-semibold ${C.ink}` : C.mute}`}>All accounts</Text>
             </View>
-            <Each of={d()?.accounts || []} key={(g: Any) => g.group}>
+            <Each of={d()?.accounts || []} key={rowKey}>
               {(g: Any) => (
                 <View class="gap-px">
                   <Text class={`text-[10.5px] uppercase tracking-wider px-2 pt-2 pb-0.5 ${C.dim}`}>{g().group}</Text>
-                  <Each of={g().rows} key={(a: Any) => a.ticket}>
+                  <Each of={g().rows} key={rowKey}>
                     {(a: Any) => (
                       <View
                         class={`flex-row justify-between gap-1.5 px-2 py-1.5 rounded-[7px] ${ledgerAccount() === a().ticket ? C.raise : ""}`}
@@ -133,7 +133,7 @@ function LedgerPage(p: { go: (page: string, filter?: string) => void; sheet: (mo
               <If when={(d()?.rows || []).length === 0}>
                 <Text class={`text-[12.5px] px-3 py-4 ${C.dim}`}>{`No ${ledgerFilter() === "all" ? "" : "matching "}entries in ${d()?.account.name || ""} this month.`}</Text>
               </If>
-              <Each of={d()?.rows || []} key={(r: Any) => r.ticket}>
+              <Each of={d()?.rows || []} key={rowKey}>
                 {(r: Any) => <TxRow r={r()} />}
               </Each>
             </View>

@@ -72,12 +72,12 @@ function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
             <Panel class="flex-[1.25]">
               <View class="flex-row items-center justify-between px-3.5 pt-3 pb-1">
                 <Text class={`text-[13px] font-bold ${C.ink}`}>Needs you</Text>
-                <Text class={`text-[12px] ${C.dim}`}>{`${String(t()?.needs_count || 0)} things`}</Text>
+                <Text class={`text-[12px] ${C.dim}`}>{t()?.needs_count === 1 ? "1 thing" : `${String(t()?.needs_count || 0)} things`}</Text>
               </View>
               <If when={(t()?.needs || []).length === 0}>
                 <Text class={`text-[12.5px] px-3.5 pb-3 pt-1 ${C.dim}`}>Nothing waits for you. New drafts and bank lines show up here.</Text>
               </If>
-              <Each of={t()?.needs || []} key={(n: Any) => n.kind}>
+              <Each of={t()?.needs || []} key={rowKey}>
                 {(n: Any) => <NeedRow n={n()} go={p.go} />}
               </Each>
             </Panel>
@@ -93,11 +93,11 @@ function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
                 </View>
                 <View class="flex-row gap-2">
                   <Quick title="Transfer" sub="Between your accounts" onPress={() => p.sheet("transfer")} />
-                  <Quick title="Journal" sub="Any balanced lines" onPress={() => p.sheet("journal")} />
+                  <Quick title="Unpaid" sub="Invoices and bills waiting" onPress={() => p.go("unpaid")} />
                 </View>
                 <View class="flex-row gap-2">
                   <Quick title="Ledger" sub="Every entry this month" onPress={() => p.go("ledger")} />
-                  <Quick title="Accounts" sub="The chart, with balances" onPress={() => p.go("accounts")} />
+                  <Quick title={`${t()?.month_name || "This month"}'s P&L`} sub={`Net ${t()?.month.shown || ""}`} onPress={() => p.go("reports")} />
                 </View>
               </View>
             </Panel>

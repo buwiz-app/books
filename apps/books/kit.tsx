@@ -51,6 +51,9 @@ const TAG: Record<string, string> = {
 const BAR: Record<string, string> = { pos: C.greenBg, neg: C.redBg, blue: C.blueBg, "": C.greenBg };
 const AMT: Record<string, string> = { pos: C.green, neg: C.ink, "": C.ink };
 
+/** A row's key is its content: a row whose data changes is drawn again. */
+const rowKey = (row: Any) => JSON.stringify(row);
+
 const errText = (e: Any) => (e && e.message ? String(e.message) : String(e));
 
 /** A client_request_id: unique per call, never a subject (DD-17). */
@@ -230,7 +233,7 @@ function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; plac
       <If when={open()}>
         <View class={`rounded-lg border max-h-[180px] ${C.panel} ${C.line}`}>
           <Scroll class="max-h-[178px]">
-            <Each of={p.options || []} key={(o: Any) => o.ticket}>
+            <Each of={p.options || []} key={rowKey}>
               {(o: Any) => (
                 <View
                   class={`px-2.5 py-1.5 ${o().ticket === p.value ? C.raise : ""}`}

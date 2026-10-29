@@ -412,6 +412,13 @@ pub fn void(conn: &Connection, book: &Book, id: i64, date: Date, gate: Gate<'_>)
         "UPDATE entry SET status = 'voided', voided_by_entry_id = ?2 WHERE entry_id = ?1",
         params![id, reversal],
     )?;
+    // the reversal belongs to the same person and tags
+    conn.execute(
+        "UPDATE entry SET (person_id, department_id, location_id) =
+           (SELECT person_id, department_id, location_id FROM entry WHERE entry_id = ?1)
+         WHERE entry_id = ?2",
+        params![id, reversal],
+    )?;
     Ok(reversal)
 }
 

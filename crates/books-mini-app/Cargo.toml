@@ -32,6 +32,10 @@ name = "ledger_tools"
 path = "../../tests/ledger_tools.rs"
 
 [[test]]
+name = "golden_reports"
+path = "../../tests/golden_reports.rs"
+
+[[test]]
 name = "privacy_outputs"
 path = "../../tests/privacy_outputs.rs"
 

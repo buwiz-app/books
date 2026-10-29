@@ -38,7 +38,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
             <Text class={`w-[120px] text-right text-[10.5px] uppercase tracking-wider ${C.dim}`}>Balance</Text>
             <View class="w-[14px]" />
           </View>
-          <Each of={d()?.rows || []} key={(a: Any) => a.ticket}>
+          <Each of={d()?.rows || []} key={rowKey}>
             {(a: Any) => (
               <View class={`flex-row items-center gap-3 px-3 py-2 border-b ${C.line}`} onPress={() => open(a())} activeStyle={{ opacity: a().off ? 1 : 0.75 }}>
                 <Text class={`w-[64px] text-[12.5px] font-mono ${a().off ? C.dim : C.ink}`}>{a().number}</Text>

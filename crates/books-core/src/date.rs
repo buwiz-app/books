@@ -4,6 +4,15 @@
 
 use std::fmt;
 
+static PINNED: std::sync::Mutex<Option<Date>> = std::sync::Mutex::new(None);
+
+/// Pin today's date for this process (tests and the demo), or unpin it.
+pub fn pin_today(day: Option<Date>) {
+    *PINNED
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = day;
+}
+
 /// A calendar day. Ordering is calendar order.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Date {
@@ -122,9 +131,15 @@ impl Date {
         Self::from_days((ms.div_euclid(1000) + 8 * 3600).div_euclid(86_400))
     }
 
-    /// Today in Manila. `BOOKS_TODAY` (a `YYYY-MM-DD`) pins it for tests
-    /// and the demo book.
+    /// Today in Manila. [`pin_today`] or `BOOKS_TODAY` (a `YYYY-MM-DD`) pins
+    /// it for tests and the demo book.
     pub fn today() -> Self {
+        if let Some(pinned) = *PINNED
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+        {
+            return pinned;
+        }
         if let Some(pinned) = std::env::var("BOOKS_TODAY")
             .ok()
             .and_then(|t| Self::parse(&t))

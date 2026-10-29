@@ -114,6 +114,9 @@ pub struct Summary {
     pub debits: i64,
     /// For a reversal: what the voided entry was.
     pub voided_what: Option<String>,
+    /// A line sits on a "not sure yet" account: it holds every box it
+    /// could feed until the user picks a category (plan 2.2).
+    pub unsure: bool,
 }
 
 impl Summary {
@@ -126,12 +129,29 @@ impl Summary {
             .map(|l| l.debit - l.credit)
             .sum();
         let debits = lines.iter().map(|l| l.debit).sum();
+        // the category: a transfer's destination; else the first income or
+        // expense line, then the first line off the money accounts
+        let pl_line = |l: &&LineRow| {
+            chart
+                .by_id
+                .get(&l.account_id)
+                .is_some_and(|a| a.account_type.is_pl())
+        };
         let pick = match entry.form {
             Form::Transfer => lines.iter().find(|l| l.debit > 0),
-            Form::Journal => lines.iter().find(|l| l.debit > 0),
-            _ => lines.iter().find(|l| !is_cash(l)).or(lines.first()),
+            _ => lines
+                .iter()
+                .find(pl_line)
+                .or_else(|| lines.iter().find(|l| !is_cash(l)))
+                .or(lines.first()),
         };
         let category = pick.and_then(|l| chart.by_id.get(&l.account_id).cloned());
+        let unsure = lines.iter().any(|l| {
+            chart
+                .by_id
+                .get(&l.account_id)
+                .is_some_and(|a| a.kind == KindRef::Unsure)
+        });
         let voided_what = match entry.reverses {
             Some(id) => entries::get(store.conn(), id)?.map(|o| {
                 o.memo
@@ -147,10 +167,22 @@ impl Summary {
             cash,
             debits,
             voided_what,
+            unsure,
         })
     }
 
     /// The amount a row shows: the cash effect, else the debit total.
+    /// Waits for the user: a draft from a statement, or a posted entry on
+    /// a "not sure yet" account that no void has cancelled.
+    pub fn needs_review(&self) -> bool {
+        let e = &self.entry;
+        match e.status {
+            Status::Draft => e.needs_review,
+            Status::Posted => self.unsure && e.form != Form::Reversal,
+            _ => false,
+        }
+    }
+
     pub fn amount(&self) -> i64 {
         if self.cash != 0 {
             self.cash
@@ -176,7 +208,11 @@ impl Summary {
 
     pub fn row(&self, store: &Store, origin: Origin) -> Result<Value, Refusal> {
         let e = &self.entry;
-        let (tone, label) = status_pill(e);
+        let (tone, label) = if self.needs_review() {
+            ("rev", "Needs review")
+        } else {
+            status_pill(e)
+        };
         let amount = self.amount();
         let mut row = json!({
             "ticket": ticket(store, "entry", e.id)?,
@@ -281,35 +317,39 @@ pub fn today(store: &Store, book: Book, origin: Origin) -> Result<Value, Refusal
         .chain(owed.iter().map(|a| bal(a).abs()))
         .max()
         .unwrap_or(0);
-    let mut cash_rows: Vec<Value> = cash_accounts
-        .iter()
-        .filter(|a| bal(a) != 0 || a.number == "11000")
-        .map(|a| json!({ "label": a.name, "shown": money::display(bal(a)), "pct": pct(bal(a), biggest), "tone": "pos" }))
-        .collect();
+    let shown_cash: Vec<&&Account> = cash_accounts.iter().filter(|a| bal(a) != 0).collect();
+    let mut cash_rows: Vec<Value> = if shown_cash.is_empty() {
+        cash_accounts.iter().take(1).collect::<Vec<_>>()
+    } else {
+        shown_cash
+    }
+    .iter()
+    .map(|a| json!({ "label": a.name, "shown": money::display(bal(a)), "pct": pct(bal(a), biggest), "tone": "pos" }))
+    .collect();
     for a in &owed {
         cash_rows.push(json!({ "label": format!("{} owed", a.name), "shown": money::display(-bal(a)), "pct": pct(bal(a), biggest), "tone": "neg" }));
     }
 
+    // the month so far is its P&L: income less expenses (a void and its
+    // reversal net to zero; transfers and owner money are not income)
     let month = Period::of(today, PeriodKind::Month);
-    let (inflow, outflow) = cash_flow(store, &chart, &month)?;
+    let (inflow, spent) = crate::reports::pl_totals(store, &chart, &month)?;
+    let outflow = -spent;
     let net = inflow + outflow;
     let prev = month.previous();
-    let (pin, pout) = cash_flow(store, &chart, &prev)?;
-    let prev_net = pin + pout;
+    let (pin, pout) = crate::reports::pl_totals(store, &chart, &prev)?;
+    let prev_net = pin - pout;
     let scale = inflow.abs().max(outflow.abs()).max(prev_net.abs());
 
     let all = entries_in(store, &chart, &Filter::default())?;
-    let review = all
-        .iter()
-        .filter(|s| s.entry.status == Status::Draft && s.entry.needs_review)
-        .count();
+    let review = all.iter().filter(|s| s.needs_review()).count();
     let drafts: Vec<&Summary> = all
         .iter()
         .filter(|s| s.entry.status == Status::Draft && !s.entry.needs_review)
         .collect();
     let mut needs = Vec::new();
     if review > 0 {
-        needs.push(json!({ "kind": "review", "count": review, "title": "Bank lines to categorize", "detail": "From an imported statement · pick a category", "go": "ledger", "filter": "review", "tone": "rev" }));
+        needs.push(json!({ "kind": "review", "count": review, "title": "Bank lines to categorize", "detail": "Not sure yet · pick a category for each", "go": "ledger", "filter": "review", "tone": "rev" }));
     }
     if !drafts.is_empty() {
         let detail = if origin.is_app() {
@@ -341,6 +381,7 @@ pub fn today(store: &Store, book: Book, origin: Origin) -> Result<Value, Refusal
         "book": book_json(store, &chart.book)?,
         "today": today.to_string(),
         "today_label": format!("{weekday}, {month_name} {}", today.day),
+        "month_name": books_core::date::MONTH_NAMES[usize::from(today.month - 1)],
         "cash": { "label": "Cash now", "total": money::format(cash_total), "shown": money::display(cash_total), "rows": cash_rows },
         "month": {
             "label": format!("{} so far", books_core::date::MONTH_NAMES[usize::from(today.month - 1)]),
@@ -353,14 +394,7 @@ pub fn today(store: &Store, book: Book, origin: Origin) -> Result<Value, Refusal
                 { "label": format!("vs {prev_name}"), "shown": money::display(prev_net), "pct": pct(prev_net, scale), "tone": "blue" },
             ],
         },
-        "unpaid": {
-            "label": "Unpaid", "shown": money::display(0),
-            "rows": [
-                { "label": "To collect · 0", "shown": money::display(0), "pct": 0, "tone": "pos" },
-                { "label": "To pay · 0", "shown": money::display(0), "pct": 0, "tone": "neg" },
-                { "label": "Next due", "shown": "—", "pct": 0, "tone": "" },
-            ],
-        },
+        "unpaid": crate::records::owed_summary(store, &chart.book)?,
         "needs": needs,
         "needs_count": needs.iter().map(|n| n["count"].as_i64().unwrap_or(0)).sum::<i64>(),
         "counts": { "review": review, "drafts": drafts.len(), "entries": all.len() },
@@ -447,12 +481,33 @@ pub fn ledger(
         _ => None,
     };
     let balances = books::movements(store.conn(), chart.book.id, None, Some(month.end))?;
+    // the accounts in use (and every cash account), unless all are asked for
+    let used: std::collections::HashSet<i64> = {
+        let mut stmt = store
+            .conn()
+            .prepare("SELECT DISTINCT l.account_id FROM line l JOIN entry e ON e.entry_id = l.entry_id WHERE e.book_id = ?1 AND e.status <> 'discarded'")
+            .map_err(books_store::StoreError::from)?;
+        stmt.query_map([chart.book.id], |r| r.get::<_, i64>(0))
+            .map_err(books_store::StoreError::from)?
+            .collect::<Result<_, _>>()
+            .map_err(books_store::StoreError::from)?
+    };
+    let every = args
+        .get("all_accounts")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let mut groups = Vec::new();
     for g in GROUPS {
         let rows: Vec<Value> = chart
             .list
             .iter()
             .filter(|a| a.account_type.group() == g && !chart.hidden(a) && a.active)
+            .filter(|a| {
+                every
+                    || used.contains(&a.id)
+                    || (a.is_cash() && used.is_empty())
+                    || selected.as_ref().is_some_and(|s| s.id == a.id)
+            })
             .map(|a| -> Result<Value, Refusal> {
                 Ok(json!({ "ticket": ticket(store, "account", a.id)?, "number": a.number, "name": a.name }))
             })
@@ -472,7 +527,7 @@ pub fn ledger(
         },
     )?;
     let is = |s: &Summary, f: &str| match f {
-        "review" => s.entry.status == Status::Draft && s.entry.needs_review,
+        "review" => s.needs_review(),
         "draft" => s.entry.status == Status::Draft && !s.entry.needs_review,
         "posted" => matches!(s.entry.status, Status::Posted | Status::Voided),
         _ => true,
@@ -510,6 +565,7 @@ pub fn ledger(
         "book": book_json(store, &chart.book)?,
         "month": { "key": month.key, "label": month.label(), "range": format!("{} {} – {} {}", MONTHS[usize::from(s.month - 1)], s.day, MONTHS[usize::from(e.month - 1)], e.day), "prev": month.previous().key, "next": Period::of(month.end.add_days(1), PeriodKind::Month).key },
         "accounts": groups,
+        "all_accounts": every,
         "account": header,
         "filter": filter,
         "counts": counts,

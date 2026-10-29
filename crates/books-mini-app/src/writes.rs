@@ -9,6 +9,7 @@ use books_core::ledger::{Basis, KindRef};
 use books_core::money;
 use books_store::books::{self, Account, Book};
 use books_store::entries::{self, DraftInput, Form, LineInput};
+use books_store::people;
 use books_store::plumbing;
 use books_store::rusqlite::{Connection, params};
 use serde_json::{Map, Value, json};
@@ -19,7 +20,7 @@ fn tickets(conn: &Connection, kind: &str, id: i64) -> Result<String, Refusal> {
     Ok(plumbing::ticket_for(conn, kind, id)?)
 }
 
-fn book_in(conn: &Connection, args: &Map<String, Value>) -> Result<Book, Refusal> {
+pub fn book_in(conn: &Connection, args: &Map<String, Value>) -> Result<Book, Refusal> {
     if let Some(t) = text(args, "book") {
         let id = match plumbing::subject(conn, t)? {
             Some((k, id)) if k == "book" => id,
@@ -40,7 +41,7 @@ fn book_in(conn: &Connection, args: &Map<String, Value>) -> Result<Book, Refusal
     })
 }
 
-fn account_in(conn: &Connection, book: &Book, reference: &str) -> Result<Account, Refusal> {
+pub fn account_in(conn: &Connection, book: &Book, reference: &str) -> Result<Account, Refusal> {
     let found = if plumbing::is_ticket(reference) {
         match plumbing::subject(conn, reference)? {
             Some((k, id)) if k == "account" => books::account(conn, id)?,
@@ -69,7 +70,7 @@ fn entry_in(conn: &Connection, book: &Book, reference: &str) -> Result<entries::
         .ok_or_else(|| Refusal::new("not_found", "That entry is not in this book."))
 }
 
-fn amount(args: &Map<String, Value>, key: &str) -> Result<i64, Refusal> {
+pub fn amount(args: &Map<String, Value>, key: &str) -> Result<i64, Refusal> {
     let t = service::required(args, key)?;
     let c = money::parse(t).map_err(|e| Refusal::invalid(format!("`{key}`: {e}")))?;
     if c <= 0 {
@@ -216,6 +217,65 @@ pub fn gate(_conn: &Connection, _book: &Book) -> impl Fn(Date) -> books_store::R
     |_| Ok(())
 }
 
+/// A person and tags named by a request: `person` (a ticket), or `payee`
+/// with `person_kind` (made when new); `department` and `location` by
+/// ticket or name (made when new).
+fn apply_links(
+    conn: &Connection,
+    book: &Book,
+    id: i64,
+    args: &Map<String, Value>,
+) -> Result<(), Refusal> {
+    let person = match text(args, "person") {
+        Some(t) => match plumbing::subject(conn, t)? {
+            Some((k, pid)) if k == "person" => Some(pid),
+            _ => {
+                return Err(Refusal::new(
+                    "not_found",
+                    "That person ticket is not one Books issued.",
+                ));
+            }
+        },
+        None => match (text(args, "person_kind"), text(args, "payee")) {
+            (Some(kind), Some(name)) if !name.trim().is_empty() => {
+                let kind = crate::records::person_kind(kind)
+                    .ok_or_else(|| Refusal::invalid("`person_kind` is vendors, customers, employees, owners, lenders or government."))?;
+                Some(people::person_for(conn, book, kind, name)?)
+            }
+            _ => None,
+        },
+    };
+    let tag = |key: &str, kind: &str| -> Result<Option<i64>, Refusal> {
+        let Some(v) = text(args, key).map(str::trim).filter(|v| !v.is_empty()) else {
+            return Ok(None);
+        };
+        if plumbing::is_ticket(v) {
+            return match plumbing::subject(conn, v)? {
+                Some((k, tid)) if k == "tag" => Ok(Some(tid)),
+                _ => Err(Refusal::new(
+                    "not_found",
+                    "That tag ticket is not one Books issued.",
+                )),
+            };
+        }
+        match people::tags(conn, book.id, Some(kind))?
+            .into_iter()
+            .find(|t| t.name.eq_ignore_ascii_case(v))
+        {
+            Some(t) => Ok(Some(t.id)),
+            None => Ok(Some(people::create_tag(conn, book, kind, v)?)),
+        }
+    };
+    let (department, location) = (
+        tag("department", "department")?,
+        tag("location", "location")?,
+    );
+    if person.is_some() || department.is_some() || location.is_some() {
+        people::set_entry_links(conn, book, id, person, department, location)?;
+    }
+    Ok(())
+}
+
 fn entry_result(conn: &Connection, id: i64) -> Result<Value, Refusal> {
     let e = entries::get(conn, id)?.ok_or_else(|| Refusal::new("store", "The entry vanished."))?;
     Ok(with_subject(
@@ -233,9 +293,11 @@ pub fn draft(conn: &Connection, args: &Map<String, Value>, origin: Origin) -> An
         Some(t) => Some(entry_in(conn, &book, t)?.id),
         None => None,
     };
+    let mut copied_links = None;
     let input = match text(args, "copy_of") {
         Some(t) => {
             let source = entry_in(conn, &book, t)?;
+            copied_links = Some(people::links(conn, source.id)?);
             if source.form == Form::Reversal {
                 return Err(Refusal::invalid("A reversal cannot be copied."));
             }
@@ -261,6 +323,10 @@ pub fn draft(conn: &Connection, args: &Map<String, Value>, origin: Origin) -> An
         None => draft_input(conn, &book, args)?,
     };
     let id = entries::save_draft(conn, &book, existing, &input, origin.as_str())?;
+    if let Some((p, d, l)) = copied_links {
+        people::set_entry_links(conn, &book, id, p, d, l)?;
+    }
+    apply_links(conn, &book, id, args)?;
     entry_result(conn, id)
 }
 
@@ -272,7 +338,9 @@ pub fn post(conn: &Connection, args: &Map<String, Value>) -> Answer {
         Some(t) => entry_in(conn, &book, t)?.id,
         None => {
             let input = draft_input(conn, &book, args)?;
-            entries::save_draft(conn, &book, None, &input, "app")?
+            let id = entries::save_draft(conn, &book, None, &input, "app")?;
+            apply_links(conn, &book, id, args)?;
+            id
         }
     };
     let g = gate(conn, &book);

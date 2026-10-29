@@ -57,8 +57,92 @@ blocked. Labels follow [01, How to read this file](01-architecture.md#how-to-rea
 
 ### Gates
 
-Recorded in the tracker and in the M1 commit message.
+fmt clean; clippy clean; cargo test 53; PoC 177; conformance 53/53; host test 17/17; privacy scan 0 findings (commit
+`7e5f183`).
+
+### Checked in a test Rox (M1-09)
+
+Rox `016f63c` (a detached worktree, its own target folder), plain-Node broker on 8810 with a per-run trust file
+(`books-test-01`) and `ROX_KEYSTORE=file:`, the app on gpui-agent port 17441, workspace 4. Screenshots:
+[docs/shots/m1/](shots/m1/).
+
+- `/books` shows "Open your books · Buwiz Books" (M1-10) and opens the Books window full screen; first run shows
+  "Make your book" with Cash (default) selected, and an empty name is refused in place.
+- Today, Ledger (the drawer with "Behind the scenes", Discard and Post) and Accounts render as drawn.
+- Post and Void were real presses in the window: the draft became Posted; the void marked it Voided ("Cancelled by
+  entry 0006") and posted "Void of Office supplies" dated like the original.
+- **Limit (UNCONFIRMED in Rox docs, CONFIRMED by test):** a mini app's own surface is not in the gpui-agent snapshot
+  tree, so an agent can press into it by point (`invoke press --arg x= --arg y=`) but cannot type into its inputs.
+  Data that needs typing went in through signed host calls as the window (the path `rox.call` takes); actions were
+  presses. The rox session put the gap on the owner's list (nsh fork change).
+- **Found and fixed by the check:** rows keyed by ticket kept their first props after a change (a posted row still read
+  Draft); rows are now keyed by their content. Today's month counted a void and its reversal as money out and in; it
+  now reads the month's P&L, as the drawing does.
+- The test Rox must be launched outside the shell sandbox; inside it the app gets no window and its agent port backs up.
+
+## M2 People, Tags, Unpaid · M3 Reports
+
+### What exists
+
+| Part | Where | Notes |
+|---|---|---|
+| Schema 0002 | `crates/books-store/migrations/0002_people_tags_unpaid.sql` | `person` (vendor, customer, employee, owner, lender, government; no TIN column), `tag` (department, location), entry links, `unpaid`. |
+| People, tags, unpaid | `crates/books-store/src/people.rs` | A cash book's unpaid document is a reminder; marking it paid posts the money that day (Dr bank, Cr the category, `sale_invoice` on a sales line). An accrual book posts the receivable or payable when the document is saved, and marking it paid clears it; cancelling voids it. |
+| Page data and writes | `crates/books-mini-app/src/records.rs` | People (one page, seven kinds; banks and cards are the cash and card accounts), Tags, Unpaid. The model sees no person names. |
+| Reports | `crates/books-mini-app/src/reports.rs` | P&L with the previous period, balance sheet (with net income this year), cash flow, trial balance, aging (accrual books only), CSV. Every P&L and balance-sheet row carries its account ticket and month, so a click opens the Ledger there. |
+| Pages | `apps/books/{unpaid,people,tags,reports}.tsx` | As drawn. Today's Unpaid panel and Quick actions now read real data. |
+| Demo book | `tools/demo/gen_demo.py` → `fixtures/demo/buwiz-trading-2026.json`; `books-mini-app seed <file>` | Synthetic, 110 tool calls as the app. The generator checks its own golden numbers before writing. |
+| Golden test | `tests/golden_reports.rs` | Seeds the demo through the tools and asserts the drawing's numbers. |
+
+### Design choices (PROPOSAL)
+
+- **Tool names avoid invariant 7's words.** "Unpaid" and "payroll" contain `paid`/`pay`, which no Books tool name may
+  hold, so the Unpaid tools are `books_owed_list`, `books_owed_options`, `books_app_owed_create`,
+  `books_app_owed_settle` (mark paid) and `books_app_owed_cancel`; payroll tools will be `books_wage_*`.
+- **Lines on a "not sure yet" account need review.** The drawing's two bank lines (electricity, bank fee) are posted
+  to Uncategorized Expense (kind `unsure`): they are real bank movements, so balances and the P&L include them, the
+  P&L marks the row "2 to review", the Ledger shows them as Needs review, and (M5) they hold every box they could feed.
+- **The demo book honours the M3 exit numbers, not every number in the drawing.** The drawing's pages disagree with
+  each other (its P&L shows September sales of 300,000.00 while its Forms page builds Q3 net sales of 290,000.00 from
+  July and August invoices). The demo keeps the Q3 lineage, so October's P&L, the trial balance, the balance sheet,
+  cash now and unpaid match the drawing exactly, and the September column does not.
+- **Export CSV copies to the clipboard** (`rox.copy`, permission `copy`). Protocol v1 has no save-file permission
+  (permissions are `tools`, `open`, `attach`, `pick_file`, `storage`, `copy`, `preview`); `preview` (print to PDF) is
+  the other route, left for later.
+- A person or tag named on a write (`person_kind` with `payee`, `department`, `location`) is linked, and made when new.
+  A reversal keeps its original's person and tags.
+
+### Golden numbers (tests/golden_reports.rs, all passing)
+
+| Check | Value |
+|---|---|
+| P&L October 2026, net income | 251,151.00 |
+| Trial balance at Oct 31, each side | 1,224,548.40 |
+| Balance sheet at Oct 31 | assets 429,250.00 = liabilities 24,548.40 + equity 404,701.60 (net income this year 480,361.00) |
+| Cash flow October, cash at Oct 31 | 417,350.00 |
+| Q3 2026 sales and returns | 300,000.00 and −10,000.00 (net 290,000.00) |
+| Today | cash 417,350.00; October +251,151.00; to collect 105,000.00, to pay −5,800.00, next due Nov 05 |
+| Mark paid (Invoice 0143) | posts +60,000.00 on Oct 29; October net becomes 311,151.00 |
+| Accrual book | the invoice posts a receivable; aging puts it in 31–60 days; paying clears it with no second income |
+
+### Gates
+
+fmt clean; clippy clean; cargo test 85 (with the M6 port's 48); PoC 177; host test 17/17; privacy scan 0 findings.
+**Conformance 61/65:** the four failures are BRG-03 `rate_limited`. The runner sends one signed call per granted tool on
+one open, back to back, and the broker allows 20 new calls per second per open (`sessions.mjs:240`); the window grants
+24 tools. The four tools pass in the unit, golden and host tests. Asked the rox session to pace BRG-03.
+
+Checked in the test Rox: [docs/shots/m2/](shots/m2/), [docs/shots/m3/](shots/m3/).
+
+## M6 (part): the bridge in Rust
+
+Ported by a subagent in a separate worktree (branch `m6-port`, commit `bf33be7`) and verified here before it reached
+main: `crates/books-core/src/{canonical,rules,input,posting,measures,bridge,proposal,engine_error}.rs`, `tests/vectors.rs`.
+All 17 PoC vectors reproduce byte for byte: each case's proposal equals the expected proposal in canonical form, the
+input digest matches, and the whole vector file re-emitted with the Rust proposal equals its bytes. A planted one-cent
+change to a vector's input fails the test. Notes from the port: `certificates_2316_received` is `planned` in the
+catalogue and fails closed, as in the PoC; Rust sums in i128 and refuses a measure past i64.
 
 ## Not yet built
 
-M2 to M9: see the tracker.
+M4, M5, the rest of M6 (Forms, Certificates, Payroll pages), M7 to M9: see the tracker.

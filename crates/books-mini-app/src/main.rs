@@ -4,6 +4,8 @@
 //! test key id.
 //! `books-mini-app app-source <id>`: print an app's served source, for the
 //! signing step (`sign-manifest.mjs --app <id>=<file>`).
+//! `books-mini-app seed <demo.json>`: replay a synthetic demo book into the
+//! store `BOOKS_DATA_DIR` names (the test Rox and the golden tests).
 
 use std::io::Write;
 use std::process::ExitCode;
@@ -12,7 +14,7 @@ use books_mini_app::jsonrpc::{Server, serve_stdio};
 use books_mini_app::manifest::{self, Source};
 use books_mini_app::service::Books;
 
-const USAGE: &str = "usage: books-mini-app [mcp]\n       books-mini-app manifest [--key-id <id>]\n       books-mini-app app-source <app id>";
+const USAGE: &str = "usage: books-mini-app [mcp]\n       books-mini-app manifest [--key-id <id>]\n       books-mini-app app-source <app id>\n       books-mini-app seed <demo.json>";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -33,6 +35,7 @@ fn main() -> ExitCode {
         }
         ["manifest"] => print_manifest(manifest::RELEASE_KEY_ID),
         ["manifest", "--key-id", key_id] if valid_key_id(key_id) => print_manifest(key_id),
+        ["seed", file] => seed(file),
         ["app-source", id] => match books_mini_app::apps::find(id) {
             Some(app) => print_text(app.source),
             None => {
@@ -43,6 +46,30 @@ fn main() -> ExitCode {
         _ => {
             eprintln!("{USAGE}");
             ExitCode::from(2)
+        }
+    }
+}
+
+/// Replay a synthetic demo book into the store `BOOKS_DATA_DIR` names.
+fn seed(file: &str) -> ExitCode {
+    let demo = match std::fs::read_to_string(file)
+        .ok()
+        .and_then(|t| serde_json::from_str(&t).ok())
+    {
+        Some(d) => d,
+        None => {
+            eprintln!("books-mini-app: {file} is not a demo file");
+            return ExitCode::from(2);
+        }
+    };
+    match books_mini_app::demo::seed(&mut Books::from_env(), &demo) {
+        Ok(n) => {
+            println!("seeded {n} steps");
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("books-mini-app: seed: {e}");
+            ExitCode::FAILURE
         }
     }
 }

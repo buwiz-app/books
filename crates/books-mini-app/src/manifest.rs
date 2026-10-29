@@ -39,7 +39,12 @@ pub fn fingerprint(source: &str) -> String {
 /// What each app may reach (spec 5.6). `tools` is exactly the Books tools
 /// its source names (checked in `tests/manifest_shape.rs`).
 fn permissions(app: &apps::App) -> Value {
-    json!({ "tools": apps::named_tools(app.source) })
+    let mut p = json!({ "tools": apps::named_tools(app.source) });
+    // the window copies a report's CSV to the clipboard (M3 export)
+    if app.source.contains("rox.copy(") {
+        p["copy"] = json!(true);
+    }
+    p
 }
 
 fn app_entry(app: &apps::App) -> Value {
@@ -48,7 +53,7 @@ fn app_entry(app: &apps::App) -> Value {
             "id": "books",
             // neutral: no business name, amount or TIN (D1, RK-10)
             "title": "Books",
-            "description": "Your books: today, the ledger and the chart of accounts. Only you post, void or close here.",
+            "description": "Your books: today, the ledger, unpaid invoices and bills, reports, people, accounts and tags. Only you post, void or close here.",
             "entry": format!("{}{}", apps::URI_PREFIX, app.id),
             "mime": apps::MIME,
             "sdk": "1",
