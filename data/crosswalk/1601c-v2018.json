@@ -28,7 +28,7 @@
     "fill_mvp": "Books may send this key in Slice A/B (MVP).",
     "fill_p6": "Books may send this key only after P6 (payroll, 1601-C).",
     "fill_p7": "Books may send this key only after P7 (1701-MS).",
-    "cross_check": "Forms computes it; Books compares its own value and never sends it.",
+    "forms_computes": "Forms computes it. Books neither computes nor compares it (ADR-0007; replaces cross_check).",
     "never_fill": "Books never sends this key (user, profile, prior filing, evidence or human entry).",
     "refuse_mvp_spouse": "Spouse (B-side) key; refused in MVP.",
     "never_touch": "App-written, derived, page-2 mirror or BIR online credential; Books never sends it."
@@ -40,7 +40,8 @@
     "profile",
     "prior_filing",
     "user_input",
-    "none"
+    "none",
+    "forms"
   ],
   "key_semantics": {
     "key": "Exact official key as spelled in the pinned schema (bindings/boxes). It may be refused by the fill tool.",
@@ -70,9 +71,9 @@
       "computed": 13
     },
     "books_policy": {
-      "never_fill": 69,
-      "fill_p6": 12,
-      "cross_check": 13,
+      "never_fill": 73,
+      "fill_p6": 8,
+      "forms_computes": 13,
       "never_touch": 11
     }
   },
@@ -81,7 +82,8 @@
     "There is no drawee key for item 39 (verify.md s2 #13). Items 37, 38 and 40 are unmapped in the pin.",
     "Item 19 path /tax_19_sss_gsis is narrower than the printed label 'Mandatory contributions and union dues' (verify.md s3b). Employee share only (RR 11-2018 s2.78.1(B)(12); statute UNVERIFIED).",
     "Typed write targets for items 32-34 are UNCONFIRMED (verify.md s4). Official keys bind to /penalty_overrides/*.",
-    "The pinned schema has no identity lock on /month; item 1 is identity-locked here only through the txtMonth box lock (lock=identity)."
+    "The pinned schema has no identity lock on /month; item 1 is identity-locked here only through the txtMonth box lock (lock=identity).",
+    "ADR-0007 (2026-10-29): books_policy cross_check became forms_computes (Books neither computes nor compares tax boxes). ATC selection keys, and inputs that need a tax classification, threshold or deductibility judgement, became never_fill (source forms or user_input). rule_ids now resolve to data/rules/*.rules.json mappings or not_mapped pointers (rule set r2)."
   ],
   "typed_only_entries": [],
   "fields": [
@@ -377,8 +379,8 @@
       "value_type_basis": "schema binding type",
       "fill_class": "input",
       "scope": "none",
-      "books_source": "none",
-      "books_policy": "fill_p6",
+      "books_source": "forms",
+      "books_policy": "never_fill",
       "rule_ids": [
         "1601C.H.5"
       ],
@@ -1171,8 +1173,8 @@
       "value_type_basis": "schema binding type",
       "fill_class": "input",
       "scope": "none",
-      "books_source": "payroll",
-      "books_policy": "fill_p6",
+      "books_source": "user_input",
+      "books_policy": "never_fill",
       "rule_ids": [
         "1601C.II.20"
       ],
@@ -1204,8 +1206,8 @@
       "value_type_basis": "schema binding type",
       "fill_class": "input",
       "scope": "none",
-      "books_source": "payroll",
-      "books_policy": "fill_p6",
+      "books_source": "user_input",
+      "books_policy": "never_fill",
       "rule_ids": [
         "1601C.II.20"
       ],
@@ -1236,7 +1238,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1601C.II.21"
       ],
@@ -1267,7 +1269,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1601C.II.22"
       ],
@@ -1299,8 +1301,8 @@
       "value_type_basis": "schema binding type",
       "fill_class": "input",
       "scope": "none",
-      "books_source": "payroll",
-      "books_policy": "fill_p6",
+      "books_source": "forms",
+      "books_policy": "never_fill",
       "rule_ids": [
         "1601C.II.23"
       ],
@@ -1331,7 +1333,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1601C.II.24"
       ],
@@ -1395,7 +1397,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1601C.II.26"
       ],
@@ -1426,7 +1428,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1601C.II.27"
       ],
@@ -1556,7 +1558,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1601C.II.30"
       ],
@@ -1587,7 +1589,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1601C.II.31"
       ],
@@ -1717,7 +1719,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1601C.II.35"
       ],
@@ -1748,7 +1750,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1601C.II.36"
       ],
@@ -3140,7 +3142,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1601C.S1.1.7"
       ],
@@ -3204,7 +3206,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1601C.S1.2.7"
       ],
@@ -3268,7 +3270,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1601C.S1.3.7"
       ],
@@ -3299,7 +3301,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1601C.S1.4"
       ],

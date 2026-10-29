@@ -15,19 +15,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "120000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "F-001.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-F-001 synthetic sales invoice",
@@ -46,19 +40,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "100000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "F-002.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-F-002 synthetic sales invoice",
@@ -77,19 +65,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "80000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "F-003.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-F-003 synthetic sales invoice",
@@ -105,12 +87,9 @@
           "credit": "0.00",
           "debit": "25000.00",
           "document_kind": "expense_document",
+          "income_class": "operating_expense",
           "line_id": "F-004.1",
-          "tax_side": "debit",
-          "tax_types": [
-            "income_tax"
-          ],
-          "treatment": "expense"
+          "measure_side": "debit"
         },
         {
           "account": "bank_accounts",
@@ -135,19 +114,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "0.00",
           "debit": "100000.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "F-005.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-F-005 synthetic void of F-002",
@@ -155,27 +128,14 @@
       "tax_profile_id": "5a7b9c1d-4e6f-4a8b-9c0d-1e2f3a4b5c6d"
     }
   ],
-  "fixture_format": "buwiz-poc-fixture/1",
+  "fixture_format": "buwiz-poc-fixture/2",
   "fixture_id": "f-slice-a-2026",
   "profiles": [
     {
       "display": "***-***-***-00000",
-      "facts": {
-        "2026": {
-          "deduction_method": "osd",
-          "owner_taxable_compensation_2316": "0.00",
-          "regime": "graduated",
-          "vat_status": "non_vat"
-        }
-      },
       "label": "F: Slice A",
       "periods": {
         "2026-Q3": "closed"
-      },
-      "prior_filings": {
-        "2026": {
-          "1701q_q1_q3_tax_payments": "0.00"
-        }
       },
       "tax_profile_id": "5a7b9c1d-4e6f-4a8b-9c0d-1e2f3a4b5c6d"
     }

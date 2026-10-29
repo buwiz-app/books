@@ -1,76 +1,299 @@
 {
-  "description": "8% pathway is not implemented in the PoC; fails closed. Blocked.",
+  "description": "Forms context eight_percent: net sales 1190000.00 to IV.19. Ready.",
   "expected": {
     "as_of": "2026-10-29",
-    "blocking": [
-      {
-        "code": "eight_percent_1701ms_not_implemented",
-        "detail": "the 8% pathway (IV.19, IV.20, IV.25) is not implemented in the PoC"
-      }
-    ],
-    "discrepancies": [
-      {
-        "citations": [
-          "research/traces/bir.md section 2",
-          "data/rules/rates.v1.json osd",
-          "research/spreadsheet-corrections.md item 38"
-        ],
-        "id": "DISC-OSD-BASE-1701MS",
-        "status": "needs_review",
-        "summary": "OSD base conflict: printed Part I item 17 says 40% of gross sales; Part IV item 11 says 40% of IV.7 (net sales). The PoC follows the rules file and the workbook worked example (net sales). UNCONFIRMED."
-      }
-    ],
-    "due": {
-      "date": "2027-04-15",
-      "overdue": false,
-      "penalties_computed": false,
-      "rule": "15 April after the taxable year (rates.v1 due_dates.1701MS; April 15 CONFIRMED)",
-      "rule_status": "CONFIRMED"
-    },
+    "blocking": [],
     "excluded_keys": [
       {
-        "key": "frm1701MS:txtAllowableItemizedDeductionsNo10a",
-        "reason": "proposal blocked: eight_percent_1701ms_not_implemented"
-      },
-      {
         "key": "frm1701MS:txtCostofSalesNo8a",
-        "reason": "proposal blocked: eight_percent_1701ms_not_implemented"
+        "reason": "not selected by the Forms context: /taxpayer/tax_option is eight_percent (mapping needs graduated); /taxpayer/deduction is unset (mapping needs itemized)"
       },
       {
         "key": "frm1701MS:txtNonOperatingIncomeNo13a",
-        "reason": "proposal blocked: eight_percent_1701ms_not_implemented"
+        "reason": "not selected by the Forms context: /taxpayer/tax_option is eight_percent (mapping needs graduated)"
       },
       {
         "key": "frm1701MS:txtOtherNonOperatingIncomeNo20a",
-        "reason": "proposal blocked: eight_percent_1701ms_not_implemented"
+        "reason": "no source lines; mapping open for review (EXC.FINAL_TAX_INTEREST)"
       },
       {
         "key": "frm1701MS:txtSalesReturnsNo6a",
-        "reason": "proposal blocked: eight_percent_1701ms_not_implemented"
+        "reason": "not selected by the Forms context: /taxpayer/tax_option is eight_percent (mapping needs graduated)"
       },
       {
         "key": "frm1701MS:txtSalesRevenueNo5a",
-        "reason": "proposal blocked: eight_percent_1701ms_not_implemented"
-      },
-      {
-        "key": "frm1701MS:txtSalesRevenuesFeesANo19a",
-        "reason": "proposal blocked: eight_percent_1701ms_not_implemented"
+        "reason": "not selected by the Forms context: /taxpayer/tax_option is eight_percent (mapping needs graduated)"
       }
     ],
-    "expected_readback": {},
-    "fill_args": {},
-    "fixture_sha256": "9ce4f7198fe48150d8ff66b24c0bb79cd7d51f85a6af50276bb0591f1e9603e1",
+    "fill_args": {
+      "frm1701MS:txtSalesRevenuesFeesANo19a": "1190000.00"
+    },
+    "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
     "form_code": "1701MS",
-    "inputs_hash": "0dcec37ba1a71f91a8d55b848cfe33a55ebd17546b6477de9666815d5cc67a6b",
-    "lineage": {},
-    "output_sha256": "f512306f0c2fb5209f24d549927ee420163d046ba394f2b6eecba72c506a0464",
+    "form_context": {
+      "/taxpayer/tax_option": "eight_percent"
+    },
+    "inputs_hash": "7ea62d725530d6edd109327fada91628aa2c37c4bf5f7e9025e3f343df3bd710",
+    "lineage": {
+      "frm1701MS:txtCreditableFourthQuarterNo4a": {
+        "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+        "lines": [
+          {
+            "amount": "3000.00",
+            "entry_id": "EL-019",
+            "line_id": "EL-019.1"
+          }
+        ],
+        "mapping_id": "1701MS.V.4",
+        "measures": [
+          "it_withheld_2307_received"
+        ],
+        "netted_pairs": 0,
+        "rule_set_version": 2
+      },
+      "frm1701MS:txtCreditableTaxNo3a": {
+        "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+        "lines": [
+          {
+            "amount": "3000.00",
+            "entry_id": "EL-004",
+            "line_id": "EL-004.1"
+          },
+          {
+            "amount": "3000.00",
+            "entry_id": "EL-008",
+            "line_id": "EL-008.1"
+          },
+          {
+            "amount": "2900.00",
+            "entry_id": "EL-014",
+            "line_id": "EL-014.1"
+          }
+        ],
+        "mapping_id": "1701MS.V.3",
+        "measures": [
+          "it_withheld_2307_received"
+        ],
+        "netted_pairs": 0,
+        "rule_set_version": 2
+      },
+      "frm1701MS:txtSalesRevenuesFeesANo19a": {
+        "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+        "lines": [
+          {
+            "amount": "120000.00",
+            "entry_id": "EL-001",
+            "line_id": "EL-001.2"
+          },
+          {
+            "amount": "100000.00",
+            "entry_id": "EL-002",
+            "line_id": "EL-002.2"
+          },
+          {
+            "amount": "80000.00",
+            "entry_id": "EL-003",
+            "line_id": "EL-003.2"
+          },
+          {
+            "amount": "120000.00",
+            "entry_id": "EL-005",
+            "line_id": "EL-005.2"
+          },
+          {
+            "amount": "100000.00",
+            "entry_id": "EL-006",
+            "line_id": "EL-006.2"
+          },
+          {
+            "amount": "80000.00",
+            "entry_id": "EL-007",
+            "line_id": "EL-007.2"
+          },
+          {
+            "amount": "120000.00",
+            "entry_id": "EL-009",
+            "line_id": "EL-009.2"
+          },
+          {
+            "amount": "100000.00",
+            "entry_id": "EL-010",
+            "line_id": "EL-010.2"
+          },
+          {
+            "amount": "80000.00",
+            "entry_id": "EL-011",
+            "line_id": "EL-011.2"
+          },
+          {
+            "amount": "-10000.00",
+            "entry_id": "EL-013",
+            "line_id": "EL-013.1"
+          },
+          {
+            "amount": "120000.00",
+            "entry_id": "EL-016",
+            "line_id": "EL-016.2"
+          },
+          {
+            "amount": "100000.00",
+            "entry_id": "EL-017",
+            "line_id": "EL-017.2"
+          },
+          {
+            "amount": "80000.00",
+            "entry_id": "EL-018",
+            "line_id": "EL-018.2"
+          }
+        ],
+        "mapping_id": "1701MS.IV.19",
+        "measures": [
+          "net_sales"
+        ],
+        "netted_pairs": 0,
+        "rule_set_version": 2
+      }
+    },
+    "measures": {
+      "it_withheld_2307_received[Q1-Q3]": {
+        "lines": [
+          {
+            "amount": "3000.00",
+            "entry_id": "EL-004",
+            "line_id": "EL-004.1"
+          },
+          {
+            "amount": "3000.00",
+            "entry_id": "EL-008",
+            "line_id": "EL-008.1"
+          },
+          {
+            "amount": "2900.00",
+            "entry_id": "EL-014",
+            "line_id": "EL-014.1"
+          }
+        ],
+        "netted_pairs": 0,
+        "value": "8900.00",
+        "window": {
+          "end": "2026-09-30",
+          "start": "2026-01-01"
+        }
+      },
+      "it_withheld_2307_received[Q4]": {
+        "lines": [
+          {
+            "amount": "3000.00",
+            "entry_id": "EL-019",
+            "line_id": "EL-019.1"
+          }
+        ],
+        "netted_pairs": 0,
+        "value": "3000.00",
+        "window": {
+          "end": "2026-12-31",
+          "start": "2026-10-01"
+        }
+      },
+      "net_sales": {
+        "lines": [
+          {
+            "amount": "120000.00",
+            "entry_id": "EL-001",
+            "line_id": "EL-001.2"
+          },
+          {
+            "amount": "100000.00",
+            "entry_id": "EL-002",
+            "line_id": "EL-002.2"
+          },
+          {
+            "amount": "80000.00",
+            "entry_id": "EL-003",
+            "line_id": "EL-003.2"
+          },
+          {
+            "amount": "120000.00",
+            "entry_id": "EL-005",
+            "line_id": "EL-005.2"
+          },
+          {
+            "amount": "100000.00",
+            "entry_id": "EL-006",
+            "line_id": "EL-006.2"
+          },
+          {
+            "amount": "80000.00",
+            "entry_id": "EL-007",
+            "line_id": "EL-007.2"
+          },
+          {
+            "amount": "120000.00",
+            "entry_id": "EL-009",
+            "line_id": "EL-009.2"
+          },
+          {
+            "amount": "100000.00",
+            "entry_id": "EL-010",
+            "line_id": "EL-010.2"
+          },
+          {
+            "amount": "80000.00",
+            "entry_id": "EL-011",
+            "line_id": "EL-011.2"
+          },
+          {
+            "amount": "-10000.00",
+            "entry_id": "EL-013",
+            "line_id": "EL-013.1"
+          },
+          {
+            "amount": "120000.00",
+            "entry_id": "EL-016",
+            "line_id": "EL-016.2"
+          },
+          {
+            "amount": "100000.00",
+            "entry_id": "EL-017",
+            "line_id": "EL-017.2"
+          },
+          {
+            "amount": "80000.00",
+            "entry_id": "EL-018",
+            "line_id": "EL-018.2"
+          }
+        ],
+        "netted_pairs": 0,
+        "value": "1190000.00",
+        "window": {
+          "end": "2026-12-31",
+          "start": "2026-01-01"
+        }
+      },
+      "other_non_operating_income": {
+        "lines": [],
+        "netted_pairs": 0,
+        "value": "0.00",
+        "window": {
+          "end": "2026-12-31",
+          "start": "2026-01-01"
+        }
+      }
+    },
+    "measures_catalog": {
+      "catalog_id": "measures-v1",
+      "version": 1
+    },
+    "output_sha256": "3e92a597fe1cf798c23eb06478eabd2ea34a0fbd1bf35d2aa7a14c5c1682e452",
     "period_end": "2026-12-31",
     "period_key": "2026",
     "period_start": "2026-01-01",
     "profile_digest": "bcfa1b24bf610bb7e145f65fe105f9c419a6068e32eb2c26b77a240793b0695b",
-    "proposal_format": "buwiz-poc-proposal/1",
-    "rate": null,
-    "reference_values": {},
+    "proposal_format": "buwiz-poc-proposal/2",
+    "reference_values": {
+      "frm1701MS:txtCreditableFourthQuarterNo4a": "3000.00",
+      "frm1701MS:txtCreditableTaxNo3a": "8900.00"
+    },
     "refused_keys": [
       {
         "key": "frm1701MS:txtAllowableItemizedDeductionsNo10aSpouse",
@@ -166,7 +389,7 @@
       },
       {
         "key": "frm1701MS:txtSpouseNo17",
-        "reason": "election box with no Forms lock; Books never fills it (blocker B7)"
+        "reason": "Forms-owned election input: the bridge may read it as form_context, never fills or decides it (B7: not locked against the profile election)"
       },
       {
         "key": "frm1701MS:txtSurchangeNo28b",
@@ -190,11 +413,11 @@
       },
       {
         "key": "frm1701MS:txtTaxpayerNo12",
-        "reason": "election box with no Forms lock; Books never fills it (blocker B7)"
+        "reason": "Forms-owned election input: the bridge may read it as form_context, never fills or decides it (B7: not locked against the profile election)"
       },
       {
         "key": "frm1701MS:txtTaxpayerNo12b",
-        "reason": "election box with no Forms lock; Books never fills it (blocker B7)"
+        "reason": "Forms-owned election input: the bridge may read it as form_context, never fills or decides it (B7: not locked against the profile election)"
       },
       {
         "key": "frm1701MS:txtTaxpayerNo13b",
@@ -218,7 +441,7 @@
       },
       {
         "key": "frm1701MS:txtTaxpayerNo17",
-        "reason": "election box with no Forms lock; Books never fills it (blocker B7)"
+        "reason": "Forms-owned election input: the bridge may read it as form_context, never fills or decides it (B7: not locked against the profile election)"
       },
       {
         "key": "frm1701MS:txtTaxpayerNo8b",
@@ -230,39 +453,34 @@
       },
       {
         "key": "taxCodeDropdown",
-        "reason": "election box with no Forms lock; Books never fills it (blocker B7)"
+        "reason": "Forms-owned election input: the bridge may read it as form_context, never fills or decides it (B7: not locked against the profile election)"
       },
       {
         "key": "taxCodeDropdownSpouse",
-        "reason": "election box with no Forms lock; Books never fills it (blocker B7)"
+        "reason": "Forms-owned election input: the bridge may read it as form_context, never fills or decides it (B7: not locked against the profile election)"
       }
     ],
     "rule_set": {
-      "rule_set_id": "1701MS-v2024-r1",
-      "rule_set_version": 1,
+      "rule_set_id": "1701MS-v2024-r2",
+      "rule_set_version": 2,
       "schema_pin": "63267ca3d4d526a8ec490394470f026de82ac385",
       "schema_sha256": "6cf45329d89a09d6436de58df4b0e65acb7d68d91a91bf299c3b3b635dcaab84"
     },
-    "status": "blocked",
+    "status": "ready",
     "tax_year": 2026,
     "warnings": [
       {
-        "code": "ELECTION_BOXES_NOT_LOCKED",
-        "detail": "items I.12, I.17 and I.18 have no Forms lock and are not compared with the profile election (blocker B7); Books never fills them"
-      },
-      {
-        "code": "II19_IV18A_UNCONFIRMED",
-        "detail": "II.19 (IV.18A) is not produced; zero because no special-rate or direct-remittance input exists"
-      },
-      {
-        "code": "V10_SUMMATION_UNCONFIRMED",
-        "detail": "V.10 sums V.1 to V.9 per the field tab; the printed summation is UNCONFIRMED (verify.md s2 #54)"
+        "code": "MAPPING_REVIEW_OPEN",
+        "detail": "1701MS.IV.20: Same open question as IV.13 (EXC.FINAL_TAX_INTEREST)."
       }
     ]
   },
   "fixture": "b-eight-percent-2026",
-  "fixture_sha256": "9ce4f7198fe48150d8ff66b24c0bb79cd7d51f85a6af50276bb0591f1e9603e1",
+  "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
   "form": "1701MS",
+  "form_context": {
+    "/taxpayer/tax_option": "eight_percent"
+  },
   "input": {
     "acknowledged_entry_ids": [
       "EL-013"
@@ -275,44 +493,45 @@
         "lines": [
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "120000.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-001.1",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           },
           {
             "account": "sales_revenue",
-            "atc": "PT010",
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "120000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "sale_invoice",
+            "final_tax_withheld": "unknown",
             "income_class": "business_sales",
             "line_id": "EL-001.2",
+            "measure_side": "credit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "credit",
-            "tax_types": [
-              "income_tax",
-              "percentage_tax"
-            ],
-            "treatment": "sale_pt"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -324,44 +543,45 @@
         "lines": [
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "100000.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-002.1",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           },
           {
             "account": "sales_revenue",
-            "atc": "PT010",
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "100000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "sale_invoice",
+            "final_tax_withheld": "unknown",
             "income_class": "business_sales",
             "line_id": "EL-002.2",
+            "measure_side": "credit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "credit",
-            "tax_types": [
-              "income_tax",
-              "percentage_tax"
-            ],
-            "treatment": "sale_pt"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -373,44 +593,45 @@
         "lines": [
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "80000.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-003.1",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           },
           {
             "account": "sales_revenue",
-            "atc": "PT010",
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "80000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "sale_invoice",
+            "final_tax_withheld": "unknown",
             "income_class": "business_sales",
             "line_id": "EL-003.2",
+            "measure_side": "credit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "credit",
-            "tax_types": [
-              "income_tax",
-              "percentage_tax"
-            ],
-            "treatment": "sale_pt"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -422,43 +643,45 @@
         "lines": [
           {
             "account": "ph_cwt_receivable",
-            "atc": "WI010",
+            "certificate_atc": "WI010",
             "certificate_status": "received",
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "it",
             "debit": "3000.00",
             "document_kind": "certificate_2307",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-004.1",
+            "measure_side": "debit",
+            "party_ref": null,
             "period_end": "2026-03-31",
             "period_start": "2026-01-01",
-            "person_scope": "self",
-            "tax_side": "debit",
-            "tax_types": [
-              "income_tax"
-            ],
-            "treatment": "cwt_credit"
+            "person_scope": "self"
           },
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "3000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-004.2",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -470,44 +693,45 @@
         "lines": [
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "120000.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-005.1",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           },
           {
             "account": "sales_revenue",
-            "atc": "PT010",
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "120000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "sale_invoice",
+            "final_tax_withheld": "unknown",
             "income_class": "business_sales",
             "line_id": "EL-005.2",
+            "measure_side": "credit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "credit",
-            "tax_types": [
-              "income_tax",
-              "percentage_tax"
-            ],
-            "treatment": "sale_pt"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -519,44 +743,45 @@
         "lines": [
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "100000.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-006.1",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           },
           {
             "account": "sales_revenue",
-            "atc": "PT010",
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "100000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "sale_invoice",
+            "final_tax_withheld": "unknown",
             "income_class": "business_sales",
             "line_id": "EL-006.2",
+            "measure_side": "credit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "credit",
-            "tax_types": [
-              "income_tax",
-              "percentage_tax"
-            ],
-            "treatment": "sale_pt"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -568,44 +793,45 @@
         "lines": [
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "80000.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-007.1",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           },
           {
             "account": "sales_revenue",
-            "atc": "PT010",
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "80000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "sale_invoice",
+            "final_tax_withheld": "unknown",
             "income_class": "business_sales",
             "line_id": "EL-007.2",
+            "measure_side": "credit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "credit",
-            "tax_types": [
-              "income_tax",
-              "percentage_tax"
-            ],
-            "treatment": "sale_pt"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -617,43 +843,45 @@
         "lines": [
           {
             "account": "ph_cwt_receivable",
-            "atc": "WI010",
+            "certificate_atc": "WI010",
             "certificate_status": "received",
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "it",
             "debit": "3000.00",
             "document_kind": "certificate_2307",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-008.1",
+            "measure_side": "debit",
+            "party_ref": null,
             "period_end": "2026-06-30",
             "period_start": "2026-04-01",
-            "person_scope": "self",
-            "tax_side": "debit",
-            "tax_types": [
-              "income_tax"
-            ],
-            "treatment": "cwt_credit"
+            "person_scope": "self"
           },
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "3000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-008.2",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -665,44 +893,45 @@
         "lines": [
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "120000.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-009.1",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           },
           {
             "account": "sales_revenue",
-            "atc": "PT010",
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "120000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "sale_invoice",
+            "final_tax_withheld": "unknown",
             "income_class": "business_sales",
             "line_id": "EL-009.2",
+            "measure_side": "credit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "credit",
-            "tax_types": [
-              "income_tax",
-              "percentage_tax"
-            ],
-            "treatment": "sale_pt"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -714,44 +943,45 @@
         "lines": [
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "100000.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-010.1",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           },
           {
             "account": "sales_revenue",
-            "atc": "PT010",
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "100000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "sale_invoice",
+            "final_tax_withheld": "unknown",
             "income_class": "business_sales",
             "line_id": "EL-010.2",
+            "measure_side": "credit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "credit",
-            "tax_types": [
-              "income_tax",
-              "percentage_tax"
-            ],
-            "treatment": "sale_pt"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -763,44 +993,45 @@
         "lines": [
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "80000.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-011.1",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           },
           {
             "account": "sales_revenue",
-            "atc": "PT010",
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "80000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "sale_invoice",
+            "final_tax_withheld": "unknown",
             "income_class": "business_sales",
             "line_id": "EL-011.2",
+            "measure_side": "credit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "credit",
-            "tax_types": [
-              "income_tax",
-              "percentage_tax"
-            ],
-            "treatment": "sale_pt"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -812,43 +1043,45 @@
         "lines": [
           {
             "account": "office_supplies",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "20000.00",
             "document_kind": "expense_document",
-            "income_class": "none",
+            "final_tax_withheld": "unknown",
+            "income_class": "operating_expense",
             "line_id": "EL-012.1",
+            "measure_side": "debit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "debit",
-            "tax_types": [
-              "income_tax"
-            ],
-            "treatment": "expense"
+            "person_scope": "self"
           },
           {
             "account": "bank_accounts",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "20000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-012.2",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -860,44 +1093,45 @@
         "lines": [
           {
             "account": "refunds_and_discounts",
-            "atc": "PT010",
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": "return",
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "10000.00",
             "document_kind": "credit_note",
+            "final_tax_withheld": "unknown",
             "income_class": "contra_sales",
             "line_id": "EL-013.1",
+            "measure_side": "credit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "credit",
-            "tax_types": [
-              "income_tax",
-              "percentage_tax"
-            ],
-            "treatment": "sale_pt"
+            "person_scope": "self"
           },
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "10000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-013.2",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -909,43 +1143,45 @@
         "lines": [
           {
             "account": "ph_cwt_receivable",
-            "atc": "WI010",
+            "certificate_atc": "WI010",
             "certificate_status": "received",
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "it",
             "debit": "2900.00",
             "document_kind": "certificate_2307",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-014.1",
+            "measure_side": "debit",
+            "party_ref": null,
             "period_end": "2026-09-30",
             "period_start": "2026-07-01",
-            "person_scope": "self",
-            "tax_side": "debit",
-            "tax_types": [
-              "income_tax"
-            ],
-            "treatment": "cwt_credit"
+            "person_scope": "self"
           },
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "2900.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-014.2",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -957,148 +1193,150 @@
         "lines": [
           {
             "account": "salaries",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
-            "comp_component": "taxable_basic",
+            "comp_component": "basic_pay",
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "40000.00",
             "document_kind": "payroll_register",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-015.1",
+            "measure_side": "debit",
+            "party_ref": "EMP-1",
             "period_end": null,
             "period_start": null,
-            "person_scope": "employee",
-            "tax_side": "debit",
-            "tax_types": [
-              "compensation_withholding"
-            ],
-            "treatment": "comp_income"
+            "person_scope": "employee"
           },
           {
             "account": "employee_benefits",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": "de_minimis",
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "2000.00",
             "document_kind": "payroll_register",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-015.2",
+            "measure_side": "debit",
+            "party_ref": "EMP-1",
             "period_end": null,
             "period_start": null,
-            "person_scope": "employee",
-            "tax_side": "debit",
-            "tax_types": [
-              "compensation_withholding"
-            ],
-            "treatment": "comp_income"
+            "person_scope": "employee"
           },
           {
             "account": "employer_payroll_taxes",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
-            "comp_component": null,
+            "comp_component": "contribution",
+            "contra_kind": null,
+            "contribution_scheme": "sss_gsis",
             "contribution_side": "employer",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "1500.00",
             "document_kind": "payroll_register",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-015.3",
+            "measure_side": "debit",
+            "party_ref": "EMP-1",
             "period_end": null,
             "period_start": null,
-            "person_scope": "employee",
-            "tax_side": "debit",
-            "tax_types": [
-              "compensation_withholding"
-            ],
-            "treatment": "expense"
+            "person_scope": "employee"
           },
           {
             "account": "ph_sss_payable",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
-            "comp_component": "mandatory_contributions_employee",
+            "comp_component": "contribution",
+            "contra_kind": null,
+            "contribution_scheme": "sss_gsis",
             "contribution_side": "employee",
             "credit": "2000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "payroll_register",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-015.4",
+            "measure_side": "credit",
+            "party_ref": "EMP-1",
             "period_end": null,
             "period_start": null,
-            "person_scope": "employee",
-            "tax_side": "credit",
-            "tax_types": [
-              "compensation_withholding"
-            ],
-            "treatment": "contribution"
+            "person_scope": "employee"
           },
           {
             "account": "ph_sss_payable",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
-            "comp_component": null,
+            "comp_component": "contribution",
+            "contra_kind": null,
+            "contribution_scheme": "sss_gsis",
             "contribution_side": "employer",
             "credit": "1500.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "payroll_register",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-015.5",
+            "measure_side": "credit",
+            "party_ref": "EMP-1",
             "period_end": null,
             "period_start": null,
-            "person_scope": "employee",
-            "tax_side": "credit",
-            "tax_types": [
-              "compensation_withholding"
-            ],
-            "treatment": "none"
+            "person_scope": "employee"
           },
           {
             "account": "ph_wtc_payable",
-            "atc": "WW010",
+            "certificate_atc": null,
             "certificate_status": null,
-            "comp_component": null,
+            "comp_component": "tax_withheld",
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "2808.40",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "payroll_register",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-015.6",
+            "measure_side": "credit",
+            "party_ref": "EMP-1",
             "period_end": null,
             "period_start": null,
-            "person_scope": "employee",
-            "tax_side": "credit",
-            "tax_types": [
-              "compensation_withholding"
-            ],
-            "treatment": "none"
+            "person_scope": "employee"
           },
           {
             "account": "ph_net_pay_payable",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "37191.60",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-015.7",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -1110,44 +1348,45 @@
         "lines": [
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "120000.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-016.1",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           },
           {
             "account": "sales_revenue",
-            "atc": "PT010",
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "120000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "sale_invoice",
+            "final_tax_withheld": "unknown",
             "income_class": "business_sales",
             "line_id": "EL-016.2",
+            "measure_side": "credit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "credit",
-            "tax_types": [
-              "income_tax",
-              "percentage_tax"
-            ],
-            "treatment": "sale_pt"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -1159,44 +1398,45 @@
         "lines": [
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "100000.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-017.1",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           },
           {
             "account": "sales_revenue",
-            "atc": "PT010",
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "100000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "sale_invoice",
+            "final_tax_withheld": "unknown",
             "income_class": "business_sales",
             "line_id": "EL-017.2",
+            "measure_side": "credit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "credit",
-            "tax_types": [
-              "income_tax",
-              "percentage_tax"
-            ],
-            "treatment": "sale_pt"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -1208,44 +1448,45 @@
         "lines": [
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "80000.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-018.1",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           },
           {
             "account": "sales_revenue",
-            "atc": "PT010",
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "80000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "sale_invoice",
+            "final_tax_withheld": "unknown",
             "income_class": "business_sales",
             "line_id": "EL-018.2",
+            "measure_side": "credit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "credit",
-            "tax_types": [
-              "income_tax",
-              "percentage_tax"
-            ],
-            "treatment": "sale_pt"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -1257,60 +1498,54 @@
         "lines": [
           {
             "account": "ph_cwt_receivable",
-            "atc": "WI010",
+            "certificate_atc": "WI010",
             "certificate_status": "received",
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "it",
             "debit": "3000.00",
             "document_kind": "certificate_2307",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-019.1",
+            "measure_side": "debit",
+            "party_ref": null,
             "period_end": "2026-10-28",
             "period_start": "2026-10-01",
-            "person_scope": "self",
-            "tax_side": "debit",
-            "tax_types": [
-              "income_tax"
-            ],
-            "treatment": "cwt_credit"
+            "person_scope": "self"
           },
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "3000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "EL-019.2",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
         "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
       }
     ],
-    "input_format": "buwiz-poc-input/1",
+    "input_format": "buwiz-poc-input/2",
     "profiles": [
       {
-        "facts": {
-          "2026": {
-            "deduction_method": "osd",
-            "owner_taxable_compensation_2316": "0.00",
-            "regime": "eight_percent",
-            "vat_status": "non_vat"
-          }
-        },
         "periods": {
           "2026": "closed",
           "2026-09": "closed",
@@ -1318,16 +1553,11 @@
           "2026-Q2": "closed",
           "2026-Q3": "closed"
         },
-        "prior_filings": {
-          "2026": {
-            "1701q_q1_q3_tax_payments": "40400.00"
-          }
-        },
         "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
       }
     ]
   },
   "period": "2026",
-  "vector_format": "buwiz-poc-vector/1",
+  "vector_format": "buwiz-poc-vector/2",
   "vector_id": "b-1701ms-2026"
 }

@@ -1,205 +1,76 @@
 {
-  "rule_set_id": "1601C-v2018-r1",
+  "rule_set_id": "1601C-v2018-r2",
   "form_code": "1601C",
   "edition": "January 2018 (ENCS)",
   "schema_sha256": "07ca2f04da430efa12b9fa30ca4ab4fa37bb6a226c397783a3d1e4358e7bc251",
   "schema_pin": "63267ca3d4d526a8ec490394470f026de82ac385",
-  "version": 1,
+  "version": 2,
   "effective_from": "2018-01-01",
   "effective_to": null,
-  "status_note": "Edition CONFIRMED (bir.md s1). Bindings CONFIRMED for the pin. Payroll rules are design targets for P6; MVP does not fill 1601-C.",
-  "rules": [
-    {
-      "id": "1601C.H.1",
-      "printed_item": "1 For the month (MM/YYYY)",
-      "method": "identity",
-      "formula": "Month and year come from the requested filing period (identity lock). Books never sends them.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 1 (txtMonth, txtYear identity)"
-      ]
-    },
-    {
-      "id": "1601C.H.2",
-      "printed_item": "2 Amended return?",
-      "method": "human choice",
-      "formula": "Original return in MVP. Amended links the original.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 2"
-      ]
-    },
+  "supersedes": "1601C-v2018-r1 (archived at research/handoff-to-forms/rules-r1/1601c-v2018.rules.r1.json; ADR-0007)",
+  "measures_catalog": "measures-v1",
+  "status_note": "Edition CONFIRMED (bir.md s1). Bindings CONFIRMED for the pin. Payroll rules are design targets for P6; MVP does not fill 1601-C. Rule set r2 is a thin mapping: accounting measure to crosswalk input key (fill_class input) with lineage. Books holds no rate, election, threshold, applicability test, ATC choice, due date or penalty (ADR-0007).",
+  "owner_values": {
+    "forms": "Forms computes or decides it (tax due, rate, ATC, election, applicability, penalties, totals). Books keeps no rule.",
+    "profile": "The Forms taxpayer profile supplies it.",
+    "identity": "Forms sets it from the requested period.",
+    "user": "A person enters it in Forms.",
+    "prior_filing": "Forms holds prior filings.",
+    "not_fillable": "No addressable key.",
+    "app": "App-written or derived by Forms."
+  },
+  "form_context_inputs": [],
+  "mappings": [
     {
       "id": "1601C.H.3",
       "printed_item": "3 Any taxes withheld?",
-      "method": "payroll",
-      "formula": "Yes when the month has employee withholding in the payroll register; No otherwise. Confirm zero payroll against no withholding.",
-      "status": "CONFIRMED",
-      "books_source": "payroll",
-      "books_policy": "fill_p6",
+      "mode": "fill",
+      "target_key": "frm1601c:TaxWithheld",
+      "measures": [
+        "tax_withheld_from_employees"
+      ],
+      "aggregation": "choice_yes_if_nonzero",
+      "aggregation_params": {
+        "yes": "1",
+        "no": "2"
+      },
+      "period_basis": "month",
+      "person_scope": "employee",
+      "gates": [
+        "GATE.PERIOD_LOCK"
+      ],
+      "review": {
+        "status": "settled",
+        "note": "A payroll fact: yes when payroll recorded any tax withheld in the month."
+      },
+      "poc": "implemented",
+      "status": "CONFIRMED key",
       "citations": [
         "workbook 1601-C H.3",
         "verify.md s4 item 3"
       ]
     },
     {
-      "id": "1601C.H.4",
-      "printed_item": "4 Number of sheets attached",
-      "method": "human count",
-      "formula": "Count the attachment sheets submitted.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 4"
-      ]
-    },
-    {
-      "id": "1601C.H.5",
-      "printed_item": "5 Alphanumeric tax code (ATC)",
-      "method": "constant",
-      "formula": "WW010 for compensation withholding (preprinted ATC; official default).",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "fill_p6",
-      "citations": [
-        "sheets.md s3 (H.5 WW010; buwiz-oss writer-cells.json:620)",
-        "bir.md s2 (ATC 5 printed)"
-      ]
-    },
-    {
-      "id": "1601C.I.6",
-      "printed_item": "6 TIN and branch code",
-      "method": "profile (derived)",
-      "formula": "Derived by BIR from the taxprofile ticket. Books never receives or stores a TIN.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 6",
-        "decision 3"
-      ]
-    },
-    {
-      "id": "1601C.I.7",
-      "printed_item": "7 RDO code",
-      "method": "profile lock",
-      "formula": "Employer registration RDO from the profile.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 7"
-      ]
-    },
-    {
-      "id": "1601C.I.8",
-      "printed_item": "8 Withholding agent name and line of business",
-      "method": "profile lock",
-      "formula": "Employer registered name and line of business from the profile.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 8"
-      ]
-    },
-    {
-      "id": "1601C.I.9",
-      "printed_item": "9 Registered address (lines 1 and 2)",
-      "method": "profile lock",
-      "formula": "Address from the profile. Line 2 is typed alias registered_address_2 (human).",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 9"
-      ]
-    },
-    {
-      "id": "1601C.I.9A",
-      "printed_item": "9A ZIP code",
-      "method": "profile lock",
-      "formula": "From the profile.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 9"
-      ]
-    },
-    {
-      "id": "1601C.I.10",
-      "printed_item": "10 Telephone number",
-      "method": "profile lock",
-      "formula": "From the profile.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 10"
-      ]
-    },
-    {
-      "id": "1601C.I.11",
-      "printed_item": "11 Category of withholding agent (P private, G government)",
-      "method": "profile",
-      "formula": "Employer classification from the profile.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 11"
-      ]
-    },
-    {
-      "id": "1601C.I.12",
-      "printed_item": "12 Email address",
-      "method": "profile lock",
-      "formula": "From the profile.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 12 (bare txtEmail)"
-      ]
-    },
-    {
-      "id": "1601C.I.13",
-      "printed_item": "13 Payees with relief under law or treaty?",
-      "method": "human choice",
-      "formula": "Per-payee relief from payroll and profile records. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 13"
-      ]
-    },
-    {
-      "id": "1601C.I.13A",
-      "printed_item": "13 Relief specification (treaty or special rate)",
-      "method": "human entry",
-      "formula": "Authority text when item 13 applies.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 13 (selTreaty)"
-      ]
-    },
-    {
       "id": "1601C.II.14",
       "printed_item": "14 Total amount of compensation",
-      "method": "payroll",
-      "formula": "Gross compensation per employee before employee deductions: basic gross plus exempt benefits. No employer-contribution expense. Reconcile to payroll detail.",
-      "status": "CONFIRMED",
-      "books_source": "payroll",
-      "books_policy": "fill_p6",
+      "mode": "fill",
+      "target_key": "frm1601c:txtTax14",
+      "measures": [
+        "gross_compensation"
+      ],
+      "aggregation": "sum",
+      "period_basis": "month",
+      "person_scope": "employee",
+      "gates": [
+        "GATE.PERIOD_LOCK",
+        "EXC.EMPLOYER_SHARE_NOT_19"
+      ],
+      "review": {
+        "status": "settled",
+        "note": "Gross compensation before employee deductions. Never the employer contribution expense."
+      },
+      "poc": "implemented",
+      "status": "CONFIRMED key",
       "test_vectors": [
         {
           "name": "synthetic: basic 40000.00 + de minimis 2000.00",
@@ -208,31 +79,55 @@
       ],
       "citations": [
         "workbook 1601-C II.14",
-        "verify.md s4 item 14 (conditional; not computed)",
+        "verify.md s4 item 14",
         "books.md s1 #1 probe C"
       ]
     },
     {
       "id": "1601C.II.15",
       "printed_item": "15 Statutory minimum wage for MWEs",
-      "method": "payroll",
-      "formula": "Minimum-wage earners only: basic pay at the statutory minimum wage. Needs the MWE flag.",
-      "status": "CONFIRMED",
-      "books_source": "payroll",
-      "books_policy": "fill_p6",
+      "mode": "fill",
+      "target_key": "frm1601c:txtTax15",
+      "measures": [
+        "mwe_basic_pay"
+      ],
+      "aggregation": "sum",
+      "period_basis": "month",
+      "person_scope": "employee",
+      "gates": [
+        "GATE.PERIOD_LOCK"
+      ],
+      "review": {
+        "status": "settled",
+        "note": "Basic pay of employees that payroll records as minimum-wage earners."
+      },
+      "poc": "implemented",
+      "status": "CONFIRMED key",
       "citations": [
-        "bir.md 3.4 (RR 11-2018 s2.78.1(B)(13); TRAIN s5 proviso)"
+        "bir.md 3.4 (RR 11-2018 s2.78.1(B)(13))"
       ]
     },
     {
       "id": "1601C.II.16",
       "printed_item": "16 Holiday, overtime, night-shift and hazard pay (MWEs only)",
-      "method": "payroll",
-      "formula": "Qualified MWE components only. Holiday pay is exempt (TRAIN s5 proviso). Overtime, night-shift and hazard basis is UNVERIFIED.",
-      "status": "CONFIRMED",
-      "books_source": "payroll",
-      "books_policy": "fill_p6",
-      "status_detail": "Holiday pay CONFIRMED; overtime, night-shift and hazard legal basis UNVERIFIED (bir.md 3.4).",
+      "mode": "fill",
+      "target_key": "frm1601c:txtTax16",
+      "measures": [
+        "holiday_ot_nsd_hazard_pay"
+      ],
+      "aggregation": "sum",
+      "period_basis": "month",
+      "person_scope": "employee",
+      "gates": [
+        "GATE.PERIOD_LOCK"
+      ],
+      "review": {
+        "status": "open",
+        "note": "Item 16 takes this pay for minimum-wage earners only. The per-employee MWE split of the measure is planned (P6)."
+      },
+      "poc": "fail_closed",
+      "fail_closed_code": "mwe_split_not_implemented",
+      "status": "CONFIRMED key",
       "citations": [
         "bir.md 3.4",
         "ra10963 line 63 (holiday pay)"
@@ -240,17 +135,36 @@
     },
     {
       "id": "1601C.II.17",
-      "printed_item": "17 13th month pay and other benefits",
-      "method": "payroll",
-      "formula": "Exempt portion up to 90,000.00 per employee per calendar year. Cap is configurable: the Finance Secretary may raise it (bir.md 3.4).",
-      "status": "CONFIRMED",
-      "books_source": "payroll",
-      "books_policy": "fill_p6",
+      "printed_item": "17 13th month pay and other benefits (non-taxable part)",
+      "mode": "fill",
+      "target_key": "frm1601c:txtTax17",
+      "measures": [
+        "thirteenth_month_and_benefits_paid"
+      ],
+      "aggregation": "nontaxable_13th_month_cap",
+      "aggregation_params": {
+        "annual_cap_text": "90000.00",
+        "per": "employee (party_ref) per calendar year",
+        "ytd_measure": "thirteenth_month_and_benefits_paid",
+        "ytd_basis": "year_to_date_before_period",
+        "formula": "per employee: min(paid in the month, max(0, cap - paid earlier in the year)); summed over employees"
+      },
+      "period_basis": "month",
+      "person_scope": "employee",
+      "gates": [
+        "GATE.PERIOD_LOCK"
+      ],
+      "input_level_tax_rule": "THE ONE INPUT-LEVEL TAX RULE IN THE BRIDGE. Item 17 asks for the NON-TAXABLE part of 13th month pay and other benefits (annual cap 90,000.00 per employee). Only Books has the year-to-date payroll it needs. Open for the Forms owner: either Forms applies the cap (and the bridge sends the gross paid amount through a new input), or the bridge keeps it here. See research/handoff-to-forms/compliance-notes.md.",
+      "review": {
+        "status": "open",
+        "note": "Gray area kept in the mapping layer by owner instruction (2026-10-29). The cap may be raised by the Finance Secretary (bir.md 3.4)."
+      },
+      "poc": "implemented",
+      "status": "CONFIRMED key; cap CONFIRMED (NIRC s32(B)(7)(e) as amended)",
       "test_vectors": [
         {
-          "name": "synthetic: 95000.00 of 13th-month pay",
-          "expected_exempt_text": "90000.00",
-          "expected_taxable_excess_text": "5000.00"
+          "name": "synthetic: 95000.00 paid, nothing earlier in the year",
+          "expected_text": "90000.00"
         }
       ],
       "citations": [
@@ -261,12 +175,23 @@
     {
       "id": "1601C.II.18",
       "printed_item": "18 De minimis benefits",
-      "method": "payroll",
-      "formula": "Exempt portion by benefit type and ceiling. Verified ceilings: monetized unused vacation leave up to 10 days (private); medical cash allowance up to 1,500 per semester; rice subsidy up to 2,000 or 50 kg per month; uniforms up to 6,000 per year. Other types UNVERIFIED.",
-      "status": "CONFIRMED",
-      "books_source": "payroll",
-      "books_policy": "fill_p6",
-      "status_detail": "Ceilings (a)-(e) CONFIRMED in RR 11-2018 text; the rest UNVERIFIED (bir.md 3.4).",
+      "mode": "fill",
+      "target_key": "frm1601c:txtTax18",
+      "measures": [
+        "de_minimis_paid"
+      ],
+      "aggregation": "sum",
+      "period_basis": "month",
+      "person_scope": "employee",
+      "gates": [
+        "GATE.PERIOD_LOCK"
+      ],
+      "review": {
+        "status": "settled",
+        "note": "As recorded by payroll."
+      },
+      "poc": "implemented",
+      "status": "CONFIRMED key",
       "citations": [
         "RR 11-2018 s2.78.1(3) (bir.md 3.4)"
       ]
@@ -274,20 +199,29 @@
     {
       "id": "1601C.II.19",
       "printed_item": "19 SSS, GSIS, PHIC, HDMF contributions and union dues (employee share only)",
-      "method": "payroll",
-      "formula": "Employee shares only: SSS, PhilHealth, Pag-IBIG, GSIS if applicable, union dues. Never the employer share (EXC.EMPLOYER_SHARE_NOT_19). The payable account also holds the employer share, so do not use the full account balance.",
-      "status": "CONFIRMED",
-      "books_source": "payroll",
-      "books_policy": "fill_p6",
+      "mode": "fill",
+      "target_key": "frm1601c:txtTax19",
+      "measures": [
+        "employee_mandatory_contributions"
+      ],
+      "aggregation": "sum",
+      "period_basis": "month",
+      "person_scope": "employee",
       "gates": [
+        "GATE.PERIOD_LOCK",
         "EXC.EMPLOYER_SHARE_NOT_19"
       ],
-      "status_detail": "RR 11-2018 CONFIRMED; the statute text is UNVERIFIED. The crosswalk path /tax_19_sss_gsis is narrower than the label (verify.md s3b).",
+      "review": {
+        "status": "settled",
+        "note": "Employee shares only. employer_mandatory_contributions is a separate measure and never feeds this box."
+      },
+      "poc": "implemented",
+      "status": "CONFIRMED key; RR 11-2018 CONFIRMED, statute text UNVERIFIED",
       "test_vectors": [
         {
           "name": "BK-TS defect vector",
           "employee_share_text": "2000.00",
-          "expected_II19_text": "2000.00"
+          "expected_text": "2000.00"
         }
       ],
       "citations": [
@@ -297,769 +231,403 @@
       ]
     },
     {
-      "id": "1601C.II.20",
-      "printed_item": "20 Other non-taxable compensation (specify)",
-      "method": "payroll",
-      "formula": "Other exemptions with a description. Do not repeat items 15 to 19.",
-      "status": "CONFIRMED",
-      "books_source": "payroll",
-      "books_policy": "fill_p6",
-      "citations": [
-        "workbook 1601-C II.20"
-      ]
-    },
-    {
-      "id": "1601C.II.21",
-      "printed_item": "21 Total non-taxable compensation",
-      "method": "computed",
-      "formula": "Sum of items 15 to 20 (mutually exclusive categories).",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "test_vectors": [
-        {
-          "II18_text": "2000.00",
-          "II19_text": "2000.00",
-          "expected_text": "4000.00"
-        }
-      ],
-      "citations": [
-        "workbook 1601-C II.21",
-        "verify.md s2 #47 (CONFIRMED)"
-      ]
-    },
-    {
-      "id": "1601C.II.22",
-      "printed_item": "22 Total taxable compensation",
-      "method": "computed",
-      "formula": "II.14 - II.21. Do not omit employee contributions.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "test_vectors": [
-        {
-          "II14_text": "42000.00",
-          "II21_text": "4000.00",
-          "expected_text": "38000.00",
-          "regression": "BK-TS gives 40000.00"
-        }
-      ],
-      "citations": [
-        "workbook 1601-C II.22",
-        "verify.md s2 #28 (BK-TS omits contributions)"
-      ]
-    },
-    {
-      "id": "1601C.II.23",
-      "printed_item": "23 Taxable compensation not subject to withholding",
-      "method": "payroll",
-      "formula": "Non-MWE employees whose annual taxable compensation is at or below 250,000.00 (verify current instructions).",
-      "status": "UNCONFIRMED",
-      "books_source": "payroll",
-      "books_policy": "fill_p6",
-      "status_detail": "Legal basis UNVERIFIED (bir.md 3.4). The only 250,000 text in RR 11-2018 concerns another section.",
-      "citations": [
-        "bir.md 3.4",
-        "workbook 1601-C II.23 'verify current instructions'"
-      ]
-    },
-    {
-      "id": "1601C.II.24",
-      "printed_item": "24 Net taxable compensation",
-      "method": "computed",
-      "formula": "II.22 - II.23.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook 1601-C II.24"
-      ]
-    },
-    {
       "id": "1601C.II.25",
       "printed_item": "25 Total taxes withheld",
-      "method": "payroll",
-      "formula": "Employee income tax withheld in the month from the payroll computation. Reconcile to the posted withholding control movement (ph_wtc_payable) for the month, excluding remittances.",
-      "status": "CONFIRMED",
-      "books_source": "payroll",
-      "books_policy": "fill_p6",
-      "status_detail": "The reconciliation gate was not passed to the filing workspace in BK-TS (books.md s1 #5).",
+      "mode": "fill",
+      "target_key": "frm1601c:txtTax25",
+      "measures": [
+        "tax_withheld_from_employees"
+      ],
+      "aggregation": "sum",
+      "period_basis": "month",
+      "person_scope": "employee",
+      "gates": [
+        "GATE.PERIOD_LOCK"
+      ],
+      "review": {
+        "status": "settled",
+        "note": "The amount payroll recorded as withheld. Books does not compute withholding."
+      },
+      "poc": "implemented",
+      "status": "CONFIRMED key",
       "citations": [
         "workbook 1601-C II.25 note",
         "books.md s4a (control movement)"
       ]
+    }
+  ],
+  "not_mapped": [
+    {
+      "id": "1601C.H.1",
+      "printed_item": "1 For the month (MM/YYYY)",
+      "owner": "identity"
+    },
+    {
+      "id": "1601C.H.2",
+      "printed_item": "2 Amended return?",
+      "owner": "user"
+    },
+    {
+      "id": "1601C.H.4",
+      "printed_item": "4 Number of sheets attached",
+      "owner": "user"
+    },
+    {
+      "id": "1601C.H.5",
+      "printed_item": "5 Alphanumeric tax code (ATC)",
+      "owner": "forms",
+      "note": "ATC (WW010) is Forms'. The bridge never sends an ATC."
+    },
+    {
+      "id": "1601C.I.6",
+      "printed_item": "6 TIN and branch code",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1601C.I.7",
+      "printed_item": "7 RDO code",
+      "owner": "profile"
+    },
+    {
+      "id": "1601C.I.8",
+      "printed_item": "8 Withholding agent name and line of business",
+      "owner": "profile"
+    },
+    {
+      "id": "1601C.I.9",
+      "printed_item": "9 Registered address (lines 1 and 2)",
+      "owner": "profile"
+    },
+    {
+      "id": "1601C.I.9A",
+      "printed_item": "9A ZIP code",
+      "owner": "profile"
+    },
+    {
+      "id": "1601C.I.10",
+      "printed_item": "10 Telephone number",
+      "owner": "profile"
+    },
+    {
+      "id": "1601C.I.11",
+      "printed_item": "11 Category of withholding agent (P private, G government)",
+      "owner": "profile"
+    },
+    {
+      "id": "1601C.I.12",
+      "printed_item": "12 Email address",
+      "owner": "profile"
+    },
+    {
+      "id": "1601C.I.13",
+      "printed_item": "13 Payees with relief under law or treaty?",
+      "owner": "user"
+    },
+    {
+      "id": "1601C.I.13A",
+      "printed_item": "13 Relief specification (treaty or special rate)",
+      "owner": "user"
+    },
+    {
+      "id": "1601C.II.20",
+      "printed_item": "20 Other non-taxable compensation (specify)",
+      "owner": "user",
+      "note": "Other non-taxable compensation is a tax classification. Entered in Forms."
+    },
+    {
+      "id": "1601C.II.21",
+      "printed_item": "21 Total non-taxable compensation",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1601C.II.22",
+      "printed_item": "22 Total taxable compensation",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1601C.II.23",
+      "printed_item": "23 Taxable compensation not subject to withholding",
+      "owner": "forms",
+      "note": "Taxable compensation not subject to withholding depends on a 250,000 threshold test (UNCONFIRMED basis). Forms owns it."
+    },
+    {
+      "id": "1601C.II.24",
+      "printed_item": "24 Net taxable compensation",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "1601C.II.26",
       "printed_item": "26 Adjustment from previous months",
-      "method": "computed",
-      "formula": "Total adjustment from Schedule I (S1.4). Signed.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "sign": "signed",
-      "citations": [
-        "verify.md s4 (Schedule I rows)",
-        "workbook S1.4"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "1601C.II.27",
       "printed_item": "27 Taxes withheld for remittance",
-      "method": "computed",
-      "formula": "II.25 + II.26.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook 1601-C II.27"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "1601C.II.28",
       "printed_item": "28 Tax remitted in previously filed return (amended only)",
-      "method": "prior filing",
-      "formula": "Only in an amended return, with proof.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "workbook II.28"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.II.29",
       "printed_item": "29 Other remittances (specify)",
-      "method": "evidence",
-      "formula": "Eligible prior remittance with evidence.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "workbook II.29"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.II.30",
       "printed_item": "30 Total remittances made",
-      "method": "computed",
-      "formula": "II.28 + II.29.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook II.30"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "1601C.II.31",
       "printed_item": "31 Tax still due / (over-remittance)",
-      "method": "computed",
-      "formula": "II.27 - II.30. Preserve the sign.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "sign": "signed",
-      "citations": [
-        "workbook II.31"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "1601C.II.32",
       "printed_item": "32 Surcharge",
-      "method": "manual (penalty)",
-      "formula": "Penalty assessment. Books computes none and never fills it. Official key binds /penalty_overrides/surcharge.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "status_detail": "Typed alias write target not traced (verify.md s4): UNCONFIRMED for the typed form.",
-      "citations": [
-        "verify.md s4 items 32-34"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.II.33",
       "printed_item": "33 Interest",
-      "method": "manual (penalty)",
-      "formula": "Penalty assessment. Books computes none and never fills it. Official key binds /penalty_overrides/interest.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "status_detail": "Typed alias write target not traced (verify.md s4): UNCONFIRMED for the typed form.",
-      "citations": [
-        "verify.md s4 items 32-34"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.II.34",
       "printed_item": "34 Compromise",
-      "method": "manual (penalty)",
-      "formula": "Penalty assessment. Books computes none and never fills it. Official key binds /penalty_overrides/compromise.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "status_detail": "Typed alias write target not traced (verify.md s4): UNCONFIRMED for the typed form.",
-      "citations": [
-        "verify.md s4 items 32-34"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.II.35",
       "printed_item": "35 Total penalties",
-      "method": "computed",
-      "formula": "II.32 + II.33 + II.34.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook II.35"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "1601C.II.36",
       "printed_item": "36 Total amount still due / (over-remittance)",
-      "method": "computed",
-      "formula": "II.31 + II.35. Preserve the sign.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "sign": "signed",
-      "citations": [
-        "workbook 1601-C II.36 (added by correction 3)",
-        "verify.md s2 #48"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "1601C.S1.1.1",
       "printed_item": "Schedule I row 1: previous month (typed schedule_1.N.previous_month only)",
-      "method": "prior period",
-      "formula": "Only for an earlier-month adjustment. The app derives the month (07/2031 when filled). Typed alias accepted for the month; the official key is refused.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2; month refused)",
-        "workbook S1.1.1"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.1.2",
       "printed_item": "Schedule I row 1: date paid",
-      "method": "prior period",
-      "formula": "Only for an earlier-month adjustment. The app derives the month (07/2031 when filled). Typed alias accepted for the month; the official key is refused.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2; month refused)",
-        "workbook S1.1.2"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.1.3",
       "printed_item": "Schedule I row 1: drawee bank, code or agency",
-      "method": "prior period",
-      "formula": "Only for an earlier-month adjustment. The app derives the month (07/2031 when filled). Typed alias accepted for the month; the official key is refused.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2; month refused)",
-        "workbook S1.1.3"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.1.4",
       "printed_item": "Schedule I row 1: payment number",
-      "method": "prior period",
-      "formula": "Only for an earlier-month adjustment. The app derives the month (07/2031 when filled). Typed alias accepted for the month; the official key is refused.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2; month refused)",
-        "workbook S1.1.4"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.1.5",
       "printed_item": "Schedule I row 1: tax paid excluding penalties",
-      "method": "prior period",
-      "formula": "Only for an earlier-month adjustment. The app derives the month (07/2031 when filled). Typed alias accepted for the month; the official key is refused.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2; month refused)",
-        "workbook S1.1.5"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.1.6",
       "printed_item": "Schedule I row 1: should be tax due (reviewed)",
-      "method": "prior period",
-      "formula": "Only for an earlier-month adjustment. The app derives the month (07/2031 when filled). Typed alias accepted for the month; the official key is refused.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2; month refused)",
-        "workbook S1.1.6"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.1.7",
       "printed_item": "Schedule I row 1: adjustment (column 6 less column 5)",
-      "method": "computed",
-      "formula": "Should-be tax due minus tax paid. Signed.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "sign": "signed",
-      "citations": [
-        "workbook S1.1.7"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "1601C.S1.2.1",
       "printed_item": "Schedule I row 2: field 1",
-      "method": "prior period",
-      "formula": "Earlier-month adjustment field. Official keys exist for rows 0 to 2 only; the typed form for rows 3+ is UNCONFIRMED.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2)",
-        "verify.md s2 #17 (typed N>=3 not traced)"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.2.2",
       "printed_item": "Schedule I row 2: field 2",
-      "method": "prior period",
-      "formula": "Earlier-month adjustment field. Official keys exist for rows 0 to 2 only; the typed form for rows 3+ is UNCONFIRMED.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2)",
-        "verify.md s2 #17 (typed N>=3 not traced)"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.2.3",
       "printed_item": "Schedule I row 2: field 3",
-      "method": "prior period",
-      "formula": "Earlier-month adjustment field. Official keys exist for rows 0 to 2 only; the typed form for rows 3+ is UNCONFIRMED.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2)",
-        "verify.md s2 #17 (typed N>=3 not traced)"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.2.4",
       "printed_item": "Schedule I row 2: field 4",
-      "method": "prior period",
-      "formula": "Earlier-month adjustment field. Official keys exist for rows 0 to 2 only; the typed form for rows 3+ is UNCONFIRMED.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2)",
-        "verify.md s2 #17 (typed N>=3 not traced)"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.2.5",
       "printed_item": "Schedule I row 2: field 5",
-      "method": "prior period",
-      "formula": "Earlier-month adjustment field. Official keys exist for rows 0 to 2 only; the typed form for rows 3+ is UNCONFIRMED.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2)",
-        "verify.md s2 #17 (typed N>=3 not traced)"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.2.6",
       "printed_item": "Schedule I row 2: field 6",
-      "method": "prior period",
-      "formula": "Earlier-month adjustment field. Official keys exist for rows 0 to 2 only; the typed form for rows 3+ is UNCONFIRMED.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2)",
-        "verify.md s2 #17 (typed N>=3 not traced)"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.2.7",
       "printed_item": "Schedule I row 2: adjustment",
-      "method": "computed",
-      "formula": "Should-be tax due minus tax paid. Signed.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "sign": "signed",
-      "citations": [
-        "workbook S1.2.7"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "1601C.S1.3.1",
       "printed_item": "Schedule I row 3: field 1",
-      "method": "prior period",
-      "formula": "Earlier-month adjustment field. Official keys exist for rows 0 to 2 only; the typed form for rows 3+ is UNCONFIRMED.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2)",
-        "verify.md s2 #17 (typed N>=3 not traced)"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.3.2",
       "printed_item": "Schedule I row 3: field 2",
-      "method": "prior period",
-      "formula": "Earlier-month adjustment field. Official keys exist for rows 0 to 2 only; the typed form for rows 3+ is UNCONFIRMED.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2)",
-        "verify.md s2 #17 (typed N>=3 not traced)"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.3.3",
       "printed_item": "Schedule I row 3: field 3",
-      "method": "prior period",
-      "formula": "Earlier-month adjustment field. Official keys exist for rows 0 to 2 only; the typed form for rows 3+ is UNCONFIRMED.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2)",
-        "verify.md s2 #17 (typed N>=3 not traced)"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.3.4",
       "printed_item": "Schedule I row 3: field 4",
-      "method": "prior period",
-      "formula": "Earlier-month adjustment field. Official keys exist for rows 0 to 2 only; the typed form for rows 3+ is UNCONFIRMED.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2)",
-        "verify.md s2 #17 (typed N>=3 not traced)"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.3.5",
       "printed_item": "Schedule I row 3: field 5",
-      "method": "prior period",
-      "formula": "Earlier-month adjustment field. Official keys exist for rows 0 to 2 only; the typed form for rows 3+ is UNCONFIRMED.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2)",
-        "verify.md s2 #17 (typed N>=3 not traced)"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.3.6",
       "printed_item": "Schedule I row 3: field 6",
-      "method": "prior period",
-      "formula": "Earlier-month adjustment field. Official keys exist for rows 0 to 2 only; the typed form for rows 3+ is UNCONFIRMED.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (Sch I rows 0-2)",
-        "verify.md s2 #17 (typed N>=3 not traced)"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1601C.S1.3.7",
       "printed_item": "Schedule I row 3: adjustment",
-      "method": "computed",
-      "formula": "Should-be tax due minus tax paid. Signed.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "sign": "signed",
-      "citations": [
-        "workbook S1.3.7"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "1601C.S1.4",
       "printed_item": "Schedule I total adjustment",
-      "method": "computed",
-      "formula": "Sum of the row adjustments (rows 1 to 3). Carries to item 26.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook S1.4"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "1601C.S1.N",
       "printed_item": "Schedule I row family pattern",
-      "method": "pattern",
-      "formula": "Pattern marker for the runtime-indexed row family (no fixed key). Not a fill target.",
-      "status": "UNCONFIRMED",
-      "books_source": "none",
-      "books_policy": "never_fill",
-      "status_detail": "Typed rows N>=3 not traced (verify.md s2 #17).",
-      "citations": [
-        "verify.md s2 #17"
-      ]
+      "owner": "not_fillable"
     },
     {
       "id": "1601C.III.37.bank",
       "printed_item": "37 payment row: drawee bank or agency",
-      "method": "evidence",
-      "formula": "Record only when payment method 37 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.37.number",
       "printed_item": "37 payment row: reference number",
-      "method": "evidence",
-      "formula": "Record only when payment method 37 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.37.date",
       "printed_item": "37 payment row: payment date",
-      "method": "evidence",
-      "formula": "Record only when payment method 37 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.37.amount",
       "printed_item": "37 payment row: amount",
-      "method": "evidence",
-      "formula": "Record only when payment method 37 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.38.bank",
       "printed_item": "38 payment row: drawee bank or agency",
-      "method": "evidence",
-      "formula": "Record only when payment method 38 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.38.number",
       "printed_item": "38 payment row: reference number",
-      "method": "evidence",
-      "formula": "Record only when payment method 38 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.38.date",
       "printed_item": "38 payment row: payment date",
-      "method": "evidence",
-      "formula": "Record only when payment method 38 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.38.amount",
       "printed_item": "38 payment row: amount",
-      "method": "evidence",
-      "formula": "Record only when payment method 38 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.39.bank",
       "printed_item": "39 payment row: drawee bank or agency",
-      "method": "evidence",
-      "formula": "Record only when payment method 39 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "status_detail": "Item 39 has no drawee key in the pin (verify.md s2 #13).",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.39.number",
       "printed_item": "39 payment row: reference number",
-      "method": "evidence",
-      "formula": "Record only when payment method 39 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.39.date",
       "printed_item": "39 payment row: payment date",
-      "method": "evidence",
-      "formula": "Record only when payment method 39 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.39.amount",
       "printed_item": "39 payment row: amount",
-      "method": "evidence",
-      "formula": "Record only when payment method 39 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.40.bank",
       "printed_item": "40 payment row: drawee bank or agency",
-      "method": "evidence",
-      "formula": "Record only when payment method 40 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.40.number",
       "printed_item": "40 payment row: reference number",
-      "method": "evidence",
-      "formula": "Record only when payment method 40 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.40.date",
       "printed_item": "40 payment row: payment date",
-      "method": "evidence",
-      "formula": "Record only when payment method 40 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.40.amount",
       "printed_item": "40 payment row: amount",
-      "method": "evidence",
-      "formula": "Record only when payment method 40 was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 37-40 unmapped)",
-        "verify.md s2 #13"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.III.40.particular",
       "printed_item": "40 Other payment: particulars",
-      "method": "evidence",
-      "formula": "Free text for item 40 (txtParticular40). Added by correction 31. Unmapped in the pin.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtParticular40 unmapped)"
-      ]
+      "owner": "user"
     },
     {
       "id": "1601C.DECL.signature",
       "printed_item": "Signer, title, TIN, agent credentials and dates",
-      "method": "human",
-      "formula": "A person signs and declares. Books never auto-signs.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "workbook DECL.signature",
-        "verify.md s4 (agent fields unmapped)"
-      ]
+      "owner": "user"
     }
   ]
 }

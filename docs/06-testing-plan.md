@@ -20,9 +20,9 @@ Labels follow [01, How to read this file](01-architecture.md#how-to-read-this-fi
 | BIR mini-app Rust tests | Live BIR `crates/bir-shell/src/mini_app/` (106 `#[test]` attributes by grep) | Yes. Not run. | `[bir-shell §5]` |
 | BIR app static test | Live BIR `crates/bir-shell/v1-tests/apps.test.mjs` | Yes. Its permission test skips unless `BIR_MINI_APP_BIN` is set. Not in CI. | `[bir-shell §5; §8 item 4]` |
 | BIR broker test | Live BIR `crates/bir-shell/v1-tests/broker.test.mjs` | Yes. Not in CI. Uses a per-run key and a scratch DB. | `[bir-shell §5]` |
-| Books (this repo) `poc/` | `/Volumes/goldcoders/buwiz-books/poc/` | Did not exist when this file was written (checked 2026-10-29). | Directory listing [V] |
-| Books (this repo) `fixtures/` | `/Volumes/goldcoders/buwiz-books/fixtures/` | Did not exist when this file was written. | Directory listing [V] |
-| Every Books test in this document | This repo | PROPOSED. None written. | This file |
+| Books (this repo) `poc/` | `/Volumes/goldcoders/buwiz-books/poc/` | Yes. Bun PoC of measures, mapping and fill args (ADR 0007). The run summary is in `poc/README.md`. | `poc/test/*.test.ts` |
+| Books (this repo) `fixtures/` | `/Volumes/goldcoders/buwiz-books/fixtures/` | Yes. Synthetic fixtures and language-neutral vectors written by the PoC tools. | `fixtures/synthetic/`, `fixtures/vectors/` |
+| Every Rust Books test in this document | This repo | PROPOSED. None written. | This file |
 
 Rule. A skipped test in CI is a failure. BIR's permission test is skipped without an env var and no CI workflow runs it `[bir-shell §8 item 4]`. Books must not inherit that.
 
@@ -33,7 +33,7 @@ Rule. A skipped test in CI is a failure. BIR's permission test is skipped withou
 1. **Synthetic data only.** Every value in a test is invented. Canary TINs are generated at run time from a seed and never committed.
 2. **No live calls.** No test calls Rox production, BIR, or buwiz-cloud. Host-level tests run a local broker on a free port with a temp data folder.
 3. **The live BIR database is never opened.** Slice B uses a scratch profile (B0).
-4. **Golden first.** A golden tax test fails the build. A BK-TS defect gets a regression test that fails on the BK-TS behaviour.
+4. **Golden first.** A golden measure or mapping test fails the build. A BK-TS defect gets a regression test that fails on the BK-TS behaviour. Books has no tax, rate, rounding, threshold or due-date test, because it has no such logic (ADR 0007). Forms' expected outputs appear only as `expected_forms_computed` documentation in the vectors.
 5. **Determinism.** Same inputs, same outputs. Clocks are injected. Time zone is Asia/Manila for all calendar dates.
 6. **Refusals are one class.** Tests treat `permission_denied` and `tool_error` the same way (A12).
 
@@ -44,65 +44,58 @@ Rule. A skipped test in CI is a failure. BIR's permission test is skipped withou
 | Set | Purpose | Content |
 |---|---|---|
 | DS-A | Slice A | E1 (120,000.00, 2026-07-01), E2 (100,000.00, 2026-07-15), E3 (80,000.00, 2026-08-20), E4 (rent 25,000.00, 2026-08-05), E5 (void of E2), N1 (unbalanced 100.00 and 99.99). See [04 section 4](04-first-slice.md#4-synthetic-data-set). |
-| DS-B | VAT gate | Posted sales year-to-date at exactly 300000000 centavos (3,000,000.00), 300000001 (3,000,000.01), and 299999999 (2,999,999.99). |
-| DS-C | Rounding | Bases in centavos at 300 bps and 100 bps: 150, 149, −150, 1, 50, 49, −50, 300000000. |
-| DS-D | Periods and rates | Dates on both sides of 2020-07-01, 2023-06-30, 2023-07-01, 2025-12-31, 2026-09-30, 2026-10-01. Timestamps 2026-09-30T23:30+08:00 and 2026-10-01T00:30+08:00. |
-| DS-E | 1601-C netting (P6) | Basic 40,000.00, de minimis 2,000.00, employee SSS 2,000.00. Expected taxable 38,000.00. |
-| DS-F | Certificates (P4) | Received WB082; pending, lost and disputed WB082; received WB084 (final). |
+| DS-B | (retired) | The VAT-threshold set moved to Forms with the threshold (ADR 0007). |
+| DS-C | Money text | Two-place decimal text to integer centavos and back (`fixtures/vectors/money-and-mapping.json`). The rounding-tie set moved to Forms with D7. |
+| DS-D | Periods | Period boundaries (quarter, month, year) and timestamps 2026-09-30T23:30+08:00 and 2026-10-01T00:30+08:00. |
+| DS-E | 1601-C payroll measures (P6) | Basic 40,000.00, de minimis 2,000.00, employee SSS 2,000.00, employer SSS 1,500.00, tax withheld 2,808.40. Expected: gross compensation 42,000.00; item 19 2,000.00 (employee only). Forms computes taxable 38,000.00. |
+| DS-F | Certificates (P4) | Received WB082 2307; pending, lost and disputed WB082; received WB084 2306 (final). |
 | DS-G | Privacy canaries | Generated at run time. Fake nine-digit strings, a memo marker `MEMO-CANARY-<run-id>`, and a fake ticket. Never in the repo. |
-| DS-H | Worked example | Gross 300,000.00 at 3% gives PT 9,000.00. Fixture credit 3,000.00. Payable 6,000.00. Overpayment case: credit 7,000.00 against PT 6,000.00. |
+| DS-H | Worked example | Gross sales 300,000.00; received PT 2307 3,000.00 to item 15. Overpayment variant: certificates 10,000.00. Forms computes PT 9,000.00 and the payable. |
 | DS-I | Paging | 1,000 synthetic sale lines in Q3 2026 for the entry list. |
-| DS-J | Negative base | Refunds larger than sales in one quarter. Expect a blocking reason (PROPOSAL). |
+| DS-J | Negative measure | Returns larger than sales in one quarter. Expect `negative_measure` (PROPOSAL). |
 
 Each set is a fixture file under `fixtures/` (PROPOSED). The expected results sit beside the input. A reviewer can read both.
 
 ---
 
-## 3. Calculation, period and blocking tests (golden)
+## 3. Measure, period and blocking tests (golden)
 
-### 3.1 Rates, dates, due dates
+Superseded by ADR-0007 (2026-10-29): the rate, due-date, VAT-gate, 8%-block and rounding-tie tests that stood here (T-CALC-01 to 07 and 11, T-BLK-01 to 03, T-RND-01 to 09) test compliance logic that Books no longer has. They moved to Forms with the rules; see `research/handoff-to-forms/compliance-notes.md`. Money and sign tests remain.
+
+### 3.1 Measures and dates
 
 | ID | Input | Expected | Source of expectation |
 |---|---|---|---|
-| T-CALC-01 | Rate for 2020-06-30 | 300 bps | No 1% row before 2020-07-01 `[bir PT-2]` |
-| T-CALC-02 | Rate for 2020-07-01 | 100 bps | RA 11534 proviso `[bir PT-2]` |
-| T-CALC-03 | Rate for 2023-06-30 | 100 bps | Same |
-| T-CALC-04 | Rate for 2023-07-01 | 300 bps | RMC 69-2023 `[bir PT-2]` |
-| T-CALC-05 | Rate for 2026-09-30 | 300 bps | `[verify §2 item 62]` |
-| T-CALC-06 | Rate for 2024-06-30 with the disputed 2023-25 row off | 300 bps. Enabling the row gives a warning. | D6; `[verify §2 item 63]` UNCONFIRMED |
-| T-CALC-07 | Due dates for quarters of 2026 | 2026-04-25, 2026-07-25, 2026-10-25, 2027-01-25 | Quarter end plus 25 days `[bir PT-3]` |
-| T-CALC-08 | Slice A Q3 2026 | Base 200,000.00. PT 6,000.00. | `[04 section 4]` |
+| T-MEAS-01 | Slice A Q3 2026 | Net sales 200,000.00, lineage E1 and E3 | `[04 section 4]` |
+| T-MEAS-02 | Workbook Q3 | Gross sales 300,000.00; returns 10,000.00 (a separate measure); net sales 290,000.00 → `txtATCAmt1` | Workbook worked example (corrected) |
+| T-MEAS-03 | Workbook September payroll | Gross compensation 42,000.00; de minimis 2,000.00; employee contributions 2,000.00 → `frm1601c:txtTax19`; employer shares never in item 19 | DS-E |
+| T-MEAS-04 | Workbook annual, Forms context graduated | IV.5 1,200,000.00 (`/taxpayer/sales`), IV.6 10,000.00; net sales measure 1,190,000.00 | DS worked example |
+| T-MEAS-05 | Workbook annual, Forms context eight_percent | IV.19 1,190,000.00 (`/taxpayer/eight_sales`); IV.5 and IV.6 not proposed | Same |
+| T-MEAS-06 | Returns, allowances and discounts | Three separate measures; 1701-MS IV.6 sums them once | Owner correction |
 | T-CALC-09 | Time zone. Entry at 2026-09-30T23:30+08:00 | Q3 2026 | Asia/Manila calendar day (PROPOSAL) |
 | T-CALC-10 | Time zone. Entry at 2026-10-01T00:30+08:00 (2026-09-30T16:30Z) | Q4 2026. A UTC-based implementation would wrongly put it in Q3. | Same |
-| T-CALC-11 | Overdue as of 2026-10-29 for Q3 | 4 days. Surcharge and interest not computed (fields absent or zero). | D14 |
-| T-CALC-12 | Period override `tax_period_key` moves an entry to another period | The proposal for each period changes. Both inputs hashes change. | PROPOSAL |
+| T-CALC-12 | Period override `period_override` moves an entry to another period | The measures for each period change. Both inputs hashes change. | D4 (accounting policy) |
 
 ### 3.2 Blocking matrix
 
 | ID | Input | Expected | Source of expectation |
 |---|---|---|---|
-| T-BLK-01 | Posted sales YTD = 300000000 centavos (DS-B) | Not breached | Strict greater-than `[BK-TS percentage-tax.ts:106]`; `[bir PT-7]` |
-| T-BLK-02 | Posted sales YTD = 300000001 | Breached. Blocks with the VAT reason. No PT values. | Same |
-| T-BLK-03 | Election 8% recorded in the store; request body says `electedEightPercent: false` | Blocked with the 8% reason. No values. The request value is ignored. | `[verify §2 item 32]`; `[books §1 item 4]` |
-| T-BLK-04 | Returns line in Q3 | Blocked until acknowledged. Acknowledgement regenerates the proposal. | A6; D20 |
-| T-BLK-05 | Negative base (DS-J) | Blocked with "negative base" reason (PROPOSAL) | D20 |
+| T-BLK-04 | Returns line, credit note or later-period reversal in Q3 | Held until acknowledged. Acknowledgement regenerates the proposal. | A6; `GATE.RETURNS_ACK` |
+| T-BLK-05 | Negative sales measure (DS-J) | `negative_measure`; no value proposed | PROPOSAL |
 | T-BLK-06 | Blocking and warnings order | Blocking reasons listed before warnings | `[01 section 2 step 5]` |
+| T-BLK-07 | 1701-MS with no Forms tax option | `form_context_missing`. The bridge never defaults it. | DD-28 |
+| T-BLK-08 | 1701-MS with an unsupported option, or a context key the rule set does not declare | `form_context_unsupported` or `form_context_undeclared` | DD-28 |
+| T-BLK-09 | Spouse-scoped line | `EXC.SPOUSE_MVP` | PROPOSAL |
+| T-BLK-10 | A line or profile carrying `atc`, `treatment`, `tax_types`, `regime` or tax facts | Refused at input | ADR 0007 |
 
-### 3.3 Rounding and sign
+### 3.3 Money and sign
 
 | ID | Input | Expected | Source |
 |---|---|---|---|
-| T-RND-01 | 150 centavos at 300 bps | 5 centavos (0.05) | A10; half away from zero, D7 |
-| T-RND-02 | 149 centavos at 300 bps | 4 centavos (0.04) | A10 |
-| T-RND-03 | −150 centavos at 300 bps | −5 centavos (−0.05) | A10 |
-| T-RND-04 | 50 centavos at 100 bps (exactly 0.5) | 1 centavo | Half away from zero |
-| T-RND-05 | 49 centavos at 100 bps | 0 | |
-| T-RND-06 | −50 centavos at 100 bps | −1 | Symmetry |
-| T-RND-07 | Property: for random x, round(−x) equals −round(x) | Holds for 10,000 random values | PROPOSAL |
-| T-RND-08 | Property: PT is never negative for a non-negative base | Holds | PROPOSAL |
-| T-RND-09 | Golden tie through the live Forms cents helper. 1.50 at 3%. | Gives 0.05. The test fails if it does not. | R-11; `crates/bir-core/src/forms/form_2551q.rs:1467` [V]. Runs in P3 with the BIR checkout. |
-| T-RND-10 | Overpayment (DS-H): credit 7,000.00 against PT 6,000.00 | Signed −1,000.00 line. No clamp. | `[sheets §6 item 15]` |
-| T-RND-11 | Worked example (DS-H): PT 9,000.00; credit 3,000.00; payable 6,000.00 | Exact | `[01 section 7.7]` |
+| T-MNY-01 | Decimal text with two places | Parsed to integer centavos; formatted back unchanged | A10 |
+| T-MNY-02 | JS number, one place, three places, thousands separator | Refused | A10 |
+| T-MNY-03 | A reversal | Its signed amount is the exact negative of the original | REV.VOID_OPEN_PERIOD |
+| T-RND-10 | Overpayment (DS-H) | Books proposes the certificate measure (10,000.00) as recorded. Forms computes the signed payable. | ADR 0007 |
 
 ### 3.4 Periods, close and reopen
 
@@ -121,32 +114,29 @@ Each set is a fixture file under `fixtures/` (PROPOSED). The expected results si
 
 | ID | Input | Expected | Source |
 |---|---|---|---|
-| T-P6-01 | DS-E | Taxable 38,000.00. Not 40,000.00. | `[books §1 item 1]` (probe A to C); `[verify §2 item 28]` |
-| T-P6-02 | 1601-C due date for September 2026 | 2026-10-10 | `[books §4a]` |
-| T-P6-03 | 1601-C due date for December 2026 | 2027-01-15 | `[bir §3.6 D-3]` |
+| T-P6-01 | DS-E | Item 19 = 2,000.00 (employee share); employer share excluded. Forms then computes taxable 38,000.00, not 40,000.00. | `[books §1 item 1]` (probe A to C); `[verify §2 item 28]` |
+| T-P6-02 | 13th month 95,000.00 paid, nothing earlier in the year | Item 17 = 90,000.00 (the one input-level tax rule in the bridge); item 14 includes 95,000.00 | DS-E variant; DD-29 |
+| T-P6-03 | 13th month with earlier payments, two employees | Cap applied per employee from year-to-date payroll | DD-29 |
 | T-P6-04 | Semi-monthly runs for one month (DS-E variants) | Two runs do not overwrite each other. Key includes the run. | `[books §1 item 8]` (BK-TS collides) |
-| T-P4-01 | Certificate `received` WB082 | Credits line 15 | `[books §4g]` |
-| T-P4-02 | `pending`, `lost`, `disputed` WB082 | Do not credit | `[books §4g]` (BK-TS posts pending) |
-| T-P4-03 | WB084 received | Never credited | `[bir W-4]` |
+| T-P4-01 | Certificate `received` WB082 2307 | Counts in the PT certificate measure → line 15 | `[books §4g]` |
+| T-P4-02 | `pending`, `lost`, `disputed` WB082 | Do not count | `[books §4g]` (BK-TS posts pending) |
+| T-P4-03 | WB084 2306 received | Never in a 2307 measure | `[bir W-4]` |
 | T-P4-04 | Period fields on a certificate | DATE, not text | `[books §2]` (BK-TS text) |
 
-### 3.6 Later rules (P7, graduated and mixed)
+### 3.6 Later rules (P7)
 
-| ID | Input | Expected | Source |
-|---|---|---|---|
-| T-P7-01 | Mixed earner, 8%, receipts plus other non-operating income | Base includes other non-operating income. No 250,000 reduction. | `[bir 8-8]`; `[verify §2 item 36]` |
-| T-P7-02 | 8% base and VAT threshold | Same dated figure. Not hard-coded. | `[bir PT-7]` |
+The 8% base, the ₱250,000 reduction and the mixed-earner rule are Forms' (handed over by ADR 0007). Books tests only that the bridge picks the box from the Forms context (T-MEAS-04, T-MEAS-05) and that a context change makes the proposal stale (T-STALE-02).
 
 ---
 
 ## 4. Traceability and contract tests
 
-These prove the chain transaction → rule → proposal → form key (A14).
+These prove the chain transaction → measure → mapping → proposal → input key (A14).
 
 | ID | Check | Expected |
 |---|---|---|
-| T-TRACE-01 | Slice A `fill_args` keys | Exactly `schedule_1.0.atc`, `txtATCAmt1`, `frm2551Qv2018:txt15` |
-| T-TRACE-02 | Each key | Maps to exactly one `rule_mapping` row |
+| T-TRACE-01 | Slice A `fill_args` keys | Exactly `txtATCAmt1`, `frm2551Qv2018:txt15`. No ATC, rate, tax or total key. |
+| T-TRACE-02 | Each key | Maps to exactly one `rule_mapping` row, which names its measures. Every key has fill_class `input`. |
 | T-TRACE-03 | Lineage sum for `txtATCAmt1` | 200000.00 = E1 + E3. Under Reading 1 of the void rule, E2 and E5 are absent. Under Reading 2, they are present and net to zero. (01 section 7.6, Q-1) |
 | T-TRACE-04 | Expense E4 | Not in the base lineage |
 | T-TRACE-05 | Back-trace | From proposal row, through `inputs_hash` and `proposal_lineage`, to each line revision. Forward-trace from a line revision to every proposal it makes stale. |
@@ -195,9 +185,9 @@ Scope note. The `strings` scan on the store uses canaries and memo markers only.
 | ID | Input class changed | Expected |
 |---|---|---|
 | T-STALE-01 | A line revision (void and repost in an open period) | Proposal `stale` |
-| T-STALE-02 | A tax fact | Proposal `stale` |
-| T-STALE-03 | A rule set | Proposal `stale` |
-| T-STALE-04 | A rate row | Proposal `stale` |
+| T-STALE-02 | The Forms context the bridge read (for example the 1701-MS tax option) | Proposal `stale` |
+| T-STALE-03 | A mapping rule set | Proposal `stale` |
+| T-STALE-04 | The measures catalogue | Proposal `stale` |
 | T-STALE-05 | The pinned schema hash | Proposal `stale`. Start-up hash check fails and blocks generation. |
 | T-STALE-06 | A period reopen | Proposal `stale` |
 | T-STALE-07 | A stale proposal asked for `fill_args` | No `fill_args` returned. The reason is given. (B4) |
@@ -311,7 +301,7 @@ Tool results, app props, attachment and pin titles (Rox `mini-v1.json`), logs, t
 | ID | Check | Expected |
 |---|---|---|
 | T-UR-01 | `card-proposal` and `card-cash` (inline) | Counts and status only. No amounts. No TIN. (RK-21) |
-| T-UR-02 | `bookform` (full) before hand-off | Shows every `fill_args` value and the due date. Shows a "BIR shows these values" control. |
+| T-UR-02 | `bookform` (full) before hand-off | Shows every `fill_args` value and its measure lineage summary. Shows a "BIR shows these values" control. No due date (Forms'). |
 | T-UR-03 | Clicking "BIR shows these values" | Calls `books_app_handoff_confirm` with origin `app`. Records `fill_args_sha256`. |
 | T-UR-04 | Static check on every app's permissions | `bir_form_send` and `bir_form_submit` are never listed. No app can send. |
 | T-UR-05 | Nothing in Books changes the BIR draft after the user's click | No BIR call after confirm |

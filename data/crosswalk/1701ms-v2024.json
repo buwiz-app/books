@@ -28,7 +28,7 @@
     "fill_mvp": "Books may send this key in Slice A/B (MVP).",
     "fill_p6": "Books may send this key only after P6 (payroll, 1601-C).",
     "fill_p7": "Books may send this key only after P7 (1701-MS).",
-    "cross_check": "Forms computes it; Books compares its own value and never sends it.",
+    "forms_computes": "Forms computes it. Books neither computes nor compares it (ADR-0007; replaces cross_check).",
     "never_fill": "Books never sends this key (user, profile, prior filing, evidence or human entry).",
     "refuse_mvp_spouse": "Spouse (B-side) key; refused in MVP.",
     "never_touch": "App-written, derived, page-2 mirror or BIR online credential; Books never sends it."
@@ -40,7 +40,8 @@
     "profile",
     "prior_filing",
     "user_input",
-    "none"
+    "none",
+    "forms"
   ],
   "key_semantics": {
     "key": "Exact official key as spelled in the pinned schema (bindings/boxes). It may be refused by the fill tool.",
@@ -70,10 +71,10 @@
       "computed": 53
     },
     "books_policy": {
-      "never_fill": 107,
+      "never_fill": 108,
       "refuse_mvp_spouse": 37,
-      "cross_check": 53,
-      "fill_p7": 7,
+      "forms_computes": 53,
+      "fill_p7": 6,
       "never_touch": 2
     }
   },
@@ -85,7 +86,8 @@
     "Spouse (B-side) keys are refused in MVP (phase P7). The spouse dropdown binds II011 (compensation); the taxpayer dropdown does not.",
     "Items IV.18A and IV.4: the ATP and ASP boxes are mapped to IV.18A by the BTP/BSP pattern (UNCONFIRMED). No pinned box is mapped to IV.4.",
     "Schedule 4.10A, 4.13A/B, 4.20A/B and 5 No. 9 are runtime-indexed row families with no row template in the pin. They are not fillable.",
-    "Forms rounding for 1701-MS is not in this crosswalk; the printed 'whole peso' rule is UNCONFIRMED (verify.md s2 #83)."
+    "Forms rounding for 1701-MS is not in this crosswalk; the printed 'whole peso' rule is UNCONFIRMED (verify.md s2 #83).",
+    "ADR-0007 (2026-10-29): books_policy cross_check became forms_computes (Books neither computes nor compares tax boxes). ATC selection keys, and inputs that need a tax classification, threshold or deductibility judgement, became never_fill (source forms or user_input). rule_ids now resolve to data/rules/*.rules.json mappings or not_mapped pointers (rule set r2)."
   ],
   "typed_only_entries": [],
   "fields": [
@@ -2233,7 +2235,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.19"
       ],
@@ -2264,7 +2266,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.19"
       ],
@@ -2361,7 +2363,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.21"
       ],
@@ -2392,7 +2394,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.21"
       ],
@@ -2423,7 +2425,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.22"
       ],
@@ -2454,7 +2456,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.22"
       ],
@@ -2485,7 +2487,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.23"
       ],
@@ -2516,7 +2518,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.23"
       ],
@@ -2547,7 +2549,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.24"
       ],
@@ -2578,7 +2580,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.24"
       ],
@@ -2609,7 +2611,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.25"
       ],
@@ -2640,7 +2642,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.25"
       ],
@@ -2737,7 +2739,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.27"
       ],
@@ -2768,7 +2770,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.27"
       ],
@@ -2997,7 +2999,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.28D"
       ],
@@ -3028,7 +3030,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.28D"
       ],
@@ -3059,7 +3061,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.29"
       ],
@@ -3090,7 +3092,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.29"
       ],
@@ -3121,7 +3123,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.II.30"
       ],
@@ -4317,7 +4319,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.3"
       ],
@@ -4348,7 +4350,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.3"
       ],
@@ -4573,7 +4575,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.7"
       ],
@@ -4604,7 +4606,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.7"
       ],
@@ -4701,7 +4703,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.9"
       ],
@@ -4732,7 +4734,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.9"
       ],
@@ -4764,8 +4766,8 @@
       "value_type_basis": "schema binding type",
       "fill_class": "input",
       "scope": "taxpayer",
-      "books_source": "ledger",
-      "books_policy": "fill_p7",
+      "books_source": "user_input",
+      "books_policy": "never_fill",
       "rule_ids": [
         "1701MS.IV.10A"
       ],
@@ -4961,7 +4963,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.10D"
       ],
@@ -4992,7 +4994,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.10D"
       ],
@@ -5023,7 +5025,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.11"
       ],
@@ -5054,7 +5056,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.11"
       ],
@@ -5085,7 +5087,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.12"
       ],
@@ -5116,7 +5118,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.12"
       ],
@@ -5213,7 +5215,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.14"
       ],
@@ -5244,7 +5246,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.14"
       ],
@@ -5275,7 +5277,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.15"
       ],
@@ -5306,7 +5308,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.15"
       ],
@@ -5399,7 +5401,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.17"
       ],
@@ -5430,7 +5432,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.17"
       ],
@@ -5461,7 +5463,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.18A"
       ],
@@ -5492,7 +5494,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.18A"
       ],
@@ -5523,7 +5525,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.18B"
       ],
@@ -5554,7 +5556,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.18B"
       ],
@@ -5717,7 +5719,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.21"
       ],
@@ -5748,7 +5750,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.21"
       ],
@@ -5841,7 +5843,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.23"
       ],
@@ -5872,7 +5874,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.23"
       ],
@@ -5903,7 +5905,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.24"
       ],
@@ -5934,7 +5936,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.24"
       ],
@@ -5965,7 +5967,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.25"
       ],
@@ -5996,7 +5998,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.IV.25"
       ],
@@ -6687,7 +6689,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.V.10"
       ],
@@ -6718,7 +6720,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.V.10"
       ],
@@ -6749,7 +6751,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.VI.1"
       ],
@@ -6780,7 +6782,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "1701MS.VI.1"
       ],

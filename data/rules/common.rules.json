@@ -1,9 +1,10 @@
 {
-  "rule_set_id": "common-v1",
-  "version": 1,
+  "rule_set_id": "common-v2",
+  "version": 2,
   "effective_from": "2018-01-01",
   "effective_to": null,
-  "status_note": "Cross-form gates, exclusions, reversal rules and generic field rules. Rules marked PROPOSAL are design choices, not BIR text.",
+  "supersedes": "common-v1 (archived at research/handoff-to-forms/rules-r1/common.rules.r1.json; ADR-0007)",
+  "status_note": "Cross-form bridge hygiene: crosswalk discipline (GEN.*), period lock, staleness, certificate status, return-event acknowledgement, measure exclusions (EXC.*), reversal handling (REV.*) and the bridge rules (BRIDGE.*). Compliance gates and eligibility notes (VAT threshold, 8% year, mixed income, overdue, ELIG.*) moved to research/handoff-to-forms/compliance-notes.md (ADR-0007). Rules marked PROPOSAL are design choices, not BIR text.",
   "rules": [
     {
       "id": "GEN.APP_WRITTEN",
@@ -79,69 +80,17 @@
       ]
     },
     {
-      "id": "GATE.VAT_THRESHOLD",
-      "printed_item": "gate",
-      "method": "gate",
-      "formula": "Block the 8% option and the percentage-tax return when posted sales year-to-date are strictly above 3,000,000.00 (3000000.00 pesos, decimal text). Force VAT status after that date.",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "cross_check",
-      "status_detail": "The CPI-adjusted figure is UNKNOWN (bir.md PT-7). The threshold is a dated fact in rates-v1.json.",
-      "citations": [
-        "verify.md s2 #65; bir.md PT-7",
-        "Books percentage-tax.ts:106 (strict >)"
-      ]
-    },
-    {
-      "id": "GATE.8PCT_YEAR_2551Q",
-      "printed_item": "gate",
-      "method": "gate",
-      "formula": "In a taxable year with a valid 8% election, produce no 2551Q values (block, no NIL row in MVP).",
-      "status": "UNCONFIRMED",
-      "status_detail": "CONFLICT CONFIRMED (verify.md s2 #73, #84). Resolution needs RR 8-2018 full text, which was not read (blocker B5, decision D5). Do not choose a side in code until resolved.",
-      "citations": [
-        "RMO 23-2018 pt 9(a)-(e) (bir.md 8-6; verify.md s2 #73: 8% electors do not file 2551Q)",
-        "Books deadlines.ts:122 and percentage-tax.ts:354-360 (block)",
-        "buwiz-oss form_2551q.rs:2217-2226 (NIL PT010 required)"
-      ]
-    },
-    {
       "id": "GATE.RETURNS_ACK",
       "printed_item": "gate",
       "method": "gate",
-      "formula": "A sales return, allowance or credit note posted in the quarter blocks the 2551Q proposal until a person acknowledges it. Regenerating after acknowledgement creates a new proposal row.",
+      "formula": "A return event (a sales return, allowance or discount line, a credit note, or a reversal of a sale from an earlier period) holds every mapping that consumes a sales measure for that period until a person acknowledges the event. The acknowledgement is a bookkeeping review of the classification; the tax treatment of returns is not decided here. Which sales measure feeds a form box is a mapping rule for tax review (former D20).",
       "status": "UNCONFIRMED",
-      "status_detail": "The gate is a PROPOSAL (decision D20). The 2551Q treatment of credit notes is UNCONFIRMED.",
+      "status_detail": "PROPOSAL (bookkeeping review). The tax treatment of credit notes on 2551Q is UNCONFIRMED (bir.md PT-8) and belongs to the Forms/tax review.",
       "citations": [
         "bir.md PT-8 (no printed deduction for returns; UNVERIFIED)",
         "verify.md: credit-note treatment not verified (bir.md PT-8)"
-      ]
-    },
-    {
-      "id": "GATE.MIXED_INCOME_8PCT",
-      "printed_item": "gate",
-      "method": "gate",
-      "formula": "Mixed earners (compensation plus business) get no 250,000 reduction on the 8% component.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "cross_check",
-      "citations": [
-        "RMO 23-2018 pts 3, 10-12 (verify.md s2 #75)",
-        "bir.md 8-8"
-      ]
-    },
-    {
-      "id": "GATE.OVERDUE",
-      "printed_item": "gate",
-      "method": "gate",
-      "formula": "Show a return as overdue after its due date. Compute no surcharge or interest (decision D14).",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "never_fill",
-      "citations": [
-        "workbook 2551Q fields II.23 'Do not invent penalties'",
-        "decision D14 (owner)"
-      ]
+      ],
+      "books_source": "ledger"
     },
     {
       "id": "GATE.PERIOD_LOCK",
@@ -150,7 +99,7 @@
       "formula": "A closed tax period is immutable. Reopen needs a reason, writes a period_event and marks dependent proposals stale.",
       "status": "CONFIRMED",
       "books_source": "ledger",
-      "books_policy": "cross_check",
+      "books_policy": "gate",
       "citations": [
         "books.md s1 #9 (org-wide lock; tax filing ignores it)",
         "design decision 16 (PROPOSAL)"
@@ -160,10 +109,10 @@
       "id": "GATE.STALE_INPUTS",
       "printed_item": "gate",
       "method": "gate",
-      "formula": "A proposal is stale when a line revision, tax fact, rule set, rate row, schema hash or period reopen changes. Stale proposals are refused for fill.",
+      "formula": "A proposal is stale when a line revision, an acknowledgement, the Forms-provided form context, the rule set, the measures catalog, the crosswalk or schema hash, or a period reopen changes. Stale proposals are refused for fill.",
       "status": "CONFIRMED",
       "books_source": "ledger",
-      "books_policy": "cross_check",
+      "books_policy": "gate",
       "citations": [
         "design (inputs_hash, PROPOSAL)"
       ]
@@ -172,7 +121,7 @@
       "id": "GATE.CERT_STATUS",
       "printed_item": "gate",
       "method": "gate",
-      "formula": "Only certificates with status 'received' create a credit. Pending, lost and disputed certificates never credit. WB084 (final) is never credited.",
+      "formula": "Only certificates with status 'received' count in a certificate measure. Pending, lost and disputed certificates never count. A 2306 (final withholding, for example WB084) is not a 2307 and never counts.",
       "status": "CONFIRMED",
       "books_source": "evidence",
       "books_policy": "fill_mvp",
@@ -221,7 +170,7 @@
       "id": "EXC.WB084_FINAL",
       "printed_item": "2307 WB084",
       "method": "exclusion",
-      "formula": "WB084 (final withholding, Section 116 applies) is never credited against 2551Q or 1701-MS. It belongs to 2306.",
+      "formula": "A final-withholding certificate (2306; ATC WB084 printed on it) is evidence of final tax. It never feeds 2551Q item 15 or 1701-MS V.3-V.5. This is a mapping fact read from the document kind, not an ATC choice.",
       "status": "CONFIRMED",
       "books_source": "evidence",
       "citations": [
@@ -267,7 +216,7 @@
       "id": "EXC.FINAL_TAX_INTEREST",
       "printed_item": "1701-MS IV.13 / IV.20",
       "method": "exclusion",
-      "formula": "Interest income subject to final tax is excluded from the graduated and 8% other-income lines. It is shown separately.",
+      "formula": "Whether non-operating income final-taxed at source is excluded from 1701-MS IV.13 or IV.20 is an open mapping question for tax review. Until settled, those mappings fail closed when the measure has lines.",
       "status": "UNCONFIRMED",
       "books_source": "ledger",
       "status_detail": "Whether Books stores a final-tax attribute is UNKNOWN (sheets.md s10). Do not apply until the attribute exists.",
@@ -290,9 +239,9 @@
     },
     {
       "id": "EXC.PAYABLE_NOT_BASE",
-      "printed_item": "2551Q S1 base",
+      "printed_item": "any measure",
       "method": "exclusion",
-      "formula": "The return tax is computed from the ATC base, not from the payable balance or the ledger's VAT accounts.",
+      "formula": "Measures come from transaction lines, never from a payable or receivable balance or the ledger's VAT accounts.",
       "status": "CONFIRMED",
       "books_source": "ledger",
       "citations": [
@@ -350,63 +299,42 @@
       ]
     },
     {
-      "id": "ELIG.PT_116",
-      "printed_item": "2551Q scope",
-      "method": "eligibility",
-      "formula": "2551Q applies to Section 116 persons (non-VAT, percentage tax). Other percentage-tax ATCs need their own schedule row.",
+      "id": "BRIDGE.INPUT_ONLY",
+      "printed_item": "any form",
+      "method": "bridge",
+      "formula": "The bridge proposes values only for crosswalk keys with fill_class input and a fill policy. It never targets computed, locked or not_fillable boxes, and never sends a tax amount, a rate, an ATC, an election, a penalty or a total.",
       "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "cross_check",
-      "citations": [
-        "RA 11534 s13 / RA 11976 s24 (bir.md PT-1)",
-        "workbook 2551Q field S1.1.ATC"
-      ]
-    },
-    {
-      "id": "ELIG.MICRO_SMALL_TIERS",
-      "printed_item": "1701-MS scope",
-      "method": "eligibility",
-      "formula": "1701-MS is for micro and small individuals. Tier by taxable-year gross sales: micro below 3,000,000.00; small from 3,000,000.00 to below 20,000,000.00 (net of VAT, business income only).",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "cross_check",
-      "citations": [
-        "RR 8-2024 s2 A-D (bir.md M-2, M-3)",
-        "lawphil numerals are off by 1,000 (verify.md s2 #71); the words govern"
-      ]
-    },
-    {
-      "id": "ELIG.ESTATE_TRUST",
-      "printed_item": "1701-MS scope",
-      "method": "eligibility",
-      "formula": "A trust or estate in trade or business is in scope for 1701-MS in the cases named in RMC 34-2025 Annex A item 3.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "status_detail": "The workbook label 'Individual/Fiduciary' stays. Annex C text is TY2025 only (verify.md s2 #80).",
-      "citations": [
-        "RMC 34-2025 Annex A item 3 (verify.md s2 #60, REFUTED as 'Individual' only)"
-      ]
-    },
-    {
-      "id": "ELIG.COR_NOT_METHOD",
-      "printed_item": "COR",
-      "method": "eligibility",
-      "formula": "A certificate of registration or a form list does not choose the method. Do not infer 8%, OSD, itemized, payroll or one-time events from a COR.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "citations": [
-        "workbook Build notes row 17"
-      ]
-    },
-    {
-      "id": "ELIG.ANNEX_C_TY2025",
-      "printed_item": "Annex C",
-      "method": "eligibility",
-      "formula": "RMC 20-2026 Annex C is the TY2025 FAQ. Its applicability to TY2026 is UNKNOWN.",
-      "status": "UNCONFIRMED",
       "books_source": "none",
+      "books_policy": "never_fill",
       "citations": [
-        "verify.md s2 #76, #80"
+        "docs/adr/0007-books-supplies-measures-forms-owns-compliance.md",
+        "data/crosswalk/*.json fill_class"
+      ]
+    },
+    {
+      "id": "BRIDGE.FORM_CONTEXT_READ_ONLY",
+      "printed_item": "any form",
+      "method": "bridge",
+      "formula": "Where a form has alternative input boxes that depend on a taxpayer choice (for example 1701-MS /taxpayer/tax_option: graduated to IV.5, eight_percent to IV.19), the bridge reads the choice from the Forms draft or profile context (form_context) and selects the mapping. It never decides, infers or defaults the choice. A missing or unsupported value blocks.",
+      "status": "CONFIRMED",
+      "books_source": "none",
+      "books_policy": "never_fill",
+      "citations": [
+        "owner correction 2026-10-29 (research/traces/decisions.md addendum)",
+        "ADR-0007"
+      ]
+    },
+    {
+      "id": "BRIDGE.NO_COMPLIANCE",
+      "printed_item": "any form",
+      "method": "bridge",
+      "formula": "Books holds no rate, election, threshold (VAT, 8% eligibility, mixed income), applicability or NIL test, ATC selection, OSD computation, graduated tax, tax rounding, due date, overdue status or penalty. Those belong to Buwiz Forms / the BIR mini app. The single labelled exception is 1601C.II.17 (13th-month non-taxable cap), an input-level split that needs year-to-date payroll.",
+      "status": "CONFIRMED",
+      "books_source": "none",
+      "books_policy": "never_fill",
+      "citations": [
+        "ADR-0007",
+        "research/handoff-to-forms/compliance-notes.md"
       ]
     }
   ]

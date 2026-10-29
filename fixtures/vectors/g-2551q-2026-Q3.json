@@ -1,36 +1,20 @@
 {
-  "description": "Journey worked example with a percentage-tax credit (DS-H): sales 300000.00, PT 9000.00, received WB082 credit 3000.00; a pending WB082 and a received WB084 are not credited. Payable 6000.00. Ready.",
+  "description": "Journey worked example (DS-H): net sales 300000.00; received WB082 2307 of 3000.00 to item 15; a pending WB082 and a WB084 2306 are excluded. Ready.",
   "expected": {
     "as_of": "2026-10-29",
     "blocking": [],
-    "discrepancies": [],
-    "due": {
-      "date": "2026-10-25",
-      "overdue": true,
-      "penalties_computed": false,
-      "rule": "25 days after the quarter end (RA 11976 s128(1); rates.v1 due_dates.2551Q)",
-      "rule_status": "CONFIRMED"
-    },
     "excluded_keys": [],
-    "expected_readback": {
-      "frm2551Qv2018:txt14": "9000.00",
-      "frm2551Qv2018:txt18": "3000.00",
-      "frm2551Qv2018:txt19": "6000.00",
-      "frm2551Qv2018:txt24": "6000.00",
-      "txtATCDue1": "9000.00",
-      "txtTotalSched1": "9000.00"
-    },
     "fill_args": {
       "frm2551Qv2018:txt15": "3000.00",
-      "schedule_1.0.atc": "PT010",
       "txtATCAmt1": "300000.00"
     },
-    "fixture_sha256": "4e958843a23b659d21e13ab81e9ccfc0c1eedaac70870d5a45e4fccfbb339014",
+    "fixture_sha256": "e5a25054e53466c2fa33f371e6a45425d21eb1bba404c36d17d3a7d58b497928",
     "form_code": "2551Q",
-    "inputs_hash": "dfae9c66188e613f9ff47e6c15c248dd02768f8ee9533d396bd6a8db05c69b22",
+    "form_context": {},
+    "inputs_hash": "d5cb77395d31e71fbd88eed3693ac47802bd2012d104de3c7fa9d7f4d283fd6a",
     "lineage": {
       "frm2551Qv2018:txt15": {
-        "fixture_sha256": "4e958843a23b659d21e13ab81e9ccfc0c1eedaac70870d5a45e4fccfbb339014",
+        "fixture_sha256": "e5a25054e53466c2fa33f371e6a45425d21eb1bba404c36d17d3a7d58b497928",
         "lines": [
           {
             "amount": "3000.00",
@@ -38,19 +22,37 @@
             "line_id": "G-003.1"
           }
         ],
+        "mapping_id": "2551Q.II.15",
+        "measures": [
+          "pt_withheld_2307_received"
+        ],
         "netted_pairs": 0,
-        "rule_id": "2551Q.II.15",
-        "rule_set_version": 1
-      },
-      "schedule_1.0.atc": {
-        "fixture_sha256": "4e958843a23b659d21e13ab81e9ccfc0c1eedaac70870d5a45e4fccfbb339014",
-        "lines": [],
-        "netted_pairs": 0,
-        "rule_id": "2551Q.S1.1.ATC",
-        "rule_set_version": 1
+        "rule_set_version": 2
       },
       "txtATCAmt1": {
-        "fixture_sha256": "4e958843a23b659d21e13ab81e9ccfc0c1eedaac70870d5a45e4fccfbb339014",
+        "fixture_sha256": "e5a25054e53466c2fa33f371e6a45425d21eb1bba404c36d17d3a7d58b497928",
+        "lines": [
+          {
+            "amount": "200000.00",
+            "entry_id": "G-001",
+            "line_id": "G-001.2"
+          },
+          {
+            "amount": "100000.00",
+            "entry_id": "G-002",
+            "line_id": "G-002.2"
+          }
+        ],
+        "mapping_id": "2551Q.S1.1.base",
+        "measures": [
+          "net_sales"
+        ],
+        "netted_pairs": 0,
+        "rule_set_version": 2
+      }
+    },
+    "measures": {
+      "net_sales": {
         "lines": [
           {
             "amount": "200000.00",
@@ -64,27 +66,68 @@
           }
         ],
         "netted_pairs": 0,
-        "rule_id": "2551Q.S1.1.base",
-        "rule_set_version": 1
+        "value": "300000.00",
+        "window": {
+          "end": "2026-09-30",
+          "start": "2026-07-01"
+        }
+      },
+      "pt_withheld_2307_received": {
+        "lines": [
+          {
+            "amount": "3000.00",
+            "entry_id": "G-003",
+            "line_id": "G-003.1"
+          }
+        ],
+        "netted_pairs": 0,
+        "value": "3000.00",
+        "window": {
+          "end": "2026-09-30",
+          "start": "2026-07-01"
+        }
       }
     },
-    "output_sha256": "10f4349d8747ed47fc81c682f13055616a2f3d66a363ef434565f803f13dc9cf",
+    "measures_catalog": {
+      "catalog_id": "measures-v1",
+      "version": 1
+    },
+    "output_sha256": "893f4844ad6c5d2f755e1293825fadc9f2c34233f5248ed1e61c2162064839d6",
     "period_end": "2026-09-30",
     "period_key": "2026-Q3",
     "period_start": "2026-07-01",
     "profile_digest": "84375f70cd6b80bc70635d26f35d90c11274824195da900d630e13236db09f65",
-    "proposal_format": "buwiz-poc-proposal/1",
-    "rate": {
-      "code": "PT010",
-      "effective_from": "2023-07-01",
-      "effective_to": null,
-      "rate_bps": 300
-    },
+    "proposal_format": "buwiz-poc-proposal/2",
     "reference_values": {},
-    "refused_keys": [],
+    "refused_keys": [
+      {
+        "key": "schedule_1.0.atc",
+        "reason": "Forms decides it (ATC selection, threshold or classification); Books never sends it"
+      },
+      {
+        "key": "schedule_1.1.atc",
+        "reason": "Forms decides it (ATC selection, threshold or classification); Books never sends it"
+      },
+      {
+        "key": "schedule_1.2.atc",
+        "reason": "Forms decides it (ATC selection, threshold or classification); Books never sends it"
+      },
+      {
+        "key": "schedule_1.3.atc",
+        "reason": "Forms decides it (ATC selection, threshold or classification); Books never sends it"
+      },
+      {
+        "key": "schedule_1.4.atc",
+        "reason": "Forms decides it (ATC selection, threshold or classification); Books never sends it"
+      },
+      {
+        "key": "schedule_1.5.atc",
+        "reason": "Forms decides it (ATC selection, threshold or classification); Books never sends it"
+      }
+    ],
     "rule_set": {
-      "rule_set_id": "2551Q-v2018-r1",
-      "rule_set_version": 1,
+      "rule_set_id": "2551Q-v2018-r2",
+      "rule_set_version": 2,
       "schema_pin": "63267ca3d4d526a8ec490394470f026de82ac385",
       "schema_sha256": "a206416cabb09c5e1e0ebedf9f7ac635a46856a139ffbbde5f7be88f89005788"
     },
@@ -93,23 +136,37 @@
     "warnings": [
       {
         "code": "EXC.UNRECEIVED_CERT",
-        "detail": "certificate status is pending; no credit",
+        "detail": "excluded from the measure by rule; listed, never silently dropped",
         "ids": [
           "G-004.1"
         ]
       },
       {
         "code": "EXC.WB084_FINAL",
-        "detail": "final withholding (WB084); never credited",
+        "detail": "excluded from the measure by rule; listed, never silently dropped",
         "ids": [
           "G-005.1"
         ]
+      },
+      {
+        "code": "MAPPING_REVIEW_OPEN",
+        "detail": "2551Q.S1.1.base: Which sales measure feeds row 1 (net_sales or gross_sales) is a mapping rule for tax review (former D20, handed to Forms review). This rule set uses net_sales. The ATC on row 1 is chosen in Forms (drpATC1 is Forms-owned); the bridge fills the row-1 amount only. Whether a 2551Q is required for the period (8% year, NIL) is Forms' decision."
       }
     ]
   },
+  "expected_forms_computed": {
+    "asserted_against_books": false,
+    "basis": "300000.00 at 3%, less the 3000.00 credit. Forms' output with Forms' own rate table and rules; recorded for reviewers, never asserted against Books code.",
+    "values": {
+      "frm2551Qv2018:txt14": "9000.00",
+      "frm2551Qv2018:txt18": "3000.00",
+      "frm2551Qv2018:txt19": "6000.00"
+    }
+  },
   "fixture": "g-pt-withholding-2026",
-  "fixture_sha256": "4e958843a23b659d21e13ab81e9ccfc0c1eedaac70870d5a45e4fccfbb339014",
+  "fixture_sha256": "e5a25054e53466c2fa33f371e6a45425d21eb1bba404c36d17d3a7d58b497928",
   "form": "2551Q",
+  "form_context": {},
   "input": {
     "acknowledged_entry_ids": [],
     "as_of": "2026-10-29",
@@ -120,44 +177,45 @@
         "lines": [
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "200000.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "G-001.1",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           },
           {
             "account": "sales_revenue",
-            "atc": "PT010",
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "200000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "sale_invoice",
+            "final_tax_withheld": "unknown",
             "income_class": "business_sales",
             "line_id": "G-001.2",
+            "measure_side": "credit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "credit",
-            "tax_types": [
-              "income_tax",
-              "percentage_tax"
-            ],
-            "treatment": "sale_pt"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -169,44 +227,45 @@
         "lines": [
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "none",
             "debit": "100000.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "G-002.1",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           },
           {
             "account": "sales_revenue",
-            "atc": "PT010",
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "100000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "sale_invoice",
+            "final_tax_withheld": "unknown",
             "income_class": "business_sales",
             "line_id": "G-002.2",
+            "measure_side": "credit",
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": "credit",
-            "tax_types": [
-              "income_tax",
-              "percentage_tax"
-            ],
-            "treatment": "sale_pt"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -218,43 +277,45 @@
         "lines": [
           {
             "account": "pct_tax_credit_receivable",
-            "atc": "WB082",
+            "certificate_atc": "WB082",
             "certificate_status": "received",
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "pt",
             "debit": "3000.00",
             "document_kind": "certificate_2307",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "G-003.1",
+            "measure_side": "debit",
+            "party_ref": null,
             "period_end": "2026-09-30",
             "period_start": "2026-07-01",
-            "person_scope": "self",
-            "tax_side": "debit",
-            "tax_types": [
-              "percentage_tax"
-            ],
-            "treatment": "cwt_credit"
+            "person_scope": "self"
           },
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "3000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "G-003.2",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -266,43 +327,45 @@
         "lines": [
           {
             "account": "pct_tax_credit_receivable",
-            "atc": "WB082",
+            "certificate_atc": "WB082",
             "certificate_status": "pending",
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "pt",
             "debit": "2000.00",
             "document_kind": "certificate_2307",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "G-004.1",
+            "measure_side": "debit",
+            "party_ref": null,
             "period_end": "2026-09-30",
             "period_start": "2026-07-01",
-            "person_scope": "self",
-            "tax_side": "debit",
-            "tax_types": [
-              "percentage_tax"
-            ],
-            "treatment": "cwt_credit"
+            "person_scope": "self"
           },
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "2000.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "G-004.2",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
@@ -314,73 +377,62 @@
         "lines": [
           {
             "account": "pct_tax_credit_receivable",
-            "atc": "WB084",
+            "certificate_atc": "WB084",
             "certificate_status": "received",
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "0.00",
             "credit_kind": "pt",
             "debit": "1500.00",
-            "document_kind": "certificate_2307",
+            "document_kind": "certificate_2306",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "G-005.1",
+            "measure_side": "debit",
+            "party_ref": null,
             "period_end": "2026-09-30",
             "period_start": "2026-07-01",
-            "person_scope": "self",
-            "tax_side": "debit",
-            "tax_types": [
-              "percentage_tax"
-            ],
-            "treatment": "cwt_credit"
+            "person_scope": "self"
           },
           {
             "account": "accounts_receivable_gross",
-            "atc": null,
+            "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
+            "contra_kind": null,
+            "contribution_scheme": null,
             "contribution_side": "none",
             "credit": "1500.00",
             "credit_kind": "none",
             "debit": "0.00",
             "document_kind": "other",
+            "final_tax_withheld": "unknown",
             "income_class": "none",
             "line_id": "G-005.2",
+            "measure_side": null,
+            "party_ref": null,
             "period_end": null,
             "period_start": null,
-            "person_scope": "self",
-            "tax_side": null,
-            "tax_types": [],
-            "treatment": "none"
+            "person_scope": "self"
           }
         ],
         "reverses_entry_id": null,
         "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
       }
     ],
-    "input_format": "buwiz-poc-input/1",
+    "input_format": "buwiz-poc-input/2",
     "profiles": [
       {
-        "facts": {
-          "2026": {
-            "deduction_method": "osd",
-            "owner_taxable_compensation_2316": "0.00",
-            "regime": "graduated",
-            "vat_status": "non_vat"
-          }
-        },
         "periods": {
           "2026-Q3": "closed"
-        },
-        "prior_filings": {
-          "2026": {
-            "1701q_q1_q3_tax_payments": "0.00"
-          }
         },
         "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
       }
     ]
   },
   "period": "2026-Q3",
-  "vector_format": "buwiz-poc-vector/1",
+  "vector_format": "buwiz-poc-vector/2",
   "vector_id": "g-2551q-2026-Q3"
 }

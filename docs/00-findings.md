@@ -325,7 +325,7 @@ Two workbooks: `Buwiz_Tax_Profiles_Categories_Form_Fields.xlsx` (10 sheets) and 
 | 1601-C item 19 is the employee's share only | CONFIRMED (RR 11-2018 §2.78.1(B)(12)); statute UNCONFIRMED | [verify #69] |
 | 1601-C item 17 cap ₱90,000 | CONFIRMED | [verify #67] |
 | Holiday pay exempt for MWEs. OT, NSD and hazard basis UNCONFIRMED | CONFIRMED (holiday pay); UNCONFIRMED (rest) | [verify #68] |
-| 1601-C due 10th of the following month; December due 15 January | CONFIRMED in code (P6 rule; `data/rules/rates.v1.json` cites `form-1601c.ts:178-199`). Printed due-date text UNCONFIRMED | [verify #83]; [books §4a]. [bir D-3] says printed CONFIRMED; verify governs (section 11, C-24) |
+| 1601-C due 10th of the following month; December due 15 January | CONFIRMED in code (P6 rule; `research/handoff-to-forms/rates-reference.v1.json`, formerly `data/rules/rates.v1.json`, cites `form-1601c.ts:178-199`; due dates are Forms' under ADR 0007). Printed due-date text UNCONFIRMED | [verify #83]; [books §4a]. [bir D-3] says printed CONFIRMED; verify governs (section 11, C-24) |
 | 1701-MS tiers: micro below ₱3M; small ₱3M to below ₱20M (RR 8-2024) | CONFIRMED (words); lawphil numerals are off by 1,000 | [bir M-2]; [verify #71] |
 | 1701-MS: one business income-tax rate for individuals, including mixed-income earners. Annex C covers TY2025 | CONFIRMED for TY2025; TY2026 applicability UNKNOWN | [verify #77, #80] |
 | 1701-MS manual filing allowed without a COR (Annex C A10, TY2025 FAQ) | CONFIRMED (manual route) | [verify #76] |

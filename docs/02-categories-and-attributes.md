@@ -1,21 +1,24 @@
-# 02. Categories and tax attributes
+# 02. Categories, line attributes and measures
 
 Owner: W2 (tax mapping data). Status: research and design. Nothing here is code, and no BIR, Rox or cloud call was made.
 
 Labels: CONFIRMED, PARTIAL, MISSING, UNKNOWN, UNCONFIRMED. INFERENCE and PROPOSAL are marked where used. Unmarked design statements are PROPOSAL. Each section says what was **Observed** (in a file, schema or code) and what is **Recommended**.
 
+**Revised for [ADR 0007](adr/0007-books-supplies-measures-forms-owns-compliance.md) (2026-10-29).** Line attributes are accounting and evidence facts. Measures are the Books output. The bridge maps measures to Forms input boxes. Tax attributes, elections, rates and the compliance edge cases moved to Forms; the old attribute catalogue is archived at `research/handoff-to-forms/rules-r1/tax-attributes.r1.json`.
+
 Repo HEADs used for citations: Books `OSS/buwiz-books` 1662ca3 (read-only reference); buwiz-forms pin 63267ca (local checkout 301f9a0f is stale); buwiz-oss 0f34106 (schema copies byte-identical to the pin). Workbook sources are in `research/inputs/`.
 
 ## 1. The idea in plain words
 
-- An **account** says what a transaction is (sales, rent, bank). It does not say what tax applies.
-- A **category** is a starting point the user picks. It suggests account and tax defaults.
-- A **line attribute** says the tax meaning of one posted line (for example: percentage tax, creditable withholding, employee share). Only the line decides the tax meaning.
-- A **mapping rule** says which form field a line feeds, with a sign, a period and a method. Rules are versioned and dated.
+- An **account** says what a transaction is (sales, rent, bank). It does not say which form box it feeds.
+- A **category** is a starting point the user picks. It suggests an account and default line attributes. Suggestions may use the linked tax profile's registered-forms list as a hint (for example, show payroll categories when 1601-C is registered). That list is never an election.
+- A **line attribute** records an accounting or evidence fact on one posted line (for example: a sales return, an employee contribution, a received percentage-tax 2307). Only the line decides.
+- A **measure** is an accounting total per business profile per period, with lineage (for example net sales, gross compensation). Catalogue: `data/measures.v1.json`.
+- A **mapping rule** (the bridge) says which Forms input box a measure feeds. Rules are versioned. Where a box depends on a taxpayer choice, the rule reads that choice from Forms.
 
 **Observed (CONFIRMED):** the workbook puts tax meaning on accounts and categories. Books has no tax attribute on `journal_lines`, `accounts`, bill lines or invoice lines (books.md s2, finding 3). Sheets.md s8 #1 calls this the main conceptual problem: `salaries` feeds 1601-C II.14 and 1701-MS IV.10A.
 
-**Recommended:** adopt the four layers. Keep an account as bookkeeping only. Put every tax meaning on the line. Version every mapping rule.
+**Recommended:** adopt the five layers (account, category, line attributes, measures, mapping). Keep an account as bookkeeping only. Put every fact on the line. Version every mapping rule. Keep compliance (elections, rates, thresholds, tax) in Forms.
 
 ## 2. Category catalog
 
@@ -103,59 +106,58 @@ Selection logic (observed, workbook formula, identical in all 59 rows):
 
 **Limitation (observed):** the profile cannot tell 8% from graduated income tax, and cells C11-C15 are not used by any formula (sheets.md s1.1, verify.md s2 #58).
 
-**Recommended:** show categories by activation only as suggestions. A category never sets a tax treatment on its own.
+**Recommended:** show categories by activation only as suggestions. The activation reads the registered-forms list as a hint, never an election: categories never depend on 8% versus graduated, OSD versus itemized, or VAT status. `data/categories.v1.json` now carries `default_line_attributes` (accounting facts) and the `measures` each category typically feeds.
 
 ## 3. Line attributes
 
-Every posted line carries these attributes. Values are closed sets. MVP values are the ones Slice A and B need.
+Every posted line carries these attributes. Values are closed sets. Source: `data/tax-attributes.v1.json` (schema_version 2; the path keeps its v1 name).
 
-| Attribute | Allowed values | MVP values | Default | Status | Rule |
-|---|---|---|---|---|---|
-| `tax_type` | income_tax; percentage_tax; vat; compensation_withholding; expanded_withholding; final_withholding; none | percentage_tax; income_tax; none | none | PROPOSAL | Which tax the line belongs to. Drives the form family. VAT and expanded withholding are later phases (P10+). |
-| `atc` | PT010; WB080; WB082; WB084; WW010; II011; II012; II013; II014; II015; II016; II017; (later) WI and WC series; null | PT010; WB080; WB082; WB084 (final; never credited); WW010 (1601-C, P6); II011-II017 (1701-MS I.18; not ATCs) | - | CONFIRMED | Alphanumeric tax code. Closed set in MVP. PT010 = persons exempt from VAT under Sec. 109(BB) (Sec. 116), 3% (printed Table 1). WB080/WB082 = creditable percentage-tax withholding (2307). WB084 = final, Section 116 applies (2306). WW010 = compensation withhold… |
-| `treatment` | sale_pt; cwt_credit; expense; owner_money; none; (later P7) non_op_income; (later P6) comp_income; (later P6) contribution; (later P7) final_taxed_income; (reserved 2550Q) sale_vat; (reserved 2550Q) sale_zero_rated; (re… | sale_pt; cwt_credit; expense; owner_money; none | none | PROPOSAL | How the line enters the tax computation. An account never implies a treatment (sheets.md s8 #1). |
-| `income_class` | business_sales; contra_sales; non_operating_income; final_taxed_income; compensation; cost; none | business_sales; contra_sales; none | none | PROPOSAL | Which income or cost bucket the line feeds: 1701-MS IV.5 (business sales), IV.6 (contra), IV.13 or IV.20 (non-operating), IV.8 (cost). |
-| `regime` | graduated; eight_percent; special_exempt; unknown | graduated (user-asserted); eight_percent and unknown block | unknown | PROPOSAL | Per taxable year. Income-tax rate regime. 'unknown' blocks output. Mixed earners cannot use the 250,000 reduction. |
-| `vat_status` | non_vat; vat_registered; unknown | non_vat (asserted); others block | unknown | PROPOSAL | Per taxable year. A VAT-registered person cannot use the 8% option. Posted sales above the threshold force VAT. |
-| `returns_state` | none; present_unacknowledged; acknowledged | none; present_unacknowledged blocks until acknowledged | none | PROPOSAL | Per quarter. A return or credit note in the quarter blocks the 2551Q until a person acknowledges it. |
-| `person_scope` | self; spouse; employee; payor | self (spouse refused) | self | PROPOSAL | Whose tax the line belongs to. Spouse is out of MVP; employee comes with P6 (1601-C); payor with P4 (certificates). |
-| `counterparty_kind` | customer; supplier; employee; owner; bank; government; payor; other | customer; owner; bank; other | - | PROPOSAL | What kind of party is on the line. The party is referenced by an opaque party_ref. No TIN is stored on a line. |
-| `party_ref` | opaque UUID (never a TIN, never a name) | opaque UUID | - | PROPOSAL | Reference to a party record kept by Books. No TIN, branch or legal name appears here. |
-| `comp_component` | taxable_basic; statutory_minimum_wage; holiday_ot_nsd_hazard; thirteenth_month_and_benefits; de_minimis; mandatory_contributions_employee; union_dues; other_non_taxable | - | - | CONFIRMED | Payroll component of a compensation line (P6). Maps to 1601-C II.14-II.20. Mandatory contributions and union dues feed II.19 only at the employee share. |
-| `contribution_side` | employee; employer; none | - | none | CONFIRMED | Whose share a statutory contribution is. Employee share goes to 1601-C II.19. Employer share goes to expense and to the payable account, never to II.19 (EXC.EMPLOYER_SHARE_NOT_19). |
-| `credit_kind` | pt; it; none | pt; none | none | CONFIRMED (series routing: INFERENCE) | Which tax a withholding credit reduces. pt = percentage tax (2551Q II.15). it = income tax (1701-MS V.3-V.5, including the 2316 credit in V.5, and 1701Q). Routing by ATC series: WB = pt; WI and WC = it (INFERENCE from the form headings, bir.md W-3). WB084 is … |
-| `certificate_status` | received; pending; lost; disputed | received only credits | pending | CONFIRMED | Status of a 2307 or 2306 certificate. Only 'received' credits. Pending, lost and disputed never post a receivable (books.md s4g: BK-TS does not check it). |
-| `document_kind` | sale_invoice; payment_receipt; expense_document; adjustment; credit_note; certificate_2307; payroll_register; tax_form; other | sale_invoice; payment_receipt; expense_document; adjustment | other | PROPOSAL | Kind of evidence document. A credit_note blocks 2551Q until acknowledged (UNCONFIRMED for 2551Q, bir.md PT-8). certificate_2307 is the only certificate type that can credit. |
-| `evidence_ref` | evidence_id (opaque); sha256 of the stored file; document_kind; redaction_state | - | - | PROPOSAL | Pointer to stored evidence. The model sees the sha256 and kind only; OCR text is not sent by default (design R-23). |
-| `tax_period_key` | null (use the default); 2026-Q3 (quarter); 2026-09 (month); 2026 (year) | null; quarter override | - | PROPOSAL | Explicit override of the default period derived from the recognition date. The default is the calendar day in Asia/Manila. The PT timing basis (invoice, receipt or entry date) is UNKNOWN (decision D4). |
-| `final_tax_flag` | none; final_tax; unknown_not_stored | none; unknown_not_stored (blocks IV.13/IV.20 for interest) | unknown_not_stored | UNKNOWN | Whether the income was final-taxed (excluded from graduated or 8% business lines). Books does not store this today (sheets.md s10: UNKNOWN). |
-| `deductibility` | itemized_only; osd_excluded; not_applicable | itemized_only | not_applicable | CONFIRMED | Whether a cost line can reach 1701-MS IV.8 or IV.10A. Itemized only. OSD and 8% do not deduct it separately. |
-| `election_event` | form (1901 / 1905 / 2551Q item 13 / 1701Q); taxable_year; quarter; recorded_at (DATE); source_form | - | - | CONFIRMED | Dated 8% or graduated election record per taxable year. The 8% election is irrevocable within the year. Stored as an event, not overwritten (BK-TS upserts it; books.md s2). |
-| `sign_and_rounding` | signed amounts; rounding at output only | - | - | PROPOSAL | Totals keep their sign. Half-away rounding is applied once, at the output line (decision D7, PROPOSAL; Forms rounding statement pending). |
+| Attribute | Allowed values | Default | Status | Rule |
+|---|---|---|---|---|
+| `measure_side` | debit; credit | - | PROPOSAL | Which side is positive for the line's measure. A reversal mirrors it, so its amount is the exact negative. |
+| `income_class` | business_sales; contra_sales; non_operating_income; cost_of_sales; operating_expense; none | none | PROPOSAL | Statement bucket. Output VAT, payables and receivables are none. |
+| `contra_kind` | return; allowance; discount | - | PROPOSAL | Required on contra_sales. Three separate measures. |
+| `person_scope` | self; spouse; employee; payor | self | PROPOSAL | Whose activity the line records. Spouse is measured but refused by the bridge in MVP. |
+| `counterparty_kind` | customer; supplier; employee; owner; bank; government; payor; other | - | PROPOSAL | Party kind. The party is an opaque party_ref. No TIN on a line. |
+| `party_ref` | opaque id (never a TIN, never a name) | - | PROPOSAL | Party record. Payroll 13th-month lines carry the employee's ref (per-employee cap, 1601-C item 17). |
+| `comp_component` | basic_pay; statutory_minimum_wage; holiday_ot_nsd_hazard; thirteenth_month_and_benefits; de_minimis; contribution; tax_withheld | - | PROPOSAL | Payroll component as recorded by payroll. tax_withheld is a fact; Books does not compute withholding. |
+| `contribution_side` | employee; employer; none | none | CONFIRMED | Employee and employer shares are separate measures (EXC.EMPLOYER_SHARE_NOT_19). |
+| `contribution_scheme` | sss_gsis; philhealth; pagibig; union_dues | - | PROPOSAL | Per-scheme breakdown. |
+| `credit_kind` | pt; it; none | none | CONFIRMED (series routing: INFERENCE) | Which tax a received certificate reports as withheld (WB = pt; WI, WC = it). |
+| `certificate_atc` | WB080; WB082; WB084; WI010; WC010 | - | PROPOSAL | The ATC printed on a received certificate. Evidence only; Books never selects an ATC for a return. |
+| `certificate_status` | received; pending; lost; disputed | pending | CONFIRMED | Only received counts in a certificate measure. |
+| `document_kind` | sale_invoice; payment_receipt; expense_document; adjustment; credit_note; certificate_2307; certificate_2306; certificate_2316; payroll_register; other | other | PROPOSAL | A credit_note is a return event. A 2306 (final withholding) never counts in a 2307 measure. |
+| `evidence_ref` | evidence_id; sha256; document_kind; redaction_state | - | PROPOSAL | The model sees the sha256 and kind only. |
+| `period_override` | null; quarter; month; year key | - | PROPOSAL | Revenue-recognition override. An accounting policy (D4). |
+| `final_tax_withheld` | yes; no; unknown | unknown | UNKNOWN | Evidence fact. Its effect on 1701-MS IV.13/IV.20 is an open mapping question (EXC.FINAL_TAX_INTEREST). |
 
-Money and dates (PROPOSAL, from the design; consistent with books.md s4i):
+**Removed by ADR 0007 (Forms-supplied):** `tax_type`, `atc` (as a choice), `treatment`, `regime`, `vat_status`, `returns_state`, `election_event`, `deductibility`, `sign_and_rounding`. Where the bridge needs a taxpayer choice, it reads it from the Forms draft (`form_context`).
+
+Money and dates (PROPOSAL, consistent with books.md s4i):
 
 - **storage:** integer centavos (i64); intermediates i128
 - **text:** exactly two decimal places in JSON, for example "200000.00"; more than two decimals is refused
-- **rates:** integer basis points (300 = 3.00%)
 - **floats:** not allowed in Books money paths
-- **sign:** signed; no clamp to zero; overpayment is a separate signed line
-- **entry_date:** DATE in Asia/Manila (calendar day)
-- **recognition_date:** DATE; may differ from entry date when the recognition rule says so (decision D4 open)
+- **sign:** signed; no clamp to zero
+- **entry_date:** DATE in Asia/Manila (calendar day); the revenue-recognition date by default (D4)
 - **certificate_period:** period_start and period_end as DATE (BK-TS uses text: tax-certificates.ts:53-54)
 
-Forbidden in Books (PROPOSAL, from the design):
+Forbidden in Books (PROPOSAL):
 
 - any TIN or branch code
 - BIR tickets (tkt_...) or Rox tokens in records
-- floats for money or rates
-- account-implied tax meaning
-- credit from pending, lost or disputed certificates
-- WB084 as a credit
+- floats for money
+- account-implied meaning
+- compliance choices on a line or profile (regime, election, VAT status, ATC selection, deduction method)
+- rates, thresholds, due dates, penalties, tax rounding
+
+### 3.1 Measures
+
+`data/measures.v1.json` lists each measure with its unit (centavos), sign convention, period basis, person scope, the categories and attributes it is derived from, and its lineage requirement. Measures in the catalogue: gross_sales; sales_returns; sales_allowances; sales_discounts; net_sales; cost_of_sales; operating_expenses_by_category; other_non_operating_income; gross_compensation; basic_pay; mwe_basic_pay; holiday_ot_nsd_hazard_pay; thirteenth_month_and_benefits_paid; de_minimis_paid; employee_mandatory_contributions; employer_mandatory_contributions; tax_withheld_from_employees; pt_withheld_2307_received; it_withheld_2307_received; certificates_2316_received (planned).
 
 ## 4. Mapping rules: category to form field
 
-The workbook's category field rules (52 rows) map a category to a form line. Each row keeps the workbook's method, period, filter and exclusion text. The rule ID links to the rules file. The workbook text is not verified rule by rule. Rule status is in `data/rules/`.
+**Research trail (workbook text), superseded for Books by the r2 mapping rules (ADR 0007).** The workbook's category field rules (52 rows) map a category to a form line. Each row keeps the workbook's method, period, filter and exclusion text, which sometimes describes a compliance choice (8% pathway, itemized method, eligibility). Books does not apply those choices. In r2 a category feeds a **measure**, and a mapping rule maps the measure to an input box; the rule IDs below now resolve to an r2 mapping or a `not_mapped` pointer (owner `forms`, `user`, `profile` or `prior_filing`). In `data/categories.v1.json` this text is kept as `workbook_form_links`.
 
 | Category | Form | Target | Method (workbook) | Period | Filter (workbook) | Rule ID |
 |---|---|---|---|---|---|---|
@@ -216,36 +218,32 @@ The workbook's category field rules (52 rows) map a category to a form line. Eac
 
 | Case | Rule (PROPOSAL unless marked) | Status |
 |---|---|---|
-| Returns and credit notes | Credit note is a document kind. It links to the original sale. It blocks the 2551Q until acknowledged (GATE.RETURNS_ACK). 1701-MS IV.6 takes contra sales once (REV.COUNT_ONCE). | UNCONFIRMED for 2551Q (bir.md PT-8) |
-| Void in an open period | Post a reversal dated the original entry date. Period totals net to zero (REV.VOID_OPEN_PERIOD). Otherwise Q3 gross would stay at 300,000.00 (design A4). | PROPOSAL (INFERENCE) |
-| Reversal dated after the period closed | Return event. Blocks the affected proposal until acknowledged (REV.LATER_PERIOD_RETURN_EVENT). | PROPOSAL; tax treatment UNCONFIRMED |
-| Employee share vs employer share | Employee share goes to 1601-C II.19. Employer share goes to expense and to the payable account. Never II.19 (EXC.EMPLOYER_SHARE_NOT_19). | CONFIRMED (RR 11-2018 text); statute UNVERIFIED |
-| Income-tax CWT vs percentage-tax CWT | WB series (PT) feeds 2551Q II.15. WI and WC series (IT) feed 1701-MS V.3-V.5. Route by ATC series (EXC.IT_CWT_NOT_PT, EXC.PT_CWT_NOT_IT). | CONFIRMED rule; series routing INFERENCE (bir.md W-3) |
-| WB084 final withholding | Never credited. It belongs to 2306 (EXC.WB084_FINAL). | CONFIRMED (bir.md W-2, W-4) |
-| Pending, lost or disputed certificate | Creates no credit (EXC.UNRECEIVED_CERT). BK-TS posts it today (books.md s4g): defect. | CONFIRMED |
-| Spouse | Refused in MVP (EXC.SPOUSE_MVP). | PROPOSAL |
-| Mixed earners (compensation and business) | No 250,000 reduction on the 8% component (GATE.MIXED_INCOME_8PCT). Compensation is split from receipts. | CONFIRMED (RMO 23-2018 pts 10-12) |
-| Rounding | Centavos inside. Half away from zero once, at output (decision D7). The 1701-MS whole-peso rule is UNCONFIRMED. | PROPOSAL; 1701-MS rule UNCONFIRMED |
-| Negative amounts | Totals keep their sign. Overpayment is a separate signed line. No clamp to zero (2551Q II.19, II.24; 8% sheet fix, correction 15). | CONFIRMED (workbook note) |
-| Tax period | Default: entry date in Asia/Manila. tax_period_key overrides. Certificates use their own period dates. PT timing basis (invoice, receipt or entry) is open. | PT timing UNKNOWN (decision D4) |
-| 8% election and 2551Q | No 2551Q values in an 8% year (GATE.8PCT_YEAR_2551Q). No NIL row in MVP. | CONFLICT CONFIRMED; resolution UNCONFIRMED (decision D5) |
-| VAT threshold | Posted sales year-to-date strictly above 3,000,000.00 blocks the 8% option and forces VAT (GATE.VAT_THRESHOLD). | CONFIRMED text; CPI-adjusted figure UNKNOWN |
-| Penalties and overdue | Show overdue from the due date. Compute no surcharge or interest (GATE.OVERDUE; decision D14). | CONFIRMED (workbook note); owner decision D14 |
-| Interest subject to final tax | Excluded from the graduated and 8% other-income lines when final tax applies. Books does not store the attribute yet. | UNKNOWN (sheets.md s10) |
-| Depreciation | Use the tax-depreciation schedule, not the GL account (correction 17). | Needs review |
-| Mixed income: 1701 or 1701-MS | Two activities or two regimes route to 1701 (printed note, bir.md M-6). Books has no 1701 path. | CONFIRMED routing; Books UNSUPPORTED |
+| Returns, allowances, discounts and credit notes | Separate measures (contra_kind). A return event holds the mappings that read sales measures until acknowledged (GATE.RETURNS_ACK). 1701-MS IV.6 takes the three reductions once (REV.COUNT_ONCE). Which measure feeds 2551Q row 1 is a mapping question (former D20). | Mapping open for tax review |
+| Void in an open period | Post a reversal dated the original entry date. Period measures net to zero (REV.VOID_OPEN_PERIOD). | PROPOSAL (INFERENCE) |
+| Reversal dated after the period closed | Return event; counted once, in its own period (REV.LATER_PERIOD_RETURN_EVENT). | PROPOSAL |
+| Employee share vs employer share | Separate measures. Only the employee measure feeds 1601-C II.19 (EXC.EMPLOYER_SHARE_NOT_19). | CONFIRMED (RR 11-2018 text); statute UNVERIFIED |
+| Income-tax vs percentage-tax certificates | Separate measures by credit_kind. PT feeds 2551Q II.15; IT is shown for 1701-MS V.3-V.4 as reference (EXC.IT_CWT_NOT_PT, EXC.PT_CWT_NOT_IT). | CONFIRMED rule; series routing INFERENCE (bir.md W-3) |
+| 2306 final withholding (WB084) | Never in a 2307 measure (EXC.WB084_FINAL). | CONFIRMED (bir.md W-2, W-4) |
+| Pending, lost or disputed certificate | Not in any certificate measure (EXC.UNRECEIVED_CERT). BK-TS posts it today (books.md s4g): defect. | CONFIRMED |
+| Spouse | Measured; refused by the bridge in MVP (EXC.SPOUSE_MVP). | PROPOSAL |
+| 13th month and other benefits | Measured gross. The bridge computes the non-taxable part for 1601-C item 17 (annual cap per employee): the one input-level tax rule in the bridge. | Open for the Forms owner (07 DD-29) |
+| Negative amounts | Measures keep their sign. A negative sales measure is not proposed for a box. No clamp. | CONFIRMED (workbook note) |
+| Recognition period | Default: entry date in Asia/Manila. period_override overrides. Certificates use their own period dates. | D4 (accounting policy) |
+| Interest subject to final tax | Evidence fact final_tax_withheld; mapping to IV.13/IV.20 fails closed until reviewed (EXC.FINAL_TAX_INTEREST). | UNKNOWN (sheets.md s10) |
+| Depreciation | Book depreciation is an operating expense measure. A tax-depreciation schedule (correction 17) is Forms' concern. | Needs review |
+| 8% election, VAT threshold, mixed income, rounding, penalties, overdue, 1701 vs 1701-MS routing | Not Books rules. | Handed to Forms (07 section 2.2; `research/handoff-to-forms/compliance-notes.md`) |
 
 ## 6. Worked examples (synthetic)
 
 All amounts are synthetic. They come from the workbook's fictional worked example or from the Slice A plan. No real financial data is used.
 
-**Percentage tax (2551Q, Slice A).** Posted sales: 120,000.00 (2026-07-01), 100,000.00 (2026-07-15), 80,000.00 (2026-08-20). The 100,000.00 sale is voided by a reversal dated 2026-07-15. Base = 200,000.00. Tax = 200,000.00 x 3% = 6,000.00 (PT010, rate row 300 bps). Due date: 2026-10-25 (quarter end + 25 days). As of 2026-10-29 the return is overdue by 4 days. Books computes no surcharge.
+**Sales measures (Slice A).** Posted sales: 120,000.00 (2026-07-01), 100,000.00 (2026-07-15), 80,000.00 (2026-08-20). The 100,000.00 sale is voided by a reversal dated 2026-07-15. Net sales Q3 = 200,000.00, with lineage to the two live sales. The bridge maps it to 2551Q `txtATCAmt1`. Forms computes the tax (6,000.00 at 3%) and owns the due date.
 
-**Rounding tie (golden test).** 1.50 at 3% gives 0.05. 1.49 gives 0.04. -1.50 gives -0.05. Python's built-in round() would give 0.04 for 1.50 (banker's rounding), so the test must assert half-away explicitly.
+**Workbook quarter 3.** Gross sales 300,000.00; returns 10,000.00 (a separate measure); net sales 290,000.00 → `txtATCAmt1` (mapping uses net sales; open for tax review).
 
-**1601-C employee share (BK-TS defect).** Basic 40,000.00 plus de minimis 2,000.00 (total 42,000.00). Employee SSS share 2,000.00. Non-taxable total 4,000.00. Taxable compensation 38,000.00. BK-TS gives 40,000.00 because it drops the employee share (verify.md s2 #28).
+**1601-C employee share (BK-TS defect).** Basic 40,000.00 plus de minimis 2,000.00: gross compensation 42,000.00 → item 14. De minimis 2,000.00 → item 18. Employee SSS share 2,000.00 → item 19. The employer share 1,500.00 is a separate measure and never reaches item 19. Forms computes the non-taxable total and taxable compensation. BK-TS drops the employee share (verify.md s2 #28).
 
-**1701-MS graduated (workbook example).** Sales 1,200,000.00 less returns 10,000.00 = net 1,190,000.00. OSD 40% = 476,000.00. Taxable business income 714,000.00. Graduated tax (2023+ table) = 22,500.00 + 20% x (714,000.00 - 400,000.00) = 85,300.00 (rates-v1.json test vector).
+**1701-MS (workbook example).** Gross sales 1,200,000.00, returns 10,000.00, net sales 1,190,000.00. If the Forms draft says graduated: IV.5 = 1,200,000.00 and IV.6 = 10,000.00. If it says eight_percent: IV.19 = 1,190,000.00. Forms computes OSD, taxable income and the tax.
 
 ## 7. Observed discrepancies that affect categories and rules
 
@@ -254,22 +252,21 @@ All amounts are synthetic. They come from the workbook's fictional worked exampl
 | Account type labels | Workbook used 'contra revenue', 'other income', 'cost', 'other expense'. Books enum is revenue, other_income, cost_of_revenue, other_expense (account-constants.ts:9-18). | Corrected (correction 19) | Workbook |
 | Three PH accounts missing | 12700, 12800 and 61950 were not in the catalog. | Added (correction 21; verify s2 #40) | Workbook |
 | owner_drawings | Proposed key. Books has owners_equity 32000 for distributions to owners. | Pending owner decision (correction 20) | Owner |
-| Activation cannot tell 8% from graduated | The IT flag covers both (sheets.md s8 #10). | Limitation | Workbook |
+| Activation cannot tell 8% from graduated | The IT flag covers both (sheets.md s8 #10). | Intended: categories never depend on the election (ADR 0007) | Workbook |
 | Profile C11-C15 unused | No formula reads them (verify.md s2 #58). | CONFIRMED | Workbook |
 | Interest final tax | Attribute not stored (sheets.md s10). | UNKNOWN | Books |
-| OSD base wording | Part I item 17 says gross sales; Part IV item 11 says net sales (bir.md s2). | UNCONFIRMED (conflict) | Tax adviser |
-| Credit notes in 2551Q | No printed deduction found (bir.md PT-8). The workbook example deducts 10,000. | UNCONFIRMED | Owner (D20) |
+| OSD base wording | Part I item 17 says gross sales; Part IV item 11 says net sales (bir.md s2). | UNCONFIRMED (conflict). Handed to Forms. | Forms owner |
+| Credit notes in 2551Q | No printed deduction found (bir.md PT-8). The workbook example deducts 10,000. | UNCONFIRMED. Mapping question (former D20). | Tax review |
 
 ## 8. Open owner decisions
 
 | ID | Decision | Default in this design | Blocks |
 |---|---|---|---|
-| D4 | PT timing basis and other-income treatment | Entry date, with a flag; tax adviser decides | P2 non-default cases |
-| D5 | 2551Q in an 8% year | Block; read RR 8-2018 full text | Any 8%-year output |
-| D6 | 1% PT extension to 2025-12-31 | Off; warn; obtain the primary text | 2023-25 proposals as ready |
-| D7 | Rounding (half away, once) | Yes | P3 golden tie |
-| D14 | Overdue Q3 2026 return | Show overdue; no penalties | Slice A status text |
-| D20 | Returns and credit notes | Block until acknowledged | P2 |
+| D4 | Revenue-recognition date (accounting policy) | Entry date, with an override | P2 non-default cases |
+| D20 | Which sales measure feeds 2551Q row 1 (now a mapping question) | net_sales, review open | P2 release (tax review) |
+| DD-29 | 1601-C item 17 cap: Forms or the bridge | The bridge keeps it, labelled | P6 |
 | owner_drawings | Reuse owners_equity 32000 or new key | Pending | Category catalog |
 
-**Recommended:** resolve D5 and D20 before P2 is built. Keep the crosswalk and rules files as the single source for form mappings.
+D5, D6, D7 and D14 are handed to Forms ([07 section 2.2](07-decisions-and-blockers.md#22-handed-to-forms-compliance-side)).
+
+**Recommended:** settle the D20 mapping in tax review before P2 is released. Keep the crosswalk, the measures catalogue and the mapping rule sets as the single source for what Books proposes.

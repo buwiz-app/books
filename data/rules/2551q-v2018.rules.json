@@ -1,1221 +1,463 @@
 {
-  "rule_set_id": "2551Q-v2018-r1",
+  "rule_set_id": "2551Q-v2018-r2",
   "form_code": "2551Q",
   "edition": "January 2018 (ENCS)",
   "schema_sha256": "a206416cabb09c5e1e0ebedf9f7ac635a46856a139ffbbde5f7be88f89005788",
   "schema_pin": "63267ca3d4d526a8ec490394470f026de82ac385",
-  "version": 1,
+  "version": 2,
   "effective_from": "2018-01-01",
   "effective_to": null,
-  "status_note": "Edition CONFIRMED (no 2025-26 revision found; bir.md s1). Key bindings CONFIRMED for the pin; selectors PARTIAL.",
-  "rules": [
-    {
-      "id": "2551Q.H.1",
-      "printed_item": "1 For the (calendar or fiscal)",
-      "method": "profile",
-      "formula": "Copy the tax-year basis from the BIR profile. Books never sends it.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 1 (forThe -> /tax_period_basis)"
-      ]
-    },
-    {
-      "id": "2551Q.H.2",
-      "printed_item": "2 Year ended (month and year)",
-      "method": "profile+identity",
-      "formula": "Year-end month comes from the profile. Taxable year comes from the requested period (identity lock).",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 2 (rtnMonth, txtYear identity)"
-      ]
-    },
-    {
-      "id": "2551Q.H.3",
-      "printed_item": "3 Quarter",
-      "method": "identity",
-      "formula": "Forms sets the quarter from the requested filing period (calendar quarter). Books sends no quarter.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 3 (qtr radios derived or app-written)",
-        "forms.md s4 (exact calendar quarter)"
-      ]
-    },
-    {
-      "id": "2551Q.H.4",
-      "printed_item": "4 Amended return?",
-      "method": "human choice",
-      "formula": "Original return only in MVP. Amended = Yes links the original return and enables item 16 (not in MVP).",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 4",
-        "workbook 2551Q H.4"
-      ]
-    },
-    {
-      "id": "2551Q.H.5",
-      "printed_item": "5 Number of sheets attached",
-      "method": "human count",
-      "formula": "Count the attachment sheets submitted.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 5"
-      ]
-    },
-    {
-      "id": "2551Q.I.6",
-      "printed_item": "6 TIN and branch code",
-      "method": "profile (derived)",
-      "formula": "Derived by BIR from the taxprofile ticket. Books never receives or stores a TIN.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 6 (derived, not fillable)",
-        "decision 3"
-      ]
-    },
-    {
-      "id": "2551Q.I.7",
-      "printed_item": "7 RDO code",
-      "method": "profile lock",
-      "formula": "Profile supplies the RDO. Forms refuses a fill while the profile holds it.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 7",
-        "verify.md s3 (profile lock)"
-      ]
-    },
-    {
-      "id": "2551Q.I.8",
-      "printed_item": "8 Taxpayer's name",
-      "method": "profile lock",
-      "formula": "Profile supplies the registered name.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 8"
-      ]
-    },
-    {
-      "id": "2551Q.I.9",
-      "printed_item": "9 Registered address",
-      "method": "profile lock",
-      "formula": "Profile supplies the registered address.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 9"
-      ]
-    },
-    {
-      "id": "2551Q.I.9A",
-      "printed_item": "9A ZIP code",
-      "method": "profile lock",
-      "formula": "Profile supplies the ZIP code (text, not a number).",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 9"
-      ]
-    },
-    {
-      "id": "2551Q.I.10",
-      "printed_item": "10 Telephone number",
-      "method": "profile lock",
-      "formula": "Profile supplies the contact number.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 10"
-      ]
-    },
-    {
-      "id": "2551Q.I.11",
-      "printed_item": "11 Email address",
-      "method": "profile lock",
-      "formula": "Profile supplies the email. Occurrence 2 is unmapped.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 11 (L unbound; R/O bind /email)"
-      ]
-    },
-    {
-      "id": "2551Q.I.12",
-      "printed_item": "12 Tax relief under special law or treaty?",
-      "method": "human choice",
-      "formula": "Relief elections are entered by a person. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 12"
-      ]
-    },
-    {
-      "id": "2551Q.I.12A",
-      "printed_item": "12 Specify relief",
-      "method": "human entry",
-      "formula": "Relief authority text, when item 12 is Yes.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 12"
-      ]
-    },
-    {
-      "id": "2551Q.I.13",
-      "printed_item": "13 Income-tax rate availed (initial quarter only)",
-      "method": "election (locked)",
-      "formula": "Election comes from the BIR profile. Forms refuses fills for this box (election lock). Books never fills it. A valid 8% election year blocks all 2551Q values (GATE.8PCT_YEAR_2551Q).",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "gates": [
-        "GATE.8PCT_YEAR_2551Q"
-      ],
-      "status_detail": "The pin has a 'Not applicable' option (taxRateNA). The printed NA option is UNCONFIRMED (bir.md s2 lists two options).",
-      "citations": [
-        "verify.md s2 #7, s4 item 13",
-        "bir.md s2",
-        "RMO 23-2018 (verify.md s2 #72)"
-      ]
-    },
+  "supersedes": "2551Q-v2018-r1 (archived at research/handoff-to-forms/rules-r1/2551q-v2018.rules.r1.json; ADR-0007)",
+  "measures_catalog": "measures-v1",
+  "status_note": "Edition CONFIRMED (no 2025-26 revision found; bir.md s1). Key bindings CONFIRMED for the pin; selectors PARTIAL. Rule set r2 is a thin mapping: accounting measure to crosswalk input key (fill_class input) with lineage. Books holds no rate, election, threshold, applicability test, ATC choice, due date or penalty (ADR-0007).",
+  "owner_values": {
+    "forms": "Forms computes or decides it (tax due, rate, ATC, election, applicability, penalties, totals). Books keeps no rule.",
+    "profile": "The Forms taxpayer profile supplies it.",
+    "identity": "Forms sets it from the requested period.",
+    "user": "A person enters it in Forms.",
+    "prior_filing": "Forms holds prior filings.",
+    "not_fillable": "No addressable key.",
+    "app": "App-written or derived by Forms."
+  },
+  "form_context_inputs": [],
+  "mappings": [
     {
       "id": "2551Q.S1.1.base",
       "printed_item": "Schedule 1 row 1: taxable amount",
-      "method": "sum",
-      "formula": "Sum posted sales lines tagged treatment=sale_pt and this ATC in the quarter, minus eligible sales adjustments for the same ATC. Reversals dated in the original period net to zero. Centavos exact, no rounding.",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "fill_mvp",
-      "sign": "+1",
-      "rounding": "none (centavos exact)",
+      "mode": "fill",
+      "target_key": "txtATCAmt1",
+      "measures": [
+        "net_sales"
+      ],
+      "aggregation": "sum",
+      "period_basis": "quarter",
+      "person_scope": "taxpayer",
+      "row": 1,
+      "non_negative": true,
       "gates": [
-        "GATE.VAT_THRESHOLD",
-        "GATE.8PCT_YEAR_2551Q",
+        "GATE.PERIOD_LOCK",
         "GATE.RETURNS_ACK",
         "EXC.VAT_NOT_IN_SALES",
         "EXC.BANK_DEPOSIT_NOT_SALES",
+        "EXC.PAYABLE_NOT_BASE",
+        "EXC.SPOUSE_MVP",
         "REV.COUNT_ONCE",
         "REV.VOID_OPEN_PERIOD"
       ],
-      "period": "calendar quarter",
-      "selector": {
-        "tax_type": [
-          "percentage_tax"
-        ],
-        "treatment": [
-          "sale_pt"
-        ],
-        "atc": [
-          "PT010"
-        ]
+      "review": {
+        "status": "open",
+        "note": "Which sales measure feeds row 1 (net_sales or gross_sales) is a mapping rule for tax review (former D20, handed to Forms review). This rule set uses net_sales. The ATC on row 1 is chosen in Forms (drpATC1 is Forms-owned); the bridge fills the row-1 amount only. Whether a 2551Q is required for the period (8% year, NIL) is Forms' decision."
       },
-      "scope": "row:1",
-      "status_detail": "Key accepted exact (verify.md s4 item 23). Selector PARTIAL: PT timing basis (D4) and returns treatment (D20) are open.",
-      "test_vectors": [
-        {
-          "name": "Slice A synthetic (sales 120000.00 + 80000.00; 100000.00 sale voided by a reversal dated 2026-07-15)",
-          "expected_base_text": "200000.00"
-        }
-      ],
+      "poc": "implemented",
+      "status": "PROPOSAL (key CONFIRMED: verify.md s4 item 23)",
       "citations": [
         "verify.md s4 (txtATCAmt1 accepted exact)",
-        "bir.md PT-1, PT-5, PT-8",
-        "design: Slice A, A3-A4"
-      ]
-    },
-    {
-      "id": "2551Q.S1.1.ATC",
-      "printed_item": "Schedule 1 row 1: ATC",
-      "method": "constant or attribute",
-      "formula": "PT010 for Section 116 persons (constant in MVP). Typed alias schedule_1.0.atc is validated against the ATC table. Official key drpATC1 is refused (derived by the app).",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "fill_mvp",
-      "selector": {
-        "tax_type": [
-          "percentage_tax"
-        ],
-        "treatment": [
-          "sale_pt"
-        ],
-        "atc": [
-          "PT010"
-        ]
-      },
-      "scope": "row:1",
-      "citations": [
-        "verify.md s3-s4 (typed alias, refused drpATC)",
-        "bir.md PT-5 (PT010 printed)"
-      ]
-    },
-    {
-      "id": "2551Q.S1.1.rate",
-      "printed_item": "Schedule 1 row 1: tax rate",
-      "method": "lookup",
-      "formula": "PT010 rate in basis points from rates-v1 for the filing period (300 from 2023-07-01). Forms computes it; Books cross-checks.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "scope": "row:1",
-      "citations": [
-        "bir.md PT-2",
-        "verify.md s2 #62 (CONFIRMED), #63 (1% extension UNCONFIRMED)",
-        "rates-v1.json"
-      ]
-    },
-    {
-      "id": "2551Q.S1.1.tax",
-      "printed_item": "Schedule 1 row 1: tax due",
-      "method": "computed",
-      "formula": "base x rate_bps / 10000, rounded half away from zero once at output. Example: 200000.00 x 300 bps = 6000.00.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "rounding": "half away from zero, once, at output (D7)",
-      "scope": "row:1",
-      "status_detail": "Half-away rounding is a PROPOSAL (D7). The live Forms cents helper must be shown to round half away from zero (form_2551q.rs:1467). UNCONFIRMED until the tie test passes.",
-      "test_vectors": [
-        {
-          "base_text": "200000.00",
-          "rate_bps": 300,
-          "tax_text": "6000.00"
-        },
-        {
-          "base_text": "1.50",
-          "rate_bps": 300,
-          "tax_text": "0.05"
-        },
-        {
-          "base_text": "1.49",
-          "rate_bps": 300,
-          "tax_text": "0.04"
-        },
-        {
-          "base_text": "-1.50",
-          "rate_bps": 300,
-          "tax_text": "-0.05"
-        }
-      ],
-      "citations": [
-        "verify.md s4 (txtATCDue computed)",
-        "decision D7 (PROPOSAL)",
-        "forms.md s4 (f64 cents helper)"
-      ]
-    },
-    {
-      "id": "2551Q.S1.2.base",
-      "printed_item": "Schedule 1 row 2: taxable amount",
-      "method": "sum",
-      "formula": "Sum posted sales lines tagged treatment=sale_pt and this ATC in the quarter, minus eligible sales adjustments for the same ATC. Reversals dated in the original period net to zero. Centavos exact, no rounding.",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "never_fill",
-      "sign": "+1",
-      "rounding": "none (centavos exact)",
-      "gates": [
-        "GATE.VAT_THRESHOLD",
-        "GATE.8PCT_YEAR_2551Q",
-        "GATE.RETURNS_ACK",
-        "EXC.VAT_NOT_IN_SALES",
-        "EXC.BANK_DEPOSIT_NOT_SALES",
-        "REV.COUNT_ONCE",
-        "REV.VOID_OPEN_PERIOD"
-      ],
-      "period": "calendar quarter",
-      "selector": {
-        "tax_type": [
-          "percentage_tax"
-        ],
-        "treatment": [
-          "sale_pt"
-        ]
-      },
-      "scope": "row:2",
-      "status_detail": "Row only needed for other ATCs; not in MVP.",
-      "citations": [
-        "verify.md s4 (txtATCAmt1 accepted exact)",
-        "bir.md PT-1, PT-5, PT-8",
-        "design: Slice A, A3-A4"
-      ]
-    },
-    {
-      "id": "2551Q.S1.2.ATC",
-      "printed_item": "Schedule 1 row 2: ATC",
-      "method": "constant or attribute",
-      "formula": "PT010 for Section 116 persons (constant in MVP). Typed alias schedule_1.1.atc is validated against the ATC table. Official key drpATC2 is refused (derived by the app).",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "never_fill",
-      "selector": {
-        "tax_type": [
-          "percentage_tax"
-        ],
-        "treatment": [
-          "sale_pt"
-        ]
-      },
-      "scope": "row:2",
-      "citations": [
-        "verify.md s3-s4 (typed alias, refused drpATC)",
-        "bir.md PT-5 (PT010 printed)"
-      ]
-    },
-    {
-      "id": "2551Q.S1.2.rate",
-      "printed_item": "Schedule 1 row 2: tax rate",
-      "method": "lookup",
-      "formula": "PT010 rate in basis points from rates-v1 for the filing period (300 from 2023-07-01). Forms computes it; Books cross-checks.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "scope": "row:2",
-      "citations": [
-        "bir.md PT-2",
-        "verify.md s2 #62 (CONFIRMED), #63 (1% extension UNCONFIRMED)",
-        "rates-v1.json"
-      ]
-    },
-    {
-      "id": "2551Q.S1.2.tax",
-      "printed_item": "Schedule 1 row 2: tax due",
-      "method": "computed",
-      "formula": "base x rate_bps / 10000, rounded half away from zero once at output. Example: 200000.00 x 300 bps = 6000.00.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "rounding": "half away from zero, once, at output (D7)",
-      "scope": "row:2",
-      "status_detail": "Half-away rounding is a PROPOSAL (D7). The live Forms cents helper must be shown to round half away from zero (form_2551q.rs:1467). UNCONFIRMED until the tie test passes.",
-      "citations": [
-        "verify.md s4 (txtATCDue computed)",
-        "decision D7 (PROPOSAL)",
-        "forms.md s4 (f64 cents helper)"
-      ]
-    },
-    {
-      "id": "2551Q.S1.3.base",
-      "printed_item": "Schedule 1 row 3: taxable amount",
-      "method": "sum",
-      "formula": "Sum posted sales lines tagged treatment=sale_pt and this ATC in the quarter, minus eligible sales adjustments for the same ATC. Reversals dated in the original period net to zero. Centavos exact, no rounding.",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "never_fill",
-      "sign": "+1",
-      "rounding": "none (centavos exact)",
-      "gates": [
-        "GATE.VAT_THRESHOLD",
-        "GATE.8PCT_YEAR_2551Q",
-        "GATE.RETURNS_ACK",
-        "EXC.VAT_NOT_IN_SALES",
-        "EXC.BANK_DEPOSIT_NOT_SALES",
-        "REV.COUNT_ONCE",
-        "REV.VOID_OPEN_PERIOD"
-      ],
-      "period": "calendar quarter",
-      "selector": {
-        "tax_type": [
-          "percentage_tax"
-        ],
-        "treatment": [
-          "sale_pt"
-        ]
-      },
-      "scope": "row:3",
-      "status_detail": "Row only needed for other ATCs; not in MVP.",
-      "citations": [
-        "verify.md s4 (txtATCAmt1 accepted exact)",
-        "bir.md PT-1, PT-5, PT-8",
-        "design: Slice A, A3-A4"
-      ]
-    },
-    {
-      "id": "2551Q.S1.3.ATC",
-      "printed_item": "Schedule 1 row 3: ATC",
-      "method": "constant or attribute",
-      "formula": "PT010 for Section 116 persons (constant in MVP). Typed alias schedule_1.2.atc is validated against the ATC table. Official key drpATC3 is refused (derived by the app).",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "never_fill",
-      "selector": {
-        "tax_type": [
-          "percentage_tax"
-        ],
-        "treatment": [
-          "sale_pt"
-        ]
-      },
-      "scope": "row:3",
-      "citations": [
-        "verify.md s3-s4 (typed alias, refused drpATC)",
-        "bir.md PT-5 (PT010 printed)"
-      ]
-    },
-    {
-      "id": "2551Q.S1.3.rate",
-      "printed_item": "Schedule 1 row 3: tax rate",
-      "method": "lookup",
-      "formula": "PT010 rate in basis points from rates-v1 for the filing period (300 from 2023-07-01). Forms computes it; Books cross-checks.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "scope": "row:3",
-      "citations": [
-        "bir.md PT-2",
-        "verify.md s2 #62 (CONFIRMED), #63 (1% extension UNCONFIRMED)",
-        "rates-v1.json"
-      ]
-    },
-    {
-      "id": "2551Q.S1.3.tax",
-      "printed_item": "Schedule 1 row 3: tax due",
-      "method": "computed",
-      "formula": "base x rate_bps / 10000, rounded half away from zero once at output. Example: 200000.00 x 300 bps = 6000.00.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "rounding": "half away from zero, once, at output (D7)",
-      "scope": "row:3",
-      "status_detail": "Half-away rounding is a PROPOSAL (D7). The live Forms cents helper must be shown to round half away from zero (form_2551q.rs:1467). UNCONFIRMED until the tie test passes.",
-      "citations": [
-        "verify.md s4 (txtATCDue computed)",
-        "decision D7 (PROPOSAL)",
-        "forms.md s4 (f64 cents helper)"
-      ]
-    },
-    {
-      "id": "2551Q.S1.4.base",
-      "printed_item": "Schedule 1 row 4: taxable amount",
-      "method": "sum",
-      "formula": "Sum posted sales lines tagged treatment=sale_pt and this ATC in the quarter, minus eligible sales adjustments for the same ATC. Reversals dated in the original period net to zero. Centavos exact, no rounding.",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "never_fill",
-      "sign": "+1",
-      "rounding": "none (centavos exact)",
-      "gates": [
-        "GATE.VAT_THRESHOLD",
-        "GATE.8PCT_YEAR_2551Q",
-        "GATE.RETURNS_ACK",
-        "EXC.VAT_NOT_IN_SALES",
-        "EXC.BANK_DEPOSIT_NOT_SALES",
-        "REV.COUNT_ONCE",
-        "REV.VOID_OPEN_PERIOD"
-      ],
-      "period": "calendar quarter",
-      "selector": {
-        "tax_type": [
-          "percentage_tax"
-        ],
-        "treatment": [
-          "sale_pt"
-        ]
-      },
-      "scope": "row:4",
-      "status_detail": "Row only needed for other ATCs; not in MVP.",
-      "citations": [
-        "verify.md s4 (txtATCAmt1 accepted exact)",
-        "bir.md PT-1, PT-5, PT-8",
-        "design: Slice A, A3-A4"
-      ]
-    },
-    {
-      "id": "2551Q.S1.4.ATC",
-      "printed_item": "Schedule 1 row 4: ATC",
-      "method": "constant or attribute",
-      "formula": "PT010 for Section 116 persons (constant in MVP). Typed alias schedule_1.3.atc is validated against the ATC table. Official key drpATC4 is refused (derived by the app).",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "never_fill",
-      "selector": {
-        "tax_type": [
-          "percentage_tax"
-        ],
-        "treatment": [
-          "sale_pt"
-        ]
-      },
-      "scope": "row:4",
-      "citations": [
-        "verify.md s3-s4 (typed alias, refused drpATC)",
-        "bir.md PT-5 (PT010 printed)"
-      ]
-    },
-    {
-      "id": "2551Q.S1.4.rate",
-      "printed_item": "Schedule 1 row 4: tax rate",
-      "method": "lookup",
-      "formula": "PT010 rate in basis points from rates-v1 for the filing period (300 from 2023-07-01). Forms computes it; Books cross-checks.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "scope": "row:4",
-      "citations": [
-        "bir.md PT-2",
-        "verify.md s2 #62 (CONFIRMED), #63 (1% extension UNCONFIRMED)",
-        "rates-v1.json"
-      ]
-    },
-    {
-      "id": "2551Q.S1.4.tax",
-      "printed_item": "Schedule 1 row 4: tax due",
-      "method": "computed",
-      "formula": "base x rate_bps / 10000, rounded half away from zero once at output. Example: 200000.00 x 300 bps = 6000.00.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "rounding": "half away from zero, once, at output (D7)",
-      "scope": "row:4",
-      "status_detail": "Half-away rounding is a PROPOSAL (D7). The live Forms cents helper must be shown to round half away from zero (form_2551q.rs:1467). UNCONFIRMED until the tie test passes.",
-      "citations": [
-        "verify.md s4 (txtATCDue computed)",
-        "decision D7 (PROPOSAL)",
-        "forms.md s4 (f64 cents helper)"
-      ]
-    },
-    {
-      "id": "2551Q.S1.5.base",
-      "printed_item": "Schedule 1 row 5: taxable amount",
-      "method": "sum",
-      "formula": "Sum posted sales lines tagged treatment=sale_pt and this ATC in the quarter, minus eligible sales adjustments for the same ATC. Reversals dated in the original period net to zero. Centavos exact, no rounding.",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "never_fill",
-      "sign": "+1",
-      "rounding": "none (centavos exact)",
-      "gates": [
-        "GATE.VAT_THRESHOLD",
-        "GATE.8PCT_YEAR_2551Q",
-        "GATE.RETURNS_ACK",
-        "EXC.VAT_NOT_IN_SALES",
-        "EXC.BANK_DEPOSIT_NOT_SALES",
-        "REV.COUNT_ONCE",
-        "REV.VOID_OPEN_PERIOD"
-      ],
-      "period": "calendar quarter",
-      "selector": {
-        "tax_type": [
-          "percentage_tax"
-        ],
-        "treatment": [
-          "sale_pt"
-        ]
-      },
-      "scope": "row:5",
-      "status_detail": "Row only needed for other ATCs; not in MVP.",
-      "citations": [
-        "verify.md s4 (txtATCAmt1 accepted exact)",
-        "bir.md PT-1, PT-5, PT-8",
-        "design: Slice A, A3-A4"
-      ]
-    },
-    {
-      "id": "2551Q.S1.5.ATC",
-      "printed_item": "Schedule 1 row 5: ATC",
-      "method": "constant or attribute",
-      "formula": "PT010 for Section 116 persons (constant in MVP). Typed alias schedule_1.4.atc is validated against the ATC table. Official key drpATC5 is refused (derived by the app).",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "never_fill",
-      "selector": {
-        "tax_type": [
-          "percentage_tax"
-        ],
-        "treatment": [
-          "sale_pt"
-        ]
-      },
-      "scope": "row:5",
-      "citations": [
-        "verify.md s3-s4 (typed alias, refused drpATC)",
-        "bir.md PT-5 (PT010 printed)"
-      ]
-    },
-    {
-      "id": "2551Q.S1.5.rate",
-      "printed_item": "Schedule 1 row 5: tax rate",
-      "method": "lookup",
-      "formula": "PT010 rate in basis points from rates-v1 for the filing period (300 from 2023-07-01). Forms computes it; Books cross-checks.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "scope": "row:5",
-      "citations": [
-        "bir.md PT-2",
-        "verify.md s2 #62 (CONFIRMED), #63 (1% extension UNCONFIRMED)",
-        "rates-v1.json"
-      ]
-    },
-    {
-      "id": "2551Q.S1.5.tax",
-      "printed_item": "Schedule 1 row 5: tax due",
-      "method": "computed",
-      "formula": "base x rate_bps / 10000, rounded half away from zero once at output. Example: 200000.00 x 300 bps = 6000.00.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "rounding": "half away from zero, once, at output (D7)",
-      "scope": "row:5",
-      "status_detail": "Half-away rounding is a PROPOSAL (D7). The live Forms cents helper must be shown to round half away from zero (form_2551q.rs:1467). UNCONFIRMED until the tie test passes.",
-      "citations": [
-        "verify.md s4 (txtATCDue computed)",
-        "decision D7 (PROPOSAL)",
-        "forms.md s4 (f64 cents helper)"
-      ]
-    },
-    {
-      "id": "2551Q.S1.6.base",
-      "printed_item": "Schedule 1 row 6: taxable amount",
-      "method": "sum",
-      "formula": "Sum posted sales lines tagged treatment=sale_pt and this ATC in the quarter, minus eligible sales adjustments for the same ATC. Reversals dated in the original period net to zero. Centavos exact, no rounding.",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "never_fill",
-      "sign": "+1",
-      "rounding": "none (centavos exact)",
-      "gates": [
-        "GATE.VAT_THRESHOLD",
-        "GATE.8PCT_YEAR_2551Q",
-        "GATE.RETURNS_ACK",
-        "EXC.VAT_NOT_IN_SALES",
-        "EXC.BANK_DEPOSIT_NOT_SALES",
-        "REV.COUNT_ONCE",
-        "REV.VOID_OPEN_PERIOD"
-      ],
-      "period": "calendar quarter",
-      "selector": {
-        "tax_type": [
-          "percentage_tax"
-        ],
-        "treatment": [
-          "sale_pt"
-        ]
-      },
-      "scope": "row:6",
-      "status_detail": "Row only needed for other ATCs; not in MVP.",
-      "citations": [
-        "verify.md s4 (txtATCAmt1 accepted exact)",
-        "bir.md PT-1, PT-5, PT-8",
-        "design: Slice A, A3-A4"
-      ]
-    },
-    {
-      "id": "2551Q.S1.6.ATC",
-      "printed_item": "Schedule 1 row 6: ATC",
-      "method": "constant or attribute",
-      "formula": "PT010 for Section 116 persons (constant in MVP). Typed alias schedule_1.5.atc is validated against the ATC table. Official key drpATC6 is refused (derived by the app).",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "never_fill",
-      "selector": {
-        "tax_type": [
-          "percentage_tax"
-        ],
-        "treatment": [
-          "sale_pt"
-        ]
-      },
-      "scope": "row:6",
-      "citations": [
-        "verify.md s3-s4 (typed alias, refused drpATC)",
-        "bir.md PT-5 (PT010 printed)"
-      ]
-    },
-    {
-      "id": "2551Q.S1.6.rate",
-      "printed_item": "Schedule 1 row 6: tax rate",
-      "method": "lookup",
-      "formula": "PT010 rate in basis points from rates-v1 for the filing period (300 from 2023-07-01). Forms computes it; Books cross-checks.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "scope": "row:6",
-      "citations": [
-        "bir.md PT-2",
-        "verify.md s2 #62 (CONFIRMED), #63 (1% extension UNCONFIRMED)",
-        "rates-v1.json"
-      ]
-    },
-    {
-      "id": "2551Q.S1.6.tax",
-      "printed_item": "Schedule 1 row 6: tax due",
-      "method": "computed",
-      "formula": "base x rate_bps / 10000, rounded half away from zero once at output. Example: 200000.00 x 300 bps = 6000.00.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "rounding": "half away from zero, once, at output (D7)",
-      "scope": "row:6",
-      "status_detail": "Half-away rounding is a PROPOSAL (D7). The live Forms cents helper must be shown to round half away from zero (form_2551q.rs:1467). UNCONFIRMED until the tie test passes.",
-      "citations": [
-        "verify.md s4 (txtATCDue computed)",
-        "decision D7 (PROPOSAL)",
-        "forms.md s4 (f64 cents helper)"
-      ]
-    },
-    {
-      "id": "2551Q.S1.7",
-      "printed_item": "7 Total tax due (sum of Schedule 1 rows 1-6)",
-      "method": "computed",
-      "formula": "Sum of the row tax-due amounts (rows 1-6 and any additional sheets). Carries to item 14.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook 2551Q S1.7",
-        "verify.md s4 item 14"
-      ]
-    },
-    {
-      "id": "2551Q.II.14",
-      "printed_item": "14 Total tax due",
-      "method": "computed",
-      "formula": "Copy of S1.7 (not a ledger account).",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "verify.md s4 item 14 (computed)",
-        "workbook II.14"
+        "bir.md PT-8 (returns treatment UNVERIFIED)",
+        "docs/adr/0007-books-supplies-measures-forms-owns-compliance.md"
       ]
     },
     {
       "id": "2551Q.II.15",
       "printed_item": "15 Creditable percentage tax withheld per 2307",
-      "method": "certificate sum",
-      "formula": "Sum of percentage-tax 2307 certificates (WB080 or WB082) with status 'received' and a period in the quarter. Never WB084 (final). Never income-tax 2307 (WI or WC).",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "fill_mvp",
+      "mode": "fill",
+      "target_key": "frm2551Qv2018:txt15",
+      "measures": [
+        "pt_withheld_2307_received"
+      ],
+      "aggregation": "sum",
+      "period_basis": "certificate_period",
+      "person_scope": "payor",
       "gates": [
+        "GATE.PERIOD_LOCK",
         "GATE.CERT_STATUS",
         "EXC.IT_CWT_NOT_PT",
         "EXC.WB084_FINAL",
         "EXC.UNRECEIVED_CERT"
       ],
-      "selector": {
-        "atc": [
-          "WB080",
-          "WB082"
-        ],
-        "certificate_status": [
-          "received"
-        ],
-        "credit_kind": [
-          "pt"
-        ]
+      "review": {
+        "status": "settled",
+        "note": "Percentage-tax certificates only. Whether the credit goes only to item 15 is INFERENCE (bir.md W-3), listed for tax review."
       },
-      "test_vectors": [
-        {
-          "name": "Slice A (no certificates)",
-          "expected_text": "0.00"
-        }
-      ],
+      "poc": "implemented",
+      "status": "CONFIRMED key; routing INFERENCE",
       "citations": [
         "verify.md s4 item 15 (creditable_tax_withheld)",
         "bir.md W-1 to W-4",
         "books.md s4g (status defect)"
       ]
+    }
+  ],
+  "not_mapped": [
+    {
+      "id": "2551Q.H.1",
+      "printed_item": "1 For the (calendar or fiscal)",
+      "owner": "profile"
+    },
+    {
+      "id": "2551Q.H.2",
+      "printed_item": "2 Year ended (month and year)",
+      "owner": "profile"
+    },
+    {
+      "id": "2551Q.H.3",
+      "printed_item": "3 Quarter",
+      "owner": "identity"
+    },
+    {
+      "id": "2551Q.H.4",
+      "printed_item": "4 Amended return?",
+      "owner": "user"
+    },
+    {
+      "id": "2551Q.H.5",
+      "printed_item": "5 Number of sheets attached",
+      "owner": "user"
+    },
+    {
+      "id": "2551Q.I.6",
+      "printed_item": "6 TIN and branch code",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "2551Q.I.7",
+      "printed_item": "7 RDO code",
+      "owner": "profile"
+    },
+    {
+      "id": "2551Q.I.8",
+      "printed_item": "8 Taxpayer's name",
+      "owner": "profile"
+    },
+    {
+      "id": "2551Q.I.9",
+      "printed_item": "9 Registered address",
+      "owner": "profile"
+    },
+    {
+      "id": "2551Q.I.9A",
+      "printed_item": "9A ZIP code",
+      "owner": "profile"
+    },
+    {
+      "id": "2551Q.I.10",
+      "printed_item": "10 Telephone number",
+      "owner": "profile"
+    },
+    {
+      "id": "2551Q.I.11",
+      "printed_item": "11 Email address",
+      "owner": "profile"
+    },
+    {
+      "id": "2551Q.I.12",
+      "printed_item": "12 Tax relief under special law or treaty?",
+      "owner": "user"
+    },
+    {
+      "id": "2551Q.I.12A",
+      "printed_item": "12 Specify relief",
+      "owner": "user"
+    },
+    {
+      "id": "2551Q.I.13",
+      "printed_item": "13 Income-tax rate availed (initial quarter only)",
+      "owner": "forms",
+      "note": "Election. Owned by the Forms tax profile. The bridge may read it as form_context; it never fills or decides it."
+    },
+    {
+      "id": "2551Q.S1.1.ATC",
+      "printed_item": "Schedule 1 row 1: ATC",
+      "owner": "forms",
+      "note": "ATC selection is Forms' (drpATC1 / schedule_1.0.atc). The bridge never sends an ATC."
+    },
+    {
+      "id": "2551Q.S1.1.rate",
+      "printed_item": "Schedule 1 row 1: tax rate",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "2551Q.S1.1.tax",
+      "printed_item": "Schedule 1 row 1: tax due",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "2551Q.S1.2.base",
+      "printed_item": "Schedule 1 row 2: taxable amount",
+      "owner": "user",
+      "note": "Not mapped in this rule set."
+    },
+    {
+      "id": "2551Q.S1.2.ATC",
+      "printed_item": "Schedule 1 row 2: ATC",
+      "owner": "forms"
+    },
+    {
+      "id": "2551Q.S1.2.rate",
+      "printed_item": "Schedule 1 row 2: tax rate",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "2551Q.S1.2.tax",
+      "printed_item": "Schedule 1 row 2: tax due",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "2551Q.S1.3.base",
+      "printed_item": "Schedule 1 row 3: taxable amount",
+      "owner": "user",
+      "note": "Not mapped in this rule set."
+    },
+    {
+      "id": "2551Q.S1.3.ATC",
+      "printed_item": "Schedule 1 row 3: ATC",
+      "owner": "forms"
+    },
+    {
+      "id": "2551Q.S1.3.rate",
+      "printed_item": "Schedule 1 row 3: tax rate",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "2551Q.S1.3.tax",
+      "printed_item": "Schedule 1 row 3: tax due",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "2551Q.S1.4.base",
+      "printed_item": "Schedule 1 row 4: taxable amount",
+      "owner": "user",
+      "note": "Not mapped in this rule set."
+    },
+    {
+      "id": "2551Q.S1.4.ATC",
+      "printed_item": "Schedule 1 row 4: ATC",
+      "owner": "forms"
+    },
+    {
+      "id": "2551Q.S1.4.rate",
+      "printed_item": "Schedule 1 row 4: tax rate",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "2551Q.S1.4.tax",
+      "printed_item": "Schedule 1 row 4: tax due",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "2551Q.S1.5.base",
+      "printed_item": "Schedule 1 row 5: taxable amount",
+      "owner": "user",
+      "note": "Not mapped in this rule set."
+    },
+    {
+      "id": "2551Q.S1.5.ATC",
+      "printed_item": "Schedule 1 row 5: ATC",
+      "owner": "forms"
+    },
+    {
+      "id": "2551Q.S1.5.rate",
+      "printed_item": "Schedule 1 row 5: tax rate",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "2551Q.S1.5.tax",
+      "printed_item": "Schedule 1 row 5: tax due",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "2551Q.S1.6.base",
+      "printed_item": "Schedule 1 row 6: taxable amount",
+      "owner": "user",
+      "note": "Not mapped in this rule set."
+    },
+    {
+      "id": "2551Q.S1.6.ATC",
+      "printed_item": "Schedule 1 row 6: ATC",
+      "owner": "forms"
+    },
+    {
+      "id": "2551Q.S1.6.rate",
+      "printed_item": "Schedule 1 row 6: tax rate",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "2551Q.S1.6.tax",
+      "printed_item": "Schedule 1 row 6: tax due",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "2551Q.S1.7",
+      "printed_item": "7 Total tax due (sum of Schedule 1 rows 1-6)",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "2551Q.II.14",
+      "printed_item": "14 Total tax due",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "2551Q.II.16",
       "printed_item": "16 Tax paid in previously filed return (amended only)",
-      "method": "prior filing",
-      "formula": "Only when item 4 is Amended. Needs proof of the earlier payment.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 16 (counts only if amended)",
-        "workbook II.16"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "2551Q.II.17",
       "printed_item": "17 Other tax credit or payment (specify)",
-      "method": "manual with proof",
-      "formula": "Record the credit type and the proof. Never inferred.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "workbook II.17 (manual review)"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.II.18",
       "printed_item": "18 Total tax credits or payments",
-      "method": "computed",
-      "formula": "II.15 + II.16 + II.17.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook II.18",
-        "verify.md s2 #45 (CONFIRMED)"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "2551Q.II.19",
       "printed_item": "19 Tax still payable / (overpayment)",
-      "method": "computed",
-      "formula": "II.14 - II.18. Keep the sign. Never clamp to zero.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "sign": "signed",
-      "citations": [
-        "workbook II.19 'Keep sign; no silent clamp'",
-        "verify.md s2 #46, #57"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "2551Q.II.20",
       "printed_item": "20 Surcharge",
-      "method": "manual (penalty)",
-      "formula": "Penalty assessment. Books computes none (decision D14) and never fills it. Official key binds /penalty_overrides/surcharge.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 20",
-        "decision D14",
-        "verify.md s2 #5 (pin binds 20-22)"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.II.21",
       "printed_item": "21 Interest",
-      "method": "manual (penalty)",
-      "formula": "Penalty assessment. Books computes none (decision D14) and never fills it. Official key binds /penalty_overrides/interest.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 item 21",
-        "decision D14",
-        "verify.md s2 #5 (pin binds 20-22)"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.II.22",
       "printed_item": "22 Compromise",
-      "method": "manual (penalty)",
-      "formula": "Penalty assessment. Books computes none (decision D14) and never fills it. Official key binds /penalty_overrides/compromise.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "status_detail": "Typed 'compromise' writes the root field and is overwritten in auto mode. Official txt22 is the durable input (verify.md s2 #9).",
-      "citations": [
-        "verify.md s4 item 22",
-        "decision D14",
-        "verify.md s2 #5 (pin binds 20-22)"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.II.23",
       "printed_item": "23 Total penalties",
-      "method": "computed",
-      "formula": "II.20 + II.21 + II.22.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook II.23 'Do not invent penalties'"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "2551Q.II.24",
       "printed_item": "24 Total amount payable / (overpayment)",
-      "method": "computed",
-      "formula": "II.19 + II.23. Signed.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "sign": "signed",
-      "citations": [
-        "workbook II.24",
-        "verify.md s2 #46"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "2551Q.II.overpayment",
       "printed_item": "Overpayment: refund or tax credit certificate",
-      "method": "human choice",
-      "formula": "Only when an eligible overpayment exists. Never chosen by Books.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (overPayment)",
-        "workbook II.overpayment"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.25.bank",
       "printed_item": "25 payment row: drawee bank or agency",
-      "method": "evidence",
-      "formula": "Record only when payment method 25 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.25.bank"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.25.number",
       "printed_item": "25 payment row: reference number",
-      "method": "evidence",
-      "formula": "Record only when payment method 25 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.25.number"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.25.date",
       "printed_item": "25 payment row: payment date",
-      "method": "evidence",
-      "formula": "Record only when payment method 25 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.25.date"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.25.amount",
       "printed_item": "25 payment row: amount",
-      "method": "evidence",
-      "formula": "Record only when payment method 25 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.25.amount"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.26.bank",
       "printed_item": "26 payment row: drawee bank or agency",
-      "method": "evidence",
-      "formula": "Record only when payment method 26 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.26.bank"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.26.number",
       "printed_item": "26 payment row: reference number",
-      "method": "evidence",
-      "formula": "Record only when payment method 26 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.26.number"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.26.date",
       "printed_item": "26 payment row: payment date",
-      "method": "evidence",
-      "formula": "Record only when payment method 26 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.26.date"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.26.amount",
       "printed_item": "26 payment row: amount",
-      "method": "evidence",
-      "formula": "Record only when payment method 26 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.26.amount"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.27.bank",
       "printed_item": "27 payment row: drawee bank or agency",
-      "method": "evidence",
-      "formula": "Record only when payment method 27 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.27.bank"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.27.number",
       "printed_item": "27 payment row: reference number",
-      "method": "evidence",
-      "formula": "Record only when payment method 27 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.27.number"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.27.date",
       "printed_item": "27 payment row: payment date",
-      "method": "evidence",
-      "formula": "Record only when payment method 27 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.27.date"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.27.amount",
       "printed_item": "27 payment row: amount",
-      "method": "evidence",
-      "formula": "Record only when payment method 27 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.27.amount"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.28.bank",
       "printed_item": "28 payment row: drawee bank or agency",
-      "method": "evidence",
-      "formula": "Record only when payment method 28 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.28.bank"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.28.number",
       "printed_item": "28 payment row: reference number",
-      "method": "evidence",
-      "formula": "Record only when payment method 28 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.28.number"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.28.date",
       "printed_item": "28 payment row: payment date",
-      "method": "evidence",
-      "formula": "Record only when payment method 28 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.28.date"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.28.amount",
       "printed_item": "28 payment row: amount",
-      "method": "evidence",
-      "formula": "Record only when payment method 28 was used. Books never fills payment rows in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (items 25-28 unmapped)",
-        "workbook 2551Q III.28.amount"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.III.28.particular",
       "printed_item": "28 Other payment: particulars",
-      "method": "evidence",
-      "formula": "Free text for item 28 (txtParticular28). Added by correction 29. Unmapped in the pin.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s2 #20 (omission confirmed)",
-        "pinned schema: txtParticular28 unmapped"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.DECL.agent",
       "printed_item": "Tax agent accreditation, issue and expiry",
-      "method": "human entry",
-      "formula": "Agent credentials are entered by the agent. Books never fills them.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "workbook DECL.agent",
-        "verify.md s4 (tax agent fields unmapped)"
-      ]
+      "owner": "user"
     },
     {
       "id": "2551Q.DECL.signature",
       "printed_item": "Signature, title and TIN of taxpayer or representative",
-      "method": "human",
-      "formula": "A person signs. Books never auto-signs.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "workbook DECL.signature"
-      ]
+      "owner": "user"
     }
   ]
 }

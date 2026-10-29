@@ -1,331 +1,132 @@
 {
-  "schema_version": 1,
-  "title": "Line-level tax attributes (v1)",
-  "generated_by": "W2, 2026-10-29",
+  "schema_version": 2,
+  "title": "Line-level accounting attributes (file kept at its v1 path; content revised for ADR-0007)",
+  "generated_by": "W2, 2026-10-29; revised for ADR-0007 on 2026-10-29",
+  "supersedes": "schema_version 1 (archived at research/handoff-to-forms/rules-r1/tax-attributes.r1.json)",
   "status": "PROPOSAL except where a row says CONFIRMED. Values are closed sets; a new value needs a reviewed change.",
-  "principle": "Tax meaning lives on the journal line and in the mapping rules, never on the account (journey s7.1; sheets.md s8 #1: 'salaries' feeds 1601-C II.14 and 1701-MS IV.10A).",
+  "principle": "Attributes describe accounting and evidence facts on the journal line. They never carry a compliance choice (election, ATC selection, regime, VAT status, deduction method, rate). Measures (data/measures.v1.json) select lines by these attributes, never by account (ADR-0006, ADR-0007).",
   "layers": [
-    "account (what the transaction is)",
-    "category (a starting point for lines)",
-    "line attributes (tax meaning, per line)",
-    "mapping rules (line attributes to form fields, versioned)"
+    "account (what the transaction is; posting only)",
+    "category (a starting point for lines; suggestions may use the linked tax profile's registered-forms list as a hint)",
+    "line attributes (accounting and evidence facts, per line)",
+    "measures (accounting measures per business profile per period, with lineage)",
+    "mapping rules (measure to Forms input key, versioned; the bridge)"
   ],
   "money": {
     "storage": "integer centavos (i64); intermediates i128",
     "text": "exactly two decimal places in JSON, for example \"200000.00\"; more than two decimals is refused",
-    "rates": "integer basis points (300 = 3.00%)",
     "floats": "not allowed in Books money paths",
-    "sign": "signed; no clamp to zero; overpayment is a separate signed line"
+    "sign": "signed; no clamp to zero"
   },
   "dates": {
-    "entry_date": "DATE in Asia/Manila (calendar day)",
-    "recognition_date": "DATE; may differ from entry date when the recognition rule says so (decision D4 open)",
+    "entry_date": "DATE in Asia/Manila (calendar day). It is the revenue-recognition date for measures (D4: the date policy is an accounting policy that Books keeps).",
+    "recognition_date": "DATE; may differ from entry date when the recognition policy says so (D4, accounting policy, open)",
     "certificate_period": "period_start and period_end as DATE (BK-TS uses text: tax-certificates.ts:53-54)"
   },
   "line_attributes": [
     {
-      "name": "tax_type",
-      "allowed_values": [
-        "income_tax",
-        "percentage_tax",
-        "vat",
-        "compensation_withholding",
-        "expanded_withholding",
-        "final_withholding",
-        "none"
-      ],
-      "mvp_values": [
-        "percentage_tax",
-        "income_tax",
-        "none"
-      ],
-      "default": "none",
-      "rule": "Which tax the line belongs to. Drives the form family. VAT and expanded withholding are later phases (P10+).",
-      "status": "PROPOSAL",
-      "citations": [
-        "workbook Build notes row 10 (distinct tax types and roles)"
-      ]
-    },
-    {
-      "name": "atc",
-      "allowed_values": [
-        "PT010",
-        "WB080",
-        "WB082",
-        "WB084",
-        "WW010",
-        "II011",
-        "II012",
-        "II013",
-        "II014",
-        "II015",
-        "II016",
-        "II017",
-        "(later) WI and WC series",
-        "null"
-      ],
-      "mvp_values": [
-        "PT010",
-        "WB080",
-        "WB082",
-        "WB084 (final; never credited)",
-        "WW010 (1601-C, P6)",
-        "II011-II017 (1701-MS I.18; not ATCs)"
-      ],
+      "name": "measure_side",
+      "allowed_values": ["debit", "credit"],
       "default": null,
-      "rule": "Alphanumeric tax code. Closed set in MVP. PT010 = persons exempt from VAT under Sec. 109(BB) (Sec. 116), 3% (printed Table 1). WB080/WB082 = creditable percentage-tax withholding (2307). WB084 = final, Section 116 applies (2306). WW010 = compensation withholding (1601-C preprinted).",
-      "status": "CONFIRMED",
-      "citations": [
-        "bir.md PT-5, W-2, W-4",
-        "bir.md s2 (1601-C ATC WW010)",
-        "verify.md s4 (1701-MS I.18 values)"
-      ]
-    },
-    {
-      "name": "treatment",
-      "allowed_values": [
-        "sale_pt",
-        "cwt_credit",
-        "expense",
-        "owner_money",
-        "none",
-        "(later P7) non_op_income",
-        "(later P6) comp_income",
-        "(later P6) contribution",
-        "(later P7) final_taxed_income",
-        "(reserved 2550Q) sale_vat",
-        "(reserved 2550Q) sale_zero_rated",
-        "(reserved 2550Q) sale_exempt"
-      ],
-      "mvp_values": [
-        "sale_pt",
-        "cwt_credit",
-        "expense",
-        "owner_money",
-        "none"
-      ],
-      "default": "none",
-      "rule": "How the line enters the tax computation. An account never implies a treatment (sheets.md s8 #1).",
+      "rule": "Which side of the line is positive for its measure: credit for income and amounts withheld, debit for expenses, costs and receivables. A reversal mirrors the original, so its signed amount is the exact negative. Required when income_class or comp_component is set, or the line is a certificate.",
       "status": "PROPOSAL",
-      "citations": [
-        "design: four-layer model (journey s7)"
-      ]
+      "citations": ["data/measures.v1.json sign_convention"]
     },
     {
       "name": "income_class",
-      "allowed_values": [
-        "business_sales",
-        "contra_sales",
-        "non_operating_income",
-        "final_taxed_income",
-        "compensation",
-        "cost",
-        "none"
-      ],
-      "mvp_values": [
-        "business_sales",
-        "contra_sales",
-        "none"
-      ],
+      "allowed_values": ["business_sales", "contra_sales", "non_operating_income", "cost_of_sales", "operating_expense", "none"],
       "default": "none",
-      "rule": "Which income or cost bucket the line feeds: 1701-MS IV.5 (business sales), IV.6 (contra), IV.13 or IV.20 (non-operating), IV.8 (cost).",
+      "rule": "Which statement bucket the line feeds: sales, contra sales (returns, allowances, discounts), other non-operating income, cost of sales, operating expense. Output VAT, payables and receivables are none.",
       "status": "PROPOSAL",
-      "citations": [
-        "workbook 1701-MS field tab IV.5-IV.20"
-      ]
+      "citations": ["workbook 1701-MS field tab IV.5-IV.20 (bucket names)", "data/measures.v1.json"]
     },
     {
-      "name": "regime",
-      "allowed_values": [
-        "graduated",
-        "eight_percent",
-        "special_exempt",
-        "unknown"
-      ],
-      "mvp_values": [
-        "graduated (user-asserted)",
-        "eight_percent and unknown block"
-      ],
-      "default": "unknown",
-      "rule": "Per taxable year. Income-tax rate regime. 'unknown' blocks output. Mixed earners cannot use the 250,000 reduction.",
+      "name": "contra_kind",
+      "allowed_values": ["return", "allowance", "discount"],
+      "default": null,
+      "rule": "Required on a contra_sales line. Returns, allowances and discounts are separate measures.",
       "status": "PROPOSAL",
-      "citations": [
-        "RMO 23-2018 pts 2-5, 9-12 (bir.md 8-1..8-8)",
-        "verify.md s2 #72-75"
-      ]
-    },
-    {
-      "name": "vat_status",
-      "allowed_values": [
-        "non_vat",
-        "vat_registered",
-        "unknown"
-      ],
-      "mvp_values": [
-        "non_vat (asserted)",
-        "others block"
-      ],
-      "default": "unknown",
-      "rule": "Per taxable year. A VAT-registered person cannot use the 8% option. Posted sales above the threshold force VAT.",
-      "status": "PROPOSAL",
-      "citations": [
-        "bir.md 8-3",
-        "rates-v1.json vat_threshold"
-      ]
-    },
-    {
-      "name": "returns_state",
-      "allowed_values": [
-        "none",
-        "present_unacknowledged",
-        "acknowledged"
-      ],
-      "mvp_values": [
-        "none",
-        "present_unacknowledged blocks until acknowledged"
-      ],
-      "default": "none",
-      "rule": "Per quarter. A return or credit note in the quarter blocks the 2551Q until a person acknowledges it.",
-      "status": "PROPOSAL",
-      "citations": [
-        "decision D20 (correction)",
-        "bir.md PT-8 (UNVERIFIED)"
-      ]
+      "citations": ["owner correction 2026-10-29 (separate measures)"]
     },
     {
       "name": "person_scope",
-      "allowed_values": [
-        "self",
-        "spouse",
-        "employee",
-        "payor"
-      ],
-      "mvp_values": [
-        "self (spouse refused)"
-      ],
+      "allowed_values": ["self", "spouse", "employee", "payor"],
       "default": "self",
-      "rule": "Whose tax the line belongs to. Spouse is out of MVP; employee comes with P6 (1601-C); payor with P4 (certificates).",
+      "rule": "Whose activity the line records. self is the business owner (measure scope taxpayer). Spouse lines are measured but refused by the bridge in MVP (EXC.SPOUSE_MVP).",
       "status": "PROPOSAL",
-      "citations": [
-        "design (person scope table)",
-        "verify.md s4 (A/B scopes on 1701-MS)"
-      ]
+      "citations": ["design (person scope table)", "verify.md s4 (A/B scopes on 1701-MS)"]
     },
     {
       "name": "counterparty_kind",
-      "allowed_values": [
-        "customer",
-        "supplier",
-        "employee",
-        "owner",
-        "bank",
-        "government",
-        "payor",
-        "other"
-      ],
-      "mvp_values": [
-        "customer",
-        "owner",
-        "bank",
-        "other"
-      ],
+      "allowed_values": ["customer", "supplier", "employee", "owner", "bank", "government", "payor", "other"],
       "default": null,
       "rule": "What kind of party is on the line. The party is referenced by an opaque party_ref. No TIN is stored on a line.",
       "status": "PROPOSAL",
-      "citations": [
-        "books.md s2 (parties; TIN columns are plaintext in Books)",
-        "decision 3"
-      ]
+      "citations": ["books.md s2 (parties; TIN columns are plaintext in Books)", "decision 3"]
     },
     {
       "name": "party_ref",
-      "allowed_values": [
-        "opaque UUID (never a TIN, never a name)"
-      ],
-      "mvp_values": [
-        "opaque UUID"
-      ],
+      "allowed_values": ["opaque id (never a TIN, never a name)"],
       "default": null,
-      "rule": "Reference to a party record kept by Books. No TIN, branch or legal name appears here.",
+      "rule": "Reference to a party record kept by Books (customer, supplier, employee, payor). Payroll lines for 13th month pay carry the employee's party_ref so the 1601-C item 17 split can be made per employee.",
       "status": "PROPOSAL",
-      "citations": [
-        "decision 3 (Books stores no TIN)"
-      ]
+      "citations": ["decision 3 (Books stores no TIN)"]
     },
     {
       "name": "comp_component",
       "allowed_values": [
-        "taxable_basic",
+        "basic_pay",
         "statutory_minimum_wage",
         "holiday_ot_nsd_hazard",
         "thirteenth_month_and_benefits",
         "de_minimis",
-        "mandatory_contributions_employee",
-        "union_dues",
-        "other_non_taxable"
+        "contribution",
+        "tax_withheld"
       ],
-      "mvp_values": [],
       "default": null,
-      "rule": "Payroll component of a compensation line (P6). Maps to 1601-C II.14-II.20. Mandatory contributions and union dues feed II.19 only at the employee share.",
-      "status": "CONFIRMED",
-      "citations": [
-        "workbook 1601-C field tab II.14-II.20",
-        "bir.md 3.4"
-      ]
+      "rule": "Payroll component of a payroll line, as recorded by payroll. statutory_minimum_wage is basic pay of an employee that payroll records as a minimum-wage earner. contribution is a mandatory contribution or union dues (see contribution_side and contribution_scheme). tax_withheld is the tax payroll withheld from pay (a fact; Books does not compute it).",
+      "status": "PROPOSAL",
+      "citations": ["workbook 1601-C field tab II.14-II.25 (component names)", "owner correction 2026-10-29 (payroll components)"]
     },
     {
       "name": "contribution_side",
-      "allowed_values": [
-        "employee",
-        "employer",
-        "none"
-      ],
-      "mvp_values": [],
+      "allowed_values": ["employee", "employer", "none"],
       "default": "none",
-      "rule": "Whose share a statutory contribution is. Employee share goes to 1601-C II.19. Employer share goes to expense and to the payable account, never to II.19 (EXC.EMPLOYER_SHARE_NOT_19).",
+      "rule": "Whose share a contribution is. Employee shares and employer shares are separate measures. The employer share never feeds 1601-C item 19 (EXC.EMPLOYER_SHARE_NOT_19).",
       "status": "CONFIRMED",
-      "citations": [
-        "RR 11-2018 s2.78.1(B)(12) (bir.md 3.4)",
-        "books.md s2 (no reported employer column)"
-      ]
+      "citations": ["RR 11-2018 s2.78.1(B)(12) (bir.md 3.4)", "books.md s2 (no reported employer column)"]
+    },
+    {
+      "name": "contribution_scheme",
+      "allowed_values": ["sss_gsis", "philhealth", "pagibig", "union_dues"],
+      "default": null,
+      "rule": "Which scheme a contribution line belongs to. Gives the per-scheme breakdown of the contribution measures.",
+      "status": "PROPOSAL",
+      "citations": ["owner correction 2026-10-29 (SSS/GSIS, PhilHealth, Pag-IBIG, union dues)"]
     },
     {
       "name": "credit_kind",
-      "allowed_values": [
-        "pt",
-        "it",
-        "none"
-      ],
-      "mvp_values": [
-        "pt",
-        "none"
-      ],
+      "allowed_values": ["pt", "it", "none"],
       "default": "none",
-      "rule": "Which tax a withholding credit reduces. pt = percentage tax (2551Q II.15). it = income tax (1701-MS V.3-V.5, including the 2316 credit in V.5, and 1701Q). Routing by ATC series: WB = pt; WI and WC = it (INFERENCE from the form headings, bir.md W-3). WB084 is final and never credited.",
+      "rule": "Which tax a received withholding certificate reports as withheld, as printed on the certificate (WB series = percentage tax; WI and WC series = income tax). An evidence fact; the routing to form boxes is a mapping fact (EXC.IT_CWT_NOT_PT, EXC.PT_CWT_NOT_IT).",
       "status": "CONFIRMED (series routing: INFERENCE)",
-      "citations": [
-        "bir.md W-2, W-3, W-4",
-        "books.md s4g"
-      ]
+      "citations": ["bir.md W-2, W-3, W-4", "books.md s4g"]
+    },
+    {
+      "name": "certificate_atc",
+      "allowed_values": ["WB080", "WB082", "WB084", "WI010", "WC010"],
+      "default": null,
+      "rule": "The ATC printed on a received certificate (2307 or 2306). Evidence only: Books records what the document says. Books never selects an ATC for a return; that is Forms'.",
+      "status": "PROPOSAL",
+      "citations": ["bir.md W-2, W-4", "ADR-0007"]
     },
     {
       "name": "certificate_status",
-      "allowed_values": [
-        "received",
-        "pending",
-        "lost",
-        "disputed"
-      ],
-      "mvp_values": [
-        "received only credits"
-      ],
+      "allowed_values": ["received", "pending", "lost", "disputed"],
       "default": "pending",
-      "rule": "Status of a 2307 or 2306 certificate. Only 'received' credits. Pending, lost and disputed never post a receivable (books.md s4g: BK-TS does not check it).",
+      "rule": "Status of a certificate. Only received certificates count in a certificate measure (GATE.CERT_STATUS).",
       "status": "CONFIRMED",
-      "citations": [
-        "books.md s4g",
-        "bir.md W-3"
-      ]
+      "citations": ["books.md s4g", "bir.md W-3"]
     },
     {
       "name": "document_kind",
@@ -336,155 +137,78 @@
         "adjustment",
         "credit_note",
         "certificate_2307",
+        "certificate_2306",
+        "certificate_2316",
         "payroll_register",
-        "tax_form",
         "other"
       ],
-      "mvp_values": [
-        "sale_invoice",
-        "payment_receipt",
-        "expense_document",
-        "adjustment"
-      ],
       "default": "other",
-      "rule": "Kind of evidence document. A credit_note blocks 2551Q until acknowledged (UNCONFIRMED for 2551Q, bir.md PT-8). certificate_2307 is the only certificate type that can credit.",
+      "rule": "Kind of evidence document. A credit_note is a return event (GATE.RETURNS_ACK). certificate_2307 is creditable withholding; certificate_2306 is final withholding and never counts in a 2307 measure.",
       "status": "PROPOSAL",
-      "citations": [
-        "workbook Category field rules (credit note rows)"
-      ]
+      "citations": ["workbook Category field rules (credit note rows)", "bir.md W-2, W-4"]
     },
     {
       "name": "evidence_ref",
-      "allowed_values": [
-        "evidence_id (opaque)",
-        "sha256 of the stored file",
-        "document_kind",
-        "redaction_state"
-      ],
-      "mvp_values": [],
+      "allowed_values": ["evidence_id (opaque)", "sha256 of the stored file", "document_kind", "redaction_state"],
       "default": null,
       "rule": "Pointer to stored evidence. The model sees the sha256 and kind only; OCR text is not sent by default (design R-23).",
       "status": "PROPOSAL",
-      "citations": [
-        "design (evidence table)"
-      ]
+      "citations": ["design (evidence table)"]
     },
     {
-      "name": "tax_period_key",
-      "allowed_values": [
-        "null (use the default)",
-        "2026-Q3 (quarter)",
-        "2026-09 (month)",
-        "2026 (year)"
-      ],
-      "mvp_values": [
-        "null",
-        "quarter override"
-      ],
+      "name": "period_override",
+      "allowed_values": ["null (use the entry date)", "2026-Q3 (quarter)", "2026-09 (month)", "2026 (year)"],
       "default": null,
-      "rule": "Explicit override of the default period derived from the recognition date. The default is the calendar day in Asia/Manila. The PT timing basis (invoice, receipt or entry date) is UNKNOWN (decision D4).",
+      "rule": "Explicit override of the recognition period. An accounting policy (D4, kept with Books). The PoC uses the entry date only.",
       "status": "PROPOSAL",
-      "citations": [
-        "decision D4 (owner, open)",
-        "bir.md PT-3"
-      ]
+      "citations": ["decision D4 (revenue recognition: accounting policy part kept)"]
     },
     {
-      "name": "final_tax_flag",
-      "allowed_values": [
-        "none",
-        "final_tax",
-        "unknown_not_stored"
-      ],
-      "mvp_values": [
-        "none",
-        "unknown_not_stored (blocks IV.13/IV.20 for interest)"
-      ],
-      "default": "unknown_not_stored",
-      "rule": "Whether the income was final-taxed (excluded from graduated or 8% business lines). Books does not store this today (sheets.md s10: UNKNOWN).",
+      "name": "final_tax_withheld",
+      "allowed_values": ["yes", "no", "unknown"],
+      "default": "unknown",
+      "rule": "Evidence fact: whether a payor or bank withheld final tax on this income (for example interest). How it affects 1701-MS IV.13 or IV.20 is an open mapping question (EXC.FINAL_TAX_INTEREST). Not stored by BK-TS today (sheets.md s10: UNKNOWN).",
       "status": "UNKNOWN",
-      "citations": [
-        "sheets.md s10",
-        "workbook Category field rules rows 18-21"
-      ]
-    },
-    {
-      "name": "deductibility",
-      "allowed_values": [
-        "itemized_only",
-        "osd_excluded",
-        "not_applicable"
-      ],
-      "mvp_values": [
-        "itemized_only"
-      ],
-      "default": "not_applicable",
-      "rule": "Whether a cost line can reach 1701-MS IV.8 or IV.10A. Itemized only. OSD and 8% do not deduct it separately.",
-      "status": "CONFIRMED",
-      "citations": [
-        "workbook 1701-MS IV.8, IV.10A notes"
-      ]
-    },
-    {
-      "name": "election_event",
-      "allowed_values": [
-        "form (1901 | 1905 | 2551Q item 13 | 1701Q)",
-        "taxable_year",
-        "quarter",
-        "recorded_at (DATE)",
-        "source_form"
-      ],
-      "mvp_values": [],
-      "default": null,
-      "rule": "Dated 8% or graduated election record per taxable year. The 8% election is irrevocable within the year. Stored as an event, not overwritten (BK-TS upserts it; books.md s2).",
-      "status": "CONFIRMED",
-      "citations": [
-        "RMO 23-2018 pts 6-8 (bir.md 8-4, 8-5)",
-        "books.md s2 (elections)"
-      ]
-    },
-    {
-      "name": "sign_and_rounding",
-      "allowed_values": [
-        "signed amounts; rounding at output only"
-      ],
-      "mvp_values": [],
-      "default": null,
-      "rule": "Totals keep their sign. Half-away rounding is applied once, at the output line (decision D7, PROPOSAL; Forms rounding statement pending).",
-      "status": "PROPOSAL",
-      "citations": [
-        "decision D7",
-        "books.md s4i"
-      ]
+      "citations": ["sheets.md s10", "workbook Category field rules rows 18-21"]
     }
   ],
+  "forms_supplied": {
+    "note": "Removed from the Books line and profile model by ADR-0007. These are compliance choices or computations owned by Buwiz Forms / the BIR mini app. Where a mapping needs one of them to choose between alternative input boxes, the bridge reads it from the Forms draft or profile as form_context; it never stores or decides it.",
+    "removed_attributes": [
+      { "name": "tax_type", "why": "Which tax a line belongs to is decided by the forms the taxpayer must file (Forms). Measures are tax-neutral." },
+      { "name": "atc", "why": "ATC selection for a return is Forms'. Only the ATC printed on a received certificate is kept, as evidence (certificate_atc)." },
+      { "name": "treatment", "why": "How a line enters a tax computation is a compliance concept. Replaced by income_class, comp_component and measure_side (accounting facts)." },
+      { "name": "regime", "why": "8% versus graduated is the yearly election in the Forms tax profile. Read as form_context /taxpayer/tax_option." },
+      { "name": "vat_status", "why": "VAT registration and the VAT threshold test are Forms'." },
+      { "name": "election_event", "why": "Elections are recorded in the Forms tax profile." },
+      { "name": "deductibility", "why": "OSD versus itemized and deductibility are Forms' (read as form_context /taxpayer/deduction)." },
+      { "name": "returns_state", "why": "Replaced by an entry-level acknowledgement of return events (GATE.RETURNS_ACK, bookkeeping review)." },
+      { "name": "sign_and_rounding", "why": "Rounding of tax amounts is Forms'. Measures are exact centavos and never rounded." },
+      { "name": "tax_period_key", "why": "Renamed period_override; it is an accounting recognition override, not a tax period." }
+    ]
+  },
   "examples": {
     "sale_line": {
-      "description": "Synthetic sale on a non-VAT, graduated profile",
-      "amount_centavos": 12000000,
+      "description": "Synthetic sale",
       "amount_text": "120000.00",
-      "tax_type": "percentage_tax",
-      "atc": "PT010",
-      "treatment": "sale_pt",
       "income_class": "business_sales",
+      "measure_side": "credit",
+      "document_kind": "sale_invoice",
       "counterparty_kind": "customer",
-      "recognition_date": "2026-07-01",
-      "tax_period_key": null,
-      "regime": "graduated",
-      "vat_status": "non_vat"
+      "entry_date": "2026-07-01"
     },
-    "void_reversal_line": {
-      "description": "Reversal of the synthetic 100000.00 sale, dated the original date (design A4)",
-      "amount_centavos": 10000000,
-      "amount_text": "100000.00",
-      "sign": "credit to the sale line",
-      "recognition_date": "2026-07-15",
-      "treatment": "sale_pt",
-      "atc": "PT010"
+    "credit_note_line": {
+      "description": "Synthetic sales return against a Q3 sale",
+      "amount_text": "10000.00",
+      "income_class": "contra_sales",
+      "contra_kind": "return",
+      "measure_side": "credit",
+      "document_kind": "credit_note"
     },
     "pt_withholding_certificate": {
       "description": "Synthetic 2307 for percentage tax, received",
-      "atc": "WB082",
+      "document_kind": "certificate_2307",
+      "certificate_atc": "WB082",
       "credit_kind": "pt",
       "certificate_status": "received",
       "period_start": "2026-07-01",
@@ -492,18 +216,19 @@
     },
     "payroll_employee_share_line": {
       "description": "Synthetic employee SSS share (not employer)",
-      "comp_component": "mandatory_contributions_employee",
+      "comp_component": "contribution",
       "contribution_side": "employee",
-      "amount_text": "2000.00",
-      "target": "1601C.II.19 (P6)"
+      "contribution_scheme": "sss_gsis",
+      "measure_side": "credit",
+      "amount_text": "2000.00"
     }
   },
   "forbidden_in_books": [
     "any TIN or branch code",
     "BIR tickets (tkt_...) or Rox tokens in records",
-    "floats for money or rates",
-    "account-implied tax meaning",
-    "credit from pending, lost or disputed certificates",
-    "WB084 as a credit"
+    "floats for money",
+    "account-implied meaning (a measure never selects by account number or subtype)",
+    "compliance choices on a line or profile: regime, election, VAT status, ATC selection, deduction method",
+    "rates, thresholds, due dates, penalties, tax rounding"
   ]
 }

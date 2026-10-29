@@ -1,6 +1,7 @@
 # ADR 0004: Books reaches BIR's Forms through the model in MVP, and through a signed envelope later
 
 Status: Proposed. MVP path needs the BIR owner, the Forms owner and the decision on the source label (D3). P8 path needs the BIR owner, the Forms owner and the signing-key decision (D2).
+**Superseded in part by [ADR 0007](0007-books-supplies-measures-forms-owns-compliance.md) (2026-10-29).** The hand-off mechanism stands. Superseded: any read-back of computed boxes against a Books value (for example "item 14 equals Books' PT"). Books computes no tax; the read-back compares only the input keys Books sent, and `fill_args` never carries an ATC or a computed key. The text below is kept as written.
 Date: 2026-10-29. Writer: W3.
 
 ## Context

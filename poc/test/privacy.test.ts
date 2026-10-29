@@ -64,7 +64,7 @@ describe("no proposal, vector or fixture carries a TIN-like run, a ticket or a m
   test("every proposal in every case is clean", () => {
     for (const spec of CASES) {
       const memos = memoMarkers(spec.fixture);
-      const p = proposal(fixture(spec.fixture), spec.form, spec.period);
+      const p = proposal(fixture(spec.fixture), spec.form, spec.period, spec.form_context);
       expect(scanValue(p, [...MEMO_NEEDLES, ...memos]), spec.id).toEqual([]);
     }
   });

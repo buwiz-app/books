@@ -1,0 +1,79 @@
+{
+  "cases": [
+    {
+      "id": "money-290000.00",
+      "op": "money_text_round_trip",
+      "text": "290000.00",
+      "value_centavos": "29000000"
+    },
+    {
+      "id": "money-2808.40",
+      "op": "money_text_round_trip",
+      "text": "2808.40",
+      "value_centavos": "280840"
+    },
+    {
+      "id": "money-minus-1.50",
+      "op": "money_text_round_trip",
+      "text": "-1.50",
+      "value_centavos": "-150"
+    },
+    {
+      "id": "money-0.01",
+      "op": "money_text_round_trip",
+      "text": "0.01",
+      "value_centavos": "1"
+    },
+    {
+      "id": "money-0.00",
+      "op": "money_text_round_trip",
+      "text": "0.00",
+      "value_centavos": "0"
+    },
+    {
+      "id": "money-3000000.00",
+      "op": "money_text_round_trip",
+      "text": "3000000.00",
+      "value_centavos": "300000000"
+    },
+    {
+      "cap_centavos": "9000000",
+      "id": "13th-95000-earlier0",
+      "nontaxable_centavos": "9000000",
+      "op": "nontaxable_13th_month_cap",
+      "paid_centavos": "9500000",
+      "paid_earlier_centavos": "0"
+    },
+    {
+      "cap_centavos": "9000000",
+      "id": "13th-80000-earlier0",
+      "nontaxable_centavos": "8000000",
+      "op": "nontaxable_13th_month_cap",
+      "paid_centavos": "8000000",
+      "paid_earlier_centavos": "0"
+    },
+    {
+      "cap_centavos": "9000000",
+      "id": "13th-80000-earlier20000",
+      "nontaxable_centavos": "7000000",
+      "op": "nontaxable_13th_month_cap",
+      "paid_centavos": "8000000",
+      "paid_earlier_centavos": "2000000"
+    },
+    {
+      "cap_centavos": "9000000",
+      "id": "13th-5000-earlier95000",
+      "nontaxable_centavos": "0",
+      "op": "nontaxable_13th_month_cap",
+      "paid_centavos": "500000",
+      "paid_earlier_centavos": "9500000"
+    }
+  ],
+  "description": "Hand-written expectations (not computed by the engine): money text to integer centavos and back, and the 1601-C item 17 non-taxable split (the one input-level tax rule in the bridge, annual cap read from data/rules/1601c-v2018.rules.json). No rate, rounding, threshold or graduated-tax vector: those are Forms' (ADR-0007).",
+  "rules_sources": {
+    "mapping": "data/rules/1601c-v2018.rules.json 1601C.II.17",
+    "rule_set_id": "1601C-v2018-r2"
+  },
+  "vector_format": "buwiz-poc-vector/2",
+  "vector_id": "money-and-mapping"
+}

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { normalizeEntry, normalizeFixture, loadData, loadFixture, type LoadedData } from "../src/load.ts";
 import { SYNTHETIC_DIR } from "../src/paths.ts";
 import { buildProposal, type Proposal } from "../src/proposal.ts";
-import type { FormCode, NormInput } from "../src/types.ts";
+import type { FormCode, FormContext, NormInput } from "../src/types.ts";
 
 /** Shared fixtures for the suite. Loaded once per test process. */
 export const data: LoadedData = loadData();
@@ -26,8 +26,18 @@ export function rawFixture(name: string): any {
 export const PROFILE_A = "6b1d2f3a-4c5e-4f60-8a71-92b3c4d5e6f7";
 export const PROFILE_B = "c0a8e3f1-2b7d-4e9a-9f10-5d6c7b8a9e0f";
 
-export function proposal(input: NormInput, form: FormCode, period: string, profileId?: string): Proposal {
-  return buildProposal(data, input, form, period, profileId);
+/** Forms contexts the bridge reads (never decides). */
+export const GRADUATED_OSD: FormContext = { "/taxpayer/tax_option": "graduated", "/taxpayer/deduction": "osd" };
+export const GRADUATED_ITEMIZED: FormContext = { "/taxpayer/tax_option": "graduated", "/taxpayer/deduction": "itemized" };
+export const EIGHT_PERCENT: FormContext = { "/taxpayer/tax_option": "eight_percent" };
+
+/** The default Forms context per form: none for 2551Q and 1601-C, graduated + OSD for 1701-MS. */
+export function defaultContext(form: FormCode): FormContext {
+  return form === "1701MS" ? GRADUATED_OSD : {};
+}
+
+export function proposal(input: NormInput, form: FormCode, period: string, formContext?: FormContext, profileId?: string): Proposal {
+  return buildProposal(data, input, form, period, formContext ?? defaultContext(form), profileId);
 }
 
 export function clone<T>(value: T): T {
@@ -48,31 +58,26 @@ export function sumText(values: string[]): string {
   return `${negative ? "-" : ""}${magnitude / 100n}.${(magnitude % 100n).toString().padStart(2, "0")}`;
 }
 
+export type LineageEntry = { line_id: string; entry_id: string; amount: string };
+export function lineageOf(p: Proposal, key: string): { lines: LineageEntry[]; netted_pairs: number; mapping_id: string; measures: string[] } {
+  return p.lineage[key] as { lines: LineageEntry[]; netted_pairs: number; mapping_id: string; measures: string[] };
+}
+
 // ---- in-memory inputs for scenarios not worth a fixture file -------------------------------------------------------
 
 type Obj = Record<string, unknown>;
 
-export function memoryInput(opts: {
-  profileId?: string;
-  facts?: Obj;
-  periods?: Obj;
-  prior?: Obj;
-  acks?: string[];
-  entries: Obj[];
-  asOf?: string;
-}): NormInput {
+export function memoryInput(opts: { profileId?: string; periods?: Obj; acks?: string[]; entries: Obj[]; asOf?: string }): NormInput {
   const profileId = opts.profileId ?? PROFILE_A;
   const raw = {
-    fixture_format: "buwiz-poc-fixture/1",
+    fixture_format: "buwiz-poc-fixture/2",
     fixture_id: "in-memory",
     as_of: opts.asOf ?? "2026-10-29",
     profiles: [
       {
         tax_profile_id: profileId,
         display: "***-***-***-00000",
-        facts: { "2026": opts.facts ?? { regime: "graduated", vat_status: "non_vat", deduction_method: "osd", owner_taxable_compensation_2316: "0.00" } },
-        periods: opts.periods ?? { "2026-Q3": "closed", "2026-09": "closed", "2026": "closed" },
-        prior_filings: { "2026": opts.prior ?? { "1701q_q1_q3_tax_payments": "0.00" } },
+        periods: opts.periods ?? { "2026-Q3": "closed", "2026-09": "closed", "2026-12": "closed", "2026": "closed" },
       },
     ],
     acknowledged_entry_ids: opts.acks ?? [],
@@ -81,7 +86,7 @@ export function memoryInput(opts: {
   return normalizeFixture(raw, data.vocab);
 }
 
-/** A plain sale: receivable debit, PT010 sales credit. */
+/** A plain sale: receivable debit, sales credit. */
 export function saleEntry(profileId: string, entryId: string, date: string, amount: string): Obj {
   return {
     entry_id: entryId,
@@ -95,19 +100,16 @@ export function saleEntry(profileId: string, entryId: string, date: string, amou
         account: "sales_revenue",
         debit: "0.00",
         credit: amount,
-        tax_types: ["income_tax", "percentage_tax"],
-        treatment: "sale_pt",
-        tax_side: "credit",
+        measure_side: "credit",
         income_class: "business_sales",
-        atc: "PT010",
         document_kind: "sale_invoice",
       },
     ],
   };
 }
 
-/** A credit note: contra-sales debit, acknowledged by entry id. */
-export function creditNoteEntry(profileId: string, entryId: string, date: string, amount: string): Obj {
+/** A contra-sales debit (return by default), acknowledged by entry id. */
+export function creditNoteEntry(profileId: string, entryId: string, date: string, amount: string, contraKind = "return"): Obj {
   return {
     entry_id: entryId,
     tax_profile_id: profileId,
@@ -119,11 +121,9 @@ export function creditNoteEntry(profileId: string, entryId: string, date: string
         account: "refunds_and_discounts",
         debit: amount,
         credit: "0.00",
-        tax_types: ["income_tax", "percentage_tax"],
-        treatment: "sale_pt",
-        tax_side: "credit",
+        measure_side: "credit",
         income_class: "contra_sales",
-        atc: "PT010",
+        contra_kind: contraKind,
         document_kind: "credit_note",
       },
       { line_id: `${entryId}.2`, account: "accounts_receivable_gross", debit: "0.00", credit: amount },
@@ -131,13 +131,13 @@ export function creditNoteEntry(profileId: string, entryId: string, date: string
   };
 }
 
-/** Certificate posting: receivable debit with the certificate attributes. */
+/** Certificate posting: receivable debit with the certificate's evidence attributes. */
 export function certEntry(
   profileId: string,
   entryId: string,
   date: string,
   amount: string,
-  opts: { atc: string; creditKind: "pt" | "it"; status: string; periodStart: string; periodEnd: string },
+  opts: { atc: string; creditKind: "pt" | "it"; status: string; periodStart: string; periodEnd: string; documentKind?: string },
 ): Obj {
   const account = opts.creditKind === "pt" ? "pct_tax_credit_receivable" : "ph_cwt_receivable";
   return {
@@ -151,17 +151,38 @@ export function certEntry(
         account,
         debit: amount,
         credit: "0.00",
-        tax_types: [opts.creditKind === "pt" ? "percentage_tax" : "income_tax"],
-        treatment: "cwt_credit",
-        tax_side: "debit",
-        atc: opts.atc,
+        measure_side: "debit",
+        certificate_atc: opts.atc,
         credit_kind: opts.creditKind,
         certificate_status: opts.status,
         period_start: opts.periodStart,
         period_end: opts.periodEnd,
-        document_kind: "certificate_2307",
+        document_kind: opts.documentKind ?? "certificate_2307",
       },
       { line_id: `${entryId}.2`, account: "accounts_receivable_gross", debit: "0.00", credit: amount },
+    ],
+  };
+}
+
+/** One employee's 13th-month payment (balanced against net pay). */
+export function thirteenthEntry(profileId: string, entryId: string, date: string, amount: string, employee = "EMP-1"): Obj {
+  return {
+    entry_id: entryId,
+    tax_profile_id: profileId,
+    entry_date: date,
+    lines: [
+      {
+        line_id: `${entryId}.1`,
+        account: "employee_benefits",
+        debit: amount,
+        credit: "0.00",
+        measure_side: "debit",
+        comp_component: "thirteenth_month_and_benefits",
+        person_scope: "employee",
+        party_ref: employee,
+        document_kind: "payroll_register",
+      },
+      { line_id: `${entryId}.2`, account: "ph_net_pay_payable", debit: "0.00", credit: amount },
     ],
   };
 }

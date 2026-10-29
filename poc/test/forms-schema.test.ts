@@ -20,11 +20,12 @@ const reports = present ? checkSchemas(data, FORMS_SCHEMA_DIR) : [];
 
 describe.skipIf(!present)(`real agent-forms schemas at ${FORMS_SCHEMA_DIR}`, () => {
   for (const form of ["2551Q", "1601C", "1701MS"] as const) {
-    test(`${form}: the schema file matches the pinned SHA-256 and every crosswalk key and fill rule checks out`, () => {
+    test(`${form}: the schema file matches the pinned SHA-256 and every crosswalk key, mapping and Forms-context path checks out`, () => {
       const report = reports.find((r) => r.form === form)!;
       expect(report.present).toBe(true);
       expect(report.problems).toEqual([]);
       expect(report.fieldsChecked).toBe(data.crosswalk[form].fields.length);
+      expect(report.rulesChecked).toBe(data.rules[form].mappings.length);
     });
   }
 
@@ -43,7 +44,7 @@ describe.skipIf(!present)(`real agent-forms schemas at ${FORMS_SCHEMA_DIR}`, () 
       schemas.set(form, JSON.parse(readFileSync(join(FORMS_SCHEMA_DIR, data.crosswalk[form].schema_file.split("/").pop()!), "utf8")));
     }
     for (const spec of CASES) {
-      const p = proposal(fixture(spec.fixture), spec.form, spec.period);
+      const p = proposal(fixture(spec.fixture), spec.form, spec.period, spec.form_context);
       const schema = schemas.get(spec.form);
       const cw = data.crosswalk[spec.form];
       for (const key of Object.keys(p.fill_args)) {

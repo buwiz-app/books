@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { postLedger, LedgerError } from "../src/ledger.ts";
-import { normalizeEntry } from "../src/load.ts";
-import { sumText, data, fixture, memoryInput, proposal, saleEntry, creditNoteEntry, reversalEntry, PROFILE_A } from "./support.ts";
+import { normalizeEntry, normalizeFixture } from "../src/load.ts";
+import { sumText, data, fixture, lineageOf, memoryInput, proposal, saleEntry, creditNoteEntry, reversalEntry, PROFILE_A } from "./support.ts";
 
 /* Design Slice A (docs/04, acceptance A3-A5) on fixture f, which carries DS-A exactly. */
 
@@ -16,7 +16,7 @@ describe("Slice A ledger (A3, A4)", () => {
         entry_date: "2026-07-20",
         lines: [
           { line_id: "N1.1", account: "bank_accounts", debit: "100.00", credit: "0.00" },
-          { line_id: "N1.2", account: "sales_revenue", debit: "0.00", credit: "99.99", tax_types: ["percentage_tax"], treatment: "sale_pt", tax_side: "credit", income_class: "business_sales", atc: "PT010" },
+          { line_id: "N1.2", account: "sales_revenue", debit: "0.00", credit: "99.99", measure_side: "credit", income_class: "business_sales" },
         ],
       },
       new Set([PROFILE_A]),
@@ -59,20 +59,20 @@ describe("Slice A ledger (A3, A4)", () => {
 });
 
 describe("Slice A proposal (A5)", () => {
-  test("A5: 2026-Q3 is ready; base 200000.00; PT 6000.00; due 2026-10-25; overdue as of 2026-10-29", () => {
+  test("A5: 2026-Q3 is ready; net sales 200000.00 to txtATCAmt1; no tax, due date or overdue status in Books", () => {
     const p = proposal(f, "2551Q", "2026-Q3");
     expect(p.status).toBe("ready");
+    expect(p.measures["net_sales"]?.value).toBe("200000.00");
     expect(p.fill_args["txtATCAmt1"]).toBe("200000.00");
-    expect(p.expected_readback["frm2551Qv2018:txt14"]).toBe("6000.00");
-    expect(p.due).toMatchObject({ date: "2026-10-25", overdue: true, penalties_computed: false });
+    for (const field of ["due", "rate", "expected_readback", "discrepancies"]) expect(field in p).toBe(false);
   });
 
   test("A5: lineage lists the 120000.00 and 80000.00 sales and not the voided pair", () => {
     const p = proposal(f, "2551Q", "2026-Q3");
-    const lines = (p.lineage["txtATCAmt1"] as { lines: Array<{ entry_id: string; amount: string }>; netted_pairs: number }).lines;
-    expect(lines.map((l) => l.entry_id).sort()).toEqual(["F-001", "F-003"]);
-    expect(sumText(lines.map((l) => l.amount))).toBe("200000.00");
-    expect((p.lineage["txtATCAmt1"] as { netted_pairs: number }).netted_pairs).toBe(1);
+    const lin = lineageOf(p, "txtATCAmt1");
+    expect(lin.lines.map((l) => l.entry_id).sort()).toEqual(["F-001", "F-003"]);
+    expect(sumText(lin.lines.map((l) => l.amount))).toBe("200000.00");
+    expect(lin.netted_pairs).toBe(1);
   });
 
   test("the rent expense does not reach the 2551Q base or the output", () => {
@@ -111,15 +111,15 @@ describe("reversal rules: mirror, orphan and count-once", () => {
   });
 });
 
-describe("negative base is blocked, never clamped (DS-J)", () => {
-  test("refunds larger than sales in one quarter block with negative_base", () => {
+describe("a negative sales measure is not proposed, never clamped (DS-J)", () => {
+  test("returns larger than sales in one quarter block with negative_measure", () => {
     const input = memoryInput({
       entries: [saleEntry(PROFILE_A, "S-1", "2026-07-10", "1000.00"), creditNoteEntry(PROFILE_A, "CN-1", "2026-07-20", "2000.00")],
       acks: ["CN-1"],
     });
     const p = proposal(input, "2551Q", "2026-Q3");
     expect(p.status).toBe("blocked");
-    expect(p.blocking.map((b) => b.code)).toContain("negative_base");
+    expect(p.blocking.map((b) => b.code)).toContain("negative_measure");
     expect(p.fill_args).toEqual({});
   });
 });
@@ -133,5 +133,28 @@ describe("the input is validated before any proposal (privacy and shape)", () =>
         data.vocab,
       ),
     ).toThrow(/decimal text/);
+  });
+
+  test("a compliance attribute on a line is refused: lines carry accounting facts only (ADR-0007)", () => {
+    for (const banned of [{ atc: "PT010" }, { treatment: "sale_pt" }, { tax_types: ["percentage_tax"] }, { regime: "graduated" }]) {
+      expect(() =>
+        normalizeEntry(
+          { entry_id: "X", tax_profile_id: PROFILE_A, entry_date: "2026-07-01", lines: [{ line_id: "X.1", account: "bank_accounts", debit: "1.00", credit: "0.00" }, { line_id: "X.2", account: "sales_revenue", debit: "0.00", credit: "1.00", measure_side: "credit", income_class: "business_sales", ...banned }] },
+          new Set([PROFILE_A]),
+          data.vocab,
+        ),
+      ).toThrow(/compliance attribute/);
+    }
+  });
+
+  test("a profile carrying elections or tax facts is refused (elections are Forms')", () => {
+    const raw = { fixture_format: "buwiz-poc-fixture/2", as_of: "2026-10-29", profiles: [{ tax_profile_id: PROFILE_A, display: "***-***-***-00000", facts: { "2026": { regime: "eight_percent" } } }], entries: [] };
+    expect(() => normalizeFixture(raw, data.vocab)).toThrow(/Forms/);
+  });
+
+  test("a contra-sales line must say whether it is a return, an allowance or a discount", () => {
+    const entry = creditNoteEntry(PROFILE_A, "CK-1", "2026-07-20", "10.00");
+    delete ((entry.lines as Array<Record<string, unknown>>)[0]).contra_kind;
+    expect(() => normalizeEntry(entry, new Set([PROFILE_A]), data.vocab)).toThrow(/contra_kind/);
   });
 });

@@ -1,4 +1,5 @@
 {
+  "handoff_note": "Moved from data/rules/rates.v1.json on 2026-10-29 by ADR-0007. Reference for the Buwiz Forms / BIR mini app owner. Books code does not load this file; rates, thresholds, the graduated table, OSD, rounding and due dates are Forms-owned.",
   "rule_set_id": "rates-v1",
   "version": 1,
   "effective_from": "2018-01-01",

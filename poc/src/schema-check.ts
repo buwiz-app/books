@@ -15,7 +15,8 @@ import { FORM_CODES } from "./types.ts";
  *  3. A sendable official key has a binding with no lock and is not unmapped.
  *  4. A sendable typed alias (for example schedule_1.0.atc) has an official box and a CONFIRMED alias status.
  *  5. A locked crosswalk class matches the schema lock; a computed key is not a binding.
- *  6. Each rule's target keys (by rule_ids) exist, and a fill rule's targets are sendable.
+ *  6. Each mapping's target exists, cites the mapping, and is sendable when the mapping fills it.
+ *  7. Each Forms-context path the bridge reads is set by a schema binding, with every supported value.
  */
 
 export interface SchemaReport {
@@ -82,15 +83,37 @@ function checkOne(data: LoadedData, form: FormCode, dir: string): SchemaReport {
   }
 
   let rulesChecked = 0;
-  for (const rule of data.rules[form].rules) {
-    const targets = cw.fields.filter((f) => f.rule_ids.includes(rule.id));
-    if (targets.length === 0) continue;
+  for (const mapping of data.rules[form].mappings) {
     rulesChecked += 1;
-    // A fill rule must have at least one sendable target. Its spouse (B-side) twins and runtime row families
-    // are allowed to be non-sendable, since they are refused or not addressable.
-    if (rule.books_policy?.startsWith("fill_")) {
-      const sendable = targets.filter((t) => t.fill_key !== null && t.books_policy.startsWith("fill_"));
-      if (sendable.length === 0) problems.push(`${rule.id}: fill rule with no sendable target`);
+    const target = cw.byFillKey.get(mapping.target_key) ?? cw.byKey.get(mapping.target_key);
+    if (!target) {
+      problems.push(`${mapping.id}: target ${mapping.target_key} is not a crosswalk key`);
+      continue;
+    }
+    if (!target.rule_ids.includes(mapping.id)) problems.push(`${mapping.id}: target ${mapping.target_key} does not cite the mapping`);
+    if (target.fill_class !== "input") problems.push(`${mapping.id}: target ${mapping.target_key} is ${target.fill_class}`);
+    if (mapping.mode === "fill" && (target.fill_key === null || !target.books_policy.startsWith("fill_"))) {
+      problems.push(`${mapping.id}: fill mapping with a target that is not sendable`);
+    }
+  }
+
+  const setsByPath = new Map<string, Set<string>>();
+  for (const binding of Object.values<any>(bindings)) {
+    for (const option of binding?.options ?? []) {
+      for (const [path, value] of Object.entries<string>(option.set ?? {})) {
+        if (!setsByPath.has(path)) setsByPath.set(path, new Set());
+        setsByPath.get(path)!.add(value);
+      }
+    }
+  }
+  for (const input of data.rules[form].form_context_inputs) {
+    const values = setsByPath.get(input.path);
+    if (!values) {
+      problems.push(`form context ${input.path}: no schema binding sets it`);
+      continue;
+    }
+    for (const value of input.supported_values) {
+      if (!values.has(value)) problems.push(`form context ${input.path}: no schema option sets ${value}`);
     }
   }
   return { form, file, present: true, problems, fieldsChecked: cw.fields.length, rulesChecked };

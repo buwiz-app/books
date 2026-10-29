@@ -1,781 +1,82 @@
 {
-  "rule_set_id": "1701MS-v2024-r1",
+  "rule_set_id": "1701MS-v2024-r2",
   "form_code": "1701MS",
   "edition": "August 2024 (08/24)",
   "schema_sha256": "6cf45329d89a09d6436de58df4b0e65acb7d68d91a91bf299c3b3b635dcaab84",
   "schema_pin": "63267ca3d4d526a8ec490394470f026de82ac385",
-  "version": 1,
+  "version": 2,
   "effective_from": "2024-08-01",
   "effective_to": null,
   "effective_basis": "printed edition date (August 2024). Applicability to TY2026 is UNKNOWN (verify.md s2 #80).",
-  "status_note": "Edition CONFIRMED for current use (named in RMC 36-2026 item 1). Annex C text is TY2025 only; TY2026 applicability UNKNOWN (verify.md s2 #80). Phase P7; not filled in MVP.",
-  "rules": [
+  "supersedes": "1701MS-v2024-r1 (archived at research/handoff-to-forms/rules-r1/1701ms-v2024.rules.r1.json; ADR-0007)",
+  "measures_catalog": "measures-v1",
+  "status_note": "Edition CONFIRMED for current use (named in RMC 36-2026 item 1). Annex C text is TY2025 only; TY2026 applicability UNKNOWN (verify.md s2 #80). Phase P7; not filled in MVP. Rule set r2 is a thin mapping: accounting measure to crosswalk input key (fill_class input) with lineage. Books holds no rate, election, threshold, applicability test, ATC choice, due date or penalty (ADR-0007).",
+  "owner_values": {
+    "forms": "Forms computes or decides it (tax due, rate, ATC, election, applicability, penalties, totals). Books keeps no rule.",
+    "profile": "The Forms taxpayer profile supplies it.",
+    "identity": "Forms sets it from the requested period.",
+    "user": "A person enters it in Forms.",
+    "prior_filing": "Forms holds prior filings.",
+    "not_fillable": "No addressable key.",
+    "app": "App-written or derived by Forms."
+  },
+  "form_context_inputs": [
     {
-      "id": "1701MS.H.1",
-      "printed_item": "H.1 For the year (MM/YYYY): month and year",
-      "method": "identity",
-      "formula": "Taxable year from the requested period (identity lock). Month is unlocked in the pin (no lock), so Books never sends it.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "never_fill",
-      "status_detail": "Month /month has no lock in the pin (forms.md s3c).",
-      "citations": [
-        "verify.md s4 1701-MS header",
-        "forms.md s3c"
-      ]
-    },
-    {
-      "id": "1701MS.H.2",
-      "printed_item": "H.2 Amended return?",
-      "method": "human choice",
-      "formula": "Original return in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4"
-      ]
-    },
-    {
-      "id": "1701MS.H.3",
-      "printed_item": "H.3 Short-period return?",
-      "method": "human choice",
-      "formula": "Short period only when the filer's year is shorter than twelve months.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4"
-      ]
-    },
-    {
-      "id": "1701MS.H.4",
-      "printed_item": "H.4 Civil status",
-      "method": "human choice",
-      "formula": "Civil status from the person profile. Not a business category.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (civilStatus -> /civil_status)"
-      ]
-    },
-    {
-      "id": "1701MS.H.5",
-      "printed_item": "H.5 If married: jointly, separately or spouse has no income",
-      "method": "human choice",
-      "formula": "Filing election for married filers. Each option sets /filing.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtIfMarried -> /filing)"
-      ]
-    },
-    {
-      "id": "1701MS.I.6",
-      "printed_item": "I.6 TIN (taxpayer and spouse)",
-      "method": "profile (derived)",
-      "formula": "Derived by BIR from the taxprofile ticket. Books never receives a TIN.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s2 #22",
-        "decision 3"
-      ]
-    },
-    {
-      "id": "1701MS.I.7",
-      "printed_item": "I.7 RDO code (taxpayer; spouse unlocked)",
-      "method": "profile lock",
-      "formula": "Profile supplies the RDO. The spouse RDO has no lock.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtRDOCodea profile)",
-        "forms.md s3c"
-      ]
-    },
-    {
-      "id": "1701MS.I.8",
-      "printed_item": "I.8 Name (taxpayer or filer)",
-      "method": "profile lock",
-      "formula": "Profile supplies the taxpayer name.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 1701-MS profile row"
-      ]
-    },
-    {
-      "id": "1701MS.I.9",
-      "printed_item": "I.9 Email address",
-      "method": "profile lock",
-      "formula": "Profile supplies the email. The spouse email has no lock.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (1701-MS Email row: R binds /email and /spouse_info/email; L lacks both)"
-      ]
-    },
-    {
-      "id": "1701MS.I.10",
-      "printed_item": "I.10 Contact number",
-      "method": "profile lock",
-      "formula": "Profile supplies the contact number.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtTelNum10a profile)"
-      ]
-    },
-    {
-      "id": "1701MS.I.11",
-      "printed_item": "I.11 Source of income (business, mixed, profession, compensation)",
-      "method": "profile or election",
-      "formula": "Source of income is part of the filer profile. Books does not decide it.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "status_detail": "Forms binds item 11 to /taxpayer/source with no lock. Nothing compares it with the profile election.",
-      "citations": [
-        "verify.md s4 (txtTaxpayerNo11group, a, b, c)",
-        "verify.md s1 #3"
-      ]
-    },
-    {
-      "id": "1701MS.I.12",
-      "printed_item": "I.12 Income subject to (graduated, 8%, exempt, special)",
-      "method": "election (NO lock in pin)",
-      "formula": "The 8% or graduated election is the profile record. Books never fills it. Forms has NO lock on this box (verify.md s2 #10): this is an open risk (blocker B7).",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "gates": [
-        "GATE.MIXED_INCOME_8PCT"
+      "path": "/taxpayer/tax_option",
+      "source": "Forms draft (set from the tax profile's yearly election; Forms keys taxCodeDropdown / frm1701MS:txtTaxpayerNo12)",
+      "supported_values": [
+        "graduated",
+        "eight_percent"
       ],
-      "status_detail": "RISK: the 8% option (c) is unlocked. Nothing compares it with the profile election.",
-      "citations": [
-        "verify.md s1 #3, s2 #10",
-        "forms.md s9 #5",
-        "RMO 23-2018 (eligibility)"
-      ]
+      "required": true,
+      "why": "IV.5/IV.6/IV.13 (graduated) versus IV.19/IV.20 (8%). The bridge reads the value. It never decides it."
     },
     {
-      "id": "1701MS.I.13",
-      "printed_item": "I.13 Legal basis of relief or exemption",
-      "method": "human entry",
-      "formula": "Relief authority text. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtTaxpayerNo13a)"
-      ]
-    },
-    {
-      "id": "1701MS.I.14",
-      "printed_item": "I.14 Investment promotion or government agency",
-      "method": "human entry",
-      "formula": "Relief authority text. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtTaxpayerNo14a)"
-      ]
-    },
-    {
-      "id": "1701MS.I.15",
-      "printed_item": "I.15 Registered activity or program number",
-      "method": "human entry",
-      "formula": "Registration number for the relief. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtTaxpayerNo15a)"
-      ]
-    },
-    {
-      "id": "1701MS.I.16",
-      "printed_item": "I.16 Relief effective from and to",
-      "method": "human entry",
-      "formula": "Registration dates for the relief. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtTaxpayerNo16a, a1)"
-      ]
-    },
-    {
-      "id": "1701MS.I.17",
-      "printed_item": "I.17 Method of deduction (itemized or OSD)",
-      "method": "election (NO lock in pin)",
-      "formula": "Itemized or OSD. Books never fills it. Forms has NO lock on this box (verify.md s2 #3); L also sets source and tax option (verify.md s2 #11).",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "status_detail": "RISK: unlocked election-like field. OSD is 40% of IV.7 (net sales) per the form; the Part I printed wording is in conflict (see IV.11).",
-      "citations": [
-        "verify.md s4 (txtTaxpayerNo17 -> /taxpayer/deduction)",
-        "verify.md s2 #10, #11"
-      ]
-    },
-    {
-      "id": "1701MS.I.18",
-      "printed_item": "I.18 Alphanumeric tax code (II011 to II017)",
-      "method": "election (NO lock in pin)",
-      "formula": "Tax code sets source and tax option together (taxCodeDropdown). II015 to II017 mean 8%. There is no lock on this dropdown.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "status_detail": "Official box values II011 to II017. The taxpayer binding maps II012 to II017 (no II011 binding); the spouse dropdown maps II011 (compensation).",
-      "citations": [
-        "verify.md s4 (taxCodeDropdown)",
-        "pinned schema box options",
-        "verify.md s2 #10"
-      ]
-    },
-    {
-      "id": "1701MS.II.19",
-      "printed_item": "II.19 Income tax due: special or preferential rate (IV.18A)",
-      "method": "computed",
-      "formula": "IV.18A (special or exempt tax plus compensation tax). Forms computes it; Books cross-checks.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "status_detail": "Mapping of TotalTaxDueCompensationATP to IV.18A is inferred from the BTP pattern (UNCONFIRMED).",
-      "citations": [
-        "workbook 1701-MS II.19 (E24 = IV.18A)",
-        "sheets.md s3 (IV.18B -> BTP)"
-      ]
-    },
-    {
-      "id": "1701MS.II.20",
-      "printed_item": "II.20 Share remitted to other government agency",
-      "method": "evidence",
-      "formula": "Only when remitted directly to an agency, with evidence.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtShareOfOtherNo20a)"
-      ]
-    },
-    {
-      "id": "1701MS.II.21",
-      "printed_item": "II.21 Net special or preferential tax",
-      "method": "computed",
-      "formula": "II.19 - II.20. Per person.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook II.21 (E26)"
-      ]
-    },
-    {
-      "id": "1701MS.II.22",
-      "printed_item": "II.22 Income tax due: regular rate",
-      "method": "computed",
-      "formula": "IV.18B (graduated) or IV.25 (8%). Choose the applicable regime.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook II.22 (E27)",
-        "verify.md s4 (IV.18B, IV.25)"
-      ]
-    },
-    {
-      "id": "1701MS.II.23",
-      "printed_item": "II.23 Total income tax due",
-      "method": "computed",
-      "formula": "II.21 + II.22.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook II.23"
-      ]
-    },
-    {
-      "id": "1701MS.II.24",
-      "printed_item": "II.24 Total tax credits or payments",
-      "method": "computed",
-      "formula": "V.10 (income-tax credits only).",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook II.24 (E29 = V.10)"
-      ]
-    },
-    {
-      "id": "1701MS.II.25",
-      "printed_item": "II.25 Tax payable or overpayment",
-      "method": "computed",
-      "formula": "II.23 - II.24. Preserve the sign.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "sign": "signed",
-      "citations": [
-        "workbook II.25",
-        "sheets.md s6 #7 (chain II.23 -> II.25 -> II.27 -> II.29)"
-      ]
-    },
-    {
-      "id": "1701MS.II.26",
-      "printed_item": "II.26 Tax due allowed for the second installment",
-      "method": "election (filer)",
-      "formula": "Installment of 50% or less, due 15 October (form item 26). Do not assume entitlement.",
-      "status": "UNCONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "status_detail": "15 October installment UNCONFIRMED (verify.md s2 #83).",
-      "citations": [
-        "workbook II.26 'Do not assume automatic entitlement'",
-        "bir.md D-4"
-      ]
-    },
-    {
-      "id": "1701MS.II.27",
-      "printed_item": "II.27 Amount payable or overpayment",
-      "method": "computed",
-      "formula": "II.25 - II.26. Preserve the sign.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "sign": "signed",
-      "citations": [
-        "workbook II.27"
-      ]
-    },
-    {
-      "id": "1701MS.II.28A",
-      "printed_item": "II.28A Surcharge",
-      "method": "manual (penalty)",
-      "formula": "Penalty assessment, per person. Official key binds /taxpayer/penalty_overrides/surcharge. Books never fills it.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtSurchangeNo28a, txtInterestNo28a, txtCompromise28a)"
-      ]
-    },
-    {
-      "id": "1701MS.II.28B",
-      "printed_item": "II.28B Interest",
-      "method": "manual (penalty)",
-      "formula": "Penalty assessment, per person. Official key binds /taxpayer/penalty_overrides/interest. Books never fills it.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtSurchangeNo28a, txtInterestNo28a, txtCompromise28a)"
-      ]
-    },
-    {
-      "id": "1701MS.II.28C",
-      "printed_item": "II.28C Compromise",
-      "method": "manual (penalty)",
-      "formula": "Penalty assessment, per person. Official key binds /taxpayer/penalty_overrides/compromise. Books never fills it.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtSurchangeNo28a, txtInterestNo28a, txtCompromise28a)"
-      ]
-    },
-    {
-      "id": "1701MS.II.28D",
-      "printed_item": "II.28D Total penalties",
-      "method": "computed",
-      "formula": "II.28A + II.28B + II.28C.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook II.28D"
-      ]
-    },
-    {
-      "id": "1701MS.II.29",
-      "printed_item": "II.29 Total amount payable or overpayment",
-      "method": "computed",
-      "formula": "II.27 + II.28D. Per person.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "sign": "signed",
-      "citations": [
-        "workbook II.29",
-        "sheets.md s6 #7"
-      ]
-    },
-    {
-      "id": "1701MS.II.30",
-      "printed_item": "II.30 Aggregate amount payable or overpayment",
-      "method": "computed",
-      "formula": "II.29 taxpayer + II.29 spouse. Only when filing jointly.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook II.30"
-      ]
-    },
-    {
-      "id": "1701MS.II.31",
-      "printed_item": "II.31 Overpayment options and amounts",
-      "method": "human choice",
-      "formula": "Refund, tax credit certificate or carry-over; the form's irrevocability rules apply. Never chosen by Books.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "workbook II.31",
-        "verify.md s4 (txtToBeRefunded, Issued, Carried)"
-      ]
-    },
-    {
-      "id": "1701MS.II.32",
-      "printed_item": "II.32 Declaration (perjury agreement)",
-      "method": "human",
-      "formula": "The taxpayer agrees. Books never auto-signs.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "workbook II.32",
-        "verify.md s4 (perjuryClause)"
-      ]
-    },
-    {
-      "id": "1701MS.II.33",
-      "printed_item": "II.33 Name and signature of filer or representative",
-      "method": "human",
-      "formula": "Printed name and authorized representative. No representative TIN key exists (II.34).",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "status_detail": "No printed item number is in the schema for name and signature (workbook ID II.33).",
-      "citations": [
-        "verify.md s4 (printedName, authorizeRepresentative)",
-        "verify.md s2 #14 (II.34 TIN missing)"
-      ]
-    },
-    {
-      "id": "1701MS.II.35",
-      "printed_item": "II.35 Number of attachments (schema: Item 33)",
-      "method": "constant",
-      "formula": "Attachment count written by the app. Corrected ID: the schema label reads 'Page 1 Item 33'.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "never_touch",
-      "status_detail": "Workbook ID corrected from II.35 to the schema item 33 (correction 32).",
-      "citations": [
-        "pinned schema label 'Page 1 Item 33 Number Of Attachments'",
-        "verify.md s4 (item 33 unmapped constant)"
-      ]
-    },
-    {
-      "id": "1701MS.III.36.bank",
-      "printed_item": "III.36 payment row: cash or bank debit bank",
-      "method": "evidence",
-      "formula": "Record only when the cash or bank debit method was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (payment lines unmapped)"
-      ]
-    },
-    {
-      "id": "1701MS.III.36.number",
-      "printed_item": "III.36 payment row: cash or bank debit number",
-      "method": "evidence",
-      "formula": "Record only when the cash or bank debit method was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (payment lines unmapped)"
-      ]
-    },
-    {
-      "id": "1701MS.III.36.date",
-      "printed_item": "III.36 payment row: cash or bank debit date",
-      "method": "evidence",
-      "formula": "Record only when the cash or bank debit method was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (payment lines unmapped)"
-      ]
-    },
-    {
-      "id": "1701MS.III.36.amount",
-      "printed_item": "III.36 payment row: cash or bank debit amount",
-      "method": "evidence",
-      "formula": "Record only when the cash or bank debit method was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (payment lines unmapped)"
-      ]
-    },
-    {
-      "id": "1701MS.III.37.bank",
-      "printed_item": "III.37 payment row: check bank",
-      "method": "evidence",
-      "formula": "Record only when the check method was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (payment lines unmapped)"
-      ]
-    },
-    {
-      "id": "1701MS.III.37.number",
-      "printed_item": "III.37 payment row: check number",
-      "method": "evidence",
-      "formula": "Record only when the check method was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (payment lines unmapped)"
-      ]
-    },
-    {
-      "id": "1701MS.III.37.date",
-      "printed_item": "III.37 payment row: check date",
-      "method": "evidence",
-      "formula": "Record only when the check method was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (payment lines unmapped)"
-      ]
-    },
-    {
-      "id": "1701MS.III.37.amount",
-      "printed_item": "III.37 payment row: check amount",
-      "method": "evidence",
-      "formula": "Record only when the check method was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (payment lines unmapped)"
-      ]
-    },
-    {
-      "id": "1701MS.III.38.bank",
-      "printed_item": "III.38: tax debit memo drawee bank",
-      "method": "evidence",
-      "formula": "No drawee key exists for the tax debit memo (only number, date and amount).",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "status_detail": "No drawee key in the pin (verify.md s4 'No tax-debit-memo drawee key').",
-      "citations": [
-        "verify.md s4 (payment lines)",
-        "forms.md s10"
-      ]
-    },
-    {
-      "id": "1701MS.III.38.number",
-      "printed_item": "III.38 payment row: tax debit memo number",
-      "method": "evidence",
-      "formula": "Record only when the tax debit memo method was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (payment lines unmapped)"
-      ]
-    },
-    {
-      "id": "1701MS.III.38.date",
-      "printed_item": "III.38 payment row: tax debit memo date",
-      "method": "evidence",
-      "formula": "Record only when the tax debit memo method was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (payment lines unmapped)"
-      ]
-    },
-    {
-      "id": "1701MS.III.38.amount",
-      "printed_item": "III.38 payment row: tax debit memo amount",
-      "method": "evidence",
-      "formula": "Record only when the tax debit memo method was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (payment lines unmapped)"
-      ]
-    },
-    {
-      "id": "1701MS.III.39.bank",
-      "printed_item": "III.39 payment row: other payment bank",
-      "method": "evidence",
-      "formula": "Record only when the other payment method was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (payment lines unmapped)"
-      ]
-    },
-    {
-      "id": "1701MS.III.39.number",
-      "printed_item": "III.39 payment row: other payment number",
-      "method": "evidence",
-      "formula": "Record only when the other payment method was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (payment lines unmapped)"
-      ]
-    },
-    {
-      "id": "1701MS.III.39.date",
-      "printed_item": "III.39 payment row: other payment date",
-      "method": "evidence",
-      "formula": "Record only when the other payment method was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (payment lines unmapped)"
-      ]
-    },
-    {
-      "id": "1701MS.III.39.amount",
-      "printed_item": "III.39 payment row: other payment amount",
-      "method": "evidence",
-      "formula": "Record only when the other payment method was used. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (payment lines unmapped)"
-      ]
-    },
-    {
-      "id": "1701MS.III.39.particular",
-      "printed_item": "III.39: other particulars",
-      "method": "evidence",
-      "formula": "Free text (txtOtherParticulars). Added by correction 33. Unmapped in the pin.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "pinned schema: txtOtherParticulars unmapped"
-      ]
-    },
-    {
-      "id": "1701MS.IV.1",
-      "printed_item": "IV.1 Gross compensation income (owner's 2316)",
-      "method": "evidence",
-      "formula": "From the owner's own employer certificate (2316), not the business payroll. Books has no compensation path in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "status_detail": "Compensation path MISSING in Books (books.md s2; design P7).",
-      "citations": [
-        "workbook 1701-MS IV.1",
-        "verify.md s4 (txtGrossa)",
-        "forms.md s3c"
-      ]
-    },
-    {
-      "id": "1701MS.IV.2",
-      "printed_item": "IV.2 Non-taxable or exempt compensation",
-      "method": "evidence",
-      "formula": "From the owner's 2316. Not amounts paid to business employees.",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "workbook 1701-MS IV.2",
-        "verify.md s4 (txtLessNonTaxablea)"
-      ]
-    },
-    {
-      "id": "1701MS.IV.3",
-      "printed_item": "IV.3 Taxable compensation",
-      "method": "computed",
-      "formula": "IV.1 - IV.2. Per person.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook IV.3",
-        "verify.md s4"
-      ]
-    },
-    {
-      "id": "1701MS.IV.4",
-      "printed_item": "IV.4 Tax due on compensation",
-      "method": "computed",
-      "formula": "Graduated schedule applied to IV.3 (progressive, not flat).",
-      "status": "UNCONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "status_detail": "No pinned box is mapped to IV.4 (W2 check). The ATP box is mapped to IV.18A by pattern.",
-      "citations": [
-        "workbook IV.4"
-      ]
-    },
+      "path": "/taxpayer/deduction",
+      "source": "Forms draft (frm1701MS:txtTaxpayerNo17)",
+      "supported_values": [
+        "osd",
+        "itemized"
+      ],
+      "required_when": {
+        "/taxpayer/tax_option": "graduated"
+      },
+      "why": "IV.8 is filled only under itemized. The OSD vs itemized choice and the OSD amount are Forms'."
+    }
+  ],
+  "mappings": [
     {
       "id": "1701MS.IV.5",
       "printed_item": "IV.5 Sales, revenues and fees",
-      "method": "sum",
-      "formula": "Sum of posted sales lines (sales_revenue and related leaf accounts), annual, excluding VAT and non-sales movements. Posted only; reversals net; no parent accounts.",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "fill_p7",
+      "mode": "fill",
+      "target_key": "frm1701MS:txtSalesRevenueNo5a",
+      "measures": [
+        "gross_sales"
+      ],
+      "aggregation": "sum",
+      "period_basis": "year",
+      "person_scope": "taxpayer",
+      "form_context": [
+        {
+          "read": "/taxpayer/tax_option",
+          "equals": "graduated"
+        }
+      ],
+      "non_negative": true,
       "gates": [
+        "GATE.PERIOD_LOCK",
         "EXC.VAT_NOT_IN_SALES",
         "EXC.BANK_DEPOSIT_NOT_SALES",
-        "REV.VOID_OPEN_PERIOD"
+        "EXC.SPOUSE_MVP",
+        "REV.VOID_OPEN_PERIOD",
+        "REV.COUNT_ONCE"
       ],
-      "period": "calendar year",
-      "selector": {
-        "regime": [
-          "graduated"
-        ],
-        "tax_type": [
-          "income_tax"
-        ],
-        "income_class": [
-          "business_sales"
-        ],
-        "vat_status": [
-          "non_vat"
-        ]
+      "review": {
+        "status": "settled",
+        "note": "Gross sales go to item 5 and the three reductions to item 6; Forms computes item 7 (net) and everything after it."
       },
-      "status_detail": "Official key bound (verify.md s4). Selector PARTIAL: only graduated or special pathways.",
+      "poc": "implemented",
+      "status": "CONFIRMED key",
       "citations": [
         "verify.md s4 (txtSalesRevenueNo5a -> /taxpayer/sales)",
         "workbook Category field rules rows 7, 10, 13",
@@ -785,28 +86,35 @@
     {
       "id": "1701MS.IV.6",
       "printed_item": "IV.6 Sales returns, allowances and discounts",
-      "method": "sum",
-      "formula": "Sum of contra-sales (refunds_and_discounts) linked to eligible sales, annual.",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "fill_p7",
-      "gates": [
-        "REV.COUNT_ONCE",
-        "GATE.RETURNS_ACK"
+      "mode": "fill",
+      "target_key": "frm1701MS:txtSalesReturnsNo6a",
+      "measures": [
+        "sales_returns",
+        "sales_allowances",
+        "sales_discounts"
       ],
-      "period": "calendar year",
-      "selector": {
-        "regime": [
-          "graduated"
-        ],
-        "tax_type": [
-          "income_tax"
-        ],
-        "income_class": [
-          "contra_sales"
-        ]
+      "aggregation": "sum",
+      "period_basis": "year",
+      "person_scope": "taxpayer",
+      "form_context": [
+        {
+          "read": "/taxpayer/tax_option",
+          "equals": "graduated"
+        }
+      ],
+      "non_negative": true,
+      "gates": [
+        "GATE.PERIOD_LOCK",
+        "GATE.RETURNS_ACK",
+        "REV.COUNT_ONCE",
+        "EXC.SPOUSE_MVP"
+      ],
+      "review": {
+        "status": "settled",
+        "note": "The three reduction measures summed. Counted once: never also netted into item 5."
       },
-      "status_detail": "Books has no credit-note or sales-return document (books.md s2: MISSING).",
+      "poc": "implemented",
+      "status": "CONFIRMED key",
       "citations": [
         "verify.md s4 (txtSalesReturnsNo6a)",
         "workbook Category field rules rows 16-17",
@@ -814,298 +122,107 @@
       ]
     },
     {
-      "id": "1701MS.IV.7",
-      "printed_item": "IV.7 Net sales (IV.5 - IV.6)",
-      "method": "computed",
-      "formula": "Display only. The key name says taxable compensation, but the box is net sales (verify.md s2 #15).",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "verify.md s2 #15 (REFUTED as 'bound')",
-        "sheets.md s3 (key-name defect)"
-      ]
-    },
-    {
       "id": "1701MS.IV.8",
-      "printed_item": "IV.8 Cost of sales or services (itemized only)",
-      "method": "sum",
-      "formula": "Allowable cost of goods or direct services. Itemized method only. OSD and 8% do not deduct it separately.",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "fill_p7",
-      "period": "calendar year",
-      "selector": {
-        "regime": [
-          "graduated"
-        ],
-        "tax_type": [
-          "income_tax"
-        ],
-        "deduction": [
-          "itemized"
-        ]
+      "printed_item": "IV.8 Cost of sales or services",
+      "mode": "fill",
+      "target_key": "frm1701MS:txtCostofSalesNo8a",
+      "measures": [
+        "cost_of_sales"
+      ],
+      "aggregation": "sum",
+      "period_basis": "year",
+      "person_scope": "taxpayer",
+      "form_context": [
+        {
+          "read": "/taxpayer/tax_option",
+          "equals": "graduated"
+        },
+        {
+          "read": "/taxpayer/deduction",
+          "equals": "itemized"
+        }
+      ],
+      "gates": [
+        "GATE.PERIOD_LOCK",
+        "EXC.SPOUSE_MVP"
+      ],
+      "review": {
+        "status": "settled",
+        "note": "Filled only when the Forms draft says itemized. The OSD vs itemized choice and the OSD amount are Forms'."
       },
+      "poc": "implemented",
+      "status": "CONFIRMED key",
       "citations": [
         "verify.md s4 (txtCostofSalesNo8a)",
         "workbook Category field rules rows 22-23, 44-45"
       ]
     },
     {
-      "id": "1701MS.IV.9",
-      "printed_item": "IV.9 Gross income from operation",
-      "method": "computed",
-      "formula": "IV.7 - IV.8 (IV.8 omitted for OSD).",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook IV.9"
-      ]
-    },
-    {
-      "id": "1701MS.IV.10A",
-      "printed_item": "IV.10A Ordinary allowable itemized deductions",
-      "method": "sum",
-      "formula": "Tax-eligible operating expenses with substantiation, itemized method only. Not every book expense is deductible; avoid double-counting cost of sales.",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "fill_p7",
-      "period": "calendar year",
-      "selector": {
-        "regime": [
-          "graduated"
-        ],
-        "tax_type": [
-          "income_tax"
-        ],
-        "deduction": [
-          "itemized"
-        ]
-      },
-      "status_detail": "Deductibility rules and limits need tax review per line (workbook I.17 notes).",
-      "citations": [
-        "verify.md s4 (txtAllowableItemizedDeductionsNo10a)",
-        "workbook Category field rules rows 24-43"
-      ]
-    },
-    {
-      "id": "1701MS.IV.10B",
-      "printed_item": "IV.10B Special allowable itemized deductions",
-      "method": "human entry",
-      "formula": "Specific supported special deductions. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtSpecialAllowableNo10a)"
-      ]
-    },
-    {
-      "id": "1701MS.IV.10C",
-      "printed_item": "IV.10C Net operating loss carryover",
-      "method": "prior filing",
-      "formula": "Eligible loss vintages and time limits. Not in MVP.",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtNetOperatingLossNo10a)"
-      ]
-    },
-    {
-      "id": "1701MS.IV.10D",
-      "printed_item": "IV.10D Total allowable itemized deductions",
-      "method": "computed",
-      "formula": "IV.10A + IV.10B + IV.10C. Do not mix with OSD.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook IV.10D"
-      ]
-    },
-    {
-      "id": "1701MS.IV.11",
-      "printed_item": "IV.11 Optional standard deduction (OSD)",
-      "method": "computed",
-      "formula": "40% of IV.7 (net sales), only when OSD is validly elected.",
-      "status": "UNCONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "selector": {
-        "regime": [
-          "graduated"
-        ],
-        "tax_type": [
-          "income_tax"
-        ],
-        "deduction": [
-          "osd"
-        ]
-      },
-      "status_detail": "CONFLICT: printed Part I item 17 says 40% of gross sales (bir.md s2); the code and the workbook say 40% of net sales (form_1701a.rs:470-471; workbook IV.11). Needs review.",
-      "citations": [
-        "workbook IV.11 (E74)",
-        "bir.md s2 (Part IV item 11, Part I item 17)",
-        "sheets.md s5"
-      ]
-    },
-    {
-      "id": "1701MS.IV.12",
-      "printed_item": "IV.12 Net income or loss",
-      "method": "computed",
-      "formula": "Itemized: IV.9 - IV.10D. OSD: IV.9 - IV.11.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook IV.12"
-      ]
-    },
-    {
       "id": "1701MS.IV.13",
       "printed_item": "IV.13 Other non-operating income (graduated path)",
-      "method": "sum",
-      "formula": "Eligible other non-operating income. Exclude income subject to final tax when appropriate (EXC.FINAL_TAX_INTEREST).",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "fill_p7",
-      "gates": [
-        "EXC.FINAL_TAX_INTEREST"
+      "mode": "fill",
+      "target_key": "frm1701MS:txtNonOperatingIncomeNo13a",
+      "measures": [
+        "other_non_operating_income"
       ],
-      "period": "calendar year",
-      "selector": {
-        "regime": [
-          "graduated"
-        ],
-        "tax_type": [
-          "income_tax"
-        ],
-        "income_class": [
-          "non_operating_income"
-        ]
+      "aggregation": "sum",
+      "period_basis": "year",
+      "person_scope": "taxpayer",
+      "form_context": [
+        {
+          "read": "/taxpayer/tax_option",
+          "equals": "graduated"
+        }
+      ],
+      "gates": [
+        "GATE.PERIOD_LOCK",
+        "EXC.FINAL_TAX_INTEREST",
+        "EXC.SPOUSE_MVP"
+      ],
+      "review": {
+        "status": "open",
+        "note": "Whether income final-taxed at source is excluded from this box is a mapping question for tax review (EXC.FINAL_TAX_INTEREST). Until settled the bridge fails closed when the measure has lines."
       },
-      "status_detail": "Final-tax attribute on interest income is UNKNOWN (sheets.md s10).",
+      "poc": "fail_closed",
+      "fail_closed_code": "EXC.FINAL_TAX_INTEREST",
+      "status": "CONFIRMED key",
       "citations": [
         "verify.md s4 (txtNonOperatingIncomeNo13a)",
         "workbook Category field rules rows 18, 20"
       ]
     },
     {
-      "id": "1701MS.IV.14",
-      "printed_item": "IV.14 Taxable income from business (IV.12 + IV.13)",
-      "method": "computed",
-      "formula": "Net income plus other non-operating income. Apply the loss rules.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook IV.14"
-      ]
-    },
-    {
-      "id": "1701MS.IV.15",
-      "printed_item": "IV.15 Taxable compensation and business income (IV.3 + IV.14)",
-      "method": "computed",
-      "formula": "Graduated base. The 2023+ bracket table applies to this value (rates-v1).",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "status_detail": "Printed-form base is the graduated pathway. The graduated table is applied to IV.15 (sheets.md s6 #5, verify.md s2 #50).",
-      "citations": [
-        "verify.md s2 #50",
-        "workbook IV.15"
-      ]
-    },
-    {
-      "id": "1701MS.IV.16",
-      "printed_item": "IV.16 Special or preferential rate",
-      "method": "reference",
-      "formula": "Relief profile and rate version. Only the special or exempt path.",
-      "status": "CONFIRMED",
-      "books_source": "profile",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtTaxRatea derived)"
-      ]
-    },
-    {
-      "id": "1701MS.IV.17",
-      "printed_item": "IV.17 Special, preferential or exempt tax due",
-      "method": "computed",
-      "formula": "IV.9 or IV.14 x the applicable IV.16 rate, per form instructions.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook IV.17",
-        "verify.md s4 (txtTaxDueSpeciala)"
-      ]
-    },
-    {
-      "id": "1701MS.IV.18A",
-      "printed_item": "IV.18A Total special or exempt plus compensation tax",
-      "method": "computed",
-      "formula": "IV.4 + IV.17. Feeds II.19.",
-      "status": "UNCONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "status_detail": "The ATP box is mapped by naming pattern; the IV.4 box is not found (W2 check).",
-      "citations": [
-        "workbook IV.18A (E81)",
-        "sheets.md s3"
-      ]
-    },
-    {
-      "id": "1701MS.IV.18B",
-      "printed_item": "IV.18B Total tax due under graduated rates",
-      "method": "computed",
-      "formula": "Graduated schedule applied to IV.15 (rates-v1 2023+ table). Feeds II.22.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "selector": {
-        "regime": [
-          "graduated"
-        ],
-        "tax_type": [
-          "income_tax"
-        ]
-      },
-      "test_vectors": [
+      "id": "1701MS.IV.19",
+      "printed_item": "IV.19 Sales, revenues and fees, net of returns (8% path)",
+      "mode": "fill",
+      "target_key": "frm1701MS:txtSalesRevenuesFeesANo19a",
+      "measures": [
+        "net_sales"
+      ],
+      "aggregation": "sum",
+      "period_basis": "year",
+      "person_scope": "taxpayer",
+      "form_context": [
         {
-          "name": "workbook synthetic: IV.15 = 714000.00 -> 85300.00",
-          "input_text": "714000.00",
-          "expected_text": "85300.00"
+          "read": "/taxpayer/tax_option",
+          "equals": "eight_percent"
         }
       ],
-      "citations": [
-        "verify.md s4 (sheets s3: IV.18B -> BTP)",
-        "rates-v1.json graduated_income_tax_2023"
-      ]
-    },
-    {
-      "id": "1701MS.IV.19",
-      "printed_item": "IV.19 8%: net sales (eligible sales minus returns)",
-      "method": "sum",
-      "formula": "Eligible sales minus eligible returns, 8% pathway only, annual.",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "fill_p7",
+      "non_negative": true,
       "gates": [
-        "GATE.8PCT_YEAR_2551Q",
-        "REV.COUNT_ONCE"
+        "GATE.PERIOD_LOCK",
+        "GATE.RETURNS_ACK",
+        "REV.COUNT_ONCE",
+        "EXC.VAT_NOT_IN_SALES",
+        "EXC.BANK_DEPOSIT_NOT_SALES",
+        "EXC.SPOUSE_MVP"
       ],
-      "period": "calendar year",
-      "selector": {
-        "regime": [
-          "eight_percent"
-        ],
-        "tax_type": [
-          "income_tax"
-        ]
+      "review": {
+        "status": "settled",
+        "note": "Selected only when the Forms draft's tax option is eight_percent. The bridge never decides the option, the 8% eligibility, the 250,000 reduction or the tax."
       },
+      "poc": "implemented",
+      "status": "CONFIRMED key",
       "citations": [
         "verify.md s4 (txtSalesRevenuesFeesANo19a -> /taxpayer/eight_sales)",
         "workbook Category field rules rows 8, 11, 14, 17"
@@ -1113,140 +230,60 @@
     },
     {
       "id": "1701MS.IV.20",
-      "printed_item": "IV.20 8%: other non-operating income",
-      "method": "sum",
-      "formula": "Eligible other non-operating income on the 8% pathway. Needed for the 8% base and the 3,000,000.00 test (RMO 23-2018).",
-      "status": "CONFIRMED",
-      "books_source": "ledger",
-      "books_policy": "fill_p7",
-      "gates": [
-        "EXC.FINAL_TAX_INTEREST"
+      "printed_item": "IV.20 Other non-operating income (8% path)",
+      "mode": "fill",
+      "target_key": "frm1701MS:txtOtherNonOperatingIncomeNo20a",
+      "measures": [
+        "other_non_operating_income"
       ],
-      "period": "calendar year",
-      "selector": {
-        "regime": [
-          "eight_percent"
-        ],
-        "tax_type": [
-          "income_tax"
-        ],
-        "income_class": [
-          "non_operating_income"
-        ]
+      "aggregation": "sum",
+      "period_basis": "year",
+      "person_scope": "taxpayer",
+      "form_context": [
+        {
+          "read": "/taxpayer/tax_option",
+          "equals": "eight_percent"
+        }
+      ],
+      "gates": [
+        "GATE.PERIOD_LOCK",
+        "EXC.FINAL_TAX_INTEREST",
+        "EXC.SPOUSE_MVP"
+      ],
+      "review": {
+        "status": "open",
+        "note": "Same open question as IV.13 (EXC.FINAL_TAX_INTEREST)."
       },
-      "status_detail": "Books omits this from the 8% base (verify.md s2 #36).",
+      "poc": "fail_closed",
+      "fail_closed_code": "EXC.FINAL_TAX_INTEREST",
+      "status": "CONFIRMED key",
       "citations": [
-        "verify.md s4 (txtOtherNonOperatingIncomeNo20a)",
-        "RMO 23-2018 (verify.md s2 #75)"
-      ]
-    },
-    {
-      "id": "1701MS.IV.21",
-      "printed_item": "IV.21 8%: total income (IV.19 + IV.20)",
-      "method": "computed",
-      "formula": "Base before the reduction.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "citations": [
-        "workbook IV.21"
-      ]
-    },
-    {
-      "id": "1701MS.IV.22",
-      "printed_item": "IV.22 8%: pure-business reduction (250,000.00)",
-      "method": "derived",
-      "formula": "Only for purely self-employed or professional individuals without compensation income. No reduction for mixed income. Derived by the form, never filled by Books.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "never_fill",
-      "gates": [
-        "GATE.MIXED_INCOME_8PCT"
-      ],
-      "status_detail": "Pinned box is derived (unmapped). Books never sends it.",
-      "citations": [
-        "RMO 23-2018 pts 10-12 (verify.md s2 #75)",
-        "bir.md 8-8",
-        "verify.md s4 (txtLess22A derived)"
-      ]
-    },
-    {
-      "id": "1701MS.IV.23",
-      "printed_item": "IV.23 8%: taxable income or loss (IV.21 - IV.22)",
-      "method": "computed",
-      "formula": "Handle a below-zero result per current instructions.",
-      "status": "UNCONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "status_detail": "Below-zero handling per instructions is not verified (workbook IV.23 note).",
-      "citations": [
-        "workbook IV.23"
-      ]
-    },
-    {
-      "id": "1701MS.IV.24",
-      "printed_item": "IV.24 8%: business income tax (8% x IV.23)",
-      "method": "computed",
-      "formula": "No negative tax. Review the zero-handling rule.",
-      "status": "UNCONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "status_detail": "Zero handling UNCONFIRMED (workbook IV.24).",
-      "citations": [
-        "workbook IV.24",
-        "bir.md 3.2 (8-1)"
-      ]
-    },
-    {
-      "id": "1701MS.IV.25",
-      "printed_item": "IV.25 8%: total compensation plus business tax (IV.4 + IV.24)",
-      "method": "computed",
-      "formula": "Feeds II.22 on the 8% pathway.",
-      "status": "UNCONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "status_detail": "IV.4 box not found in the pin (see IV.4).",
-      "citations": [
-        "workbook IV.25",
-        "verify.md s4 (IV 25 computed)"
-      ]
-    },
-    {
-      "id": "1701MS.V.1",
-      "printed_item": "V.1 Prior-year excess credits",
-      "method": "prior filing",
-      "formula": "Prior-year excess credits. Not in MVP. Income-tax credits only (EXC.PT_CWT_NOT_IT).",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtPriorYearsNo1a)"
-      ]
-    },
-    {
-      "id": "1701MS.V.2",
-      "printed_item": "V.2 Tax payments for the first three quarters (1701Q proofs)",
-      "method": "prior filing",
-      "formula": "Tax payments for the first three quarters (1701Q proofs). Not in MVP. Income-tax credits only (EXC.PT_CWT_NOT_IT).",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtTaxPaymentsNo2a)",
-        "workbook V.2 (avoid including withholding twice)"
+        "verify.md s4 (txtOtherNonOperatingIncomeNo20a)"
       ]
     },
     {
       "id": "1701MS.V.3",
-      "printed_item": "V.3 Creditable income-tax withheld, first three quarters (2307 WI or WC, 1606)",
-      "method": "evidence",
-      "formula": "Creditable income-tax withheld, first three quarters (2307 WI or WC, 1606). Not in MVP. Income-tax credits only (EXC.PT_CWT_NOT_IT).",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "gates": [
-        "EXC.PT_CWT_NOT_IT"
+      "printed_item": "V.3 Creditable income tax withheld, first three quarters (2307)",
+      "mode": "reference",
+      "target_key": "frm1701MS:txtCreditableTaxNo3a",
+      "measures": [
+        "it_withheld_2307_received"
       ],
+      "aggregation": "sum",
+      "period_basis": "certificate_period",
+      "sub_window": "Q1-Q3",
+      "person_scope": "payor",
+      "gates": [
+        "GATE.CERT_STATUS",
+        "EXC.PT_CWT_NOT_IT",
+        "EXC.UNRECEIVED_CERT"
+      ],
+      "review": {
+        "status": "settled",
+        "note": "Evidence. Shown as a reference value; never sent (crosswalk policy never_fill)."
+      },
+      "poc": "implemented",
+      "status": "CONFIRMED key",
       "citations": [
         "verify.md s4 (txtCreditableTaxNo3a)",
         "bir.md W-5",
@@ -1255,109 +292,501 @@
     },
     {
       "id": "1701MS.V.4",
-      "printed_item": "V.4 Creditable income-tax withheld, fourth quarter (2307 or 1606)",
-      "method": "evidence",
-      "formula": "Creditable income-tax withheld, fourth quarter (2307 or 1606). Not in MVP. Income-tax credits only (EXC.PT_CWT_NOT_IT).",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "gates": [
-        "EXC.PT_CWT_NOT_IT"
+      "printed_item": "V.4 Creditable income tax withheld, fourth quarter (2307)",
+      "mode": "reference",
+      "target_key": "frm1701MS:txtCreditableFourthQuarterNo4a",
+      "measures": [
+        "it_withheld_2307_received"
       ],
+      "aggregation": "sum",
+      "period_basis": "certificate_period",
+      "sub_window": "Q4",
+      "person_scope": "payor",
+      "gates": [
+        "GATE.CERT_STATUS",
+        "EXC.PT_CWT_NOT_IT",
+        "EXC.UNRECEIVED_CERT"
+      ],
+      "review": {
+        "status": "settled",
+        "note": "Evidence. Shown as a reference value; never sent."
+      },
+      "poc": "implemented",
+      "status": "CONFIRMED key",
       "citations": [
         "verify.md s4 (txtCreditableFourthQuarterNo4a)",
         "workbook V.4 (not percentage tax)"
       ]
+    }
+  ],
+  "not_mapped": [
+    {
+      "id": "1701MS.H.1",
+      "printed_item": "H.1 For the year (MM/YYYY): month and year",
+      "owner": "identity"
+    },
+    {
+      "id": "1701MS.H.2",
+      "printed_item": "H.2 Amended return?",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.H.3",
+      "printed_item": "H.3 Short-period return?",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.H.4",
+      "printed_item": "H.4 Civil status",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.H.5",
+      "printed_item": "H.5 If married: jointly, separately or spouse has no income",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.I.6",
+      "printed_item": "I.6 TIN (taxpayer and spouse)",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.I.7",
+      "printed_item": "I.7 RDO code (taxpayer; spouse unlocked)",
+      "owner": "profile"
+    },
+    {
+      "id": "1701MS.I.8",
+      "printed_item": "I.8 Name (taxpayer or filer)",
+      "owner": "profile"
+    },
+    {
+      "id": "1701MS.I.9",
+      "printed_item": "I.9 Email address",
+      "owner": "profile"
+    },
+    {
+      "id": "1701MS.I.10",
+      "printed_item": "I.10 Contact number",
+      "owner": "profile"
+    },
+    {
+      "id": "1701MS.I.11",
+      "printed_item": "I.11 Source of income (business, mixed, profession, compensation)",
+      "owner": "forms",
+      "note": "Election. Owned by the Forms tax profile. The bridge may read it as form_context; it never fills or decides it."
+    },
+    {
+      "id": "1701MS.I.12",
+      "printed_item": "I.12 Income subject to (graduated, 8%, exempt, special)",
+      "owner": "forms",
+      "note": "Election. Owned by the Forms tax profile. The bridge may read it as form_context; it never fills or decides it."
+    },
+    {
+      "id": "1701MS.I.13",
+      "printed_item": "I.13 Legal basis of relief or exemption",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.I.14",
+      "printed_item": "I.14 Investment promotion or government agency",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.I.15",
+      "printed_item": "I.15 Registered activity or program number",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.I.16",
+      "printed_item": "I.16 Relief effective from and to",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.I.17",
+      "printed_item": "I.17 Method of deduction (itemized or OSD)",
+      "owner": "forms",
+      "note": "Election. Owned by the Forms tax profile. The bridge may read it as form_context; it never fills or decides it."
+    },
+    {
+      "id": "1701MS.I.18",
+      "printed_item": "I.18 Alphanumeric tax code (II011 to II017)",
+      "owner": "forms",
+      "note": "Election. Owned by the Forms tax profile. The bridge may read it as form_context; it never fills or decides it."
+    },
+    {
+      "id": "1701MS.II.19",
+      "printed_item": "II.19 Income tax due: special or preferential rate (IV.18A)",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.II.20",
+      "printed_item": "II.20 Share remitted to other government agency",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.II.21",
+      "printed_item": "II.21 Net special or preferential tax",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.II.22",
+      "printed_item": "II.22 Income tax due: regular rate",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.II.23",
+      "printed_item": "II.23 Total income tax due",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.II.24",
+      "printed_item": "II.24 Total tax credits or payments",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.II.25",
+      "printed_item": "II.25 Tax payable or overpayment",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.II.26",
+      "printed_item": "II.26 Tax due allowed for the second installment",
+      "owner": "forms",
+      "note": "Election. Owned by the Forms tax profile. The bridge may read it as form_context; it never fills or decides it."
+    },
+    {
+      "id": "1701MS.II.27",
+      "printed_item": "II.27 Amount payable or overpayment",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.II.28A",
+      "printed_item": "II.28A Surcharge",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.II.28B",
+      "printed_item": "II.28B Interest",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.II.28C",
+      "printed_item": "II.28C Compromise",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.II.28D",
+      "printed_item": "II.28D Total penalties",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.II.29",
+      "printed_item": "II.29 Total amount payable or overpayment",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.II.30",
+      "printed_item": "II.30 Aggregate amount payable or overpayment",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.II.31",
+      "printed_item": "II.31 Overpayment options and amounts",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.II.32",
+      "printed_item": "II.32 Declaration (perjury agreement)",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.II.33",
+      "printed_item": "II.33 Name and signature of filer or representative",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.II.35",
+      "printed_item": "II.35 Number of attachments (schema: Item 33)",
+      "owner": "forms"
+    },
+    {
+      "id": "1701MS.III.36.bank",
+      "printed_item": "III.36 payment row: cash or bank debit bank",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.36.number",
+      "printed_item": "III.36 payment row: cash or bank debit number",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.36.date",
+      "printed_item": "III.36 payment row: cash or bank debit date",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.36.amount",
+      "printed_item": "III.36 payment row: cash or bank debit amount",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.37.bank",
+      "printed_item": "III.37 payment row: check bank",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.37.number",
+      "printed_item": "III.37 payment row: check number",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.37.date",
+      "printed_item": "III.37 payment row: check date",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.37.amount",
+      "printed_item": "III.37 payment row: check amount",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.38.bank",
+      "printed_item": "III.38: tax debit memo drawee bank",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.38.number",
+      "printed_item": "III.38 payment row: tax debit memo number",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.38.date",
+      "printed_item": "III.38 payment row: tax debit memo date",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.38.amount",
+      "printed_item": "III.38 payment row: tax debit memo amount",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.39.bank",
+      "printed_item": "III.39 payment row: other payment bank",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.39.number",
+      "printed_item": "III.39 payment row: other payment number",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.39.date",
+      "printed_item": "III.39 payment row: other payment date",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.39.amount",
+      "printed_item": "III.39 payment row: other payment amount",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.III.39.particular",
+      "printed_item": "III.39: other particulars",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.IV.1",
+      "printed_item": "IV.1 Gross compensation income (owner's 2316)",
+      "owner": "user",
+      "note": "Owner's gross compensation per 2316 (evidence). Measure certificates_2316_received is planned (P4)."
+    },
+    {
+      "id": "1701MS.IV.2",
+      "printed_item": "IV.2 Non-taxable or exempt compensation",
+      "owner": "user",
+      "note": "Non-taxable compensation per 2316 (evidence)."
+    },
+    {
+      "id": "1701MS.IV.3",
+      "printed_item": "IV.3 Taxable compensation",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.4",
+      "printed_item": "IV.4 Tax due on compensation",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.7",
+      "printed_item": "IV.7 Net sales (IV.5 - IV.6)",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.9",
+      "printed_item": "IV.9 Gross income from operation",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.10A",
+      "printed_item": "IV.10A Ordinary allowable itemized deductions",
+      "owner": "user",
+      "note": "Allowable itemized deductions need a deductibility judgement. Books offers operating_expenses_by_category as a measure; the mapping is open for tax review."
+    },
+    {
+      "id": "1701MS.IV.10B",
+      "printed_item": "IV.10B Special allowable itemized deductions",
+      "owner": "user"
+    },
+    {
+      "id": "1701MS.IV.10C",
+      "printed_item": "IV.10C Net operating loss carryover",
+      "owner": "prior_filing"
+    },
+    {
+      "id": "1701MS.IV.10D",
+      "printed_item": "IV.10D Total allowable itemized deductions",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.11",
+      "printed_item": "IV.11 Optional standard deduction (OSD)",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.12",
+      "printed_item": "IV.12 Net income or loss",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.14",
+      "printed_item": "IV.14 Taxable income from business (IV.12 + IV.13)",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.15",
+      "printed_item": "IV.15 Taxable compensation and business income (IV.3 + IV.14)",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.16",
+      "printed_item": "IV.16 Special or preferential rate",
+      "owner": "profile"
+    },
+    {
+      "id": "1701MS.IV.17",
+      "printed_item": "IV.17 Special, preferential or exempt tax due",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.18A",
+      "printed_item": "IV.18A Total special or exempt plus compensation tax",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.18B",
+      "printed_item": "IV.18B Total tax due under graduated rates",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.21",
+      "printed_item": "IV.21 8%: total income (IV.19 + IV.20)",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.22",
+      "printed_item": "IV.22 8%: pure-business reduction (250,000.00)",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.23",
+      "printed_item": "IV.23 8%: taxable income or loss (IV.21 - IV.22)",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.24",
+      "printed_item": "IV.24 8%: business income tax (8% x IV.23)",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.IV.25",
+      "printed_item": "IV.25 8%: total compensation plus business tax (IV.4 + IV.24)",
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
+    },
+    {
+      "id": "1701MS.V.1",
+      "printed_item": "V.1 Prior-year excess credits",
+      "owner": "prior_filing"
+    },
+    {
+      "id": "1701MS.V.2",
+      "printed_item": "V.2 Tax payments for the first three quarters (1701Q proofs)",
+      "owner": "prior_filing"
     },
     {
       "id": "1701MS.V.5",
       "printed_item": "V.5 Creditable tax withheld per 2316 (own employers)",
-      "method": "evidence",
-      "formula": "Creditable tax withheld per 2316 (own employers). Not in MVP. Income-tax credits only (EXC.PT_CWT_NOT_IT).",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "gates": [
-        "EXC.PT_CWT_NOT_IT"
-      ],
-      "citations": [
-        "verify.md s4 (txtCreditableForm2316No5a)",
-        "workbook V.5"
-      ]
+      "owner": "user"
     },
     {
       "id": "1701MS.V.6",
       "printed_item": "V.6 Tax paid on the prior return if amended",
-      "method": "prior filing",
-      "formula": "Tax paid on the prior return if amended. Not in MVP. Income-tax credits only (EXC.PT_CWT_NOT_IT).",
-      "status": "CONFIRMED",
-      "books_source": "prior_filing",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtTaxPaidPreviouslyFiledNo6a)"
-      ]
+      "owner": "prior_filing"
     },
     {
       "id": "1701MS.V.7",
       "printed_item": "V.7 Foreign tax credits and foreign tax number",
-      "method": "evidence",
-      "formula": "Foreign tax credits and foreign tax number. Not in MVP. Income-tax credits only (EXC.PT_CWT_NOT_IT).",
-      "status": "CONFIRMED",
-      "books_source": "evidence",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtForeignTaxCreditsNo7a)"
-      ]
+      "owner": "user"
     },
     {
       "id": "1701MS.V.8",
       "printed_item": "V.8 Special tax credits",
-      "method": "human entry",
-      "formula": "Special tax credits. Not in MVP. Income-tax credits only (EXC.PT_CWT_NOT_IT).",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtSpecialTaxCreditsNo8a)"
-      ]
+      "owner": "user"
     },
     {
       "id": "1701MS.V.9",
       "printed_item": "V.9 Other tax credits or payments, with description",
-      "method": "human entry",
-      "formula": "Other tax credits or payments, with description. Not in MVP. Income-tax credits only (EXC.PT_CWT_NOT_IT).",
-      "status": "CONFIRMED",
-      "books_source": "user_input",
-      "books_policy": "never_fill",
-      "citations": [
-        "verify.md s4 (txtOtherCreditsPaymentsNo9a)"
-      ]
+      "owner": "user"
     },
     {
       "id": "1701MS.V.10",
       "printed_item": "V.10 Total tax credits and payments",
-      "method": "computed",
-      "formula": "Sum of V.1 to V.9. Feeds II.24.",
-      "status": "UNCONFIRMED",
-      "books_source": "none",
-      "books_policy": "cross_check",
-      "status_detail": "The printed Part V total is V.10 (verify.md s2 #54: summation range not fully confirmed in the workbook worked example).",
-      "citations": [
-        "workbook V.10 (E99 'Sum V.1 through V.9')",
-        "verify.md s2 #54 (UNCONFIRMED)"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     },
     {
       "id": "1701MS.VI.1",
       "printed_item": "VI.1 Total tax relief availment",
-      "method": "BIR only",
-      "formula": "Form marks this section for BIR use only. Books never touches it.",
-      "status": "CONFIRMED",
-      "books_source": "none",
-      "books_policy": "never_touch",
-      "citations": [
-        "workbook VI.1 (BIR only)"
-      ]
+      "owner": "forms",
+      "note": "Forms computes it. Books neither computes nor compares it."
     }
   ]
 }

@@ -15,19 +15,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "100000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "D-001.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-D-001 synthetic sales invoice",
@@ -46,19 +40,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "50000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "D-002.2",
-          "person_scope": "spouse",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "spouse"
         }
       ],
       "memo": "MEMO-SYNTH-D-002 synthetic sales invoice",
@@ -66,28 +54,15 @@
       "tax_profile_id": "4f6a8b0c-3d5e-4f7a-8b9c-0d1e2f3a4b5c"
     }
   ],
-  "fixture_format": "buwiz-poc-fixture/1",
+  "fixture_format": "buwiz-poc-fixture/2",
   "fixture_id": "d-spouse-scope-2026",
   "profiles": [
     {
       "display": "***-***-***-00000",
-      "facts": {
-        "2026": {
-          "deduction_method": "osd",
-          "owner_taxable_compensation_2316": "0.00",
-          "regime": "graduated",
-          "vat_status": "non_vat"
-        }
-      },
       "label": "D: spouse-scoped sale",
       "periods": {
         "2026": "closed",
         "2026-Q3": "closed"
-      },
-      "prior_filings": {
-        "2026": {
-          "1701q_q1_q3_tax_payments": "0.00"
-        }
       },
       "tax_profile_id": "4f6a8b0c-3d5e-4f7a-8b9c-0d1e2f3a4b5c"
     }

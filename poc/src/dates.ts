@@ -1,6 +1,4 @@
-import type { FormCode } from "./types.ts";
-
-/** Calendar dates are ISO days (Asia/Manila). Period keys: 2026-Q3, 2026-09, 2026. */
+/** Calendar dates are ISO days (Asia/Manila). Period keys: 2026-Q3, 2026-09, 2026. Due dates are Forms' (ADR-0007). */
 
 export type PeriodKind = "quarter" | "month" | "year";
 
@@ -77,40 +75,4 @@ export function manilaDay(instant: string): string {
     month: "2-digit",
     day: "2-digit",
   }).format(new Date(instant));
-}
-
-export interface DueDate {
-  date: string;
-  rule_status: "CONFIRMED" | "UNCONFIRMED";
-  rule: string;
-}
-
-export function dueDate(form: FormCode, period: PeriodRange): DueDate {
-  if (form === "2551Q") {
-    return {
-      date: addDays(period.end, 25),
-      rule_status: "CONFIRMED",
-      rule: "25 days after the quarter end (RA 11976 s128(1); rates.v1 due_dates.2551Q)",
-    };
-  }
-  if (form === "1601C") {
-    const month = Number(period.start.slice(5, 7));
-    if (month === 12) {
-      return {
-        date: `${period.year + 1}-01-15`,
-        rule_status: "UNCONFIRMED",
-        rule: "December withholding due 15 January (rates.v1 due_dates.1601C; printed text UNCONFIRMED)",
-      };
-    }
-    return {
-      date: `${period.year}-${pad2(month + 1)}-10`,
-      rule_status: "UNCONFIRMED",
-      rule: "10th day of the following month (rates.v1 due_dates.1601C; printed text UNCONFIRMED)",
-    };
-  }
-  return {
-    date: `${period.year + 1}-04-15`,
-    rule_status: "CONFIRMED",
-    rule: "15 April after the taxable year (rates.v1 due_dates.1701MS; April 15 CONFIRMED)",
-  };
 }

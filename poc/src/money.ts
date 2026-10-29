@@ -1,7 +1,7 @@
 /**
  * Money is integer centavos (bigint). JSON carries decimal text with exactly two places.
- * No JS number, float or parseFloat touches a money value. Rounding is half away from zero, once,
- * at output (decision D7; research: rates.v1.json rounding.pt_example).
+ * No JS number, float or parseFloat touches a money value. Measures are exact sums of centavos and are never
+ * rounded. Tax rounding is Forms' (ADR-0007), so there is no rate or rounding helper here.
  */
 
 export class MoneyError extends Error {
@@ -34,20 +34,4 @@ export function formatMoney(value: bigint): string {
   const magnitude = negative ? -value : value;
   const cents = (magnitude % 100n).toString().padStart(2, "0");
   return `${negative ? "-" : ""}${magnitude / 100n}.${cents}`;
-}
-
-/** round(numerator / denominator), halves away from zero. */
-export function divRoundHalfAway(numerator: bigint, denominator: bigint): bigint {
-  if (denominator <= 0n) throw new MoneyError("denominator must be positive");
-  const negative = numerator < 0n;
-  const magnitude = negative ? -numerator : numerator;
-  let quotient = magnitude / denominator;
-  const remainder = magnitude % denominator;
-  if (2n * remainder >= denominator) quotient += 1n;
-  return negative ? -quotient : quotient;
-}
-
-/** Tax of a centavo base at an integer basis-point rate (300 = 3.00%). */
-export function percentOf(baseCentavos: bigint, rateBps: number): bigint {
-  return divRoundHalfAway(baseCentavos * BigInt(rateBps), 10_000n);
 }

@@ -1,22 +1,26 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { CASES, type CaseSpec, HAND_GRADUATED, HAND_PT_VECTORS, HAND_THIRTEENTH, HAND_VAT } from "./cases.ts";
+import { nontaxableThirteenthCentavos } from "./bridge.ts";
+import { CASES, type CaseSpec, HAND_MONEY, HAND_THIRTEENTH } from "./cases.ts";
 import { prettyJson, sha256Of } from "./canonical.ts";
 import type { LoadedData } from "./load.ts";
+import { formatMoney, parseMoney } from "./money.ts";
 import { buildProposal, onlyProfileId, scopeInput, type Proposal } from "./proposal.ts";
 import { VECTORS_DIR } from "./paths.ts";
-import { graduatedTaxCentavos, ptRateFor, vatThresholdCentavos } from "./rates.ts";
-import { percentOf } from "./money.ts";
-import { thirteenthMonthSplit } from "./forms.ts";
 import type { NormInput } from "./types.ts";
 
-export const VECTOR_FORMAT = "buwiz-poc-vector/1";
+export const VECTOR_FORMAT = "buwiz-poc-vector/2";
+export const MONEY_VECTOR_FILE = "money-and-mapping.json";
 
-/** A language-neutral proposal vector: the normalized, profile-scoped input and the expected proposal. */
+/**
+ * A language-neutral proposal vector: the normalized, profile-scoped input, the Forms context the bridge read, and the
+ * expected proposal (measures and fill arguments). `expected_forms_computed` is documentation of Forms' expected
+ * output; it is not produced by Books and no test compares Books code against it.
+ */
 export function buildCaseVector(data: LoadedData, spec: CaseSpec, input: NormInput): { vector: Record<string, unknown>; proposal: Proposal } {
   const pid = onlyProfileId(input);
   const scope = scopeInput(input, pid);
-  const proposal = buildProposal(data, scope, spec.form, spec.period, pid);
+  const proposal = buildProposal(data, scope, spec.form, spec.period, spec.form_context, pid);
   return {
     proposal,
     vector: {
@@ -26,79 +30,51 @@ export function buildCaseVector(data: LoadedData, spec: CaseSpec, input: NormInp
       fixture: spec.fixture,
       form: spec.form,
       period: spec.period,
+      form_context: spec.form_context,
       fixture_sha256: sha256Of(scope),
       input: scope,
       expected: proposal,
+      ...(spec.expected_forms_computed
+        ? { expected_forms_computed: { ...spec.expected_forms_computed, asserted_against_books: false } }
+        : {}),
     },
   };
 }
 
 export function buildMoneyVectors(data: LoadedData): Record<string, unknown> {
-  const pt = HAND_PT_VECTORS.map((c) => ({
-    id: c.id,
-    op: "percent_of",
-    base_centavos: c.base_centavos,
-    rate_bps: c.rate_bps,
-    expected_centavos: c.expected_centavos,
-    note: c.note,
-  }));
-  const grad = HAND_GRADUATED.map((c) => ({
-    id: c.id,
-    op: "graduated_tax_2023",
-    base_centavos: c.base_centavos,
-    expected_centavos: c.expected_centavos,
-  }));
+  const rule = data.rules["1601C"].mappings.find((m) => m.id === "1601C.II.17")!;
+  const cap = parseMoney(rule.aggregation_params?.annual_cap_text, "annual_cap_text");
+  const money = HAND_MONEY.map((c) => ({ id: c.id, op: "money_text_round_trip", text: c.text, value_centavos: c.value_centavos }));
   const thirteenth = HAND_THIRTEENTH.map((c) => ({
     id: c.id,
-    op: "thirteenth_month_split",
-    amount_centavos: c.amount_centavos,
-    ytd_exempt_centavos: c.ytd_exempt_centavos,
-    exempt_centavos: c.exempt_centavos,
-    taxable_centavos: c.taxable_centavos,
+    op: "nontaxable_13th_month_cap",
+    cap_centavos: cap.toString(),
+    paid_centavos: c.paid_centavos,
+    paid_earlier_centavos: c.paid_earlier_centavos,
+    nontaxable_centavos: c.nontaxable_centavos,
   }));
-  const vat = HAND_VAT.map((c) => ({ id: c.id, op: "vat_threshold_breached", ytd_centavos: c.ytd_centavos, expected: c.breached }));
-  const rateLookups = [
-    { id: "pt-rate-2020-07-01", date: "2020-07-01", expected_bps: 100 },
-    { id: "pt-rate-2023-06-30", date: "2023-06-30", expected_bps: 100 },
-    { id: "pt-rate-2023-07-01", date: "2023-07-01", expected_bps: 300 },
-    { id: "pt-rate-2024-04-01-disputed", date: "2024-04-01", expected_bps: 300 },
-    { id: "pt-rate-2026-09-30", date: "2026-09-30", expected_bps: 300 },
-    { id: "pt-rate-2026-10-01", date: "2026-10-01", expected_bps: 300 },
-  ].map((c) => ({ ...c, op: "pt_rate_for" }));
   return {
     vector_format: VECTOR_FORMAT,
-    vector_id: "money-and-rules",
+    vector_id: "money-and-mapping",
     description:
-      "Hand-written expectations (not computed by the engine): half-away rounding at output (DS-C), graduated tax (rates.v1 brackets), 13th-month split (1601C.II.17), VAT gate (rates.v1), PT rate lookup (rates.v1). Each case also carries the rule set that produced its expectation.",
+      "Hand-written expectations (not computed by the engine): money text to integer centavos and back, and the 1601-C item 17 non-taxable split (the one input-level tax rule in the bridge, annual cap read from data/rules/1601c-v2018.rules.json). No rate, rounding, threshold or graduated-tax vector: those are Forms' (ADR-0007).",
     rules_sources: {
-      rates: "data/rules/rates.v1.json",
-      rate_rules_version: data.rates.rule_set_id,
-      vat_threshold_amount_text: data.rates.vat_threshold.amount_text,
+      mapping: "data/rules/1601c-v2018.rules.json 1601C.II.17",
+      rule_set_id: data.rules["1601C"].rule_set_id,
     },
-    cases: [...pt, ...grad, ...thirteenth, ...vat, ...rateLookups],
+    cases: [...money, ...thirteenth],
   };
 }
 
-/**
- * Recomputes one money-and-rules case with the engine. Money results come back as decimal centavo strings,
- * never as JS numbers, so the comparison is exact.
- */
-export function runMoneyCase(data: LoadedData, c: Record<string, any>): unknown {
+/** Recomputes one money-and-mapping case with the engine. Results are decimal strings, never JS numbers. */
+export function runMoneyCase(_data: LoadedData, c: Record<string, any>): unknown {
   switch (c.op) {
-    case "percent_of":
-      return percentOf(BigInt(c.base_centavos), c.rate_bps).toString();
-    case "graduated_tax_2023":
-      return graduatedTaxCentavos(data.rates, BigInt(c.base_centavos)).toString();
-    case "thirteenth_month_split": {
-      const split = thirteenthMonthSplit(BigInt(c.amount_centavos), BigInt(c.ytd_exempt_centavos));
-      return { exempt_centavos: split.exempt.toString(), taxable_centavos: split.taxable.toString() };
+    case "money_text_round_trip": {
+      const centavos = parseMoney(c.text, c.id);
+      return { value_centavos: centavos.toString(), text: formatMoney(centavos) };
     }
-    case "vat_threshold_breached":
-      return BigInt(c.ytd_centavos) > vatThresholdCentavos(data.rates);
-    case "pt_rate_for": {
-      const found = ptRateFor(data.rates, c.date);
-      return found ? found.row.rate_bps : null;
-    }
+    case "nontaxable_13th_month_cap":
+      return nontaxableThirteenthCentavos(BigInt(c.paid_centavos), BigInt(c.paid_earlier_centavos), BigInt(c.cap_centavos)).toString();
     default:
       throw new Error(`unknown money case op ${c.op}`);
   }
@@ -109,7 +85,7 @@ export interface WrittenVector {
   bytes: number;
 }
 
-/** Writes every case vector and the money-and-rules vector. Returns what was written. */
+/** Writes every case vector and the money-and-mapping vector. Returns what was written. */
 export function writeVectors(data: LoadedData, loadInput: (fixture: string) => NormInput, dir: string = VECTORS_DIR): WrittenVector[] {
   const written: WrittenVector[] = [];
   for (const spec of CASES) {
@@ -120,7 +96,7 @@ export function writeVectors(data: LoadedData, loadInput: (fixture: string) => N
     written.push({ file, bytes: text.length });
   }
   const money = buildMoneyVectors(data);
-  const moneyFile = join(dir, "money-and-rules.json");
+  const moneyFile = join(dir, MONEY_VECTOR_FILE);
   const moneyText = prettyJson(money);
   writeFileSync(moneyFile, moneyText);
   written.push({ file: moneyFile, bytes: moneyText.length });

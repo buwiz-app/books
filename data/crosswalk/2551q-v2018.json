@@ -28,7 +28,7 @@
     "fill_mvp": "Books may send this key in Slice A/B (MVP).",
     "fill_p6": "Books may send this key only after P6 (payroll, 1601-C).",
     "fill_p7": "Books may send this key only after P7 (1701-MS).",
-    "cross_check": "Forms computes it; Books compares its own value and never sends it.",
+    "forms_computes": "Forms computes it. Books neither computes nor compares it (ADR-0007; replaces cross_check).",
     "never_fill": "Books never sends this key (user, profile, prior filing, evidence or human entry).",
     "refuse_mvp_spouse": "Spouse (B-side) key; refused in MVP.",
     "never_touch": "App-written, derived, page-2 mirror or BIR online credential; Books never sends it."
@@ -40,7 +40,8 @@
     "profile",
     "prior_filing",
     "user_input",
-    "none"
+    "none",
+    "forms"
   ],
   "key_semantics": {
     "key": "Exact official key as spelled in the pinned schema (bindings/boxes). It may be refused by the fill tool.",
@@ -71,9 +72,9 @@
       "computed": 23
     },
     "books_policy": {
-      "never_fill": 60,
-      "cross_check": 18,
-      "fill_mvp": 3,
+      "never_fill": 61,
+      "forms_computes": 18,
+      "fill_mvp": 2,
       "never_touch": 13
     }
   },
@@ -83,7 +84,8 @@
     "Typed 'compromise' writes the root field and is overwritten by the penalty recompute in auto mode. Official txt22 is the durable input (verify.md s2 #9).",
     "drpATC1-6 are refused by the fill tool (derived by the app). The typed alias schedule_1.N.atc is accepted (verify.md s3-s4).",
     "Election lock: item 13 (taxRate, taxRate1, taxRate2, taxRateNA) is refused by fill. Books never fills it (blocker B6).",
-    "Typed-only input original_return_filed_and_paid_on_time (assist.rs 182) has no official box; its effect is not traced (verify.md s3). It is listed below as typed_only_entries."
+    "Typed-only input original_return_filed_and_paid_on_time (assist.rs 182) has no official box; its effect is not traced (verify.md s3). It is listed below as typed_only_entries.",
+    "ADR-0007 (2026-10-29): books_policy cross_check became forms_computes (Books neither computes nor compares tax boxes). ATC selection keys, and inputs that need a tax classification, threshold or deductibility judgement, became never_fill (source forms or user_input). rule_ids now resolve to data/rules/*.rules.json mappings or not_mapped pointers (rule set r2)."
   ],
   "typed_only_entries": [
     {
@@ -1028,7 +1030,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.II.14"
       ],
@@ -1195,7 +1197,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.II.18"
       ],
@@ -1226,7 +1228,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.II.19"
       ],
@@ -1356,7 +1358,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.II.23"
       ],
@@ -1387,7 +1389,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.II.24"
       ],
@@ -2277,8 +2279,8 @@
       "value_type_basis": "schema box kind",
       "fill_class": "input",
       "scope": "none",
-      "books_source": "ledger",
-      "books_policy": "fill_mvp",
+      "books_source": "forms",
+      "books_policy": "never_fill",
       "rule_ids": [
         "2551Q.S1.1.ATC"
       ],
@@ -2345,7 +2347,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.S1.1.rate"
       ],
@@ -2376,7 +2378,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.S1.1.tax"
       ],
@@ -2406,7 +2408,7 @@
       "value_type_basis": "schema box kind",
       "fill_class": "input",
       "scope": "none",
-      "books_source": "ledger",
+      "books_source": "forms",
       "books_policy": "never_fill",
       "rule_ids": [
         "2551Q.S1.2.ATC"
@@ -2471,7 +2473,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.S1.2.rate"
       ],
@@ -2502,7 +2504,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.S1.2.tax"
       ],
@@ -2532,7 +2534,7 @@
       "value_type_basis": "schema box kind",
       "fill_class": "input",
       "scope": "none",
-      "books_source": "ledger",
+      "books_source": "forms",
       "books_policy": "never_fill",
       "rule_ids": [
         "2551Q.S1.3.ATC"
@@ -2597,7 +2599,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.S1.3.rate"
       ],
@@ -2628,7 +2630,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.S1.3.tax"
       ],
@@ -2658,7 +2660,7 @@
       "value_type_basis": "schema box kind",
       "fill_class": "input",
       "scope": "none",
-      "books_source": "ledger",
+      "books_source": "forms",
       "books_policy": "never_fill",
       "rule_ids": [
         "2551Q.S1.4.ATC"
@@ -2723,7 +2725,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.S1.4.rate"
       ],
@@ -2754,7 +2756,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.S1.4.tax"
       ],
@@ -2784,7 +2786,7 @@
       "value_type_basis": "schema box kind",
       "fill_class": "input",
       "scope": "none",
-      "books_source": "ledger",
+      "books_source": "forms",
       "books_policy": "never_fill",
       "rule_ids": [
         "2551Q.S1.5.ATC"
@@ -2849,7 +2851,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.S1.5.rate"
       ],
@@ -2880,7 +2882,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.S1.5.tax"
       ],
@@ -2910,7 +2912,7 @@
       "value_type_basis": "schema box kind",
       "fill_class": "input",
       "scope": "none",
-      "books_source": "ledger",
+      "books_source": "forms",
       "books_policy": "never_fill",
       "rule_ids": [
         "2551Q.S1.6.ATC"
@@ -2975,7 +2977,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.S1.6.rate"
       ],
@@ -3006,7 +3008,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.S1.6.tax"
       ],
@@ -3037,7 +3039,7 @@
       "fill_class": "computed",
       "scope": "none",
       "books_source": "none",
-      "books_policy": "cross_check",
+      "books_policy": "forms_computes",
       "rule_ids": [
         "2551Q.S1.7"
       ],

@@ -13,8 +13,8 @@ export class LedgerError extends Error {
 }
 
 /**
- * A posted line. `measure` is the line's signed effect on its tax meaning:
- * (credit - debit) when tax_side is credit, (debit - credit) when it is debit.
+ * A posted line. `measure` is the line's signed amount for the measures that select it:
+ * (credit - debit) when measure_side is credit, (debit - credit) when it is debit, zero when it is null.
  * A reversal carries the mirrored sides, so its measure is the exact negative of the original.
  */
 export interface PostedLine extends NormLine {
@@ -35,19 +35,21 @@ export interface Ledger {
 
 const MIRROR_ATTRIBUTES = [
   "account",
-  "tax_types",
-  "treatment",
-  "tax_side",
+  "measure_side",
   "income_class",
-  "atc",
+  "contra_kind",
   "document_kind",
+  "person_scope",
+  "party_ref",
+  "comp_component",
+  "contribution_side",
+  "contribution_scheme",
   "credit_kind",
+  "certificate_atc",
   "certificate_status",
   "period_start",
   "period_end",
-  "person_scope",
-  "comp_component",
-  "contribution_side",
+  "final_tax_withheld",
 ] as const;
 
 function mirrors(original: NormLine, reversal: NormLine): boolean {
@@ -115,7 +117,7 @@ export function postLedger(entries: NormEntry[]): Ledger {
       const dr = parseMoney(line.debit);
       const cr = parseMoney(line.credit);
       const measure =
-        line.tax_side === null ? 0n : line.tax_side === "credit" ? cr - dr : dr - cr;
+        line.measure_side === null ? 0n : line.measure_side === "credit" ? cr - dr : dr - cr;
       lines.push({
         ...line,
         entry_id: entry.entry_id,

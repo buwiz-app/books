@@ -1,0 +1,309 @@
+{
+  "catalog_id": "measures-v1",
+  "version": 1,
+  "generated_by": "ADR-0007 refactor, 2026-10-29",
+  "status": "PROPOSAL. Accounting measures only. No measure applies a tax rate, an election, a threshold, an applicability test, an ATC choice, a due date or a penalty (docs/adr/0007-books-supplies-measures-forms-owns-compliance.md).",
+  "units": {
+    "money": "integer centavos internally; decimal text with exactly two places in JSON (for example \"290000.00\"); no floats",
+    "dates": "calendar days in Asia/Manila"
+  },
+  "vocabulary": {
+    "period_basis": {
+      "quarter": "calendar quarter of the line's entry date (revenue-recognition date; D4 keeps the date policy with Books)",
+      "month": "calendar month of the entry date",
+      "year": "calendar year of the entry date",
+      "year_to_date_before_period": "from 1 January of the period's year up to the day before the period starts",
+      "certificate_period": "the certificate's own period_end falls in the period (not the entry date)"
+    },
+    "person_scope": {
+      "taxpayer": "the business owner's own lines (line person_scope self)",
+      "spouse": "the spouse's lines (line person_scope spouse); computed but refused by the bridge in MVP (EXC.SPOUSE_MVP)",
+      "employee": "payroll lines for employees (line person_scope employee); the measure is the sum over all employees of the business",
+      "payor": "certificate lines received from payors (line person_scope payor or self)"
+    },
+    "sign_convention": {
+      "credit_positive": "credit minus debit on the selected lines; a sale is positive, its reversal negative",
+      "debit_positive": "debit minus credit on the selected lines; an expense or receivable is positive",
+      "reduction_positive": "a reduction reported as a positive amount (for example a sales return of 10000.00 is \"10000.00\")"
+    },
+    "lineage": {
+      "required": "every value carries the line ids and signed amounts that sum to it; a same-window void and its reversal are netted and listed only as a count (REV.VOID_OPEN_PERIOD)"
+    }
+  },
+  "line_selection_rules": [
+    "Selection is by line attributes (data/tax-attributes.v1.json), never by account number or subtype (ADR-0006).",
+    "Posted entries only. Memos never reach a measure.",
+    "Output VAT is a liability line, never a sales line (EXC.VAT_NOT_IN_SALES).",
+    "Payment receipts and bank deposits are not sales (EXC.BANK_DEPOSIT_NOT_SALES).",
+    "Measures come from transaction lines, never from a payable or receivable balance (EXC.PAYABLE_NOT_BASE).",
+    "A reversal of a sale dated in a later period counts once, in the reversal's period, as a negative line (REV.COUNT_ONCE, REV.LATER_PERIOD_RETURN_EVENT)."
+  ],
+  "measures": [
+    {
+      "id": "gross_sales",
+      "description": "Sales of goods and services before returns, allowances and discounts, net of output VAT.",
+      "unit": "centavos",
+      "sign_convention": "credit_positive",
+      "period_basis": ["quarter", "month", "year"],
+      "person_scope": ["taxpayer", "spouse"],
+      "derived_from": {
+        "categories": ["sales_revenue", "subscription_revenue", "transaction_revenue"],
+        "attributes": { "income_class": ["business_sales"], "document_kind_not": ["payment_receipt"] }
+      },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "sales_returns",
+      "description": "Sales returns, reported as a positive reduction.",
+      "unit": "centavos",
+      "sign_convention": "reduction_positive",
+      "period_basis": ["quarter", "month", "year"],
+      "person_scope": ["taxpayer", "spouse"],
+      "derived_from": {
+        "categories": ["refunds_and_discounts"],
+        "attributes": { "income_class": ["contra_sales"], "contra_kind": ["return"] }
+      },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "sales_allowances",
+      "description": "Sales allowances, reported as a positive reduction. Separate from returns and discounts.",
+      "unit": "centavos",
+      "sign_convention": "reduction_positive",
+      "period_basis": ["quarter", "month", "year"],
+      "person_scope": ["taxpayer", "spouse"],
+      "derived_from": {
+        "categories": ["refunds_and_discounts"],
+        "attributes": { "income_class": ["contra_sales"], "contra_kind": ["allowance"] }
+      },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "sales_discounts",
+      "description": "Sales discounts granted, reported as a positive reduction. Separate from returns and allowances.",
+      "unit": "centavos",
+      "sign_convention": "reduction_positive",
+      "period_basis": ["quarter", "month", "year"],
+      "person_scope": ["taxpayer", "spouse"],
+      "derived_from": {
+        "categories": ["refunds_and_discounts"],
+        "attributes": { "income_class": ["contra_sales"], "contra_kind": ["discount"] }
+      },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "net_sales",
+      "description": "gross_sales less sales_returns, sales_allowances and sales_discounts. An accounting subtotal, not a tax base: which sales measure feeds a form box is a mapping rule.",
+      "unit": "centavos",
+      "sign_convention": "credit_positive",
+      "period_basis": ["quarter", "month", "year"],
+      "person_scope": ["taxpayer", "spouse"],
+      "derived_from": {
+        "measures": ["gross_sales", "sales_returns", "sales_allowances", "sales_discounts"]
+      },
+      "lineage": "required (the union of the component lines; contra lines carry negative amounts)",
+      "poc": "implemented"
+    },
+    {
+      "id": "cost_of_sales",
+      "description": "Cost of goods sold and direct cost of services.",
+      "unit": "centavos",
+      "sign_convention": "debit_positive",
+      "period_basis": ["quarter", "month", "year"],
+      "person_scope": ["taxpayer", "spouse"],
+      "derived_from": {
+        "categories": ["cost_of_goods_sold", "direct_service_cost"],
+        "attributes": { "income_class": ["cost_of_sales"] }
+      },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "operating_expenses_by_category",
+      "description": "Operating expenses, with a breakdown by category (the line's account key). Whether an expense is deductible is a tax question for Forms, not a Books measure.",
+      "unit": "centavos",
+      "sign_convention": "debit_positive",
+      "period_basis": ["quarter", "month", "year"],
+      "person_scope": ["taxpayer", "spouse"],
+      "derived_from": {
+        "categories": ["rent", "utilities", "office_supplies", "advertising", "legal", "tax_and_accounting", "consultants_and_contractors", "business_applications_and_software", "repairs_and_maintenance", "airfare", "meals", "bank_fees", "interest_expense", "depreciation_expense", "hosting_fees", "payment_processing_fees"],
+        "attributes": { "income_class": ["operating_expense"] },
+        "breakdown": "by category"
+      },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "other_non_operating_income",
+      "description": "Income outside the main business activity (interest, other income). Whether part of it was final-taxed at source is an evidence fact (final_tax_withheld); how that affects a form box is a mapping question (EXC.FINAL_TAX_INTEREST).",
+      "unit": "centavos",
+      "sign_convention": "credit_positive",
+      "period_basis": ["quarter", "month", "year"],
+      "person_scope": ["taxpayer", "spouse"],
+      "derived_from": {
+        "categories": ["other_non_operating_income", "interest_income"],
+        "attributes": { "income_class": ["non_operating_income"] }
+      },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "gross_compensation",
+      "description": "Gross compensation paid to employees: basic pay, statutory minimum wage, holiday/overtime/night-shift/hazard pay, 13th month and other benefits, and de minimis. Never the employer's contributions.",
+      "unit": "centavos",
+      "sign_convention": "debit_positive",
+      "period_basis": ["month", "year"],
+      "person_scope": ["employee"],
+      "derived_from": {
+        "categories": ["salaries", "employee_benefits"],
+        "attributes": { "comp_component": ["basic_pay", "statutory_minimum_wage", "holiday_ot_nsd_hazard", "thirteenth_month_and_benefits", "de_minimis"] }
+      },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "basic_pay",
+      "description": "Basic pay of employees who are not minimum-wage earners.",
+      "unit": "centavos",
+      "sign_convention": "debit_positive",
+      "period_basis": ["month", "year"],
+      "person_scope": ["employee"],
+      "derived_from": { "attributes": { "comp_component": ["basic_pay"] } },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "mwe_basic_pay",
+      "description": "Basic pay of employees recorded by payroll as minimum-wage earners (a payroll fact on the employee).",
+      "unit": "centavos",
+      "sign_convention": "debit_positive",
+      "period_basis": ["month", "year"],
+      "person_scope": ["employee"],
+      "derived_from": { "attributes": { "comp_component": ["statutory_minimum_wage"] } },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "holiday_ot_nsd_hazard_pay",
+      "description": "Holiday, overtime, night-shift differential and hazard pay, all employees.",
+      "unit": "centavos",
+      "sign_convention": "debit_positive",
+      "period_basis": ["month", "year"],
+      "person_scope": ["employee"],
+      "derived_from": { "attributes": { "comp_component": ["holiday_ot_nsd_hazard"] } },
+      "lineage": "required",
+      "poc": "implemented",
+      "note": "1601-C item 16 takes this pay for minimum-wage earners only. The per-employee MWE split is planned (P6); until then the mapping fails closed when such lines exist."
+    },
+    {
+      "id": "thirteenth_month_and_benefits_paid",
+      "description": "13th month pay and other benefits paid in the period (gross, before any tax split).",
+      "unit": "centavos",
+      "sign_convention": "debit_positive",
+      "period_basis": ["month", "year", "year_to_date_before_period"],
+      "person_scope": ["employee"],
+      "derived_from": { "attributes": { "comp_component": ["thirteenth_month_and_benefits"] } },
+      "lineage": "required",
+      "poc": "implemented",
+      "note": "The year_to_date_before_period basis exists so the bridge can apply the one input-level tax rule it keeps (1601-C item 17, annual non-taxable cap). See data/rules/1601c-v2018.rules.json 1601C.II.17."
+    },
+    {
+      "id": "de_minimis_paid",
+      "description": "De minimis benefits paid, as recorded by payroll.",
+      "unit": "centavos",
+      "sign_convention": "debit_positive",
+      "period_basis": ["month", "year"],
+      "person_scope": ["employee"],
+      "derived_from": { "attributes": { "comp_component": ["de_minimis"] } },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "employee_mandatory_contributions",
+      "description": "EMPLOYEE shares withheld from pay: SSS or GSIS, PhilHealth, Pag-IBIG, and union dues. Breakdown by scheme. Never the employer share.",
+      "unit": "centavos",
+      "sign_convention": "credit_positive",
+      "period_basis": ["month", "year"],
+      "person_scope": ["employee"],
+      "derived_from": {
+        "categories": ["ph_sss_payable", "ph_philhealth_payable", "ph_pagibig_payable", "ph_union_dues_payable"],
+        "attributes": { "comp_component": ["contribution"], "contribution_side": ["employee"] },
+        "breakdown": "by contribution_scheme (sss_gsis, philhealth, pagibig, union_dues)"
+      },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "employer_mandatory_contributions",
+      "description": "EMPLOYER shares (expense side): SSS or GSIS, PhilHealth, Pag-IBIG. Kept separate from employee shares; it never feeds 1601-C item 19 (EXC.EMPLOYER_SHARE_NOT_19).",
+      "unit": "centavos",
+      "sign_convention": "debit_positive",
+      "period_basis": ["month", "year"],
+      "person_scope": ["employee"],
+      "derived_from": {
+        "categories": ["employer_payroll_taxes", "retirement_contributions"],
+        "attributes": { "comp_component": ["contribution"], "contribution_side": ["employer"], "measure_side": ["debit"] },
+        "breakdown": "by contribution_scheme"
+      },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "tax_withheld_from_employees",
+      "description": "Tax withheld from employees' pay, as recorded by payroll. A fact: Books records the amount; it does not compute withholding.",
+      "unit": "centavos",
+      "sign_convention": "credit_positive",
+      "period_basis": ["month", "year"],
+      "person_scope": ["employee"],
+      "derived_from": {
+        "categories": ["ph_wtc_payable"],
+        "attributes": { "comp_component": ["tax_withheld"] }
+      },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "pt_withheld_2307_received",
+      "description": "Percentage tax withheld by payors per Form 2307 certificates with status received. Evidence with status; final withholding (2306, for example WB084) is a different document and never counts here.",
+      "unit": "centavos",
+      "sign_convention": "debit_positive",
+      "period_basis": ["certificate_period"],
+      "person_scope": ["payor"],
+      "derived_from": {
+        "categories": ["pct_tax_credit_receivable"],
+        "attributes": { "document_kind": ["certificate_2307"], "credit_kind": ["pt"], "certificate_status": ["received"] }
+      },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "it_withheld_2307_received",
+      "description": "Income tax withheld by payors per Form 2307 certificates with status received. Kept separate from the percentage-tax measure (EXC.IT_CWT_NOT_PT, EXC.PT_CWT_NOT_IT).",
+      "unit": "centavos",
+      "sign_convention": "debit_positive",
+      "period_basis": ["certificate_period"],
+      "person_scope": ["payor"],
+      "derived_from": {
+        "categories": ["ph_cwt_receivable"],
+        "attributes": { "document_kind": ["certificate_2307"], "credit_kind": ["it"], "certificate_status": ["received"] }
+      },
+      "lineage": "required",
+      "poc": "implemented"
+    },
+    {
+      "id": "certificates_2316_received",
+      "description": "Form 2316 certificates received by the business owner from an employer (evidence with status). Planned with the evidence store (P4).",
+      "unit": "centavos",
+      "sign_convention": "debit_positive",
+      "period_basis": ["year"],
+      "person_scope": ["taxpayer", "spouse"],
+      "derived_from": { "attributes": { "document_kind": ["certificate_2316"], "certificate_status": ["received"] } },
+      "lineage": "required",
+      "poc": "planned"
+    }
+  ]
+}

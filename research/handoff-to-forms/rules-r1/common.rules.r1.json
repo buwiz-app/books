@@ -1,0 +1,413 @@
+{
+  "rule_set_id": "common-v1",
+  "version": 1,
+  "effective_from": "2018-01-01",
+  "effective_to": null,
+  "status_note": "Cross-form gates, exclusions, reversal rules and generic field rules. Rules marked PROPOSAL are design choices, not BIR text.",
+  "rules": [
+    {
+      "id": "GEN.APP_WRITTEN",
+      "printed_item": "app-written or derived",
+      "method": "app",
+      "formula": "The BIR app writes this box or derives it. Books never sends it and never reads it as an input.",
+      "status": "CONFIRMED",
+      "books_source": "none",
+      "books_policy": "never_touch",
+      "citations": [
+        "forms.md s4 (unmapped reasons)"
+      ]
+    },
+    {
+      "id": "GEN.CREDENTIALS",
+      "printed_item": "BIR online credentials",
+      "method": "app",
+      "formula": "Online username, secret and confirmation fields. Books never stores, reads or sends values for these keys.",
+      "status": "CONFIRMED",
+      "books_source": "none",
+      "books_policy": "never_touch",
+      "status_detail": "Keys are named here; no value is ever recorded.",
+      "citations": [
+        "pinned schema unmapped reasons"
+      ]
+    },
+    {
+      "id": "GEN.PAGE2_MIRROR",
+      "printed_item": "page 2 mirrors",
+      "method": "app",
+      "formula": "Page-2 copies of the TIN, branch code and name. The app derives them. Books never sends them.",
+      "status": "CONFIRMED",
+      "books_source": "none",
+      "books_policy": "never_touch",
+      "citations": [
+        "pinned schema unmapped reasons"
+      ]
+    },
+    {
+      "id": "GEN.HUMAN",
+      "printed_item": "declarations, signatures, agent credentials",
+      "method": "human",
+      "formula": "A person signs or declares. Books never signs, auto-fills or submits this.",
+      "status": "CONFIRMED",
+      "books_source": "user_input",
+      "books_policy": "never_fill",
+      "citations": [
+        "workbook field tabs (DECL rows)",
+        "decisions.md (no submit)"
+      ]
+    },
+    {
+      "id": "GEN.UNMAPPED",
+      "printed_item": "no workbook row",
+      "method": "none",
+      "formula": "Schema key with no field-tab row. Not fillable by Books.",
+      "status": "UNCONFIRMED",
+      "books_source": "none",
+      "books_policy": "never_fill",
+      "status_detail": "No crosswalk entry should use this id; it marks an unmapped schema key.",
+      "citations": []
+    },
+    {
+      "id": "GEN.PROFILE_LOCK",
+      "printed_item": "profile lock",
+      "method": "profile",
+      "formula": "The BIR taxpayer profile supplies the value. Forms refuses a fill while the profile holds it. Books never sends profile values.",
+      "status": "CONFIRMED",
+      "books_source": "profile",
+      "books_policy": "never_fill",
+      "citations": [
+        "verify.md s3 (lock rule)"
+      ]
+    },
+    {
+      "id": "GATE.VAT_THRESHOLD",
+      "printed_item": "gate",
+      "method": "gate",
+      "formula": "Block the 8% option and the percentage-tax return when posted sales year-to-date are strictly above 3,000,000.00 (3000000.00 pesos, decimal text). Force VAT status after that date.",
+      "status": "CONFIRMED",
+      "books_source": "ledger",
+      "books_policy": "cross_check",
+      "status_detail": "The CPI-adjusted figure is UNKNOWN (bir.md PT-7). The threshold is a dated fact in rates-v1.json.",
+      "citations": [
+        "verify.md s2 #65; bir.md PT-7",
+        "Books percentage-tax.ts:106 (strict >)"
+      ]
+    },
+    {
+      "id": "GATE.8PCT_YEAR_2551Q",
+      "printed_item": "gate",
+      "method": "gate",
+      "formula": "In a taxable year with a valid 8% election, produce no 2551Q values (block, no NIL row in MVP).",
+      "status": "UNCONFIRMED",
+      "status_detail": "CONFLICT CONFIRMED (verify.md s2 #73, #84). Resolution needs RR 8-2018 full text, which was not read (blocker B5, decision D5). Do not choose a side in code until resolved.",
+      "citations": [
+        "RMO 23-2018 pt 9(a)-(e) (bir.md 8-6; verify.md s2 #73: 8% electors do not file 2551Q)",
+        "Books deadlines.ts:122 and percentage-tax.ts:354-360 (block)",
+        "buwiz-oss form_2551q.rs:2217-2226 (NIL PT010 required)"
+      ]
+    },
+    {
+      "id": "GATE.RETURNS_ACK",
+      "printed_item": "gate",
+      "method": "gate",
+      "formula": "A sales return, allowance or credit note posted in the quarter blocks the 2551Q proposal until a person acknowledges it. Regenerating after acknowledgement creates a new proposal row.",
+      "status": "UNCONFIRMED",
+      "status_detail": "The gate is a PROPOSAL (decision D20). The 2551Q treatment of credit notes is UNCONFIRMED.",
+      "citations": [
+        "bir.md PT-8 (no printed deduction for returns; UNVERIFIED)",
+        "verify.md: credit-note treatment not verified (bir.md PT-8)"
+      ]
+    },
+    {
+      "id": "GATE.MIXED_INCOME_8PCT",
+      "printed_item": "gate",
+      "method": "gate",
+      "formula": "Mixed earners (compensation plus business) get no 250,000 reduction on the 8% component.",
+      "status": "CONFIRMED",
+      "books_source": "profile",
+      "books_policy": "cross_check",
+      "citations": [
+        "RMO 23-2018 pts 3, 10-12 (verify.md s2 #75)",
+        "bir.md 8-8"
+      ]
+    },
+    {
+      "id": "GATE.OVERDUE",
+      "printed_item": "gate",
+      "method": "gate",
+      "formula": "Show a return as overdue after its due date. Compute no surcharge or interest (decision D14).",
+      "status": "CONFIRMED",
+      "books_source": "none",
+      "books_policy": "never_fill",
+      "citations": [
+        "workbook 2551Q fields II.23 'Do not invent penalties'",
+        "decision D14 (owner)"
+      ]
+    },
+    {
+      "id": "GATE.PERIOD_LOCK",
+      "printed_item": "gate",
+      "method": "gate",
+      "formula": "A closed tax period is immutable. Reopen needs a reason, writes a period_event and marks dependent proposals stale.",
+      "status": "CONFIRMED",
+      "books_source": "ledger",
+      "books_policy": "cross_check",
+      "citations": [
+        "books.md s1 #9 (org-wide lock; tax filing ignores it)",
+        "design decision 16 (PROPOSAL)"
+      ]
+    },
+    {
+      "id": "GATE.STALE_INPUTS",
+      "printed_item": "gate",
+      "method": "gate",
+      "formula": "A proposal is stale when a line revision, tax fact, rule set, rate row, schema hash or period reopen changes. Stale proposals are refused for fill.",
+      "status": "CONFIRMED",
+      "books_source": "ledger",
+      "books_policy": "cross_check",
+      "citations": [
+        "design (inputs_hash, PROPOSAL)"
+      ]
+    },
+    {
+      "id": "GATE.CERT_STATUS",
+      "printed_item": "gate",
+      "method": "gate",
+      "formula": "Only certificates with status 'received' create a credit. Pending, lost and disputed certificates never credit. WB084 (final) is never credited.",
+      "status": "CONFIRMED",
+      "books_source": "evidence",
+      "books_policy": "fill_mvp",
+      "citations": [
+        "books.md s4g (postCwtReceivable does not check status; PARTIAL defect)",
+        "bir.md W-2, W-4"
+      ]
+    },
+    {
+      "id": "EXC.EMPLOYER_SHARE_NOT_19",
+      "printed_item": "1601-C item 19",
+      "method": "exclusion",
+      "formula": "Employer contributions never go to 1601-C item 19. Item 19 takes the employee share only.",
+      "status": "CONFIRMED",
+      "books_source": "payroll",
+      "citations": [
+        "RR 11-2018 s2.78.1(B)(12) (bir.md 3.4; verify.md s2 #69)",
+        "statute text UNVERIFIED"
+      ]
+    },
+    {
+      "id": "EXC.IT_CWT_NOT_PT",
+      "printed_item": "2551Q item 15",
+      "method": "exclusion",
+      "formula": "Income-tax 2307 lines (WI/WC series) never feed 2551Q item 15 (percentage tax).",
+      "status": "CONFIRMED",
+      "books_source": "evidence",
+      "citations": [
+        "bir.md W-3 (routing by series; INFERENCE from form headings)",
+        "workbook 2551Q field II.15 'Must not mix with income-tax 2307'"
+      ]
+    },
+    {
+      "id": "EXC.PT_CWT_NOT_IT",
+      "printed_item": "1701-MS V.3-V.5",
+      "method": "exclusion",
+      "formula": "Percentage-tax 2307 lines (WB series) never feed 1701-MS income-tax credits (V.3, V.4, V.5).",
+      "status": "CONFIRMED",
+      "books_source": "evidence",
+      "citations": [
+        "workbook 1701-MS field V.4 'Do not use percentage tax withheld'",
+        "bir.md W-7 (INFERENCE)"
+      ]
+    },
+    {
+      "id": "EXC.WB084_FINAL",
+      "printed_item": "2307 WB084",
+      "method": "exclusion",
+      "formula": "WB084 (final withholding, Section 116 applies) is never credited against 2551Q or 1701-MS. It belongs to 2306.",
+      "status": "CONFIRMED",
+      "books_source": "evidence",
+      "citations": [
+        "bir.md W-2, W-4",
+        "decision 18 (design)"
+      ]
+    },
+    {
+      "id": "EXC.UNRECEIVED_CERT",
+      "printed_item": "2307 status",
+      "method": "exclusion",
+      "formula": "Pending, lost or disputed certificates create no credit. They post to no control account.",
+      "status": "CONFIRMED",
+      "books_source": "evidence",
+      "citations": [
+        "books.md s4g (defect: postCwtReceivable does not check status)"
+      ]
+    },
+    {
+      "id": "EXC.VAT_NOT_IN_SALES",
+      "printed_item": "sales base",
+      "method": "exclusion",
+      "formula": "Output VAT is excluded from the gross sales base for non-VAT filers and from 1701-MS IV.5.",
+      "status": "CONFIRMED",
+      "books_source": "ledger",
+      "citations": [
+        "bir.md M-3 (gross sales net of VAT)",
+        "workbook 1701-MS IV.5 'Exclude VAT'"
+      ]
+    },
+    {
+      "id": "EXC.BANK_DEPOSIT_NOT_SALES",
+      "printed_item": "sales base",
+      "method": "exclusion",
+      "formula": "Bank deposits and collections are not sales. Use invoices and posted sales lines.",
+      "status": "CONFIRMED",
+      "books_source": "ledger",
+      "citations": [
+        "workbook 1701-MS IV.5 'Do not use gross bank deposits'"
+      ]
+    },
+    {
+      "id": "EXC.FINAL_TAX_INTEREST",
+      "printed_item": "1701-MS IV.13 / IV.20",
+      "method": "exclusion",
+      "formula": "Interest income subject to final tax is excluded from the graduated and 8% other-income lines. It is shown separately.",
+      "status": "UNCONFIRMED",
+      "books_source": "ledger",
+      "status_detail": "Whether Books stores a final-tax attribute is UNKNOWN (sheets.md s10). Do not apply until the attribute exists.",
+      "citations": [
+        "workbook Category field rules rows 18-21",
+        "bir.md 3.5 (final withholding is not CWT)"
+      ]
+    },
+    {
+      "id": "EXC.SPOUSE_MVP",
+      "printed_item": "spouse fields",
+      "method": "exclusion",
+      "formula": "Spouse (B-side) fields are refused in MVP.",
+      "status": "CONFIRMED",
+      "books_source": "none",
+      "books_policy": "refuse_mvp_spouse",
+      "citations": [
+        "design phase P7"
+      ]
+    },
+    {
+      "id": "EXC.PAYABLE_NOT_BASE",
+      "printed_item": "2551Q S1 base",
+      "method": "exclusion",
+      "formula": "The return tax is computed from the ATC base, not from the payable balance or the ledger's VAT accounts.",
+      "status": "CONFIRMED",
+      "books_source": "ledger",
+      "citations": [
+        "workbook 2551Q field II.14/II.15 notes",
+        "workbook Category field rules row 57"
+      ]
+    },
+    {
+      "id": "REV.VOID_OPEN_PERIOD",
+      "printed_item": "reversal",
+      "method": "reversal",
+      "formula": "A void in an open tax period posts a reversal entry dated the original entry date. The period totals then net to zero.",
+      "status": "CONFIRMED",
+      "books_source": "ledger",
+      "books_policy": "fill_mvp",
+      "status_detail": "PROPOSAL and INFERENCE (design correction A4). Without the original-date reversal, Q3 gross would stay at 300,000.00.",
+      "citations": [
+        "design correction A4 (delivery report; INFERENCE)"
+      ]
+    },
+    {
+      "id": "REV.LATER_PERIOD_RETURN_EVENT",
+      "printed_item": "reversal",
+      "method": "reversal",
+      "formula": "A reversal dated in a later, closed period is a return event. It blocks the affected proposal until acknowledged.",
+      "status": "UNCONFIRMED",
+      "books_source": "ledger",
+      "status_detail": "PROPOSAL (journey s7.5). Tax treatment of credit notes is UNCONFIRMED for 2551Q (bir.md PT-8).",
+      "citations": [
+        "journey s7.5 (design)",
+        "bir.md PT-8"
+      ]
+    },
+    {
+      "id": "REV.CREDIT_NOTE_DOCUMENT",
+      "printed_item": "credit note",
+      "method": "reversal",
+      "formula": "A credit note is a document kind. It links to the original sale and blocks the 2551Q until acknowledged.",
+      "status": "UNCONFIRMED",
+      "books_source": "ledger",
+      "citations": [
+        "bir.md PT-8 (UNVERIFIED for 2551Q)",
+        "workbook Category field rules row 15 ('Confirm recognition and credit note')"
+      ]
+    },
+    {
+      "id": "REV.COUNT_ONCE",
+      "printed_item": "adjustment",
+      "method": "reversal",
+      "formula": "A sales adjustment is counted once: on the 2551Q base or on 1701-MS IV.6 and IV.19, never both in the same form line.",
+      "status": "CONFIRMED",
+      "books_source": "ledger",
+      "citations": [
+        "workbook Category field rules row 17 ('Same adjustment must not be counted twice')"
+      ]
+    },
+    {
+      "id": "ELIG.PT_116",
+      "printed_item": "2551Q scope",
+      "method": "eligibility",
+      "formula": "2551Q applies to Section 116 persons (non-VAT, percentage tax). Other percentage-tax ATCs need their own schedule row.",
+      "status": "CONFIRMED",
+      "books_source": "profile",
+      "books_policy": "cross_check",
+      "citations": [
+        "RA 11534 s13 / RA 11976 s24 (bir.md PT-1)",
+        "workbook 2551Q field S1.1.ATC"
+      ]
+    },
+    {
+      "id": "ELIG.MICRO_SMALL_TIERS",
+      "printed_item": "1701-MS scope",
+      "method": "eligibility",
+      "formula": "1701-MS is for micro and small individuals. Tier by taxable-year gross sales: micro below 3,000,000.00; small from 3,000,000.00 to below 20,000,000.00 (net of VAT, business income only).",
+      "status": "CONFIRMED",
+      "books_source": "ledger",
+      "books_policy": "cross_check",
+      "citations": [
+        "RR 8-2024 s2 A-D (bir.md M-2, M-3)",
+        "lawphil numerals are off by 1,000 (verify.md s2 #71); the words govern"
+      ]
+    },
+    {
+      "id": "ELIG.ESTATE_TRUST",
+      "printed_item": "1701-MS scope",
+      "method": "eligibility",
+      "formula": "A trust or estate in trade or business is in scope for 1701-MS in the cases named in RMC 34-2025 Annex A item 3.",
+      "status": "CONFIRMED",
+      "books_source": "profile",
+      "status_detail": "The workbook label 'Individual/Fiduciary' stays. Annex C text is TY2025 only (verify.md s2 #80).",
+      "citations": [
+        "RMC 34-2025 Annex A item 3 (verify.md s2 #60, REFUTED as 'Individual' only)"
+      ]
+    },
+    {
+      "id": "ELIG.COR_NOT_METHOD",
+      "printed_item": "COR",
+      "method": "eligibility",
+      "formula": "A certificate of registration or a form list does not choose the method. Do not infer 8%, OSD, itemized, payroll or one-time events from a COR.",
+      "status": "CONFIRMED",
+      "books_source": "profile",
+      "citations": [
+        "workbook Build notes row 17"
+      ]
+    },
+    {
+      "id": "ELIG.ANNEX_C_TY2025",
+      "printed_item": "Annex C",
+      "method": "eligibility",
+      "formula": "RMC 20-2026 Annex C is the TY2025 FAQ. Its applicability to TY2026 is UNKNOWN.",
+      "status": "UNCONFIRMED",
+      "books_source": "none",
+      "citations": [
+        "verify.md s2 #76, #80"
+      ]
+    }
+  ]
+}

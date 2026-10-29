@@ -31,8 +31,27 @@ Citations such as `[rox §5 stage 6]` point to the evidence traces in `../resear
 - Bookkeeping is universal. The Philippines tax layer is optional and is linked from a business. [decisions.md, owner 3]
 - Books stores no TIN in any phase. BIR holds TINs. Books links to a buwiz-cloud tax profile only by its opaque `id`. [decisions.md, cloud contract; identity §2.4]
 - In MVP, Books reaches BIR only through the chat model, using BIR tickets. Books never sends, submits, files, queues or pays. [rox §8; bir-shell §6; decisions.md, owner 5]
-- The first slice is a Q3 2026 Form 2551Q (percentage tax) built from synthetic sales. It stops at a reviewable BIR draft. [04]
-- Blockers that can stop work: the 8% election conflict (D5), the unconfirmed 1% extension (D6), cloud contract drift (B1), scratch BIR isolation (B2), and the source label for hand-off (D3). See [07](07-decisions-and-blockers.md).
+- Books is bookkeeping and accounting. It produces **accounting measures** with lineage. A thin **bridge** maps measures onto Forms **input** boxes. **Buwiz Forms / the BIR mini app** owns all compliance: elections, applicability, ATC selection, rates, tax due, thresholds, OSD, graduated tax, tax rounding, penalties and due dates. [owner correction 2026-10-29; ADR 0007]
+- The first slice is the Q3 2026 sales measures and the Form 2551Q input boxes they feed, built from synthetic sales. It stops at a reviewable BIR draft in which Forms computes the tax. [04]
+- Blockers that can stop work: cloud contract drift (B1), scratch BIR isolation (B2), the source label for hand-off (D3), and the 1701-MS election locks in Forms (B7). See [07](07-decisions-and-blockers.md).
+
+### 0.1 Responsibilities: Books, the bridge, Forms
+
+Binding owner decision O6 (2026-10-29), recorded in [ADR 0007](adr/0007-books-supplies-measures-forms-owns-compliance.md).
+
+| Concern | Books (bookkeeping and accounting) | Bridge (Books to Forms inputs) | Buwiz Forms / BIR mini app (compliance) |
+|---|---|---|---|
+| Transactions, payroll facts, evidence | Records them, encrypted, local-first | Reads measures only | — |
+| Accounting measures (gross sales; returns, allowances, discounts; net sales; cost of sales; other income; expenses by category; gross compensation and components; employee and employer contributions, separate; tax withheld as recorded by payroll; certificates received with status) | Computes them per business profile per period, with lineage ([measures catalogue](../data/measures.v1.json)) | Consumes them | — |
+| Revenue-recognition date | Accounting policy (D4) | — | Tax timing basis, if it differs |
+| Which measure feeds which input box | — | Versioned mapping rules ([data/rules](../data/rules/)); input boxes only | Owns the box definitions (schema pins) |
+| Taxpayer choices that select between boxes (8% or graduated; OSD or itemized) | Never stored | Reads them from the Forms draft (`form_context`); never decides | Owns them (tax profile, yearly election) |
+| Elections, applicability, NIL returns, ATC selection | — | — | Owns |
+| Rates, thresholds (VAT ₱3M, 8% eligibility, mixed income) | — | — | Owns |
+| Tax due, OSD amount, graduated tax, totals, tax rounding | — | — | Owns |
+| Due dates, overdue status, penalties | — | — | Owns |
+| 1601-C item 17 non-taxable 13th-month split (annual cap) | Supplies year-to-date payroll | **The one input-level tax rule in the bridge** (labelled; open for the Forms owner) | May take it over |
+| TINs, drafts, filing | Never | Never | BIR owns; the user submits in BIR |
 
 ---
 
@@ -82,10 +101,10 @@ Citations such as `[rox §5 stage 6]` point to the evidence traces in `../resear
 1. **Install.** The user connects apps and installs the signed `books` plugin. Rox asks once for the permissions. [A1]
 2. **Create a book.** The user types a neutral label (D1). Setting country PH turns on the tax layer. The user applies the `philippines-smb` chart of accounts. Applying is idempotent (the BK-TS apply path is described as idempotent and non-destructive in its `CLAUDE.md`). [books §3b; BK-TS `src/lib/tax/ph-chart.ts`]
 3. **Record activity.** The user posts sales and expenses. An unbalanced entry is refused with `unbalanced`. A mistake in an open period is fixed by a void, which posts a reversal. [A3, A4]
-4. **Set tax facts for 2026.** VAT status (`non_vat`), regime (`graduated`), compensation income (no), returns (none). Each fact is dated. Acknowledgements are recorded.
-5. **See readiness.** The proposal card shows the 2551Q for 2026-Q3 as `blocked` or `ready`. Blocking reasons come first, then warnings.
+4. **Review return events.** A sales return, allowance, discount or credit note, or a reversal of an earlier period's sale, needs an acknowledgement (bookkeeping review). Elections (8% or graduated) are not set in Books: the user chooses them each year in the Forms tax profile (ADR 0007).
+5. **See readiness.** The proposal card shows the 2026-Q3 sales measures and the 2551Q inputs they feed as `blocked` or `ready`. Blocking reasons come first, then warnings.
 6. **Close the quarter.** In the period app, entries in the period become immutable and a snapshot payload is stored. Reopening needs a reason. [A7]
-7. **Generate the proposal.** Generation is idempotent. Slice A values: base 200,000.00, PT 6,000.00, due 2026-10-25. As of 2026-10-29 the card shows the return 4 days overdue, with no surcharge or interest computed (D14). [A5]
+7. **Generate the proposal.** Generation is idempotent. Slice A values: net sales 200,000.00 for `txtATCAmt1`, with lineage. Books shows no tax, due date or overdue status: Forms computes the tax (6,000.00 at 3%) and owns the deadline. [A5]
 8. **Hand off in chat.** The user attaches the Books `proposal` token (a Rox consent dialog). The user picks the BIR `taxprofile` token through BIR's own composer flow. The assistant reads the proposal, opens the BIR 2551Q draft, fills it once with `source: "document"`, reads it back, validates, and saves a draft. It never sends. [B1-B7]
 9. **Confirm.** The user checks the BIR draft and clicks "BIR shows these values" in the proposal card. Books records `fill_args_sha256` and the time. The user submits in BIR, outside this design. [B5]
 10. **Change after hand-off.** A ledger change, a reopen or a rule change marks the proposal stale. The assistant refuses to fill and says why. Regenerating creates a new proposal row. [B4]
@@ -96,7 +115,8 @@ Citations such as `[rox §5 stage 6]` point to the evidence traces in `../resear
 |---|---|---|
 | BIR says a form is already open | The assistant asks the user to save or dismiss it. It does not retry. | forms §5 (`gate_form_lock`); bir-shell §4 B |
 | A locked election box is refused | Books never writes item 13. | verify §3, §4 (item 13 lock) |
-| 8% election year | Proposal is `blocked` with the reason. No values. | BK-TS `src/lib/tax/percentage-tax.ts:354-360`; decision D5 |
+| 8% election year | Books output is unchanged; whether a 2551Q is required is Forms' decision. For 1701-MS the bridge reads the option from the Forms draft and maps net sales to IV.19. | ADR 0007; former D5 (handed to Forms) |
+| Forms context missing (1701-MS tax option) | Proposal is `blocked` (`form_context_missing`). The bridge never defaults the choice. | `BRIDGE.FORM_CONTEXT_READ_ONLY` |
 | BIR signed out | BIR refuses data verbs. The assistant tells the user to sign in to BIR first. | identity §1 item 3; `account_gate.rs:19, 63` (BIR, per identity) |
 
 ---
@@ -110,7 +130,7 @@ Citations such as `[rox §5 stage 6]` point to the evidence traces in `../resear
 | Rox host and broker | Rox owner | Installs signed manifests, opens sessions, enforces permissions, limits and consent | CONFIRMED [rox §5] |
 | Books apps (TSX) | Books | `home`, `ledger`, `period`, `card-cash`, `card-proposal`, `bookform`. Import only `nsh` SDK-1 names and `rox`. | PROPOSAL. Import rule CONFIRMED for BIR practice [rox §5 stage 5; bir-shell §2] |
 | `books-mini-app` (Rust stdio MCP) | Books | Tools, reserved `rox.*` tools, JCS manifest, ticket store | PROPOSAL |
-| `books-core`, `books-store` | Books | Pure rules and money. Encrypted store. | PROPOSAL |
+| `books-core`, `books-store` | Books | Measures, the bridge's mapping and money. Encrypted store. No compliance logic (ADR 0007). | PROPOSAL |
 | BIR plugin `dev.goldcoders.bir` | BIR owner | Opens, fills, validates, saves drafts. Holds TINs. | CONFIRMED [bir-shell §3] |
 | Forms schema pins | Forms owner | Field bindings for 2551Q, 1601-C, 1701-MS | CONFIRMED [verify §3] |
 | buwiz-cloud | cloud session | Device sign-in. Clients `buwiz-desktop` and `buwiz-books` at `src/oauth.rs:21` [V]. `/me`, `/api/tax-profiles`. | CONFIRMED. Contract drift (B1). |
@@ -387,8 +407,8 @@ Because inline cards mount without a click, Books shows only counts and status o
 |---|---|---|---|---|
 | Business label and country | Books | `books-store` | Yes | decisions.md owner 1, 3 |
 | Ledger: accounts, entries, lines, periods | Books | `books-store`, encrypted | Yes | decisions.md owner 2 |
-| Tax facts and elections | Books | `books-store`, dated, versioned | Yes, no TIN | Canonical design |
-| Rules and rate rows | Books (data), Forms (schema pins) | `data/` in this repo, plus `books-store` | Yes | verify §3; bir §3 |
+| Elections, tax facts, rates, thresholds, due dates | Forms (tax profile and form rules) | Forms / BIR | No. The bridge reads the choices it needs from the Forms draft (ADR 0007). | Owner O6 |
+| Measures catalogue and mapping rules | Books (data), Forms (schema pins) | `data/` in this repo, plus `books-store` | Yes | ADR 0007; verify §3 |
 | TIN, COR, RDO and branch facts | BIR | BIR encrypted DB | No | identity §2.3-2.4 |
 | Cloud tax-profile `id` | Cloud | Books store | Yes, id only | decisions.md cloud; ADR 0003 |
 | Draft values in BIR | BIR | BIR `form_drafts` | No. Books keeps `fill_args_sha256` only. | bir-shell §4 |
@@ -413,20 +433,18 @@ Because inline cards mount without a click, Books shows only counts and status o
 | `meta` | key, value | `schema_version`, `cipher_version`, `store_id` |
 | `business` | `business_id` PK, label, country, tax_layer, coa_preset, coa_preset_version, `cloud_tax_profile_id` NULL | No TIN column |
 | `coa_account` | `account_id` PK, business_id, key, number, name, type, subtype, parent_id, active | Unique (business, key) and (business, number). Types per BK-TS `account-constants.ts:9-18` `[books §2]` |
-| `category` | `category_id` PK, business_id, key, label, account_key, default_treatment, applies_if JSON | See section 7 |
-| `tax_fact` | `fact_id` PK, business_id, tax_year, key, value_text, `effective_from` DATE, citation_id, acknowledged_at, supersedes_id | Versioned, never overwritten |
-| `election_event` | event_id, business_id, tax_year, form_code, period_key, option, recorded_at | An 8% event blocks 2551Q |
+| `category` | `category_id` PK, business_id, key, label, account_key, default_line_attributes JSON, applies_if JSON | See section 7. `applies_if` may read the linked tax profile's registered-forms list as a hint, never an election. |
+| `return_ack` | entry_id, business_id, acknowledged_at, reason | Bookkeeping review of a return event (`GATE.RETURNS_ACK`). Replaces the `tax_fact` and `election_event` tables, removed by ADR 0007. |
 | `period` | `period_key` PK (for example `2026-Q3`), business_id, kind, start_date, end_date, status, closed_at, snapshot_sha256 | Per tax period (not the org-wide date) |
 | `period_event` | event_id, business_id, period_key, event (`close` or `reopen`), reason, at | Reason text. No memo. |
 | `journal_entry` | `entry_id` PK, business_id, `entry_date` DATE, tax_period_key, status (`draft`, `posted`, `voided`), reverses_entry_id NULL, memo_enc, `client_request_id` UNIQUE, posted_at | Dates are calendar days in Asia/Manila |
-| `journal_line` | `line_id` PK, entry_id, line_no, account_id, debit_centavos INTEGER ≥ 0, credit_centavos INTEGER ≥ 0, treatment, atc NULL, credit_kind NULL, person_scope, comp_component NULL, contribution_side NULL, tax_period_override NULL, party_ref NULL (opaque), revision | A line is debit or credit, not both. Entry must balance at post. |
+| `journal_line` | `line_id` PK, entry_id, line_no, account_id, debit_centavos INTEGER ≥ 0, credit_centavos INTEGER ≥ 0, measure_side NULL, income_class, contra_kind NULL, person_scope, party_ref NULL (opaque), comp_component NULL, contribution_side, contribution_scheme NULL, credit_kind, certificate_atc NULL (evidence), certificate_status NULL, period_override NULL, revision | A line is debit or credit, not both. Entry must balance at post. Accounting facts only (ADR 0007). |
 | `evidence` (P4) | evidence_id, business_id, sha256, mime, bytes, blob_enc, redaction_state, ocr_text_enc NULL | — |
-| `certificate_2307` (P4) | cert_id, business_id, cert_hmac, payor_hmac, payor_masked, atc, `period_start` DATE, `period_end` DATE, income_payment_centavos, tax_withheld_centavos, status (`received`, `pending`, `lost`, `disputed`), evidence_id, posted_entry_id NULL | Only `received` credits (D-18) |
-| `rule_set` | `rule_set_id` PK (for example `2551Q-v2018-r1`), form_code, edition, schema_sha256, status, effective_from, effective_to NULL, citation_ids | Immutable once a proposal references it |
-| `rule_mapping` | mapping_id PK, rule_set_id, field_key, person_scope, selector JSON, method, sign, rounding, precedence, citation_id, status | — |
-| `rate` | rate_id PK, code, rate_bps, effective_from, effective_to NULL, disputed, default_on, citation_id | Dated rows |
+| `certificate` (P4) | cert_id, business_id, kind (`2307`, `2306`, `2316`), cert_hmac, payor_hmac, payor_masked, certificate_atc (as printed; evidence), `period_start` DATE, `period_end` DATE, income_payment_centavos, tax_withheld_centavos, status (`received`, `pending`, `lost`, `disputed`), evidence_id, posted_entry_id NULL | Only `received` counts in a certificate measure (DD-18) |
+| `rule_set` | `rule_set_id` PK (for example `2551Q-v2018-r2`), form_code, edition, schema_sha256, measures_catalog, status, effective_from, effective_to NULL, citation_ids | Immutable once a proposal references it |
+| `rule_mapping` | mapping_id PK, rule_set_id, target_key, measures JSON, aggregation, period_basis, person_scope, form_context JSON NULL, review_status, citation_id | Input keys only (ADR 0007). No rate table. |
 | `citation` | citation_id PK, source, locator, status, source_sha256, retrieved_on | — |
-| `proposal` | proposal_id PK, business_id, form_code, tax_period_key, rule_set_id, schema_sha256, inputs_hash, output_sha256, status (`ready`, `blocked`, `stale`, `superseded`), blocking JSON, warnings JSON, values JSON, fill_args JSON, client_request_id UNIQUE, created_at | Values are decimal text |
+| `proposal` | proposal_id PK, business_id, form_code, tax_period_key, rule_set_id, schema_sha256, form_context JSON, inputs_hash, output_sha256, status (`ready`, `blocked`, `stale`, `superseded`), blocking JSON, warnings JSON, measures JSON, fill_args JSON, reference_values JSON, client_request_id UNIQUE, created_at | Values are decimal text. No tax due, rate or due date. |
 | `proposal_lineage` | proposal_id, field_key, line_id, contribution_centavos | App-only read |
 | `handoff` | handoff_id, proposal_id, form_code, fill_args_sha256, confirmed_at, status | Written only after a user click |
 | `ticket` | `ticket` PK (`tkt_...`), subject_kind, subject_id, label, created_at, revoked_at NULL | Revocation supported |
@@ -440,9 +458,9 @@ Migration source of truth: `crates/books-store/migrations/0001_init.sql` (P1).
 - Money is `i64` centavos. Use `i128` for intermediate products. Overflow is checked.
 - JSON carries decimal text with exactly two places, for example `"200000.00"`. Input with more than two decimals is refused.
 - Negative values stay negative. Nothing is clamped to zero. An overpayment is a separate signed line `[sheets §6 item 15]`.
-- Rates are integer basis points. 300 means 3.00%.
-- Books code has no floats (CI check, PROPOSAL). BIR's Forms path is f64 at the input (`crates/bir-core/src/forms/form_2551q.rs:1467` `cents(value: f64) -> i64` [V]). See section 9.
-- Dates are DATE values in Asia/Manila. The percentage-tax date basis (entry, receipt or invoice) is UNKNOWN (D4). The default is entry date, with an override field.
+- Measures are exact sums of centavos. Books applies no rate and rounds nothing (ADR 0007).
+- Books code has no floats (CI check, PROPOSAL). BIR's Forms path is f64 at the input (`crates/bir-core/src/forms/form_2551q.rs:1467` `cents(value: f64) -> i64` [V]). That is Forms' rounding concern (section 2.2 of 07).
+- Dates are DATE values in Asia/Manila. The revenue-recognition date is an accounting policy (D4): the default is the entry date, with an override field. A different tax timing basis is Forms'.
 - BK-TS shows the two money styles in use `[books §4i]`. Books uses only centavos.
 
 ### 6.5 Local-first rules (PROPOSAL)
@@ -458,80 +476,68 @@ Not designed. Constraints now: any sync carries encrypted entries only, never a 
 
 ---
 
-## 7. Tax meaning, rules and proposals
+## 7. Accounting measures, the bridge and proposals
 
-### 7.1 Four layers
+Superseded by ADR-0007 (2026-10-29): the earlier version of this section held tax attributes, rate rows, an 8% block and a PT rounding rule. It is replaced below; the old text is in git history and the rates are in [research/handoff-to-forms/](../research/handoff-to-forms/).
+
+### 7.1 Five layers
 
 | Layer | What it holds | Who sets it | Example |
 |---|---|---|---|
-| 1. Account | Where money sits in the books. Number and type. **No tax meaning.** | COA preset | 41000 Sales of services |
-| 2. Category | A user-facing grouping, with default attributes | Preset, then user | "Sales of services" defaults to `treatment=sale_pt`, `atc=PT010` |
-| 3. Line attributes | Tax meaning on each journal line | User at posting, defaulted from category | `treatment=sale_pt`, `atc=PT010`, `person_scope=self` |
-| 4. Mapping rules | Versioned, effective-dated rules. They select lines by attribute and produce form fields. | Books rule set, bound to a pinned Forms schema | `2551Q.sch1.row1.base` sums `sale_pt` lines with `PT010` for graduated, non-VAT |
+| 1. Account | Where money sits in the books. Number and type. **No form meaning.** | COA preset | 41000 Sales of services |
+| 2. Category | A user-facing grouping, with default line attributes. Suggestions may use the linked tax profile's registered-forms list as a hint, never an election. | Preset, then user | "Sales of services" defaults to `income_class=business_sales` |
+| 3. Line attributes | Accounting and evidence facts on each journal line | User at posting, defaulted from category | `income_class=contra_sales`, `contra_kind=return` |
+| 4. Measures | Accounting measures per business profile per period, with lineage | Books, from layer 3 ([measures catalogue](../data/measures.v1.json)) | `net_sales` 2026-Q3 = 290,000.00 |
+| 5. Mapping rules | Versioned rules: measure → Forms input key, with optional Forms-context condition | Bridge rule set, bound to a pinned Forms schema | `2551Q.S1.1.base`: `net_sales` → `txtATCAmt1` |
 
-Evidence for layer 1 and 3: an account like `salaries` (61100) feeds 1601-C II.14 and 1701-MS IV.10A, and `refunds_and_discounts` (49000) feeds the 2551Q base and 1701-MS IV.6 and IV.19 `[sheets §8 item 1]`. BK-TS accounts have no tax attribute `[books §1 item 3, §2]`. Full attribute list: [docs/02-categories-and-attributes.md](02-categories-and-attributes.md). ADR: [0006](adr/0006-tax-meaning-on-lines-not-accounts.md).
+Evidence for layers 1 and 3: an account like `salaries` (61100) feeds 1601-C II.14 and 1701-MS IV.10A, and `refunds_and_discounts` (49000) feeds the 2551Q base and 1701-MS IV.6 and IV.19 `[sheets §8 item 1]`. BK-TS accounts have no tax attribute `[books §1 item 3, §2]`. Full attribute list: [docs/02-categories-and-attributes.md](02-categories-and-attributes.md). ADRs: [0006](adr/0006-tax-meaning-on-lines-not-accounts.md), [0007](adr/0007-books-supplies-measures-forms-owns-compliance.md).
 
 ### 7.2 Attributes (MVP subset)
 
-| Attribute | Values in MVP | Later |
+| Attribute | Values | Notes |
 |---|---|---|
-| `treatment` | `sale_pt`, `cwt_credit`, `expense`, `owner_money`, `none` | `non_op_income`, `comp_income`, `contribution` (P6-7); `sale_vat`, `sale_zero_rated`, `sale_exempt` reserved for 2550Q |
-| `returns_state` (per quarter) | `none`, `present_unacknowledged`, `acknowledged` | Credit-note rules (UNCONFIRMED for 2551Q, `[bir §3.1 PT-8]`) |
-| `atc` | `PT010`, `WB080`, `WB082`; `WB084` is final and never credited | WI and WC series (P7) |
-| `credit_kind` | `pt`, `none` | `it` (P7) |
-| `person_scope` | `self`; spouse refused | spouse (P7), employee (P6), payor (P4) |
-| `regime` (per tax year) | `graduated`; `eight_percent` and `unknown` block | P7 |
-| `vat_status` (per tax year) | `non_vat`; others block | 2550Q |
+| `income_class` | `business_sales`, `contra_sales`, `non_operating_income`, `cost_of_sales`, `operating_expense`, `none` | Statement bucket |
+| `contra_kind` | `return`, `allowance`, `discount` | Required on `contra_sales`; three separate measures |
+| `measure_side` | `debit`, `credit` | Which side is positive for the line's measure |
+| `person_scope` | `self`; spouse refused by the bridge in MVP | `employee` (P6), `payor` (P4) |
+| `comp_component`, `contribution_side`, `contribution_scheme` | payroll facts | Employee and employer shares are separate measures |
+| `credit_kind`, `certificate_atc`, `certificate_status` | evidence facts printed on a received certificate | `certificate_atc` is evidence, never an ATC choice |
 
-### 7.3 Rule schema (illustrative PROPOSAL)
+Removed by ADR 0007: `tax_type`, `atc` (as a choice), `treatment`, `regime`, `vat_status`, `returns_state`, `election_event`.
 
-Rule set header. The schema hash shown is a placeholder. The real full digest is in section 9.3.
+### 7.3 Mapping schema (PROPOSAL)
+
+Rule set header (r2):
 
 ```json
-{"rule_set_id":"2551Q-v2018-r1","form_code":"2551Q","edition":"January 2018 (ENCS)",
+{"rule_set_id":"2551Q-v2018-r2","form_code":"2551Q","edition":"January 2018 (ENCS)",
  "schema_sha256":"a206416cabb09c5e1e0ebedf9f7ac635a46856a139ffbbde5f7be88f89005788",
- "status":"bindings CONFIRMED, selectors PARTIAL",
- "effective_filing_periods":{"from":"2018-01-01","to":null}}
+ "measures_catalog":"measures-v1","version":2}
 ```
 
-Mapping example:
+Mapping example (2551Q):
 
 ```json
-{"mapping_id":"2551Q.sch1.row1.base","field_key":"txtATCAmt1","person_scope":"self",
- "selector":{"treatment":["sale_pt"],"atc":["PT010"],"regime":["graduated"],"vat_status":["non_vat"]},
- "method":"sum","sign":"+1","rounding":"none, centavos exact","precedence":10,
- "citations":["bir §3.1 PT-1, PT-5","verify §4 (txtATCAmt1 accepted exact)"],
- "status":"key CONFIRMED; selector PARTIAL"}
+{"id":"2551Q.S1.1.base","mode":"fill","target_key":"txtATCAmt1","measures":["net_sales"],
+ "aggregation":"sum","period_basis":"quarter","person_scope":"taxpayer","row":1,
+ "review":{"status":"open","note":"net or gross sales for row 1 is a mapping question for tax review (former D20)"}}
 ```
 
-Typed-alias mapping:
+Mapping with a Forms-context condition (1701-MS). The bridge reads `/taxpayer/tax_option` from the Forms draft; it never decides it:
 
 ```json
-{"mapping_id":"2551Q.sch1.row1.atc","field_key":"schedule_1.0.atc","method":"constant","value":"PT010",
- "precedence":10,"status":"CONFIRMED typed alias (verify §4)"}
+{"id":"1701MS.IV.19","mode":"fill","target_key":"frm1701MS:txtSalesRevenuesFeesANo19a",
+ "measures":["net_sales"],"form_context":[{"read":"/taxpayer/tax_option","equals":"eight_percent"}]}
 ```
 
-Rate rows:
-
-```json
-[{"code":"PT010","rate_bps":100,"effective_from":"2020-07-01","effective_to":"2023-06-30",
-  "citations":["RA 11534 sec. 116 proviso; bir §3.1 PT-2"],"status":"CONFIRMED"},
- {"code":"PT010","rate_bps":300,"effective_from":"2023-07-01","effective_to":null,
-  "citations":["RMC 69-2023; bir §3.1 PT-2; verify #62"],"status":"CONFIRMED"},
- {"code":"PT010","rate_bps":100,"effective_from":"2023-07-01","effective_to":"2025-12-31",
-  "disputed":true,"default_on":false,"citations":["commentary only; verify #63"],"status":"UNCONFIRMED"}]
-```
-
-The 1% row for 2023-07-01 to 2025-12-31 is stored, disputed and off. Books warns if it is selected (D6). The 1% rate for 2020-07-01 to 2023-06-30 is CONFIRMED `[bir PT-2; books §4d; percentage-tax.ts:65-68 [V]]`.
+For computed, locked and not_fillable boxes the rule set keeps no rule, only a `not_mapped` pointer with `owner: forms` (or profile, user, identity, prior_filing). The ATC (`schedule_1.0.atc`) is Forms'.
 
 ### 7.4 Versioning and staleness
 
 - A rule set is immutable once a proposal references it. A change makes a new `rule_set_id`.
-- Effective windows apply to the filing period, not the transaction date.
-- Recomputing an old period under a corrected rule creates a new proposal row. Nothing is overwritten.
-- A proposal goes stale when any of these change: a line revision, a tax fact, a rule set, a rate row, a schema hash, or a period reopen. `inputs_hash` covers all of them.
-- Identical inputs give an identical `output_sha256`. A test must prove it.
-- A per-line override carries a reason. It applies before rules. It becomes `needs_review` if a later rule conflicts with it.
+- Recomputing an old period under a corrected mapping creates a new proposal row. Nothing is overwritten.
+- A proposal goes stale when any of these change: a line revision, an acknowledgement, the Forms context it read, the rule set, the measures catalogue, the crosswalk or schema hash, or a period reopen. `inputs_hash` covers all of them.
+- Identical inputs give an identical `output_sha256`. A test proves it.
 
 State of a proposal:
 
@@ -549,43 +555,33 @@ stateDiagram-v2
 
 | Case | Rule | Status |
 |---|---|---|
-| Returns and credit notes | `returns_state` blocks the 2551Q until acknowledged | Blocking is a design choice (D20). Credit-note treatment UNCONFIRMED `[bir PT-8]`. |
-| Employee and employer shares | `contribution_side`. 1601-C item 19 takes the employee share only. | RR CONFIRMED `[bir §3.4 item 19]`. Statute UNVERIFIED. |
-| PT and IT credits | Route by ATC series. One certificate feeds one form. | CONFIRMED `[bir W-2 to W-4]`. Routing INFERENCE `[bir W-3]`. |
-| Spouse | Refused in MVP | PROPOSAL |
-| Mixed earners | No ₱250,000 reduction. Split compensation from receipts. | CONFIRMED `[bir 8-8]` |
-| Rounding | Centavos inside. Round half away from zero once, at output (D7). | CONFIRMED `[books §4i; bir §2 for 1701-MS rule]` |
-| Negatives | Totals keep sign. Overpayment is a separate signed line. No clamp. | BK-TS clamps in one sheet `[sheets §6 item 15]`. Books does not. |
-| Tax period | Default: entry date in Asia/Manila. `tax_period_key` overrides. Certificates use their own period fields. | Date basis UNKNOWN (D4) |
-| 8% and 2551Q | Blocks. No NIL row in MVP. | CONFLICT (D5) |
-| Penalties | Books computes none. It shows late status. Forms computes penalties when a deadline exists. | CONFIRMED `[verify §2 item 9]` |
-| Overdue | Measured from the due date. No surcharge or interest. | PROPOSAL (D14) |
+| Returns, allowances, discounts, credit notes | Separate measures. A return event holds mappings that read sales measures until acknowledged (`GATE.RETURNS_ACK`). Which measure feeds a box is a mapping rule. | Mapping for 2551Q row 1 open for tax review (former D20) |
+| Employee and employer shares | Separate measures. 1601-C item 19 takes the employee measure only. | RR CONFIRMED `[bir §3.4 item 19]`. Statute UNVERIFIED. |
+| PT and IT certificates | Separate measures (`credit_kind` printed on the certificate). One certificate feeds one form. A 2306 never counts. | CONFIRMED `[bir W-2 to W-4]`. Routing INFERENCE `[bir W-3]`. |
+| Spouse | Measured, refused by the bridge in MVP | PROPOSAL |
+| Taxpayer choices (8%, OSD) | Read from the Forms draft; a missing value blocks | DD-28 |
+| 13th-month non-taxable part | The one input-level tax rule in the bridge (cap per employee per year) | DD-29, open for the Forms owner |
+| Negatives | Measures keep their sign. A negative sales measure is not proposed for a box (`negative_measure`). No clamp. | BK-TS clamps in one sheet `[sheets §6 item 15]`. Books does not. |
+| Recognition period | Default: entry date in Asia/Manila. `period_override` overrides. Certificates use their own period fields. | D4 (accounting policy) |
+| Rates, rounding, 8% and 2551Q, penalties, overdue | Not in Books | Handed to Forms (07 section 2.2) |
 | Void in an open period | See section 7.6. | Open question Q-1 (07) |
 
 ### 7.6 Void rule (PROPOSAL, open question Q-1)
 
 The canonical design says a void posts a reversal dated like the original entry (A4). It does not say whether the original stays `posted` or becomes `voided`. The two readings give the same Slice A result (200,000.00):
 
-- **Reading 1 (recommended).** The original becomes `voided`. The base skips voided entries and skips reversal entries. The ledger keeps both, and both balance.
-- **Reading 2.** The original stays `posted`. The reversal is `posted`. The base sums both, so they net to zero.
+- **Reading 1 (recommended).** The original becomes `voided`. Measures skip voided entries and skip reversal entries. The ledger keeps both, and both balance.
+- **Reading 2.** The original stays `posted`. The reversal is `posted`. Measures sum both, so they net to zero.
 
-The two readings differ in lineage shape. Under Reading 1 the lineage omits the voided sale and its reversal. Under Reading 2 it lists both, netting to zero. Test A4 must pass either way. Test A5 (lineage) is written for Reading 1 and must be adjusted if Reading 2 is chosen. Pick one before P1 exit. A reversal dated in a later period is a return event. It blocks the next proposal until acknowledged (canonical item 15). It never changes a closed period.
+The two readings differ in lineage shape. Under Reading 1 the lineage omits the voided sale and its reversal. Under Reading 2 it lists both, netting to zero. Test A4 must pass either way. Test A5 (lineage) is written for Reading 1 and must be adjusted if Reading 2 is chosen. Pick one before P1 exit. A reversal dated in a later period is a return event. It holds the next proposal until acknowledged (canonical item 15). It never changes a closed period.
 
 ### 7.7 Worked example (synthetic golden data)
 
-From journey section 7.7 of the canonical design: gross receipts 300,000.00 at 3% give PT 9,000.00. The fixture also carries a creditable withholding of 3,000.00 and a payable of 6,000.00. The 3,000.00 credit is a fixture input. This design does not assert its rate.
+Workbook worked example, Q3 2026: gross sales 300,000.00, returns 10,000.00, net sales 290,000.00 → `txtATCAmt1` = 290,000.00 (mapping uses net sales). September payroll: gross compensation 42,000.00, de minimis 2,000.00, employee contributions 2,000.00 → `frm1601c:txtTax19`; the employer share (1,500.00) never reaches item 19. Annual: net sales 1,190,000.00; graduated (read from Forms) → IV.5 1,200,000.00 and IV.6 10,000.00; 8% (read from Forms) → IV.19 1,190,000.00.
 
-Slice A (after the void): base 200,000.00, PT 6,000.00, no credit in the slice.
+Slice A (after the void): net sales 200,000.00.
 
-Rounding ties (A10):
-
-| Base | Rate | Exact PT | Result (half away from zero) |
-|---|---|---|---|
-| 1.50 | 3% | 0.045 | 0.05 |
-| 1.49 | 3% | 0.0447 | 0.04 |
-| -1.50 | 3% | -0.045 | -0.05 |
-
-Banker's rounding would give 0.04 for the first row. The golden test must assert half-away-from-zero by name.
+Forms' outputs for the same inputs (2551Q tax 8,700.00 at 3%; Slice A 6,000.00; 1701-MS OSD 476,000.00 and tax 85,300.00) are recorded only as `expected_forms_computed` documentation in `fixtures/vectors/` and are never asserted against Books code.
 
 ---
 
@@ -645,22 +641,22 @@ Method: `GIT_NO_LAZY_FETCH=1 git -C /Volumes/goldcoders/OSS/buwiz-forms show 632
 
 ### 9.2 MVP mechanism (P3, model-mediated, PROPOSAL)
 
-1. Books generates a `ready` proposal with `fill_args`. Keys are exact. Values are decimal text.
+1. Books generates a `ready` proposal with `fill_args` for input keys only. Keys are exact. Values are decimal text. For a form with taxpayer-choice boxes, Books first reads the choice from the Forms draft (`form_context`).
 2. The user attaches the Books `proposal` token (consent dialog). The user picks the BIR `taxprofile` token through BIR's own composer flow.
 3. The assistant calls `books_form_proposal_get(ticket)`. It refuses unless status is `ready`.
 4. `bir_form_open(code="2551Q", year=2026, period=3, tin=<BIR taxprofile ticket>)`. BIR expands the ticket `[bir-shell §3; mod.rs expand]`. Period 3 is quarter 3.
 5. `bir_form_fill(fields=fill_args, source="document")`. Never `from_card`. Never `user`.
-6. `bir_form_fields` reads back. Each value must equal its `fill_args` string exactly. Computed item 14 must be 6000.00 in Slice A, if BIR echoes it. Echo is UNKNOWN (canonical design, open discrepancies). If not echoed, use `bir_form_validate` or preview. Any mismatch stops the flow.
+6. `bir_form_fields` reads back. Each input value must equal its `fill_args` string exactly. Any mismatch stops the flow. Computed boxes (item 14 and the totals) are Forms' output; Books has no expected value for them (ADR 0007).
 7. `bir_form_validate`, then `bir_form_save_draft`. Never a send.
 8. The user confirms in the proposal card. That records `fill_args_sha256` (app-only).
 
 Example `fill_args` (synthetic):
 
 ```json
-{"schedule_1.0.atc":"PT010","txtATCAmt1":"200000.00","frm2551Qv2018:txt15":"0.00"}
+{"txtATCAmt1":"200000.00","frm2551Qv2018:txt15":"0.00"}
 ```
 
-Books never fills item 13 (`frm2551Qv2018:taxRate` (with its `_1`, `_2` and `NA` variants), election lock), items 14, 18, 19, 23 or 24 (computed), items 20 to 22 (penalty overrides), or identity and profile items.
+Books never fills the ATC (`schedule_1.0.atc` / `drpATC1`; Forms selects it), item 13 (`frm2551Qv2018:taxRate` (with its `_1`, `_2` and `NA` variants), election lock), items 14, 18, 19, 23 or 24 (computed), items 20 to 22 (penalty overrides), or identity and profile items.
 
 The model may see `fill_args` values, status and tickets. It never sees a TIN or Books internal IDs.
 
@@ -684,7 +680,7 @@ The model may see `fill_args` values, status and tickets. It never sees a TIN or
 | 6 | Persist per-box provenance | `crates/bir-core/src/db/migrations.rs:112` (`form_drafts`) [V]; drafts code `[verify §3]` | Survives restart. B5 lineage. | BIR owner | P8 |
 | 7 | Envelope verifier; pinned Books public key | New, in `bir-shell` or as a host function | Signed proposal | BIR owner; owner (key, D2) | P8 |
 | 8 | Lock 1701-MS items 12, 17 and II015-II017 to the recorded election | Forms `draft_locks.rs` `[verify §1 item 3, §2 item 10]` | Books 1701-MS fill safety (B7) | Forms owner | P7, before any 1701-MS fill |
-| 9 | State half-away rounding for the PT line. Add a golden tie test. | `form_2551q.rs:1467` [V] (buwiz-forms checkout cites 1259) | R-11, D7 | Forms owner | P3 |
+| 9 | Rounding of tax amounts and the f64 helper: Forms' own decision (D7 handed to Forms, ADR 0007) | `form_2551q.rs:1467` [V] (buwiz-forms checkout cites 1259) | R-11 | Forms owner | Forms' timeline |
 | 10 | Typed `compromise` root write vs penalty override | Forms `assist.rs`, `form_2551q.rs` `[verify §2 item 9]` | Books never fills item 22 | Forms owner | Later |
 | 11 | Copy the 63267ca schemas into `data/forms` with full digests | buwiz-forms `git show 63267ca` (digests in 9.1) | Contract tests (B4) | Forms owner (read-only) | P3 |
 
@@ -697,7 +693,7 @@ Full crosswalk: [docs/03-crosswalk.md](03-crosswalk.md) (W2). The fields Books u
 | Field key (exact accepted) | Draft path | Lock or computed | Typed alias | Status |
 |---|---|---|---|---|
 | `txtATCAmt1` | `/schedule_1/0/taxable_amount` | none | `schedule_1.0.taxable_amount` | CONFIRMED |
-| `schedule_1.0.atc` | `/schedule_1/0/atc` | none | typed | CONFIRMED (drpATC1 refused) |
+| `schedule_1.0.atc` | `/schedule_1/0/atc` | none | typed | CONFIRMED (drpATC1 refused). Forms selects the ATC; Books never sends it (ADR 0007). |
 | `frm2551Qv2018:txt15` | `/creditable_tax_withheld` | none | `creditable_tax_withheld` | CONFIRMED |
 | `frm2551Qv2018:txt14` | none | computed | n/a | CONFIRMED, not fillable |
 | `frm2551Qv2018:taxRate` | `/item_13_election` | election lock | none | CONFIRMED, never written by Books |
@@ -714,10 +710,10 @@ Full crosswalk: [docs/03-crosswalk.md](03-crosswalk.md) (W2). The fields Books u
 
 ### 10.1 Filer types
 
-- MVP covers Philippine individuals with 2551Q only.
-- Regimes are per tax year: `graduated`, `eight_percent`, `special_exempt`, `unknown`. MVP accepts `graduated`. The others block `[bir §5; ADR 0006]`.
-- Later forms add rule sets, not new account types: 1601-C (P6), 1701-MS (P7), 2550Q (VAT), 1601-EQ, 1701Q (P10+).
-- Form routing for 1701 versus 1701-MS: a taxpayer with two or more activities, or multiple regimes, uses 1701 `[bir M-6]`.
+- MVP covers Philippine individuals with the 2551Q input boxes only.
+- Regimes and elections are per tax year and live in the Forms tax profile. Books reads them only where a mapping needs them (ADR 0007).
+- Later forms add mapping rule sets and, where needed, measures, not new account types: 1601-C (P6), 1701-MS (P7), 2550Q (VAT), 1601-EQ, 1701Q (P10+).
+- Form routing (1701 versus 1701-MS) is Forms' `[bir M-6]`.
 
 ### 10.2 Accountants for clients (D15)
 
@@ -749,10 +745,10 @@ The full register is in [05](05-implementation-plan.md#5-risk-register). The arc
 | RK-12 | BIR provenance is session-only (`[verify §3]`). | Re-check after restart. P8 fixes it. |
 | RK-13 | `bir_form_send` is live and grant-gated. An allow-once grant can outlive the process `[bir-shell §8 item 1]`. | Books never calls it. Fix before any live use (change 4). |
 | RK-19 | BIR may write in the background. A file checksum (B0) then changes without any Books call. UNKNOWN. | Compare table-level checksums from the scratch profile. Stop BIR before the live check, if needed. |
-| R-11 | f64 path may move a tie. | Tie vector test through the live helper (P3). |
+| R-11 | f64 path may move a tie. | Forms' concern (D7 handed to Forms). Books sends exact centavo text. |
 
 ---
 
 ## 12. Open items
 
-Decisions and blockers are listed with options and recommendations in [07](07-decisions-and-blockers.md). The ones that change this architecture are D2 (key custody), D3 (source label), D5 (8% year), D6 (1% extension), D12 (scratch isolation), D15 (accountant access) and Q-1 (void rule, section 7.6).
+Decisions and blockers are listed with options and recommendations in [07](07-decisions-and-blockers.md). The ones that change this architecture are D2 (key custody), D3 (source label), D12 (scratch isolation), D15 (accountant access), DD-29 (13th-month cap) and Q-1 (void rule, section 7.6). D5, D6, D7 and D14 are handed to Forms (07 section 2.2).

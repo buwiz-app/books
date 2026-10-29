@@ -3,7 +3,7 @@
     "EL-013"
   ],
   "as_of": "2026-10-29",
-  "description": "The same ledger as fixture a, with a recorded 8% election for 2026. 2551Q must produce no PT010 proposal and a needs-review discrepancy. 1601-C is unaffected.",
+  "description": "The same ledger as fixture a under its own profile. The 8% election lives in the Forms tax profile, not in Books: the cases read /taxpayer/tax_option = eight_percent from the Forms context. Books measures are identical to fixture a; only the 1701-MS mapping changes (IV.19 instead of IV.5 and IV.6). Whether a 2551Q is required in an 8% year is Forms' decision.",
   "entries": [
     {
       "entry_date": "2026-01-15",
@@ -17,19 +17,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "120000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "EL-001.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-EL-001 synthetic sales invoice",
@@ -48,19 +42,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "100000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "EL-002.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-EL-002 synthetic sales invoice",
@@ -79,19 +67,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "80000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "EL-003.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-EL-003 synthetic sales invoice",
@@ -104,20 +86,16 @@
       "lines": [
         {
           "account": "ph_cwt_receivable",
-          "atc": "WI010",
+          "certificate_atc": "WI010",
           "certificate_status": "received",
           "credit": "0.00",
           "credit_kind": "it",
           "debit": "3000.00",
           "document_kind": "certificate_2307",
           "line_id": "EL-004.1",
+          "measure_side": "debit",
           "period_end": "2026-03-31",
-          "period_start": "2026-01-01",
-          "tax_side": "debit",
-          "tax_types": [
-            "income_tax"
-          ],
-          "treatment": "cwt_credit"
+          "period_start": "2026-01-01"
         },
         {
           "account": "accounts_receivable_gross",
@@ -142,19 +120,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "120000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "EL-005.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-EL-005 synthetic sales invoice",
@@ -173,19 +145,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "100000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "EL-006.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-EL-006 synthetic sales invoice",
@@ -204,19 +170,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "80000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "EL-007.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-EL-007 synthetic sales invoice",
@@ -229,20 +189,16 @@
       "lines": [
         {
           "account": "ph_cwt_receivable",
-          "atc": "WI010",
+          "certificate_atc": "WI010",
           "certificate_status": "received",
           "credit": "0.00",
           "credit_kind": "it",
           "debit": "3000.00",
           "document_kind": "certificate_2307",
           "line_id": "EL-008.1",
+          "measure_side": "debit",
           "period_end": "2026-06-30",
-          "period_start": "2026-04-01",
-          "tax_side": "debit",
-          "tax_types": [
-            "income_tax"
-          ],
-          "treatment": "cwt_credit"
+          "period_start": "2026-04-01"
         },
         {
           "account": "accounts_receivable_gross",
@@ -267,19 +223,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "120000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "EL-009.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-EL-009 synthetic sales invoice",
@@ -298,19 +248,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "100000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "EL-010.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-EL-010 synthetic sales invoice",
@@ -329,19 +273,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "80000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "EL-011.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-EL-011 synthetic sales invoice",
@@ -357,12 +295,9 @@
           "credit": "0.00",
           "debit": "20000.00",
           "document_kind": "expense_document",
+          "income_class": "operating_expense",
           "line_id": "EL-012.1",
-          "tax_side": "debit",
-          "tax_types": [
-            "income_tax"
-          ],
-          "treatment": "expense"
+          "measure_side": "debit"
         },
         {
           "account": "bank_accounts",
@@ -381,18 +316,13 @@
       "lines": [
         {
           "account": "refunds_and_discounts",
-          "atc": "PT010",
+          "contra_kind": "return",
           "credit": "0.00",
           "debit": "10000.00",
           "document_kind": "credit_note",
           "income_class": "contra_sales",
           "line_id": "EL-013.1",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit"
         },
         {
           "account": "accounts_receivable_gross",
@@ -411,20 +341,16 @@
       "lines": [
         {
           "account": "ph_cwt_receivable",
-          "atc": "WI010",
+          "certificate_atc": "WI010",
           "certificate_status": "received",
           "credit": "0.00",
           "credit_kind": "it",
           "debit": "2900.00",
           "document_kind": "certificate_2307",
           "line_id": "EL-014.1",
+          "measure_side": "debit",
           "period_end": "2026-09-30",
-          "period_start": "2026-07-01",
-          "tax_side": "debit",
-          "tax_types": [
-            "income_tax"
-          ],
-          "treatment": "cwt_credit"
+          "period_start": "2026-07-01"
         },
         {
           "account": "accounts_receivable_gross",
@@ -443,17 +369,14 @@
       "lines": [
         {
           "account": "salaries",
-          "comp_component": "taxable_basic",
+          "comp_component": "basic_pay",
           "credit": "0.00",
           "debit": "40000.00",
           "document_kind": "payroll_register",
           "line_id": "EL-015.1",
-          "person_scope": "employee",
-          "tax_side": "debit",
-          "tax_types": [
-            "compensation_withholding"
-          ],
-          "treatment": "comp_income"
+          "measure_side": "debit",
+          "party_ref": "EMP-1",
+          "person_scope": "employee"
         },
         {
           "account": "employee_benefits",
@@ -462,69 +385,59 @@
           "debit": "2000.00",
           "document_kind": "payroll_register",
           "line_id": "EL-015.2",
-          "person_scope": "employee",
-          "tax_side": "debit",
-          "tax_types": [
-            "compensation_withholding"
-          ],
-          "treatment": "comp_income"
+          "measure_side": "debit",
+          "party_ref": "EMP-1",
+          "person_scope": "employee"
         },
         {
           "account": "employer_payroll_taxes",
+          "comp_component": "contribution",
+          "contribution_scheme": "sss_gsis",
           "contribution_side": "employer",
           "credit": "0.00",
           "debit": "1500.00",
           "document_kind": "payroll_register",
           "line_id": "EL-015.3",
-          "person_scope": "employee",
-          "tax_side": "debit",
-          "tax_types": [
-            "compensation_withholding"
-          ],
-          "treatment": "expense"
+          "measure_side": "debit",
+          "party_ref": "EMP-1",
+          "person_scope": "employee"
         },
         {
           "account": "ph_sss_payable",
-          "comp_component": "mandatory_contributions_employee",
+          "comp_component": "contribution",
+          "contribution_scheme": "sss_gsis",
           "contribution_side": "employee",
           "credit": "2000.00",
           "debit": "0.00",
           "document_kind": "payroll_register",
           "line_id": "EL-015.4",
-          "person_scope": "employee",
-          "tax_side": "credit",
-          "tax_types": [
-            "compensation_withholding"
-          ],
-          "treatment": "contribution"
+          "measure_side": "credit",
+          "party_ref": "EMP-1",
+          "person_scope": "employee"
         },
         {
           "account": "ph_sss_payable",
+          "comp_component": "contribution",
+          "contribution_scheme": "sss_gsis",
           "contribution_side": "employer",
           "credit": "1500.00",
           "debit": "0.00",
           "document_kind": "payroll_register",
           "line_id": "EL-015.5",
-          "person_scope": "employee",
-          "tax_side": "credit",
-          "tax_types": [
-            "compensation_withholding"
-          ],
-          "treatment": "none"
+          "measure_side": "credit",
+          "party_ref": "EMP-1",
+          "person_scope": "employee"
         },
         {
           "account": "ph_wtc_payable",
-          "atc": "WW010",
+          "comp_component": "tax_withheld",
           "credit": "2808.40",
           "debit": "0.00",
           "document_kind": "payroll_register",
           "line_id": "EL-015.6",
-          "person_scope": "employee",
-          "tax_side": "credit",
-          "tax_types": [
-            "compensation_withholding"
-          ],
-          "treatment": "none"
+          "measure_side": "credit",
+          "party_ref": "EMP-1",
+          "person_scope": "employee"
         },
         {
           "account": "ph_net_pay_payable",
@@ -549,19 +462,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "120000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "EL-016.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-EL-016 synthetic sales invoice",
@@ -580,19 +487,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "100000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "EL-017.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-EL-017 synthetic sales invoice",
@@ -611,19 +512,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "80000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "EL-018.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-EL-018 synthetic sales invoice",
@@ -636,20 +531,16 @@
       "lines": [
         {
           "account": "ph_cwt_receivable",
-          "atc": "WI010",
+          "certificate_atc": "WI010",
           "certificate_status": "received",
           "credit": "0.00",
           "credit_kind": "it",
           "debit": "3000.00",
           "document_kind": "certificate_2307",
           "line_id": "EL-019.1",
+          "measure_side": "debit",
           "period_end": "2026-10-28",
-          "period_start": "2026-10-01",
-          "tax_side": "debit",
-          "tax_types": [
-            "income_tax"
-          ],
-          "treatment": "cwt_credit"
+          "period_start": "2026-10-01"
         },
         {
           "account": "accounts_receivable_gross",
@@ -663,20 +554,12 @@
       "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
     }
   ],
-  "fixture_format": "buwiz-poc-fixture/1",
+  "fixture_format": "buwiz-poc-fixture/2",
   "fixture_id": "b-eight-percent-2026",
   "profiles": [
     {
       "display": "***-***-***-00000",
-      "facts": {
-        "2026": {
-          "deduction_method": "osd",
-          "owner_taxable_compensation_2316": "0.00",
-          "regime": "eight_percent",
-          "vat_status": "non_vat"
-        }
-      },
-      "label": "B-elector: 8% election for 2026",
+      "label": "B: same ledger, 8% Forms context",
       "periods": {
         "2026": "closed",
         "2026-09": "closed",
@@ -684,13 +567,8 @@
         "2026-Q2": "closed",
         "2026-Q3": "closed"
       },
-      "prior_filings": {
-        "2026": {
-          "1701q_q1_q3_tax_payments": "40400.00"
-        }
-      },
       "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
     }
   ],
-  "status": "SYNTHETIC: 8%-elector variant of fixture a."
+  "status": "SYNTHETIC: second copy of fixture a's ledger, used with an 8% Forms context."
 }

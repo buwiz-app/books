@@ -15,19 +15,13 @@
         },
         {
           "account": "sales_revenue",
-          "atc": "PT010",
           "credit": "999000.00",
           "debit": "0.00",
           "document_kind": "sale_invoice",
           "income_class": "business_sales",
           "line_id": "E-001.2",
-          "person_scope": "self",
-          "tax_side": "credit",
-          "tax_types": [
-            "income_tax",
-            "percentage_tax"
-          ],
-          "treatment": "sale_pt"
+          "measure_side": "credit",
+          "person_scope": "self"
         }
       ],
       "memo": "MEMO-SYNTH-E-001 synthetic sales invoice",
@@ -43,12 +37,9 @@
           "credit": "0.00",
           "debit": "30000.00",
           "document_kind": "expense_document",
+          "income_class": "operating_expense",
           "line_id": "E-002.1",
-          "tax_side": "debit",
-          "tax_types": [
-            "income_tax"
-          ],
-          "treatment": "expense"
+          "measure_side": "debit"
         },
         {
           "account": "bank_accounts",
@@ -62,27 +53,14 @@
       "tax_profile_id": "c0a8e3f1-2b7d-4e9a-9f10-5d6c7b8a9e0f"
     }
   ],
-  "fixture_format": "buwiz-poc-fixture/1",
+  "fixture_format": "buwiz-poc-fixture/2",
   "fixture_id": "e-second-profile-2026",
   "profiles": [
     {
       "display": "***-***-***-00000",
-      "facts": {
-        "2026": {
-          "deduction_method": "osd",
-          "owner_taxable_compensation_2316": "0.00",
-          "regime": "graduated",
-          "vat_status": "non_vat"
-        }
-      },
       "label": "E: second business profile",
       "periods": {
         "2026-Q3": "closed"
-      },
-      "prior_filings": {
-        "2026": {
-          "1701q_q1_q3_tax_payments": "0.00"
-        }
       },
       "tax_profile_id": "c0a8e3f1-2b7d-4e9a-9f10-5d6c7b8a9e0f"
     }

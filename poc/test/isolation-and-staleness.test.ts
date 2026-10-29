@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { canonical, prettyJson } from "../src/canonical.ts";
 import { freshness, assertFillable, computeInputsHash, buildProposal, ProposalError } from "../src/proposal.ts";
-import { data, fixture, PROFILE_A, PROFILE_B, proposal, clone, rawFixture } from "./support.ts";
+import { EIGHT_PERCENT, GRADUATED_OSD, data, defaultContext, fixture, lineageOf, PROFILE_A, PROFILE_B, proposal, clone, rawFixture } from "./support.ts";
 import { normalizeFixture } from "../src/load.ts";
 import type { NormInput } from "../src/types.ts";
 
@@ -30,24 +30,24 @@ describe("profile isolation: proposals for A never include lines of B", () => {
   ] as const) {
     test(`${form} ${period} for A is byte-identical whether or not B is in the same input`, () => {
       const alone = proposal(aAlone, form, period);
-      const withB = buildProposal(data, both, form, period, PROFILE_A);
+      const withB = buildProposal(data, both, form, period, defaultContext(form), PROFILE_A);
       expect(withB.output_sha256).toBe(alone.output_sha256);
       expect(prettyJson(withB)).toBe(prettyJson(alone));
     });
   }
 
-  test("B's 2551Q is computed from B's lines alone: base 999000.00, PT 29970.00", () => {
-    const withA = buildProposal(data, both, "2551Q", "2026-Q3", PROFILE_B);
+  test("B's 2551Q is computed from B's lines alone: net sales 999000.00", () => {
+    const withA = buildProposal(data, both, "2551Q", "2026-Q3", {}, PROFILE_B);
     const alone = proposal(bAlone, "2551Q", "2026-Q3");
     expect(withA.output_sha256).toBe(alone.output_sha256);
     expect(withA.fill_args["txtATCAmt1"]).toBe("999000.00");
-    expect(withA.expected_readback["frm2551Qv2018:txt14"]).toBe("29970.00");
+    expect(withA.measures["net_sales"]?.value).toBe("999000.00");
   });
 
   test("A's lineage names only A's lines, and A's output carries no B identifier", () => {
-    const p = buildProposal(data, both, "2551Q", "2026-Q3", PROFILE_A);
+    const p = buildProposal(data, both, "2551Q", "2026-Q3", {}, PROFILE_A);
     const bLines = bAlone.entries.flatMap((e) => e.lines.map((l) => l.line_id));
-    const lineageLines = (p.lineage["txtATCAmt1"] as { lines: Array<{ line_id: string }> }).lines.map((l) => l.line_id);
+    const lineageLines = lineageOf(p, "txtATCAmt1").lines.map((l) => l.line_id);
     for (const id of lineageLines) expect(bLines).not.toContain(id);
     const text = JSON.stringify(p);
     expect(text).not.toContain(PROFILE_B);
@@ -56,7 +56,7 @@ describe("profile isolation: proposals for A never include lines of B", () => {
   });
 
   test("a proposal for a profile that is not in the input is refused", () => {
-    expect(() => buildProposal(data, aAlone, "2551Q", "2026-Q3", PROFILE_B)).toThrow(/no_profile/);
+    expect(() => buildProposal(data, aAlone, "2551Q", "2026-Q3", {}, PROFILE_B)).toThrow(/no_profile/);
   });
 
   test("a reversal whose original belongs to another profile is an orphan, not a silent cross-profile reversal", () => {
@@ -70,7 +70,7 @@ describe("profile isolation: proposals for A never include lines of B", () => {
       lines: bEntry.lines.map((l) => ({ ...l, line_id: `X-1.${l.line_id.slice(-1)}`, debit: l.credit, credit: l.debit })),
     };
     mixed.entries.push(aReversal as NormInput["entries"][number]);
-    expect(() => buildProposal(data, mixed, "2551Q", "2026-Q3", PROFILE_A)).toThrow(/orphan_reversal/);
+    expect(() => buildProposal(data, mixed, "2551Q", "2026-Q3", {}, PROFILE_A)).toThrow(/orphan_reversal/);
   });
 });
 
@@ -141,28 +141,31 @@ describe("stale detection: a changed input marks the stored proposal stale and r
     expect(blockedNow.blocking.map((b) => b.code)).toContain("GATE.RETURNS_ACK");
   });
 
-  test("a tax fact change (regime to 8%) makes the proposal stale", () => {
-    const changed = clone(base);
-    changed.profiles[0].facts["2026"].regime = "eight_percent";
-    expect(freshness(stored, data, changed)).toBe("stale");
+  test("a change in the Forms context (the tax option read from the Forms draft) makes the 1701-MS proposal stale", () => {
+    const annual = proposal(base, "1701MS", "2026", GRADUATED_OSD);
+    expect(freshness(annual, data, base)).toBe("fresh");
+    expect(freshness(annual, data, base, EIGHT_PERCENT)).toBe("stale");
+    expect(() => assertFillable(annual, data, base, EIGHT_PERCENT)).toThrow(/stale/);
   });
 
   test("a rule-set version bump makes the proposal stale", () => {
     const bumped = structuredClone(data) as typeof data;
-    bumped.rules["2551Q"].version = 2;
+    bumped.rules["2551Q"].version = 3;
     expect(computeInputsHash(bumped, base, "2551Q", "2026-Q3")).not.toBe(stored.inputs_hash);
     expect(computeInputsHash(data, base, "2551Q", "2026-Q3")).toBe(stored.inputs_hash);
   });
 
-  test("a rate-row change makes the proposal stale and changes the tax (PT at 2.5% for the test)", () => {
-    const repriced = structuredClone(data) as typeof data;
-    const row = (repriced.rates.pt_rate_rows as Array<{ code: string; rate_bps: number; effective_to: string | null; default_on: boolean }>).find(
-      (r) => r.code === "PT010" && r.default_on && r.effective_to === null,
-    )!;
-    row.rate_bps = 250;
-    const after = buildProposal(repriced, base, "2551Q", "2026-Q3");
-    expect(after.expected_readback["frm2551Qv2018:txt14"]).toBe("7250.00");
-    expect(freshness(stored, repriced, base)).toBe("stale");
+  test("a mapping change (gross instead of net sales for row 1) makes the proposal stale and changes the input", () => {
+    const remapped = structuredClone(data) as typeof data;
+    remapped.rules["2551Q"].mappings.find((m) => m.id === "2551Q.S1.1.base")!.measures = ["gross_sales"];
+    expect(freshness(stored, remapped, base)).toBe("stale");
+    expect(buildProposal(remapped, base, "2551Q", "2026-Q3").fill_args["txtATCAmt1"]).toBe("300000.00");
+  });
+
+  test("a measures-catalogue change makes the proposal stale", () => {
+    const changed = structuredClone(data) as typeof data;
+    changed.measures.version = 2;
+    expect(freshness(stored, changed, base)).toBe("stale");
   });
 
   test("a blocked proposal is refused for fill even when fresh", () => {
