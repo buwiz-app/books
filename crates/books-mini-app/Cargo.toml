@@ -1,0 +1,40 @@
+[package]
+name = "books-mini-app"
+version = "0.1.0"
+description = "Buwiz Books Rox mini app: the stdio MCP server for plugin dev.goldcoders.books"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "books-mini-app"
+path = "src/main.rs"
+
+# The workspace-level tests (docs/05 §P0 lists `tests/`).
+[[test]]
+name = "jcs_vectors"
+path = "../../tests/jcs_vectors.rs"
+
+[[test]]
+name = "manifest_shape"
+path = "../../tests/manifest_shape.rs"
+
+[[test]]
+name = "stdio_roundtrip"
+path = "../../tests/stdio_roundtrip.rs"
+
+[dependencies]
+# Session certificates are signed with the ed25519 key Rox provisions (spec 4.4).
+ed25519-dalek = { version = "2", default-features = false, features = ["zeroize"] }
+# Tickets: 130 bits from the OS CSPRNG (spec 9.5).
+getrandom = "0.3"
+# Manifest hash, permissions digest and app fingerprints (spec 4.4, 5.2, 6.2).
+sha2 = "0.10"
+serde_json = "1"
+
+[lints]
+workspace = true
