@@ -2,6 +2,10 @@
  "entries": [
   {
    "at": "2026-10-29",
+   "text": "rox PR #13 opened: trust store honoured, path docs fixed, symlink-safe CLIs; 2 M1 tasks added"
+  },
+  {
+   "at": "2026-10-29",
    "text": "Plan and tracker published"
   },
   {

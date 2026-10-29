@@ -1,0 +1,9 @@
+{
+ "milestone": "M1",
+ "order": 9,
+ "title": "Command description that does not repeat the plugin title",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "Rox shows 'description · plugin title'; today it reads 'Open Buwiz Books · Buwiz Books' (manifest.rs:83). Use e.g. 'Open your books'.",
+ "updated": "2026-10-29"
+}
