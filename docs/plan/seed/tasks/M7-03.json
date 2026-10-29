@@ -3,7 +3,7 @@
  "order": 2,
  "title": "Scratch BIR profile for tests",
  "owner": "BIR owner",
- "status": "blocked",
- "evidence": "No scratch BIR profile yet (B2). 2026-10-30: at the owner's word, asked the rox session for a recipe (where BIR lives, BIR_DATABASE_PATH on a scratch file, test signing, draft-only tools). Live BIR database never opened.",
+ "status": "done",
+ "evidence": "86b3aff: BIR's own broker-harness recipe (rox session, 2026-10-30): HOME, BIR_DATABASE_PATH and a throwaway BIR_DB_KEY in the run's temp dir, asserted before BIR starts; EBIR_TEST_ENV, auth bypass, dry-run filing; a run-only trust file and books-test-01. Live BIR database never opened.",
  "updated": "2026-10-30"
 }

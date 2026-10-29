@@ -2,7 +2,7 @@
  "order": 8,
  "question": "Slice B: which scratch BIR install may Books use (B2, D12)?",
  "recommended": "A documented scratch install from the BIR and Rox owners: a second broker with BIR_DATABASE_PATH on a scratch file, or BIR's own harness",
- "answer": "",
- "status": "open",
+ "answer": "BIR's own broker harness (crates/bir-shell/v1-tests/broker.test.mjs): a scratch HOME, BIR_DATABASE_PATH and BIR_DB_KEY, EBIR_TEST_ENV, auth bypass, dry-run filing, run-only trust (rox session, 2026-10-30)",
+ "status": "answered",
  "where": "07 B2, D12 · M7-03, M7-04 (asked by Books build, 2026-10-30)"
 }

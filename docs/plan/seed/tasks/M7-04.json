@@ -3,7 +3,7 @@
  "order": 3,
  "title": "Slice B: Q3 2551Q into a scratch BIR draft",
  "owner": "Claude",
- "status": "blocked",
- "evidence": "4f3bfc3: Slice B passes against a harness (tests/handoff_slice_b.rs: 290000.00, source document, read-back equal); the live step waits for M7-03 (rox session asked 2026-10-30)",
+ "status": "done",
+ "evidence": "86b3aff: tools/bir/slice-b-live.sh 29/29 against a real bir-mini-app (BIR 42163e3e): 290000.00 and 0.00 filled once, source document, read back to the centavo and kept in the saved draft; September reopened and the late sale mark it out of date; the refresh fills 295000.00. No TIN in Books results or logs",
  "updated": "2026-10-30"
 }
