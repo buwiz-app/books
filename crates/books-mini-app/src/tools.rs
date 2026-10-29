@@ -14,7 +14,7 @@ use serde_json::{Map, Value, json};
 use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
-use crate::{reconcile, records, reports, views, writes};
+use crate::{forms, oldbooks, payroll, reconcile, records, reports, views, writes};
 
 pub const STATUS: &str = "books_status";
 pub const RESOLVE: &str = "books_resolve";
@@ -54,6 +54,21 @@ pub const MONTH_CLOSE: &str = "books_app_month_close";
 pub const MONTH_REOPEN: &str = "books_app_month_reopen";
 pub const DEFAULT_SET: &str = "books_app_default_set";
 pub const BOOK_UPDATE: &str = "books_app_book_update";
+pub const FILE_PART: &str = "books_app_upload_part";
+pub const IMPORT: &str = "books_app_import";
+pub const IMPORT_GET: &str = "books_import_get";
+pub const ACCOUNT_MATCH: &str = "books_app_account_match";
+pub const ACCOUNTS_CONFIRM: &str = "books_app_accounts_confirm";
+pub const OPENING_SET: &str = "books_app_opening_set";
+pub const RETURN_OK: &str = "books_app_return_ok";
+pub const FORMS: &str = "books_forms";
+pub const FORM_PROPOSAL: &str = "books_form_proposal";
+pub const FORM_LINEAGE: &str = "books_app_form_lineage";
+pub const CERTIFICATES: &str = "books_certificates_list";
+pub const CERTIFICATE_ADD: &str = "books_app_certificate_add";
+pub const CERTIFICATE_SET: &str = "books_app_certificate_set";
+pub const PAYROLL: &str = "books_wages_list";
+pub const PAYRUN_SAVE: &str = "books_app_wage_run_save";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -258,6 +273,83 @@ fn default_schema() -> Value {
 
 fn book_update_schema() -> Value {
     json!({ "type": "object", "required": ["client_request_id"], "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "label": { "type": "string" }, "fiscal_year_start": { "type": "integer" }, "basis": { "type": "string", "enum": ["cash", "accrual"] } } })
+}
+
+fn upload_part_schema() -> Value {
+    json!({ "type": "object", "required": ["upload", "part", "parts", "data_base64"], "properties": {
+        "upload": { "type": "string", "description": "The app's id for one picked file." },
+        "part": { "type": "integer", "minimum": 0 }, "parts": { "type": "integer", "minimum": 1 },
+        "data_base64": { "type": "string", "description": "This part's bytes, base64url." } } })
+}
+
+fn import_schema() -> Value {
+    json!({ "type": "object", "required": ["client_request_id", "source"], "properties": {
+        "client_request_id": { "type": "string" }, "book": { "type": "string" },
+        "source": { "type": "string", "enum": ["web", "csv"] },
+        "web_upload": { "type": "string" }, "chart_upload": { "type": "string" }, "journal_upload": { "type": "string" },
+        "web_text": { "type": "string" }, "chart_text": { "type": "string" }, "journal_text": { "type": "string" },
+        "file_name": { "type": "string" } } })
+}
+
+fn account_match_schema() -> Value {
+    json!({ "type": "object", "required": ["client_request_id", "account", "kind"], "properties": {
+        "client_request_id": { "type": "string" }, "book": { "type": "string" },
+        "account": { "type": "string" }, "kind": { "type": "string", "description": "A kind id, mixed or unsure." } } })
+}
+
+fn confirm_schema() -> Value {
+    json!({ "type": "object", "required": ["client_request_id"], "properties": {
+        "client_request_id": { "type": "string" }, "book": { "type": "string" },
+        "min": { "type": "integer", "minimum": 50, "maximum": 100, "description": "Confirm suggestions at least this sure (90)." } } })
+}
+
+fn opening_schema() -> Value {
+    json!({ "type": "object", "required": ["client_request_id", "measure", "from"], "properties": {
+        "client_request_id": { "type": "string" }, "book": { "type": "string" },
+        "measure": { "type": "string" }, "from": { "type": "string" }, "to": { "type": "string" },
+        "amount": { "type": "string" }, "proof": { "type": "string", "description": "What proves it: filed returns, bank statements." },
+        "delete": { "type": "boolean" } } })
+}
+
+fn form_schema() -> Value {
+    json!({ "type": "object", "properties": {
+        "book": { "type": "string" },
+        "form": { "type": "string", "enum": ["2551Q", "1601C", "1701MS"] },
+        "period": { "type": "string", "description": "2026-Q3, 2026-09 or 2026; the last full period when absent." },
+        "form_context": { "type": "object", "description": "The BIR choices read from the BIR draft, such as {\"/taxpayer/tax_option\": \"graduated\"}. Books never sets them." },
+        "key": { "type": "string" } } })
+}
+
+fn certificates_schema() -> Value {
+    json!({ "type": "object", "properties": { "book": { "type": "string" }, "filter": { "type": "string", "enum": ["all", "received", "pending"] } } })
+}
+
+fn certificate_add_schema() -> Value {
+    json!({ "type": "object", "required": ["client_request_id", "form", "credit_kind", "atc", "quarter", "amount", "person"], "properties": {
+        "client_request_id": { "type": "string" }, "book": { "type": "string" },
+        "form": { "type": "string", "enum": ["2307", "2306"] }, "credit_kind": { "type": "string", "enum": ["pt", "it"] },
+        "atc": { "type": "string", "description": "As printed on the paper." }, "quarter": { "type": "string" },
+        "amount": { "type": "string" }, "status": { "type": "string", "enum": ["received", "pending"] },
+        "person": { "type": "string" }, "against": { "type": "string" }, "date": { "type": "string" }, "reference": { "type": "string" } } })
+}
+
+fn certificate_set_schema() -> Value {
+    json!({ "type": "object", "required": ["client_request_id", "certificate", "status"], "properties": {
+        "client_request_id": { "type": "string" }, "book": { "type": "string" }, "certificate": { "type": "string" },
+        "status": { "type": "string", "enum": ["received", "pending", "lost", "disputed"] } } })
+}
+
+fn wage_run_schema() -> Value {
+    json!({ "type": "object", "required": ["client_request_id", "period_from", "period_to", "account", "employees"], "properties": {
+        "client_request_id": { "type": "string" }, "book": { "type": "string" },
+        "period_from": { "type": "string" }, "period_to": { "type": "string" }, "date": { "type": "string" },
+        "account": { "type": "string", "description": "The bank or cash account net pay leaves." },
+        "employees": { "type": "array", "items": { "type": "object", "required": ["person"], "properties": {
+            "person": { "type": "string" }, "basic": { "type": "string" }, "minimum_wage": { "type": "string" },
+            "overtime": { "type": "string" }, "thirteenth": { "type": "string" }, "de_minimis": { "type": "string" },
+            "ee_sss": { "type": "string" }, "ee_philhealth": { "type": "string" }, "ee_pagibig": { "type": "string" },
+            "er_sss": { "type": "string" }, "er_philhealth": { "type": "string" }, "er_pagibig": { "type": "string" },
+            "tax_withheld": { "type": "string", "description": "As payroll recorded it; Books does not compute it." } } } } } })
 }
 
 fn write_ref() -> Value {
@@ -564,6 +656,111 @@ pub const TOOLS: &[Tool] = &[
         schema: book_update_schema,
         description: "Rename the book, move its fiscal year, or change its basis (only from the start of a year with nothing posted).",
     },
+    Tool {
+        name: FILE_PART,
+        reach: Reach::App,
+        write: true,
+        schema: upload_part_schema,
+        description: "Send one part of a picked file (old books or a statement) for an import.",
+    },
+    Tool {
+        name: IMPORT,
+        reach: Reach::App,
+        write: true,
+        schema: import_schema,
+        description: "Bring old books into a book with nothing posted: a web Buwiz Books export, or a CSV chart and journal.",
+    },
+    Tool {
+        name: IMPORT_GET,
+        reach: Reach::Everyone,
+        write: false,
+        schema: book_only,
+        description: "What came in from old books, the account matches waiting for the owner, and opening totals.",
+    },
+    Tool {
+        name: ACCOUNT_MATCH,
+        reach: Reach::App,
+        write: true,
+        schema: account_match_schema,
+        description: "The owner's match of one imported account to a kind, mixed or not sure yet.",
+    },
+    Tool {
+        name: ACCOUNTS_CONFIRM,
+        reach: Reach::App,
+        write: true,
+        schema: confirm_schema,
+        description: "Confirm every suggested account match Books is sure of.",
+    },
+    Tool {
+        name: OPENING_SET,
+        reach: Reach::App,
+        write: true,
+        schema: opening_schema,
+        description: "Enter (or delete) an opening total with its proof, for a book that starts mid-year.",
+    },
+    Tool {
+        name: RETURN_OK,
+        reach: Reach::App,
+        write: true,
+        schema: write_ref,
+        description: "The owner's OK of a return event a form is waiting on.",
+    },
+    Tool {
+        name: FORMS,
+        reach: Reach::Everyone,
+        write: false,
+        schema: form_schema,
+        description: "The three BIR forms Books feeds, with their period and status.",
+    },
+    Tool {
+        name: FORM_PROPOSAL,
+        reach: Reach::Everyone,
+        write: false,
+        schema: form_schema,
+        description: "One form's Books totals beside its BIR input boxes. Pass the BIR choices you read as form_context.",
+    },
+    Tool {
+        name: FORM_LINEAGE,
+        reach: Reach::App,
+        write: false,
+        schema: form_schema,
+        description: "The ledger lines behind one BIR box.",
+    },
+    Tool {
+        name: CERTIFICATES,
+        reach: Reach::Everyone,
+        write: false,
+        schema: certificates_schema,
+        description: "The 2307s (and 2306s) customers sent, with status and what each counts toward.",
+    },
+    Tool {
+        name: CERTIFICATE_ADD,
+        reach: Reach::App,
+        write: true,
+        schema: certificate_add_schema,
+        description: "Record a certificate as printed and post it against its sale.",
+    },
+    Tool {
+        name: CERTIFICATE_SET,
+        reach: Reach::App,
+        write: true,
+        schema: certificate_set_schema,
+        description: "A certificate's paper arrived, or was lost or disputed.",
+    },
+    Tool {
+        name: PAYROLL,
+        reach: Reach::Everyone,
+        write: false,
+        schema: book_only,
+        description: "Pay runs with gross pay and status. Amounts only.",
+    },
+    Tool {
+        name: PAYRUN_SAVE,
+        reach: Reach::App,
+        write: true,
+        schema: wage_run_schema,
+        description: "Save a pay run as a draft entry; the Ledger posts it.",
+    },
 ];
 
 pub fn find(name: &str) -> Option<&'static Tool> {
@@ -719,9 +916,23 @@ pub fn call(
         SETTINGS_GET => read(books, arguments, |store, book, _| {
             reconcile::settings(store, book)
         }),
-        STATEMENT_IMPORT => write(books, name, origin, arguments, |tx| {
-            reconcile::statement_import(tx, arguments)
-        }),
+        STATEMENT_IMPORT => {
+            // a statement over one call's 256 KiB arrives in parts
+            let mut args = arguments.clone();
+            if service::text(arguments, "csv_upload").is_some() {
+                match oldbooks::file_text(&mut books.uploads, arguments, "csv") {
+                    Ok(Some(t)) => {
+                        args.remove("csv_upload");
+                        args.insert("csv_text".into(), json!(t));
+                    }
+                    Ok(None) => {}
+                    Err(r) => return Some(r.into_result()),
+                }
+            }
+            write(books, name, origin, &args, |tx| {
+                reconcile::statement_import(tx, &args)
+            })
+        }
         STATEMENT_ACCEPT => write(books, name, origin, arguments, |tx| {
             reconcile::statement_accept(tx, arguments)
         }),
@@ -745,6 +956,57 @@ pub fn call(
         }),
         BOOK_UPDATE => write(books, name, origin, arguments, |tx| {
             reconcile::book_update(tx, arguments)
+        }),
+        FILE_PART => answer(oldbooks::upload_part(&mut books.uploads, arguments)),
+        IMPORT => {
+            let plan = match oldbooks::files(&mut books.uploads, arguments)
+                .and_then(|f| oldbooks::plan(arguments, f))
+            {
+                Ok(p) => p,
+                Err(r) => return Some(r.into_result()),
+            };
+            write(books, name, origin, arguments, |tx| {
+                oldbooks::run(tx, arguments, &plan)
+            })
+        }
+        IMPORT_GET => read(books, arguments, |store, book, _| {
+            oldbooks::status(store, book, origin)
+        }),
+        ACCOUNT_MATCH => write(books, name, origin, arguments, |tx| {
+            oldbooks::account_match(tx, arguments)
+        }),
+        ACCOUNTS_CONFIRM => write(books, name, origin, arguments, |tx| {
+            oldbooks::confirm_sure(tx, arguments)
+        }),
+        OPENING_SET => write(books, name, origin, arguments, |tx| {
+            oldbooks::opening_set(tx, arguments)
+        }),
+        RETURN_OK => write(books, name, origin, arguments, |tx| {
+            oldbooks::return_ok(tx, arguments)
+        }),
+        FORMS => read(books, arguments, |store, book, args| {
+            forms::overview(store, book, args)
+        }),
+        FORM_PROPOSAL => read(books, arguments, |store, book, args| {
+            forms::proposal(store, book, args, origin)
+        }),
+        FORM_LINEAGE => read(books, arguments, |store, book, args| {
+            forms::lineage(store, book, args)
+        }),
+        CERTIFICATES => read(books, arguments, |store, book, args| {
+            payroll::list_certificates(store, book, args, origin)
+        }),
+        CERTIFICATE_ADD => write(books, name, origin, arguments, |tx| {
+            payroll::add_certificate(tx, arguments)
+        }),
+        CERTIFICATE_SET => write(books, name, origin, arguments, |tx| {
+            payroll::set_certificate(tx, arguments)
+        }),
+        PAYROLL => read(books, arguments, |store, book, _| {
+            payroll::list(store, book)
+        }),
+        PAYRUN_SAVE => write(books, name, origin, arguments, |tx| {
+            payroll::save(tx, arguments)
         }),
         _ => fail("internal", "Books has no handler for that tool."),
     })

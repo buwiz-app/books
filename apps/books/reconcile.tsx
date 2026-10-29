@@ -12,28 +12,14 @@ const CELL: Record<string, string> = {
   none: "",
 };
 
-/** The picked file's bytes as base64url, for the import tool. */
-function b64url(bytes: Any): string {
-  const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-  let out = "";
-  for (let i = 0; i < bytes.length; i += 3) {
-    const n = (bytes[i] << 16) | ((bytes[i + 1] || 0) << 8) | (bytes[i + 2] || 0);
-    const left = bytes.length - i;
-    out += A[(n >> 18) & 63] + A[(n >> 12) & 63];
-    if (left > 1) out += A[(n >> 6) & 63];
-    if (left > 2) out += A[n & 63];
-  }
-  return out;
-}
-
 function importStatement(account: string) {
   if (!rox.pickFile) return toast("Picking files is not available in this Rox.");
   rox
     .pickFile({ extensions: [".csv"] })
     .then(async (files: Any[]) => {
       if (!files.length) return;
-      const bytes = await files[0].read();
-      const r: Any = await act("books_app_statement_import", { account, csv_base64: b64url(bytes), file_name: String(files[0].name).slice(0, 120) });
+      const upload = await sendFile(files[0]);
+      const r: Any = await act("books_app_statement_import", { account, csv_upload: upload, file_name: String(files[0].name).slice(0, 120) });
       recAccount.set(account);
       recMonth.set(r.month);
       toast(`${String(r.lines)} lines imported`);

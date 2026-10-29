@@ -191,6 +191,100 @@ input digest matches, and the whole vector file re-emitted with the Rust proposa
 change to a vector's input fails the test. Notes from the port: `certificates_2316_received` is `planned` in the
 catalogue and fails closed, as in the PoC; Rust sums in i128 and refuses a measure past i64.
 
+## M5 Old books in
+
+### What exists
+
+- `books-core::import` (built by a subagent on branch `m5-import`, `b59af50`, verified here before merging): the web
+  Buwiz Books export (v1 to v4) and CSV chart and journal files (QuickBooks, Xero, spreadsheets) read into one plan;
+  Map 1 suggests a kind and a confidence for each account. The web export's `ph*` tables, bills, banks and voided
+  transactions are skipped, each with a reason; no TIN field is read, and nine-digit runs are masked.
+- `books-store::imports` (schema 4): an import lands in one transaction or not at all, into a book with nothing posted.
+  An imported account starts unconfirmed with its suggestion; the owner confirms one, all suggestions at once, or picks
+  mixed or not sure yet. Opening totals with proof (`opening_total`); the owner's OK of a return event (`return_ack`);
+  the import log (`import_batch`).
+- Tools: `books_app_upload_part` (a picked file in parts: one Rox call takes at most 256 KiB), `books_app_import`,
+  `books_import_get`, `books_app_account_match`, `books_app_accounts_confirm`, `books_app_opening_set`,
+  `books_app_return_ok`. The statement import takes parts too (`csv_upload`).
+- Pages: Old books (Settings › Link & data, and a banner on Accounts while matches wait): bring in, **Match your
+  accounts** (their account, Sure, Kind in Books, Feeds, Status; Confirm all suggested), Opening totals.
+
+### Design choices (PROPOSAL)
+
+- **Holds (plan 2.2).** A line on an account that is not sure yet, imported and not confirmed, or mixed without its
+  own facts goes to the bridge with neutral facts, and holds every box a kind on that side could feed, plus the
+  measures derived from them (net sales from gross sales). The box shows "Held: N lines on X are not matched yet".
+- **Receivable and payable accounts** of an old chart are left out of a cash book when no line uses them (listed in
+  the import's skipped list); when lines use them the import is refused with the way out (make the book accrual first).
+- **Opening totals** enter the bridge as one opening entry on the range's last day, balanced against owner's equity,
+  so lineage shows "Opening figure". The months they cover count as closed (they are fixed by their proof); a month
+  before the book's first entry that the owner closed counts as closed too.
+- **Old drafts** come in as drafts to review; voided transactions of the web export stay out.
+
+### Exit (tests/forms_bridge.rs, passing)
+
+The three sample charts (`fixtures/import/`: web Books, QuickBooks CSV, spreadsheet CSV) each give 2551Q Q3 2026
+`txtATCAmt1` = 290,000.00 once the owner confirms the matches, OKs the September return and closes Q3; before the
+matches are confirmed that box is held. A file sent in three parts imports the same. A mid-year book with an opening
+gross-sales total of 250,000.00 (Apr to Jun, with proof) gives 2551Q Q2 = 250,000.00; no proof, or a range that
+overlaps the book's own months, is refused. The assistant sees opening totals without their proof text.
+
+### Checked in the test Rox
+
+[docs/shots/m5/](shots/m5/): the QuickBooks sample imported; the Accounts banner (9 to match); Match your accounts with
+suggestions; Confirm all suggested (0 to confirm, 2 per line, 2 not matched); Q3 closed and the return waiting; after
+"OK the return", 2551Q Ready with 290,000.00; its lineage (four lines, the return negative).
+
+## M6 Forms, Certificates, Payroll
+
+### What exists
+
+- `books-mini-app::forms`: the book as the PoC's input (`buwiz-poc-fixture/3`), through the ported loader and engine,
+  so the app runs the code the 17 vectors prove. Tools `books_forms` (three cards), `books_form_proposal` (one form,
+  with the BIR choices the assistant read as `form_context`), `books_app_form_lineage` (app only).
+- `books-store::certificates` (schema 5): a certificate is a posted line with the certificate facts as printed; its
+  status changes later as a `certificate_status` row, which the bridge reads (a void's reversal reads its original's).
+  Tools `books_certificates_list`, `books_app_certificate_add`, `books_app_certificate_set`.
+- Pay runs: `books_wages_list`, `books_app_wage_run_save` (a draft entry whose lines carry the payroll facts; the
+  Ledger's Post posts it). Tool names avoid the forbidden verbs (no "pay", "file").
+- Pages: Forms (cards, Books total → BIR box → value, lineage on a click, the return to OK, who fills the boxes, the BIR
+  note), Payroll (runs, new pay run), Certificates (All, Received, Pending; status changes; add one).
+
+### Design choices (PROPOSAL)
+
+- **The 1701-MS tax option** is shown as "Read from the BIR draft"; the assistant passes it (props `tax_option`,
+  `deduction`, or `form_context` on the tool). Without it the card says "Needs the BIR option". Switching it on the page
+  only previews; Books never stores or sets it. A box for the other option is not a row; a box another choice leaves
+  out stays as "not sent: deduction is OSD".
+- **Preview while a period is open:** summed boxes show their total so far, marked "so far · preview", never sent.
+- **Card labels** come from the first blocking reason: Preview (period open), Needs your OK (a return), No pay run,
+  Needs the BIR option; "Ready · N held" counts holds and boxes that fail closed (1601-C item 16).
+- **Adding a certificate** asks how the sale was recorded: net of the tax (the withheld part is added to sales) or in
+  full as money in (it comes back out of the bank). The ATC is copied from the paper. The drawing's "+ Add from a PDF"
+  is "+ Add a 2307": Books does not read PDFs; the assistant can.
+- **Item 17's cap** is shown from the rule file ("the one tax rule in the bridge", as the drawing labels it).
+- The demo's September pay run now carries `document_kind: payroll_register` so the Payroll page lists it.
+
+### Exit (tests/forms_bridge.rs, passing)
+
+A September pay run (basic 40,000.00, de minimis 2,000.00, employee SSS 2,000.00, employer 1,500.00, tax withheld as
+recorded 2,808.40) saves as a draft (net 37,191.60), posts, and gives 1601-C items 3 Yes, 14 42,000.00, 18 2,000.00,
+19 2,000.00, 25 2,808.40. Of three Q3 certificates only the received 2307 counts (2551Q item 15 = 3,000.00); when the
+pending one's paper arrives it is 5,000.00; the 2306 never counts. A made-up ATC is refused. 1701-MS without the tax
+option is blocked on it; with 8% it shows IV.19 and not IV.5.
+
+### Checked in the test Rox
+
+[docs/shots/m6/](shots/m6/): on the demo book, Forms with the return waiting, then 2551Q Ready (290,000.00 and
+3,000.00, "1 received · 1 pending and 1 final (2306) left out"); 1601-C Ready · 1 held; 1701-MS graduated with OSD
+previewing 1,200,000.00, 10,000.00, 8,900.00 and 3,000.00; Payroll (September, 1601-C Sep ready) and its sheet;
+Certificates with what each counts toward, and its sheet.
+
+### Gates
+
+fmt clean; clippy clean; cargo test 109; PoC 177; conformance 92/92 (one of three runs hit the broker's 20 calls a
+second in BRG-03, which paces at exactly that rate; told the rox session); host test 17/17; privacy scan 0 findings.
+
 ## Not yet built
 
-M5, the rest of M6 (Forms, Certificates, Payroll pages), M7 to M9: see the tracker.
+M7 to M9: see the tracker.

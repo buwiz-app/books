@@ -35,6 +35,8 @@ pub struct Account {
     pub kind: KindRef,
     pub kind_confirmed: bool,
     pub active: bool,
+    /// `preset`, `user` or `import`.
+    pub source: String,
 }
 
 impl Account {
@@ -77,7 +79,7 @@ fn book_row(r: &Row<'_>) -> rusqlite::Result<Book> {
 }
 
 const ACCOUNT_COLUMNS: &str =
-    "account_id, book_id, number, name, type, kind, kind_confirmed, active";
+    "account_id, book_id, number, name, type, kind, kind_confirmed, active, source";
 
 fn account_row(r: &Row<'_>) -> rusqlite::Result<Account> {
     let ty: String = r.get(4)?;
@@ -91,6 +93,7 @@ fn account_row(r: &Row<'_>) -> rusqlite::Result<Account> {
         kind: KindRef::parse(&kind).unwrap_or(KindRef::Unsure),
         kind_confirmed: r.get::<_, i64>(6)? == 1,
         active: r.get::<_, i64>(7)? == 1,
+        source: r.get(8)?,
     })
 }
 

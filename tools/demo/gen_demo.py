@@ -133,14 +133,16 @@ for m in range(1, 11):
     if m <= 9:
         post(d(2), "money_out", php(7500), BANK, DRAW, "Owner", "Owner took out", None, person_kind="owners")
 post("2026-09-15", "money_out", php(2499), BANK, UTIL, "Lumen Power Co.", "Electricity · September", "September bill", dept="Operations", person_kind="vendors")
-# September payroll, with what payroll recorded withheld (a fact; Books computes no tax)
+# September payroll, with what payroll recorded withheld (a fact; Books computes no tax);
+# a pay run's lines are a payroll register, so the Payroll page lists the run
+PAY_RUN = {"document_kind": "payroll_register", "party_ref": "emp-ana", "period_start": "2026-09-01", "period_end": "2026-09-30"}
 journal("2026-09-30", [
-    (SALARIES, php(40000), 0, {"comp_component": "basic_pay", "party_ref": "emp-ana"}),
-    (SALARIES, php(2000), 0, {"comp_component": "de_minimis", "party_ref": "emp-ana"}),
-    (EMPLOYER, php(1500), 0, {"party_ref": "emp-ana"}),
-    (WTC, 0, php(2808, 40), {"party_ref": "emp-ana"}),
-    (SSS, 0, php(2000), {"party_ref": "emp-ana"}),
-    (SSS, 0, php(1500), {"contribution_side": "employer", "party_ref": "emp-ana"}),
+    (SALARIES, php(40000), 0, {**PAY_RUN, "comp_component": "basic_pay"}),
+    (SALARIES, php(2000), 0, {**PAY_RUN, "comp_component": "de_minimis"}),
+    (EMPLOYER, php(1500), 0, dict(PAY_RUN)),
+    (WTC, 0, php(2808, 40), dict(PAY_RUN)),
+    (SSS, 0, php(2000), dict(PAY_RUN)),
+    (SSS, 0, php(1500), {**PAY_RUN, "contribution_side": "employer"}),
     (BANK, 0, php(37191, 60), None),
 ], memo="Payroll · September", payee="Ana Cruz", reference="1 employee", person_kind="employees", dept="Operations")
 # October

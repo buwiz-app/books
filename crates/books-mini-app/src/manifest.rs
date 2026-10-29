@@ -44,9 +44,10 @@ fn permissions(app: &apps::App) -> Value {
     if app.source.contains("rox.copy(") {
         p["copy"] = json!(true);
     }
-    // the Reconcile page picks a CSV bank statement (M4)
+    // Reconcile picks a CSV bank statement (M4); Import picks old books,
+    // a web Books export or CSV files (M5)
     if app.source.contains("rox.pickFile(") {
-        p["pick_file"] = json!({ "extensions": [".csv"], "max_bytes": 2_000_000 });
+        p["pick_file"] = json!({ "extensions": [".csv", ".json"], "max_bytes": 52_428_800 });
     }
     p
 }
@@ -66,7 +67,11 @@ fn app_entry(app: &apps::App) -> Value {
                 "type": "object",
                 "properties": {
                     TICKET_PROP: { "type": "string", "maxLength": 30 },
-                    "page": { "type": "string", "enum": ["today", "ledger", "unpaid", "reconcile", "reports", "forms", "people", "accounts", "tags", "payroll", "certificates", "settings"] },
+                    "page": { "type": "string", "enum": ["today", "ledger", "unpaid", "reconcile", "reports", "forms", "people", "accounts", "tags", "payroll", "certificates", "settings", "import"] },
+                    // the BIR choices the assistant read from the BIR draft (owner decision): shown, never set
+                    "form": { "type": "string", "enum": ["2551Q", "1601C", "1701MS"] },
+                    "tax_option": { "type": "string", "enum": ["graduated", "eight_percent"] },
+                    "deduction": { "type": "string", "enum": ["osd", "itemized"] },
                     "account": { "type": "string", "maxLength": 30 },
                     "month": { "type": "string", "maxLength": 7 },
                     "filter": { "type": "string", "enum": ["all", "review", "draft", "posted"] }

@@ -55,7 +55,11 @@ pub fn account_in(conn: &Connection, book: &Book, reference: &str) -> Result<Acc
         .ok_or_else(|| Refusal::new("not_found", "That account is not in this book."))
 }
 
-fn entry_in(conn: &Connection, book: &Book, reference: &str) -> Result<entries::Entry, Refusal> {
+pub fn entry_in(
+    conn: &Connection,
+    book: &Book,
+    reference: &str,
+) -> Result<entries::Entry, Refusal> {
     let id = match plumbing::subject(conn, reference)? {
         Some((k, id)) if k == "entry" => id,
         _ => {
@@ -439,7 +443,7 @@ pub fn account_create(conn: &Connection, args: &Map<String, Value>) -> Answer {
         return Err(Refusal::new("exists", "That account number is taken."));
     }
     conn.execute(
-        "INSERT INTO account (book_id, number, name, type, kind) VALUES (?1, ?2, ?3, ?4, ?5)",
+        "INSERT INTO account (book_id, number, name, type, kind, source) VALUES (?1, ?2, ?3, ?4, ?5, 'user')",
         params![book.id, number, name, ty.as_str(), kind.as_str()],
     )
     .map_err(books_store::StoreError::from)?;

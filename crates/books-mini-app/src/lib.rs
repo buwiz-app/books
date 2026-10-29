@@ -13,9 +13,12 @@
 pub mod apps;
 pub mod b64;
 pub mod demo;
+pub mod forms;
 pub mod jcs;
 pub mod jsonrpc;
 pub mod manifest;
+pub mod oldbooks;
+pub mod payroll;
 pub mod reconcile;
 pub mod records;
 pub mod reports;

@@ -1550,45 +1550,63 @@
       "account": "61100",
       "debit": "40000.00",
       "facts": {
-       "comp_component": "basic_pay",
-       "party_ref": "emp-ana"
+       "document_kind": "payroll_register",
+       "party_ref": "emp-ana",
+       "period_start": "2026-09-01",
+       "period_end": "2026-09-30",
+       "comp_component": "basic_pay"
       }
      },
      {
       "account": "61100",
       "debit": "2000.00",
       "facts": {
-       "comp_component": "de_minimis",
-       "party_ref": "emp-ana"
+       "document_kind": "payroll_register",
+       "party_ref": "emp-ana",
+       "period_start": "2026-09-01",
+       "period_end": "2026-09-30",
+       "comp_component": "de_minimis"
       }
      },
      {
       "account": "61600",
       "debit": "1500.00",
       "facts": {
-       "party_ref": "emp-ana"
+       "document_kind": "payroll_register",
+       "party_ref": "emp-ana",
+       "period_start": "2026-09-01",
+       "period_end": "2026-09-30"
       }
      },
      {
       "account": "25110",
       "credit": "2808.40",
       "facts": {
-       "party_ref": "emp-ana"
+       "document_kind": "payroll_register",
+       "party_ref": "emp-ana",
+       "period_start": "2026-09-01",
+       "period_end": "2026-09-30"
       }
      },
      {
       "account": "25120",
       "credit": "2000.00",
       "facts": {
-       "party_ref": "emp-ana"
+       "document_kind": "payroll_register",
+       "party_ref": "emp-ana",
+       "period_start": "2026-09-01",
+       "period_end": "2026-09-30"
       }
      },
      {
       "account": "25120",
       "credit": "1500.00",
       "facts": {
-       "contribution_side": "employer",
-       "party_ref": "emp-ana"
+       "document_kind": "payroll_register",
+       "party_ref": "emp-ana",
+       "period_start": "2026-09-01",
+       "period_end": "2026-09-30",
+       "contribution_side": "employer"
       }
      },
      {

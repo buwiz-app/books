@@ -10,6 +10,7 @@
 //! - [`books`], [`entries`]: the book, its chart and the ledger;
 //! - [`people`]: people, tags and unpaid documents;
 //! - [`months`]: month locks, statements, defaults and book settings;
+//! - [`imports`]: old books coming in, account matches, opening totals;
 //! - [`plumbing`]: idempotency, audit rows and tickets.
 
 use std::fmt;
@@ -21,7 +22,9 @@ use std::path::{Path, PathBuf};
 use rusqlite::{Connection, OptionalExtension as _, params};
 
 pub mod books;
+pub mod certificates;
 pub mod entries;
+pub mod imports;
 pub mod months;
 pub mod people;
 pub mod plumbing;
@@ -33,6 +36,8 @@ const MIGRATIONS: &[(i64, &str)] = &[
     (1, include_str!("../migrations/0001_init.sql")),
     (2, include_str!("../migrations/0002_people_tags_unpaid.sql")),
     (3, include_str!("../migrations/0003_months_statements.sql")),
+    (4, include_str!("../migrations/0004_imports_openings.sql")),
+    (5, include_str!("../migrations/0005_certificates.sql")),
 ];
 
 pub const DATA_DIR_ENV: &str = "BOOKS_DATA_DIR";
@@ -412,7 +417,7 @@ mod tests {
         assert_eq!(mode, 0o700);
         let store = Store::open(&paths).unwrap();
         assert_eq!(store.meta("canary").unwrap().as_deref(), Some(CANARY));
-        assert_eq!(store.meta("schema_version").unwrap().as_deref(), Some("3"));
+        assert_eq!(store.meta("schema_version").unwrap().as_deref(), Some("5"));
         drop(store);
         let other = Paths {
             dir: paths.dir.clone(),

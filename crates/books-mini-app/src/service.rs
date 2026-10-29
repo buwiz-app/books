@@ -86,6 +86,8 @@ pub struct Books {
     store: Option<Store>,
     /// The ticket of the Books home, which needs no store.
     home_ticket: Option<String>,
+    /// Picked files arriving in parts (M5).
+    pub uploads: crate::oldbooks::Uploads,
 }
 
 pub const HOME_TITLE: &str = "Books";
@@ -96,6 +98,7 @@ impl Books {
             paths,
             store: None,
             home_ticket: None,
+            uploads: crate::oldbooks::Uploads::default(),
         }
     }
 
@@ -191,6 +194,7 @@ fn title(store: &Store, kind: &str, id: i64) -> Option<String> {
             }
         }),
         "sline" => Some("Statement line".into()),
+        "cert" => Some("Certificate".into()),
         _ => None,
     }
 }

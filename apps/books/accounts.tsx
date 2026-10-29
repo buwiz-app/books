@@ -17,6 +17,14 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
     (k: Any) => rox.call("books_accounts_list", { group: k.g }),
   );
   const d = () => data() as Any;
+  const imported = resource(
+    () => ({ v: ver() }),
+    () => rox.call("books_import_get", {}),
+  );
+  const waiting = () => {
+    const c = (imported() as Any)?.counts;
+    return c ? c.to_confirm + c.not_matched : 0;
+  };
   const open = (a: Any) => {
     if (a.off) return;
     ledgerAccount.set(a.ticket);
@@ -25,6 +33,13 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
   return (
     <View class="gap-3.5">
       <Head title="Accounts" sub="chart of accounts · Philippines small business" />
+      <If when={waiting() > 0}>
+        <Panel pad class="flex-row items-center gap-2.5">
+          <Pill tone="draft" label={`${String(waiting())} to match`} />
+          <Text class={`flex-1 text-[12.5px] ${C.mute}`}>Imported accounts wait for your match. Boxes their lines could feed are held until then.</Text>
+          <Btn label="Match your accounts" tone="go" onPress={() => p.go("import")} />
+        </Panel>
+      </If>
       <View class="flex-row gap-1.5 flex-wrap">
         <Each of={GROUP_CHIPS}>{(g: Any) => <Chip label={g()[1]} on={group() === g()[0]} onPress={() => group.set(g()[0])} />}</Each>
       </View>

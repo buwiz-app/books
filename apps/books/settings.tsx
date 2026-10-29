@@ -177,6 +177,10 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
                 <Kv k="Tax profile" v={d()?.link.tax_profile} />
                 <Kv k="BIR app" v={d()?.link.bir} />
                 <Kv k="Stored where" v={d()?.link.stored} />
+                <View class="flex-row gap-2 flex-wrap">
+                  <Btn label="Import from web Books" onPress={() => p.go("import")} />
+                  <Btn label="Import CSV files" onPress={() => p.go("import")} />
+                </View>
                 <Text class={`text-[12px] ${C.dim}`}>No TIN is stored here. A tax profile links by its ID only, through Buwiz sign-in.</Text>
               </Panel>
             </If>

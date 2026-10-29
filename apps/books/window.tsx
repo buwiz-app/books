@@ -2,7 +2,7 @@
 // and the new-entry sheet. First run makes the book (cash basis unless
 // the owner picks accrual, ADR 0008).
 
-const PAGES: { id: string; label: string; group?: string; bir?: boolean }[] = [
+const PAGES: { id: string; label: string; group?: string; bir?: boolean; hidden?: boolean }[] = [
   { id: "today", label: "Today" },
   { id: "ledger", label: "Ledger", group: "Money" },
   { id: "unpaid", label: "Unpaid", group: "Money" },
@@ -15,8 +15,10 @@ const PAGES: { id: string; label: string; group?: string; bir?: boolean }[] = [
   { id: "payroll", label: "Payroll", group: "Records" },
   { id: "certificates", label: "Certificates", group: "Records" },
   { id: "settings", label: "Settings", group: "end" },
+  // reached from Settings › Link & data and the Accounts page
+  { id: "import", label: "Old books", hidden: true },
 ];
-const BUILT = ["today", "ledger", "unpaid", "reconcile", "reports", "people", "accounts", "tags", "settings"];
+const BUILT = ["today", "ledger", "unpaid", "reconcile", "reports", "forms", "people", "accounts", "tags", "payroll", "certificates", "settings", "import"];
 
 const page = signal(PAGES.some((x) => x.id === PROPS.page) ? String(PROPS.page) : "today");
 const sheetMode = signal("");
@@ -30,7 +32,7 @@ function go(id: string, filter?: string) {
 function Rail(p: { book: Any; counts: Any }) {
   let last = "";
   const rows: Any[] = [];
-  for (const x of PAGES) {
+  for (const x of PAGES.filter((q) => !q.hidden)) {
     if (x.group === "end") rows.push({ spacer: true });
     else if (x.group && x.group !== last) {
       rows.push({ head: x.group });
@@ -206,6 +208,18 @@ export default function Books() {
               </If>
               <If when={page() === "tags"}>
                 <TagsPage go={go} />
+              </If>
+              <If when={page() === "forms"}>
+                <FormsPage go={go} />
+              </If>
+              <If when={page() === "payroll"}>
+                <PayrollPage go={go} />
+              </If>
+              <If when={page() === "certificates"}>
+                <CertificatesPage go={go} />
+              </If>
+              <If when={page() === "import"}>
+                <ImportPage go={go} />
               </If>
               <If when={!BUILT.includes(page())}>
                 <Later id={page()} />
