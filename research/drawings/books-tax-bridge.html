@@ -1,0 +1,674 @@
+<title>Books Tax Bridge</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one long picture book. Each question (what, how, when, where, who, what if) is one big picture with a line or two.
+   Green is Books, violet is the BIR app, blue is past returns, grey is your BIR profile, white is what you type. */
+:root {
+  --paper: #f4f7f4;
+  --ink: #13201a;
+  --muted: #5a6b62;
+  --line: #d6dfd9;
+  --card: #ffffff;
+  --chip: #eaf0ec;
+  --books: #12804a;
+  --books-soft: #ddf1e6;
+  --bir: #6f45cf;
+  --bir-soft: #ece4fd;
+  --past: #2a6fd1;
+  --past-soft: #e2ecfb;
+  --prof: #5b6b78;
+  --prof-soft: #e7edf2;
+  --you: #a2650f;
+  --you-soft: #fbf0dc;
+  --stop: #b8431c;
+  --stop-soft: #f9e5dc;
+  --ok: #12804a;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0e1411; --ink: #e7efe9; --muted: #98a99f; --line: #27332d; --card: #131b17; --chip: #1a241f;
+    --books: #45c886; --books-soft: #15301f; --bir: #b89cff; --bir-soft: #251c3d; --past: #84b3ff; --past-soft: #16243c;
+    --prof: #9fb0bd; --prof-soft: #1d252c; --you: #f0b553; --you-soft: #33270f; --stop: #ff9b74; --stop-soft: #3a1d12; --ok: #45c886; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0e1411; --ink: #e7efe9; --muted: #98a99f; --line: #27332d; --card: #131b17; --chip: #1a241f;
+  --books: #45c886; --books-soft: #15301f; --bir: #b89cff; --bir-soft: #251c3d; --past: #84b3ff; --past-soft: #16243c;
+  --prof: #9fb0bd; --prof-soft: #1d252c; --you: #f0b553; --you-soft: #33270f; --stop: #ff9b74; --stop-soft: #3a1d12; --ok: #45c886; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--paper); }
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 36px 80px; }
+.wrap { max-width: 1160px; margin: 0 auto; display: flex; flex-direction: column; gap: 60px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.2rem, 6vw, 3.8rem); font-weight: 800; line-height: 1; }
+h2 { font-size: clamp(1.5rem, 3.6vw, 2.15rem); font-weight: 800; line-height: 1.08; }
+h3 { font-size: 1.15rem; font-weight: 800; }
+p { margin: 0; max-width: 66ch; }
+.kicker { font-family: var(--mono); font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--books); }
+.lead { font-size: 1.15rem; color: var(--muted); }
+.note { font-size: 0.95rem; color: var(--muted); }
+.mono { font-family: var(--mono); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--past); outline-offset: 2px; border-radius: 6px; }
+section { display: flex; flex-direction: column; gap: 16px; }
+.q { font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.new { display: inline-block; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--you-soft); color: var(--you); vertical-align: middle; margin-left: 6px; }
+.scroller { overflow-x: auto; }
+.tag { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 0.82rem; font-weight: 700; white-space: nowrap; }
+.t-books { background: var(--books-soft); color: var(--books); } .t-bir { background: var(--bir-soft); color: var(--bir); }
+.t-past { background: var(--past-soft); color: var(--past); } .t-prof { background: var(--prof-soft); color: var(--prof); }
+.t-you { background: var(--you-soft); color: var(--you); } .t-stop { background: var(--stop-soft); color: var(--stop); }
+.t-mute { background: var(--chip); color: var(--muted); }
+
+/* ---------- hero pipeline ---------- */
+.pipe { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 0; min-width: 900px; }
+.stage { display: flex; flex-direction: column; gap: 10px; padding: 0 6px; }
+.stage .box { border-radius: 18px; padding: 16px; min-height: 178px; display: flex; flex-direction: column; gap: 8px; border: 2px solid var(--line); background: var(--card); position: relative; }
+.stage .box b { font-family: var(--display); font-size: 1.15rem; line-height: 1.15; }
+.stage .box span { color: var(--muted); font-size: 0.88rem; }
+.stage .ex { font-family: var(--mono); font-size: 0.76rem; display: flex; flex-direction: column; gap: 3px; }
+.stage .ex i { font-style: normal; padding: 2px 7px; border-radius: 6px; background: var(--chip); align-self: flex-start; }
+.stage.s1 .box { border-color: var(--you); } .stage.s2 .box, .stage.s3 .box, .stage.s4 .box { border-color: var(--books); } .stage.s5 .box { border-color: var(--bir); }
+.arrowrow { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); min-width: 900px; margin-top: 10px; }
+.arrowrow > div { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0 6px; text-align: center; }
+.map { font-family: var(--display); font-weight: 800; font-size: 1rem; }
+.who { font-size: 0.82rem; color: var(--muted); }
+.stage .box::after { content: "→"; position: absolute; right: -19px; top: 50%; transform: translateY(-50%); font-size: 1.6rem; color: var(--muted); font-family: var(--display); }
+.stage.s5 .box::after { display: none; }
+.only { display: flex; gap: 14px; align-items: center; padding: 14px 18px; border-radius: 16px; background: var(--you-soft); color: var(--ink); }
+.only b { font-family: var(--display); font-size: 1.25rem; color: var(--you); }
+
+/* ---------- three maps ---------- */
+.three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 880px) { .three { grid-template-columns: minmax(0, 1fr); } }
+.mapcard { border-radius: 18px; border: 2px solid var(--line); background: var(--card); padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.mapcard .n { font-family: var(--display); font-weight: 800; font-size: 2.6rem; line-height: 1; }
+.mapcard.m1 { border-color: var(--you); } .mapcard.m1 .n { color: var(--you); }
+.mapcard.m2, .mapcard.m3 { border-color: var(--books); } .mapcard.m2 .n, .mapcard.m3 .n { color: var(--books); }
+.mapcard .from { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 700; }
+.mapcard ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 0.93rem; display: flex; flex-direction: column; gap: 3px; }
+.never { border-radius: 18px; border: 2px dashed var(--bir); padding: 16px 18px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.never b { font-family: var(--display); color: var(--bir); margin-right: 6px; }
+
+/* ---------- three businesses ---------- */
+.biz { display: flex; gap: 8px; flex-wrap: wrap; }
+.biz button { padding: 8px 14px; border-radius: 999px; border: 2px solid var(--line); background: var(--card); font-weight: 700; }
+.biz button[aria-pressed="true"] { border-color: var(--you); background: var(--you-soft); color: var(--you); }
+.flow { display: grid; grid-template-columns: minmax(0, 1.25fr) 40px minmax(0, 1fr) 40px minmax(0, 1fr) 40px minmax(0, 1fr); align-items: start; min-width: 980px; }
+.col { display: flex; flex-direction: column; gap: 8px; }
+.col h3 { font-size: 0.95rem; font-family: var(--mono); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.acc { border-radius: 12px; border: 1.5px solid var(--line); background: var(--card); padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.acc .top { display: flex; justify-content: space-between; gap: 8px; }
+.acc b { font-weight: 700; } .acc .num { color: var(--muted); }
+.acc.mixed { border-color: var(--stop); border-style: dashed; }
+.acc .split { display: flex; flex-direction: column; gap: 3px; padding-left: 10px; border-left: 2px solid var(--stop); font-size: 0.85rem; }
+.kind { align-self: flex-start; font-size: 0.78rem; padding: 2px 9px; border-radius: 999px; font-weight: 700; background: var(--you-soft); color: var(--you); }
+.arr { display: grid; place-items: center; color: var(--muted); font-size: 1.4rem; font-family: var(--display); padding-top: 34px; }
+.tot { border-radius: 12px; border: 2px solid var(--books); background: var(--books-soft); padding: 10px 12px; display: flex; justify-content: space-between; gap: 8px; }
+.tot.dim { border-color: var(--line); background: var(--card); color: var(--muted); }
+.formbox { border-radius: 12px; border: 2px solid var(--bir); background: var(--card); padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+.formbox .lab { font-size: 0.82rem; color: var(--muted); }
+.formbox .val { font-family: var(--mono); font-size: 1.35rem; font-weight: 600; }
+.formbox code { font-family: var(--mono); font-size: 0.74rem; color: var(--bir); }
+.same { font-family: var(--display); font-weight: 800; color: var(--books); font-size: 1.05rem; }
+
+/* ---------- account matching (Map 1) ---------- */
+.win { border-radius: 16px; background: #161616; color: #eee; border: 1px solid #2c2c2c; font-family: -apple-system, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif; font-size: 13px; overflow: hidden; min-width: 860px; }
+.win .tb { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #0f0f0f; border-bottom: 1px solid #2c2c2c; }
+.win .tb b { flex: 1; }
+.win .tb span { color: #9b9b9b; font-size: 12px; }
+.win table { width: 100%; border-collapse: collapse; }
+.win th { text-align: left; color: #6f6f6f; font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px; border-bottom: 1px solid #2c2c2c; }
+.win td { padding: 8px 12px; border-bottom: 1px solid #2c2c2c; vertical-align: middle; }
+.win select { background: #222; color: #eee; border: 1px solid #3a3a3a; border-radius: 8px; padding: 5px 8px; font: inherit; max-width: 250px; }
+.win .facts { font-family: var(--mono); font-size: 10.5px; color: #8a8a8a; }
+.win .conf { font-family: var(--mono); font-size: 11.5px; }
+.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; display: inline-block; }
+.p-ok { background: #123423; color: #45d08f; } .p-sug { background: #15253f; color: #84b3ff; } .p-mix { background: #3a2e12; color: #f3b64c; } .p-unk { background: #3a1a17; color: #ff8379; }
+.win .foot { display: flex; gap: 14px; align-items: center; padding: 12px 14px; flex-wrap: wrap; }
+.win .foot .sp { flex: 1; }
+.win .btn { padding: 6px 12px; border-radius: 8px; background: #45d08f; color: #062a1b; font-weight: 700; }
+
+/* ---------- line facts ---------- */
+.lines3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 880px) { .lines3 { grid-template-columns: minmax(0, 1fr); } }
+.lcard { border-radius: 16px; border: 2px solid var(--line); background: var(--card); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.lcard .acct { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
+.lcard .what { font-family: var(--display); font-size: 1.1rem; font-weight: 800; }
+.lcard .facts { display: flex; flex-wrap: wrap; gap: 6px; }
+.lcard .facts i { font-style: normal; font-family: var(--mono); font-size: 0.74rem; padding: 3px 8px; border-radius: 6px; background: var(--chip); }
+.lcard .res { margin-top: auto; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 0.93rem; }
+
+/* ---------- Map 2 buckets ---------- */
+.buckets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 980px) { .buckets { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .buckets { grid-template-columns: minmax(0, 1fr); } }
+.bucket { border-radius: 16px; background: var(--card); border: 2px solid var(--books); padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.bucket b { font-family: var(--display); font-size: 1.05rem; }
+.bucket code { font-family: var(--mono); font-size: 0.72rem; color: var(--books); }
+.bucket .in, .bucket .out { font-size: 0.86rem; }
+.bucket .in::before { content: "In: "; font-weight: 700; color: var(--books); }
+.bucket .out::before { content: "Kept out: "; font-weight: 700; color: var(--stop); }
+.bucket .win2 { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); }
+
+/* ---------- form sheets ---------- */
+.ftabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.ftabs button { padding: 8px 14px; border-radius: 12px; border: 2px solid var(--line); background: var(--card); text-align: left; display: flex; flex-direction: column; }
+.ftabs button b { font-family: var(--mono); font-size: 1rem; }
+.ftabs button span { font-size: 0.8rem; color: var(--muted); }
+.ftabs button[aria-pressed="true"] { border-color: var(--bir); background: var(--bir-soft); }
+.ftabs button.plan { border-style: dashed; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.legend button { opacity: 1; }
+.legend button[aria-pressed="false"] { opacity: 0.35; }
+.ctxbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--bir-soft); }
+.ctxbar b { color: var(--bir); }
+.seg { display: inline-flex; border: 1.5px solid var(--bir); border-radius: 10px; overflow: hidden; }
+.seg button { padding: 5px 12px; font-size: 0.9rem; color: var(--bir); }
+.seg button[aria-pressed="true"] { background: var(--bir); color: var(--paper); font-weight: 700; }
+.sheetwrap { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 16px; align-items: start; }
+@media (max-width: 980px) { .sheetwrap { grid-template-columns: minmax(0, 1fr); } }
+.sheet { border-radius: 18px; border: 2px solid var(--ink); background: var(--card); overflow: hidden; }
+.sheet .fh { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-bottom: 2px solid var(--ink); }
+.sheet .fh .code { font-family: var(--mono); font-weight: 600; font-size: 1.5rem; }
+.sheet .fh .ttl { font-family: var(--display); font-weight: 800; font-size: 1.05rem; line-height: 1.1; }
+.sheet .fh small { color: var(--muted); display: block; font-family: var(--body); font-weight: 400; font-size: 0.82rem; }
+.part { border-top: 1.5px solid var(--line); }
+.part:first-of-type { border-top: 0; }
+.part > .ph { padding: 8px 16px; font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.06em; text-transform: uppercase; background: var(--chip); color: var(--muted); display: flex; justify-content: space-between; }
+.cells { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; padding: 10px 12px; }
+.cell { text-align: left; border-radius: 10px; padding: 8px 9px; border: 1.5px solid var(--line); background: var(--card); display: flex; flex-direction: column; gap: 3px; min-height: 64px; font-size: 0.8rem; line-height: 1.25; }
+.cell .it { font-weight: 700; }
+.cell .v { font-family: var(--mono); font-size: 0.82rem; font-weight: 600; margin-top: auto; }
+.cell.o-books { border-color: var(--books); background: var(--books-soft); }
+.cell.o-books_ref { border-color: var(--books); border-style: dashed; }
+.cell.o-forms { border-color: var(--bir); background: var(--bir-soft); }
+.cell.o-profile, .cell.o-identity { border-color: var(--prof); background: var(--prof-soft); }
+.cell.o-prior_filing { border-color: var(--past); background: var(--past-soft); }
+.cell.o-user { border-color: var(--you); }
+.cell.o-not_fillable { opacity: 0.5; }
+.cell.off { opacity: 0.18; }
+.cell.na { opacity: 0.35; border-style: dotted; }
+.cell[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--ink); }
+.detail { border-radius: 18px; border: 2px solid var(--line); background: var(--card); padding: 16px; display: flex; flex-direction: column; gap: 10px; position: sticky; top: 16px; }
+.detail .kv { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 6px 10px; font-size: 0.9rem; }
+.detail .kv span:nth-child(odd) { color: var(--muted); }
+.detail code { font-family: var(--mono); font-size: 0.78rem; overflow-wrap: anywhere; }
+.lineage { border-radius: 12px; border: 1.5px solid var(--line); overflow: hidden; font-size: 0.85rem; }
+.lineage div { display: flex; justify-content: space-between; gap: 10px; padding: 6px 10px; border-top: 1px solid var(--line); }
+.lineage div:first-child { border-top: 0; }
+.lineage .sum { font-weight: 700; background: var(--chip); }
+.plan { display: flex; flex-direction: column; gap: 12px; }
+.prow { display: grid; grid-template-columns: minmax(0, 1.2fr) 30px minmax(0, 1fr) minmax(0, 1fr); gap: 8px; align-items: center; }
+.prow > div { border-radius: 12px; padding: 10px 12px; border: 1.5px solid var(--line); background: var(--card); font-size: 0.92rem; min-height: 56px; display: flex; flex-direction: column; justify-content: center; }
+.prow .m { border-color: var(--books); } .prow .m code { color: var(--books); font-family: var(--mono); font-size: 0.74rem; }
+.prow .b { border-color: var(--bir); border-style: dashed; }
+.prow .w { color: var(--muted); font-size: 0.85rem; }
+.prow .to { border: 0; background: none; color: var(--muted); align-items: center; font-size: 1.3rem; min-height: 0; padding: 0; }
+.plhead { display: grid; grid-template-columns: minmax(0, 1.2fr) 30px minmax(0, 1fr) minmax(0, 1fr); gap: 8px; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+@media (max-width: 760px) { .prow, .plhead { grid-template-columns: minmax(0, 1fr); } .prow .to { transform: rotate(90deg); } .plhead { display: none; } }
+
+/* ---------- when (timeline) ---------- */
+.time { display: grid; grid-template-columns: repeat(7, minmax(130px, 1fr)); gap: 0; min-width: 980px; }
+.tstep { display: flex; flex-direction: column; gap: 8px; padding: 0 6px; }
+.tstep .dot { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-weight: 800; background: var(--books); color: var(--paper); position: relative; }
+.tstep .rail { height: 4px; background: var(--line); margin: -22px 0 18px 40px; }
+.tstep:last-child .rail { background: transparent; }
+.tstep b { font-family: var(--display); font-size: 1.02rem; line-height: 1.15; }
+.tstep span { color: var(--muted); font-size: 0.86rem; }
+.tstep .hap { font-size: 0.82rem; border-radius: 10px; padding: 8px 9px; background: var(--chip); }
+.tstep.you .dot { background: var(--you); } .tstep.bir .dot { background: var(--bir); }
+
+/* ---------- where ---------- */
+.places { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 980px) { .places { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .places { grid-template-columns: minmax(0, 1fr); } }
+.place { border-radius: 18px; border: 2px solid var(--line); background: var(--card); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.place .ic { font-family: var(--display); font-size: 1.8rem; line-height: 1; }
+.place b { font-family: var(--display); font-size: 1.1rem; }
+.place ul { margin: 0; padding-left: 18px; font-size: 0.88rem; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+.place .no { font-size: 0.82rem; color: var(--stop); }
+.place.mac { border-color: var(--books); } .place.app { border-color: var(--books); border-style: dashed; } .place.bir { border-color: var(--bir); }
+
+/* ---------- starting points ---------- */
+.starts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 980px) { .starts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .starts { grid-template-columns: minmax(0, 1fr); } }
+.start { border-radius: 18px; border: 2px solid var(--line); background: var(--card); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.start .lv { font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.start b { font-family: var(--display); font-size: 1.15rem; }
+.start ol { margin: 0; padding-left: 18px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 3px; }
+.start .effort { margin-top: auto; font-size: 0.85rem; color: var(--muted); }
+.opening { border-radius: 16px; border: 2px dashed var(--you); padding: 14px 16px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: center; }
+@media (max-width: 760px) { .opening { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- what if ---------- */
+.ifs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 900px) { .ifs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .ifs { grid-template-columns: minmax(0, 1fr); } }
+.if { border-radius: 14px; border: 1.5px solid var(--line); background: var(--card); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.if b { font-size: 0.98rem; }
+.if span:last-child { font-size: 0.88rem; color: var(--muted); }
+
+/* ---------- checks ---------- */
+.checks { display: flex; flex-direction: column; gap: 10px; }
+.chk { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 90px; gap: 12px; align-items: center; border-radius: 14px; border: 1.5px solid var(--line); background: var(--card); padding: 12px 14px; }
+.chk .eq { font-family: var(--mono); font-size: 0.85rem; }
+.chk .res { justify-self: end; }
+@media (max-width: 700px) { .chk { grid-template-columns: minmax(0, 1fr); } .chk .res { justify-self: start; } }
+
+/* ---------- faq ---------- */
+.faq { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 860px) { .faq { grid-template-columns: minmax(0, 1fr); } }
+details { border-radius: 14px; border: 1.5px solid var(--line); background: var(--card); padding: 12px 14px; }
+details summary { cursor: pointer; font-weight: 700; list-style: none; display: flex; gap: 10px; }
+details summary::before { content: "+"; font-family: var(--display); font-weight: 800; color: var(--books); }
+details[open] summary::before { content: "–"; }
+details p { margin-top: 8px; color: var(--muted); font-size: 0.95rem; }
+</style>
+
+<div class="wrap">
+
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <span class="kicker">Explained simply · the Buwiz Books tax form bridge · example data</span>
+    <h1>How your books become BIR form boxes</h1>
+    <p class="lead">Everyone's chart of accounts is different. The BIR forms are the same for everyone. The bridge is how one meets the other, with every number traceable to your own entries.</p>
+  </header>
+
+  <!-- the whole thing -->
+  <section aria-labelledby="h0">
+    <span class="q">The whole thing in one picture</span>
+    <h2 id="h0">Five stops from your accounts to a BIR draft</h2>
+    <div class="scroller">
+      <div class="pipe">
+        <div class="stage s1"><div class="box"><b>Your accounts</b><span>Any chart: Books', QuickBooks', your accountant's, a spreadsheet.</span><div class="ex"><i>Income:Services</i><i>Revenue (one column)</i><i>41000 Sales Revenue</i></div></div></div>
+        <div class="stage s2"><div class="box"><b>Line facts</b><span>What each line really is, in Books' own words.</span><div class="ex"><i>business sale</i><i>return</i><i>interest earned</i></div></div></div>
+        <div class="stage s3"><div class="box"><b>Books totals</b><span>Sums of lines with the same facts, for a period.</span><div class="ex"><i>net sales Q3 = 290,000.00</i></div></div></div>
+        <div class="stage s4"><div class="box"><b>BIR boxes</b><span>Which total goes in which input box of which form.</span><div class="ex"><i>2551Q row 1 ← net sales</i></div></div></div>
+        <div class="stage s5"><div class="box"><b>BIR draft</b><span>The BIR app fills the rest and computes the tax.</span><div class="ex"><i>tax due, rates, penalties</i></div></div></div>
+      </div>
+      <div class="arrowrow">
+        <div><span class="map">Map 1</span><span class="who">Different for every business. You confirm; AI suggests.</span></div>
+        <div><span class="map">Map 2</span><span class="who">Same for everyone. Ships with Books.</span></div>
+        <div><span class="map">Map 3</span><span class="who">Same for everyone. One per form edition.</span></div>
+        <div><span class="map">Your click</span><span class="who">Hand to the BIR draft.</span></div>
+        <div><span class="map">BIR</span><span class="who">Computes, you review and submit there.</span></div>
+      </div>
+    </div>
+    <div class="only"><b>Only Map 1 changes</b><span>from business to business. Once your accounts are matched, everything to the right is the same tested machinery for everyone.</span></div>
+  </section>
+
+  <!-- what -->
+  <section aria-labelledby="h1">
+    <span class="q">What do we map?</span>
+    <h2 id="h1">Three maps, and a list of things we never map</h2>
+    <div class="three">
+      <div class="mapcard m1"><span class="n">1</span><div class="from"><span class="tag t-you">your account</span>→<span class="tag t-mute">a kind</span></div><b>Your accounts to kinds</b><ul><li>Once per business, when you start or import</li><li>Again only when you add an account</li><li>Each line can still be fixed by itself</li></ul><span class="new">new: for imported charts</span></div>
+      <div class="mapcard m2"><span class="n">2</span><div class="from"><span class="tag t-mute">line facts</span>→<span class="tag t-books">a Books total</span></div><b>Facts to totals</b><ul><li>20 totals: gross sales, returns, net sales, cost of sales, other income, pay, contributions, tax withheld, 2307s…</li><li>Picks lines by facts, never by account</li><li>Same for every business</li></ul></div>
+      <div class="mapcard m3"><span class="n">3</span><div class="from"><span class="tag t-books">a Books total</span>→<span class="tag t-bir">a BIR box</span></div><b>Totals to boxes</b><ul><li>One rule set per form edition</li><li>Input boxes only</li><li>Reads your BIR choices (8% or graduated), never sets them</li></ul></div>
+    </div>
+    <div class="never"><b>Never mapped by Books</b><span class="tag t-bir">ATC codes</span><span class="tag t-bir">tax rates</span><span class="tag t-bir">tax due</span><span class="tag t-bir">8% or graduated choice</span><span class="tag t-bir">OSD or itemized</span><span class="tag t-bir">thresholds</span><span class="tag t-bir">penalties</span><span class="tag t-bir">due dates</span><span class="tag t-prof">TIN, RDO, name, address</span><span class="tag t-you">amended? attachments?</span></div>
+  </section>
+
+  <!-- three businesses -->
+  <section aria-labelledby="h2">
+    <span class="q">Different charts of accounts?</span>
+    <h2 id="h2">Three businesses, three charts, the same box</h2>
+    <div class="biz" id="biz"></div>
+    <div class="scroller"><div class="flow" id="flow"></div></div>
+    <p class="note">Same quarter, same money. The account names differ; the line facts, the totals and the BIR box do not.</p>
+  </section>
+
+  <!-- Map 1 -->
+  <section aria-labelledby="h3">
+    <span class="q">How do we map someone else's chart?</span>
+    <h2 id="h3">Map 1: match each account once <span class="new">new proposal</span></h2>
+    <p class="lead">When you import, Books shows every account with a suggested kind. You confirm or change it. Try the dropdowns.</p>
+    <div class="scroller"><div class="win" id="wiz"></div></div>
+    <p class="note">The suggestion uses the account name, its type in the old system, and what its lines look like. Nothing counts toward a BIR box until you confirm. "Not sure yet" holds the boxes it could touch.</p>
+  </section>
+
+  <!-- line facts -->
+  <section aria-labelledby="h4">
+    <span class="q">What if one line is different from its account?</span>
+    <h2 id="h4">Line facts beat account names</h2>
+    <p class="lead">A line starts with its account's kind. Any single line can be corrected without touching the account.</p>
+    <div class="lines3">
+      <div class="lcard"><span class="acct">Account: Income:Services</span><span class="what">A normal sale</span><div class="facts"><i>business sale</i><i>invoice 0131</i><i>paid Aug 20</i></div><div class="res"><span class="tag t-books">gross sales</span> → 2551Q row 1, 1701-MS IV.5</div></div>
+      <div class="lcard"><span class="acct">Account: Income:Services</span><span class="what">Bank interest booked here by mistake</span><div class="facts"><i>interest earned</i><i>from the bank</i><i>final tax withheld: unknown</i></div><div class="res"><span class="tag t-stop">kept out of sales</span> → other income; that box is held until a tax review says how interest is treated</div></div>
+      <div class="lcard"><span class="acct">Account: Income:Services</span><span class="what">A refund given to a customer</span><div class="facts"><i>return</i><i>credit note 0007</i><i>Sep 10</i></div><div class="res"><span class="tag t-you">needs your OK</span> → its own total (returns), then net sales = sales − returns</div></div>
+    </div>
+  </section>
+
+  <!-- Map 2 -->
+  <section aria-labelledby="h5">
+    <span class="q">How do facts become totals?</span>
+    <h2 id="h5">Map 2: the same buckets for everyone</h2>
+    <div class="buckets">
+      <div class="bucket"><b>Gross sales</b><code>gross_sales</code><span class="in">every business-sale line</span><span class="out">payments for invoices already counted, VAT collected</span><span class="win2">window: entry date (cash: the day money came in)</span></div>
+      <div class="bucket"><b>Returns, allowances, discounts</b><code>sales_returns · _allowances · _discounts</code><span class="in">return lines, each kind separate</span><span class="out">nothing is netted silently</span><span class="win2">a late return needs your OK</span></div>
+      <div class="bucket"><b>Net sales</b><code>net_sales</code><span class="in">gross sales minus the three above</span><span class="out">other income</span><span class="win2">exact centavos, never rounded</span></div>
+      <div class="bucket"><b>Cost of sales</b><code>cost_of_sales</code><span class="in">cost-of-sales lines</span><span class="out">operating expenses</span><span class="win2">window: entry date</span></div>
+      <div class="bucket"><b>Other income</b><code>other_non_operating_income</code><span class="in">interest, rent received, other</span><span class="out">sales</span><span class="win2">held where a tax review is open</span></div>
+      <div class="bucket"><b>Gross pay and its parts</b><code>gross_compensation · basic · OT · 13th · de minimis</code><span class="in">pay lines from pay runs, per employee</span><span class="out">employer contributions</span><span class="win2">window: pay date</span></div>
+      <div class="bucket"><b>Employee contributions</b><code>employee_mandatory_contributions</code><span class="in">employee share of SSS, PhilHealth, Pag-IBIG</span><span class="out">employer share (its own total)</span><span class="win2">per scheme</span></div>
+      <div class="bucket"><b>2307s received</b><code>pt_ / it_withheld_2307_received</code><span class="in">certificates marked received</span><span class="out">pending, lost, disputed, any 2306</span><span class="win2">window: the quarter printed on the 2307</span></div>
+    </div>
+  </section>
+
+  <!-- Map 3: form sheets -->
+  <section aria-labelledby="h6">
+    <span class="q">Which box gets which total?</span>
+    <h2 id="h6">Map 3: every box of every form, coloured by who fills it</h2>
+    <p class="lead">These are the real boxes from the BIR app's forms. Click any box. Green ones are Books'.</p>
+    <div class="ftabs" id="ftabs"></div>
+    <div id="ctx"></div>
+    <div class="legend" id="legend"></div>
+    <div id="sheetarea"></div>
+  </section>
+
+  <!-- when -->
+  <section aria-labelledby="h7">
+    <span class="q">When does each map happen?</span>
+    <h2 id="h7">Seven moments</h2>
+    <div class="scroller"><div class="time">
+      <div class="tstep you"><span class="dot">1</span><div class="rail"></div><b>Start or import</b><span>Once</span><span class="hap">Map 1: match accounts. Starting mid-year? Add opening totals.</span></div>
+      <div class="tstep"><span class="dot">2</span><div class="rail"></div><b>Every day</b><span>Each entry</span><span class="hap">Lines take their account's kind. You or the AI fix single lines.</span></div>
+      <div class="tstep"><span class="dot">3</span><div class="rail"></div><b>Month end</b><span>Close and match</span><span class="hap">Lines are locked. Bank matched. Totals become trustworthy.</span></div>
+      <div class="tstep"><span class="dot">4</span><div class="rail"></div><b>Form time</b><span>Monthly, quarterly, yearly</span><span class="hap">Map 2 and Map 3 run for that period: totals, boxes, and where each came from.</span></div>
+      <div class="tstep you"><span class="dot">5</span><div class="rail"></div><b>Your click</b><span>Hand to BIR</span><span class="hap">The values go to the BIR draft. Nothing else leaves.</span></div>
+      <div class="tstep bir"><span class="dot">6</span><div class="rail"></div><b>Something changes</b><span>Any time after</span><span class="hap">A line, a match, a rule version or your BIR choice changed: the hand-off says "out of date".</span></div>
+      <div class="tstep"><span class="dot">7</span><div class="rail"></div><b>New year or new form</b><span>Rarely</span><span class="hap">A new form edition gets a new rule set. Old hand-offs keep their version.</span></div>
+    </div></div>
+  </section>
+
+  <!-- where -->
+  <section aria-labelledby="h8">
+    <span class="q">Where does each part live?</span>
+    <h2 id="h8">Five places, and what never leaves them</h2>
+    <div class="places">
+      <div class="place mac"><span class="ic">▣</span><b>Your Mac · Books file</b><ul><li>Your accounts and their matches (Map 1)</li><li>Every line and its facts</li><li>Closed months</li><li>Each hand-off: values, rule version, where each value came from</li></ul><span class="no">Encrypted. No TIN.</span></div>
+      <div class="place app"><span class="ic">◇</span><b>The Books app itself</b><ul><li>The totals list (Map 2)</li><li>The rule sets (Map 3), one per form edition</li><li>A fingerprint of each BIR form it was checked against</li></ul><span class="no">Updated with Books, never by chat.</span></div>
+      <div class="place"><span class="ic">◎</span><b>The chat</b><ul><li>Only the box values and their keys</li><li>Your click to hand over</li></ul><span class="no">No ledger, no names on cards that pop up alone.</span></div>
+      <div class="place bir"><span class="ic">◆</span><b>BIR app</b><ul><li>The draft form</li><li>Your TIN, RDO, address</li><li>8% or graduated, OSD or itemized</li><li>Rates, tax due, penalties, deadlines</li></ul><span class="no">Books reads your choices; never writes them.</span></div>
+      <div class="place"><span class="ic">☁</span><b>buwiz-cloud</b><ul><li>That you own the tax profile</li><li>Sign-in</li></ul><span class="no">No numbers from your books.</span></div>
+    </div>
+  </section>
+
+  <!-- earlier records -->
+  <section aria-labelledby="h9">
+    <span class="q">What about records you already have?</span>
+    <h2 id="h9">Four starting points <span class="new">new proposal</span></h2>
+    <div class="starts">
+      <div class="start" style="border-color:var(--books)"><span class="lv" style="color:var(--books)">Easiest</span><b>Starting fresh</b><ol><li>Pick the Philippines chart</li><li>Record as you go</li></ol><span class="effort">Nothing to match.</span></div>
+      <div class="start" style="border-color:var(--books)"><span class="lv" style="color:var(--books)">Easy</span><b>From web Buwiz Books</b><ol><li>Export from web Books</li><li>Import into the mini app</li><li>Accounts match by themselves</li></ol><span class="effort">Same categories, same facts.</span></div>
+      <div class="start" style="border-color:var(--you)"><span class="lv" style="color:var(--you)">One sitting</span><b>From QuickBooks, Xero or an accountant</b><ol><li>Export accounts and transactions</li><li>Import</li><li>Confirm the suggested kinds (Map 1)</li><li>Split mixed accounts by line</li></ol><span class="effort">Usually 20 to 60 accounts to confirm.</span></div>
+      <div class="start" style="border-color:var(--stop)"><span class="lv" style="color:var(--stop)">Mid-year, no system</span><b>Spreadsheet or paper</b><ol><li>Import bank statements for the year, or</li><li>Enter opening totals per Books total, with proof</li><li>Books shows them as opening figures</li></ol><span class="effort">Annual forms need the whole year.</span></div>
+    </div>
+    <div class="opening">
+      <div style="display:flex;flex-direction:column;gap:6px"><b style="font-family:var(--display);font-size:1.15rem">An opening figure, as it shows in a hand-off</b><span class="note">Annual boxes (1701-MS) and yearly caps (13th month) need January to now. If you start in October, Books asks for Jan–Sep totals once, with the returns you already filed as proof.</span></div>
+      <div class="lineage"><div><span>Opening figure · Jan–Sep · gross sales <small style="color:var(--you)">entered Oct 29 · proof: filed 2551Q Q1–Q3</small></span><span class="num">900,000.00</span></div><div><span>Oct 05 · Isla Café · sale</span><span class="num">120,000.00</span></div><div><span>Oct 20 · Santos Hardware · sale</span><span class="num">100,000.00</span></div><div><span>Oct 28 · Bayani Foods · sale</span><span class="num">80,000.00</span></div><div class="sum"><span>1701-MS IV.5 · gross sales Jan–Oct</span><span class="num">1,200,000.00</span></div></div>
+    </div>
+  </section>
+
+  <!-- what if -->
+  <section aria-labelledby="h10">
+    <span class="q">What can go wrong?</span>
+    <h2 id="h10">Tricky cases, and what Books does</h2>
+    <div class="ifs">
+      <div class="if"><span class="tag t-stop">Held</span><b>An account is not matched yet</b><span>Boxes it could touch wait. No guessing.</span></div>
+      <div class="if"><span class="tag t-you">Per line</span><b>One account mixes sales and interest</b><span>Each line gets its own kind. AI suggests, you confirm.</span></div>
+      <div class="if"><span class="tag t-you">Needs your OK</span><b>A return or refund lands in a later month</b><span>Asked once, then counted in its own month.</span></div>
+      <div class="if"><span class="tag t-mute">Nets to zero</span><b>A sale voided in the same month</b><span>Sale and reversal cancel out, both kept for the record.</span></div>
+      <div class="if"><span class="tag t-stop">Refused</span><b>A customer payment tagged as a sale (cash book)</b><span>It would double count. Books says why.</span></div>
+      <div class="if"><span class="tag t-mute">Kept out</span><b>VAT collected sitting inside sales</b><span>VAT is a liability line, never sales.</span></div>
+      <div class="if"><span class="tag t-mute">Kept out</span><b>A 2307 is pending, lost or disputed</b><span>Counts only once received.</span></div>
+      <div class="if"><span class="tag t-mute">Never</span><b>A 2306 (final tax)</b><span>Never counted as a credit.</span></div>
+      <div class="if"><span class="tag t-mute">Kept out</span><b>Employer share of SSS</b><span>Its own total. Never in 1601-C item 19.</span></div>
+      <div class="if"><span class="tag t-stop">Blocked</span><b>BIR draft has no 8% or graduated choice yet</b><span>1701-MS waits. Books never picks one.</span></div>
+      <div class="if"><span class="tag t-bir">Out of date</span><b>A line changed after you handed over</b><span>The hand-off is flagged, with what changed.</span></div>
+      <div class="if"><span class="tag t-mute">Not proposed</span><b>A total comes out negative</b><span>Shown with its lines; not sent to a box.</span></div>
+      <div class="if"><span class="tag t-stop">Refused</span><b>Switching cash or accrual mid-year</b><span>Only from the start of a year with nothing posted.</span></div>
+      <div class="if"><span class="tag t-stop">Not yet</span><b>Spouse income on a joint 1701-MS</b><span>Refused in the first version.</span></div>
+      <div class="if"><span class="tag t-bir">New version</span><b>BIR releases a new form edition</b><span>New rule set, checked against the new form. Old hand-offs can be rebuilt as they were.</span></div>
+    </div>
+  </section>
+
+  <!-- checks -->
+  <section aria-labelledby="h11">
+    <span class="q">How do we know the numbers are right?</span>
+    <h2 id="h11">Cross-checks <span class="new">new proposal</span></h2>
+    <div class="checks">
+      <div class="chk"><span>Four quarters of 2551Q add up to the year on 1701-MS</span><span class="eq">300,000 + 300,000 + 290,000 + 300,000 = 1,190,000.00 = IV.19</span><span class="res tag t-books">Matches</span></div>
+      <div class="chk"><span>Sales in the P&amp;L equal the gross sales total</span><span class="eq">P&amp;L Jan–Oct 1,200,000.00 = IV.5 1,200,000.00</span><span class="res tag t-books">Matches</span></div>
+      <div class="chk"><span>The pay run equals 1601-C September</span><span class="eq">gross 42,000.00 = 14 · employee share 2,000.00 = 19 · withheld 2,808.40 = 25</span><span class="res tag t-books">Matches</span></div>
+      <div class="chk"><span>Received 2307s equal the credits</span><span class="eq">3,000 + 3,000 + 2,900 = 8,900.00 = 1701-MS V.3</span><span class="res tag t-books">Matches</span></div>
+      <div class="chk"><span>What you already filed vs Books now</span><span class="eq">2551Q Q1 filed 295,000.00 · Books 300,000.00</span><span class="res tag t-stop">5,000 off</span></div>
+      <div class="chk"><span>Months matched to the bank</span><span class="eq">Jul ✓ Aug ✓ Sep ✓ Oct —</span><span class="res tag t-you">3 of 4</span></div>
+    </div>
+  </section>
+
+  <!-- faq -->
+  <section aria-labelledby="h12">
+    <span class="q">All the other questions</span>
+    <h2 id="h12">Questions people ask</h2>
+    <div class="faq">
+      <details><summary>Do I have to switch to the Books chart of accounts?</summary><p>No. Keep yours. Match each account to a kind once. New accounts ask for a kind when you create them.</p></details>
+      <details><summary>Who does the matching, me or the AI?</summary><p>The AI suggests; you confirm. Your accountant can review the list. Nothing counts toward a BIR box until it is confirmed.</p></details>
+      <details><summary>Does the account name or number decide the box?</summary><p>Never. Only line facts and Books totals do. That is why any chart works.</p></details>
+      <details><summary>Can one account feed two boxes?</summary><p>Yes, through totals. Sales feed gross sales (1701-MS IV.5) and net sales (2551Q row 1). A single line never counts twice in the same box.</p></details>
+      <details><summary>What if one account mixes two kinds?</summary><p>Mark it mixed. Each line then gets its own kind. The AI proposes per line; you confirm.</p></details>
+      <details><summary>What if I change a match later?</summary><p>Books lists every hand-off that used those lines and marks it out of date. Refresh, check, hand over again.</p></details>
+      <details><summary>Where do the box rules come from?</summary><p>They ship with Books: one rule set per form edition, checked against the BIR app's own form, with open items sent for tax review.</p></details>
+      <details><summary>What happens when BIR changes a form?</summary><p>A new edition gets a new rule set. Old hand-offs keep the version they used, so they can be rebuilt exactly.</p></details>
+      <details><summary>Does Books compute any tax?</summary><p>No. Books adds up your entries. The BIR app applies rates, computes tax due, penalties and due dates.</p></details>
+      <details><summary>Who picks 8% or graduated?</summary><p>You, in the BIR app, at the start of the year. Books reads it and fills the matching boxes.</p></details>
+      <details><summary>Why is a box "held"?</summary><p>Its rule needs a tax review or a fact Books does not have. Books shows why and sends nothing for it.</p></details>
+      <details><summary>Why does a return need my OK?</summary><p>Returns change sales for a period. Books asks once so the total is right, then remembers.</p></details>
+      <details><summary>How do 2307s count?</summary><p>Only when received, and by the quarter printed on the certificate, not the day you entered it.</p></details>
+      <details><summary>Cash or accrual?</summary><p>Totals follow your book's basis, cash by default. Every hand-off states the basis; BIR decides if it fits the form.</p></details>
+      <details><summary>I start using Books in October. What about January to September?</summary><p>Import bank statements for those months, or enter opening totals with proof. They show as opening figures in every box that uses them.</p></details>
+      <details><summary>I already filed earlier quarters. What if Books disagrees?</summary><p>Books lists the difference and the lines behind it. Whether to amend is your call, in the BIR app.</p></details>
+      <details><summary>I have two businesses.</summary><p>Each book links to its own tax profile. Maps and totals never mix.</p></details>
+      <details><summary>What about branches?</summary><p>One tax profile per book in the first version. Branches come later.</p></details>
+      <details><summary>I file a joint 1701-MS with my spouse.</summary><p>Spouse income is refused in the first version. Your own boxes still work.</p></details>
+      <details><summary>I'm VAT-registered.</summary><p>The 2550Q bridge comes later. Today, VAT collected is always kept out of sales.</p></details>
+      <details><summary>My payroll comes from another provider.</summary><p>Import the pay register. Each column is matched to a pay kind once, like accounts.</p></details>
+      <details><summary>Does my TIN go anywhere?</summary><p>No. Books stores no TIN. Values go to the BIR app, which already has it.</p></details>
+      <details><summary>Can the AI hand over to BIR by itself?</summary><p>No. It can prepare. Handing over is your click.</p></details>
+      <details><summary>Can I see why a box has its number?</summary><p>Click it. You get every line behind it, with dates and amounts.</p></details>
+      <details><summary>What if a total is negative?</summary><p>It is not proposed. Books shows it with its lines so you can see why.</p></details>
+      <details><summary>Can my accountant use their own chart?</summary><p>Yes. Their accounts are matched once, like any import. The boxes come out the same.</p></details>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  const FORMS = {"2551Q":[["2551Q.S1.1.base","Schedule 1 row 1: taxable amount","books","txtATCAmt1","net_sales","","implemented","open"],["2551Q.II.15","15 Creditable percentage tax withheld per 2307","books","frm2551Qv2018:txt15","pt_withheld_2307_received","","implemented","settled"],["2551Q.H.1","1 For the (calendar or fiscal)","profile","","","","",""],["2551Q.H.2","2 Year ended (month and year)","profile","","","","",""],["2551Q.H.3","3 Quarter","identity","","","","",""],["2551Q.H.4","4 Amended return?","user","","","","",""],["2551Q.H.5","5 Number of sheets attached","user","","","","",""],["2551Q.I.6","6 TIN and branch code","forms","","","","",""],["2551Q.I.7","7 RDO code","profile","","","","",""],["2551Q.I.8","8 Taxpayer's name","profile","","","","",""],["2551Q.I.9","9 Registered address","profile","","","","",""],["2551Q.I.9A","9A ZIP code","profile","","","","",""],["2551Q.I.10","10 Telephone number","profile","","","","",""],["2551Q.I.11","11 Email address","profile","","","","",""],["2551Q.I.12","12 Tax relief under special law or treaty?","user","","","","",""],["2551Q.I.12A","12 Specify relief","user","","","","",""],["2551Q.I.13","13 Income-tax rate availed (initial quarter only)","forms","","","","",""],["2551Q.S1.1.ATC","Schedule 1 row 1: ATC","forms","","","","",""],["2551Q.S1.1.rate","Schedule 1 row 1: tax rate","forms","","","","",""],["2551Q.S1.1.tax","Schedule 1 row 1: tax due","forms","","","","",""],["2551Q.S1.2.base","Schedule 1 row 2: taxable amount","user","","","","",""],["2551Q.S1.2.ATC","Schedule 1 row 2: ATC","forms","","","","",""],["2551Q.S1.2.rate","Schedule 1 row 2: tax rate","forms","","","","",""],["2551Q.S1.2.tax","Schedule 1 row 2: tax due","forms","","","","",""],["2551Q.S1.3.base","Schedule 1 row 3: taxable amount","user","","","","",""],["2551Q.S1.3.ATC","Schedule 1 row 3: ATC","forms","","","","",""],["2551Q.S1.3.rate","Schedule 1 row 3: tax rate","forms","","","","",""],["2551Q.S1.3.tax","Schedule 1 row 3: tax due","forms","","","","",""],["2551Q.S1.4.base","Schedule 1 row 4: taxable amount","user","","","","",""],["2551Q.S1.4.ATC","Schedule 1 row 4: ATC","forms","","","","",""],["2551Q.S1.4.rate","Schedule 1 row 4: tax rate","forms","","","","",""],["2551Q.S1.4.tax","Schedule 1 row 4: tax due","forms","","","","",""],["2551Q.S1.5.base","Schedule 1 row 5: taxable amount","user","","","","",""],["2551Q.S1.5.ATC","Schedule 1 row 5: ATC","forms","","","","",""],["2551Q.S1.5.rate","Schedule 1 row 5: tax rate","forms","","","","",""],["2551Q.S1.5.tax","Schedule 1 row 5: tax due","forms","","","","",""],["2551Q.S1.6.base","Schedule 1 row 6: taxable amount","user","","","","",""],["2551Q.S1.6.ATC","Schedule 1 row 6: ATC","forms","","","","",""],["2551Q.S1.6.rate","Schedule 1 row 6: tax rate","forms","","","","",""],["2551Q.S1.6.tax","Schedule 1 row 6: tax due","forms","","","","",""],["2551Q.S1.7","7 Total tax due (sum of Schedule 1 rows 1-6)","forms","","","","",""],["2551Q.II.14","14 Total tax due","forms","","","","",""],["2551Q.II.16","16 Tax paid in previously filed return (amended only)","prior_filing","","","","",""],["2551Q.II.17","17 Other tax credit or payment (specify)","user","","","","",""],["2551Q.II.18","18 Total tax credits or payments","forms","","","","",""],["2551Q.II.19","19 Tax still payable / (overpayment)","forms","","","","",""],["2551Q.II.20","20 Surcharge","user","","","","",""],["2551Q.II.21","21 Interest","user","","","","",""],["2551Q.II.22","22 Compromise","user","","","","",""],["2551Q.II.23","23 Total penalties","forms","","","","",""],["2551Q.II.24","24 Total amount payable / (overpayment)","forms","","","","",""],["2551Q.II.overpayment","Overpayment: refund or tax credit certificate","user","","","","",""],["2551Q.III.25.bank","25 payment row: drawee bank or agency","user","","","","",""],["2551Q.III.25.number","25 payment row: reference number","user","","","","",""],["2551Q.III.25.date","25 payment row: payment date","user","","","","",""],["2551Q.III.25.amount","25 payment row: amount","user","","","","",""],["2551Q.III.26.bank","26 payment row: drawee bank or agency","user","","","","",""],["2551Q.III.26.number","26 payment row: reference number","user","","","","",""],["2551Q.III.26.date","26 payment row: payment date","user","","","","",""],["2551Q.III.26.amount","26 payment row: amount","user","","","","",""],["2551Q.III.27.bank","27 payment row: drawee bank or agency","user","","","","",""],["2551Q.III.27.number","27 payment row: reference number","user","","","","",""],["2551Q.III.27.date","27 payment row: payment date","user","","","","",""],["2551Q.III.27.amount","27 payment row: amount","user","","","","",""],["2551Q.III.28.bank","28 payment row: drawee bank or agency","user","","","","",""],["2551Q.III.28.number","28 payment row: reference number","user","","","","",""],["2551Q.III.28.date","28 payment row: payment date","user","","","","",""],["2551Q.III.28.amount","28 payment row: amount","user","","","","",""],["2551Q.III.28.particular","28 Other payment: particulars","user","","","","",""],["2551Q.DECL.agent","Tax agent accreditation, issue and expiry","user","","","","",""],["2551Q.DECL.signature","Signature, title and TIN of taxpayer or representative","user","","","","",""]],"1601C":[["1601C.H.3","3 Any taxes withheld?","books","frm1601c:TaxWithheld","tax_withheld_from_employees","","implemented","settled"],["1601C.II.14","14 Total amount of compensation","books","frm1601c:txtTax14","gross_compensation","","implemented","settled"],["1601C.II.15","15 Statutory minimum wage for MWEs","books","frm1601c:txtTax15","mwe_basic_pay","","implemented","settled"],["1601C.II.16","16 Holiday, overtime, night-shift and hazard pay (MWEs only)","books","frm1601c:txtTax16","holiday_ot_nsd_hazard_pay","","fail_closed","open"],["1601C.II.17","17 13th month pay and other benefits (non-taxable part)","books","frm1601c:txtTax17","thirteenth_month_and_benefits_paid","","implemented","open"],["1601C.II.18","18 De minimis benefits","books","frm1601c:txtTax18","de_minimis_paid","","implemented","settled"],["1601C.II.19","19 SSS, GSIS, PHIC, HDMF contributions and union dues (emplo","books","frm1601c:txtTax19","employee_mandatory_contributions","","implemented","settled"],["1601C.II.25","25 Total taxes withheld","books","frm1601c:txtTax25","tax_withheld_from_employees","","implemented","settled"],["1601C.H.1","1 For the month (MM/YYYY)","identity","","","","",""],["1601C.H.2","2 Amended return?","user","","","","",""],["1601C.H.4","4 Number of sheets attached","user","","","","",""],["1601C.H.5","5 Alphanumeric tax code (ATC)","forms","","","","",""],["1601C.I.6","6 TIN and branch code","forms","","","","",""],["1601C.I.7","7 RDO code","profile","","","","",""],["1601C.I.8","8 Withholding agent name and line of business","profile","","","","",""],["1601C.I.9","9 Registered address (lines 1 and 2)","profile","","","","",""],["1601C.I.9A","9A ZIP code","profile","","","","",""],["1601C.I.10","10 Telephone number","profile","","","","",""],["1601C.I.11","11 Category of withholding agent (P private, G government)","profile","","","","",""],["1601C.I.12","12 Email address","profile","","","","",""],["1601C.I.13","13 Payees with relief under law or treaty?","user","","","","",""],["1601C.I.13A","13 Relief specification (treaty or special rate)","user","","","","",""],["1601C.II.20","20 Other non-taxable compensation (specify)","user","","","","",""],["1601C.II.21","21 Total non-taxable compensation","forms","","","","",""],["1601C.II.22","22 Total taxable compensation","forms","","","","",""],["1601C.II.23","23 Taxable compensation not subject to withholding","forms","","","","",""],["1601C.II.24","24 Net taxable compensation","forms","","","","",""],["1601C.II.26","26 Adjustment from previous months","forms","","","","",""],["1601C.II.27","27 Taxes withheld for remittance","forms","","","","",""],["1601C.II.28","28 Tax remitted in previously filed return (amended only)","prior_filing","","","","",""],["1601C.II.29","29 Other remittances (specify)","user","","","","",""],["1601C.II.30","30 Total remittances made","forms","","","","",""],["1601C.II.31","31 Tax still due / (over-remittance)","forms","","","","",""],["1601C.II.32","32 Surcharge","user","","","","",""],["1601C.II.33","33 Interest","user","","","","",""],["1601C.II.34","34 Compromise","user","","","","",""],["1601C.II.35","35 Total penalties","forms","","","","",""],["1601C.II.36","36 Total amount still due / (over-remittance)","forms","","","","",""],["1601C.S1.1.1","Schedule I row 1: previous month (typed schedule_1.N.previou","prior_filing","","","","",""],["1601C.S1.1.2","Schedule I row 1: date paid","prior_filing","","","","",""],["1601C.S1.1.3","Schedule I row 1: drawee bank, code or agency","prior_filing","","","","",""],["1601C.S1.1.4","Schedule I row 1: payment number","prior_filing","","","","",""],["1601C.S1.1.5","Schedule I row 1: tax paid excluding penalties","prior_filing","","","","",""],["1601C.S1.1.6","Schedule I row 1: should be tax due (reviewed)","prior_filing","","","","",""],["1601C.S1.1.7","Schedule I row 1: adjustment (column 6 less column 5)","forms","","","","",""],["1601C.S1.2.1","Schedule I row 2: field 1","prior_filing","","","","",""],["1601C.S1.2.2","Schedule I row 2: field 2","prior_filing","","","","",""],["1601C.S1.2.3","Schedule I row 2: field 3","prior_filing","","","","",""],["1601C.S1.2.4","Schedule I row 2: field 4","prior_filing","","","","",""],["1601C.S1.2.5","Schedule I row 2: field 5","prior_filing","","","","",""],["1601C.S1.2.6","Schedule I row 2: field 6","prior_filing","","","","",""],["1601C.S1.2.7","Schedule I row 2: adjustment","forms","","","","",""],["1601C.S1.3.1","Schedule I row 3: field 1","prior_filing","","","","",""],["1601C.S1.3.2","Schedule I row 3: field 2","prior_filing","","","","",""],["1601C.S1.3.3","Schedule I row 3: field 3","prior_filing","","","","",""],["1601C.S1.3.4","Schedule I row 3: field 4","prior_filing","","","","",""],["1601C.S1.3.5","Schedule I row 3: field 5","prior_filing","","","","",""],["1601C.S1.3.6","Schedule I row 3: field 6","prior_filing","","","","",""],["1601C.S1.3.7","Schedule I row 3: adjustment","forms","","","","",""],["1601C.S1.4","Schedule I total adjustment","forms","","","","",""],["1601C.S1.N","Schedule I row family pattern","not_fillable","","","","",""],["1601C.III.37.bank","37 payment row: drawee bank or agency","user","","","","",""],["1601C.III.37.number","37 payment row: reference number","user","","","","",""],["1601C.III.37.date","37 payment row: payment date","user","","","","",""],["1601C.III.37.amount","37 payment row: amount","user","","","","",""],["1601C.III.38.bank","38 payment row: drawee bank or agency","user","","","","",""],["1601C.III.38.number","38 payment row: reference number","user","","","","",""],["1601C.III.38.date","38 payment row: payment date","user","","","","",""],["1601C.III.38.amount","38 payment row: amount","user","","","","",""],["1601C.III.39.bank","39 payment row: drawee bank or agency","user","","","","",""],["1601C.III.39.number","39 payment row: reference number","user","","","","",""],["1601C.III.39.date","39 payment row: payment date","user","","","","",""],["1601C.III.39.amount","39 payment row: amount","user","","","","",""],["1601C.III.40.bank","40 payment row: drawee bank or agency","user","","","","",""],["1601C.III.40.number","40 payment row: reference number","user","","","","",""],["1601C.III.40.date","40 payment row: payment date","user","","","","",""],["1601C.III.40.amount","40 payment row: amount","user","","","","",""],["1601C.III.40.particular","40 Other payment: particulars","user","","","","",""],["1601C.DECL.signature","Signer, title, TIN, agent credentials and dates","user","","","","",""]],"1701MS":[["1701MS.IV.5","IV.5 Sales, revenues and fees","books","frm1701MS:txtSalesRevenueNo5a","gross_sales","tax_option=graduated","implemented","settled"],["1701MS.IV.6","IV.6 Sales returns, allowances and discounts","books","frm1701MS:txtSalesReturnsNo6a","sales_returns,sales_allowances,sales_discounts","tax_option=graduated","implemented","settled"],["1701MS.IV.8","IV.8 Cost of sales or services","books","frm1701MS:txtCostofSalesNo8a","cost_of_sales","tax_option=graduated;deduction=itemized","implemented","settled"],["1701MS.IV.13","IV.13 Other non-operating income (graduated path)","books","frm1701MS:txtNonOperatingIncomeNo13a","other_non_operating_income","tax_option=graduated","fail_closed","open"],["1701MS.IV.19","IV.19 Sales, revenues and fees, net of returns (8% path)","books","frm1701MS:txtSalesRevenuesFeesANo19a","net_sales","tax_option=eight_percent","implemented","settled"],["1701MS.IV.20","IV.20 Other non-operating income (8% path)","books","frm1701MS:txtOtherNonOperatingIncomeNo20a","other_non_operating_income","tax_option=eight_percent","fail_closed","open"],["1701MS.V.3","V.3 Creditable income tax withheld, first three quarters (23","books_ref","frm1701MS:txtCreditableTaxNo3a","it_withheld_2307_received","","implemented","settled"],["1701MS.V.4","V.4 Creditable income tax withheld, fourth quarter (2307)","books_ref","frm1701MS:txtCreditableFourthQuarterNo4a","it_withheld_2307_received","","implemented","settled"],["1701MS.H.1","H.1 For the year (MM/YYYY): month and year","identity","","","","",""],["1701MS.H.2","H.2 Amended return?","user","","","","",""],["1701MS.H.3","H.3 Short-period return?","user","","","","",""],["1701MS.H.4","H.4 Civil status","user","","","","",""],["1701MS.H.5","H.5 If married: jointly, separately or spouse has no income","user","","","","",""],["1701MS.I.6","I.6 TIN (taxpayer and spouse)","forms","","","","",""],["1701MS.I.7","I.7 RDO code (taxpayer; spouse unlocked)","profile","","","","",""],["1701MS.I.8","I.8 Name (taxpayer or filer)","profile","","","","",""],["1701MS.I.9","I.9 Email address","profile","","","","",""],["1701MS.I.10","I.10 Contact number","profile","","","","",""],["1701MS.I.11","I.11 Source of income (business, mixed, profession, compensa","forms","","","","",""],["1701MS.I.12","I.12 Income subject to (graduated, 8%, exempt, special)","forms","","","","",""],["1701MS.I.13","I.13 Legal basis of relief or exemption","user","","","","",""],["1701MS.I.14","I.14 Investment promotion or government agency","user","","","","",""],["1701MS.I.15","I.15 Registered activity or program number","user","","","","",""],["1701MS.I.16","I.16 Relief effective from and to","user","","","","",""],["1701MS.I.17","I.17 Method of deduction (itemized or OSD)","forms","","","","",""],["1701MS.I.18","I.18 Alphanumeric tax code (II011 to II017)","forms","","","","",""],["1701MS.II.19","II.19 Income tax due: special or preferential rate (IV.18A)","forms","","","","",""],["1701MS.II.20","II.20 Share remitted to other government agency","user","","","","",""],["1701MS.II.21","II.21 Net special or preferential tax","forms","","","","",""],["1701MS.II.22","II.22 Income tax due: regular rate","forms","","","","",""],["1701MS.II.23","II.23 Total income tax due","forms","","","","",""],["1701MS.II.24","II.24 Total tax credits or payments","forms","","","","",""],["1701MS.II.25","II.25 Tax payable or overpayment","forms","","","","",""],["1701MS.II.26","II.26 Tax due allowed for the second installment","forms","","","","",""],["1701MS.II.27","II.27 Amount payable or overpayment","forms","","","","",""],["1701MS.II.28A","II.28A Surcharge","user","","","","",""],["1701MS.II.28B","II.28B Interest","user","","","","",""],["1701MS.II.28C","II.28C Compromise","user","","","","",""],["1701MS.II.28D","II.28D Total penalties","forms","","","","",""],["1701MS.II.29","II.29 Total amount payable or overpayment","forms","","","","",""],["1701MS.II.30","II.30 Aggregate amount payable or overpayment","forms","","","","",""],["1701MS.II.31","II.31 Overpayment options and amounts","user","","","","",""],["1701MS.II.32","II.32 Declaration (perjury agreement)","user","","","","",""],["1701MS.II.33","II.33 Name and signature of filer or representative","user","","","","",""],["1701MS.II.35","II.35 Number of attachments (schema: Item 33)","forms","","","","",""],["1701MS.III.36.bank","III.36 payment row: cash or bank debit bank","user","","","","",""],["1701MS.III.36.number","III.36 payment row: cash or bank debit number","user","","","","",""],["1701MS.III.36.date","III.36 payment row: cash or bank debit date","user","","","","",""],["1701MS.III.36.amount","III.36 payment row: cash or bank debit amount","user","","","","",""],["1701MS.III.37.bank","III.37 payment row: check bank","user","","","","",""],["1701MS.III.37.number","III.37 payment row: check number","user","","","","",""],["1701MS.III.37.date","III.37 payment row: check date","user","","","","",""],["1701MS.III.37.amount","III.37 payment row: check amount","user","","","","",""],["1701MS.III.38.bank","III.38: tax debit memo drawee bank","user","","","","",""],["1701MS.III.38.number","III.38 payment row: tax debit memo number","user","","","","",""],["1701MS.III.38.date","III.38 payment row: tax debit memo date","user","","","","",""],["1701MS.III.38.amount","III.38 payment row: tax debit memo amount","user","","","","",""],["1701MS.III.39.bank","III.39 payment row: other payment bank","user","","","","",""],["1701MS.III.39.number","III.39 payment row: other payment number","user","","","","",""],["1701MS.III.39.date","III.39 payment row: other payment date","user","","","","",""],["1701MS.III.39.amount","III.39 payment row: other payment amount","user","","","","",""],["1701MS.III.39.particular","III.39: other particulars","user","","","","",""],["1701MS.IV.1","IV.1 Gross compensation income (owner's 2316)","user","","","","",""],["1701MS.IV.2","IV.2 Non-taxable or exempt compensation","user","","","","",""],["1701MS.IV.3","IV.3 Taxable compensation","forms","","","","",""],["1701MS.IV.4","IV.4 Tax due on compensation","forms","","","","",""],["1701MS.IV.7","IV.7 Net sales (IV.5 - IV.6)","forms","","","","",""],["1701MS.IV.9","IV.9 Gross income from operation","forms","","","","",""],["1701MS.IV.10A","IV.10A Ordinary allowable itemized deductions","user","","","","",""],["1701MS.IV.10B","IV.10B Special allowable itemized deductions","user","","","","",""],["1701MS.IV.10C","IV.10C Net operating loss carryover","prior_filing","","","","",""],["1701MS.IV.10D","IV.10D Total allowable itemized deductions","forms","","","","",""],["1701MS.IV.11","IV.11 Optional standard deduction (OSD)","forms","","","","",""],["1701MS.IV.12","IV.12 Net income or loss","forms","","","","",""],["1701MS.IV.14","IV.14 Taxable income from business (IV.12 + IV.13)","forms","","","","",""],["1701MS.IV.15","IV.15 Taxable compensation and business income (IV.3 + IV.14","forms","","","","",""],["1701MS.IV.16","IV.16 Special or preferential rate","profile","","","","",""],["1701MS.IV.17","IV.17 Special, preferential or exempt tax due","forms","","","","",""],["1701MS.IV.18A","IV.18A Total special or exempt plus compensation tax","forms","","","","",""],["1701MS.IV.18B","IV.18B Total tax due under graduated rates","forms","","","","",""],["1701MS.IV.21","IV.21 8%: total income (IV.19 + IV.20)","forms","","","","",""],["1701MS.IV.22","IV.22 8%: pure-business reduction (250,000.00)","forms","","","","",""],["1701MS.IV.23","IV.23 8%: taxable income or loss (IV.21 - IV.22)","forms","","","","",""],["1701MS.IV.24","IV.24 8%: business income tax (8% x IV.23)","forms","","","","",""],["1701MS.IV.25","IV.25 8%: total compensation plus business tax (IV.4 + IV.24","forms","","","","",""],["1701MS.V.1","V.1 Prior-year excess credits","prior_filing","","","","",""],["1701MS.V.2","V.2 Tax payments for the first three quarters (1701Q proofs)","prior_filing","","","","",""],["1701MS.V.5","V.5 Creditable tax withheld per 2316 (own employers)","user","","","","",""],["1701MS.V.6","V.6 Tax paid on the prior return if amended","prior_filing","","","","",""],["1701MS.V.7","V.7 Foreign tax credits and foreign tax number","user","","","","",""],["1701MS.V.8","V.8 Special tax credits","user","","","","",""],["1701MS.V.9","V.9 Other tax credits or payments, with description","user","","","","",""],["1701MS.V.10","V.10 Total tax credits and payments","forms","","","","",""],["1701MS.VI.1","VI.1 Total tax relief availment","forms","","","","",""]]};
+  const peso = (n) => (n < 0 ? "−" : "") + Math.abs(n).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  /* ---------- three businesses ---------- */
+  const KN = { sales: "business sale", returns: "return", other: "other income", opex: "expense" };
+  const BIZ = {
+    a: { name: "Started in Books", accts: [["41000 Sales Revenue", "sales", 300000], ["49000 Refunds & Discounts", "returns", 10000], ["42000 Interest Income", "other", 1250], ["66000 Facilities", "opex", 75000]] },
+    b: { name: "From QuickBooks", accts: [["Income:Services", "sales", 180000], ["Income:Product Sales", "sales", 120000], ["Discounts Given", "returns", 10000], ["Other Income:Bank Interest", "other", 1250], ["Rent Expense", "opex", 75000]] },
+    c: { name: "From a spreadsheet", accts: [["Revenue (one column)", "mixed", 301250, [["sales", 300000, "42 sale lines"], ["other", 1250, "3 interest lines"]]], ["Refunds", "returns", 10000], ["Expenses", "opex", 75000]] },
+  };
+  let biz = "b";
+  function drawBiz() {
+    document.getElementById("biz").innerHTML = Object.entries(BIZ).map(([k, b]) => '<button data-biz="' + k + '" aria-pressed="' + (biz === k) + '">' + b.name + "</button>").join("");
+    const B = BIZ[biz];
+    const sums = { sales: 0, returns: 0, other: 0, opex: 0 };
+    let left = "";
+    for (const a of B.accts) {
+      if (a[1] === "mixed") {
+        left += '<div class="acc mixed"><div class="top"><b>' + esc(a[0]) + '</b><span class="num">' + peso(a[2]) + '</span></div><span class="kind" style="background:var(--stop-soft);color:var(--stop)">mixed: decided per line</span><div class="split">' + a[3].map(([k, v, why]) => { sums[k] += v; return "<span>" + peso(v) + " → <b>" + KN[k] + "</b> · " + why + "</span>"; }).join("") + "</div></div>";
+      } else { sums[a[1]] += a[2]; left += '<div class="acc"><div class="top"><b>' + esc(a[0]) + '</b><span class="num">' + peso(a[2]) + '</span></div><span class="kind">' + KN[a[1]] + "</span></div>"; }
+    }
+    const kinds = Object.entries(sums).map(([k, v]) => '<div class="acc"><div class="top"><b>' + KN[k] + '</b><span class="num">' + peso(v) + "</span></div></div>").join("");
+    const net = sums.sales - sums.returns;
+    const totals = '<div class="tot"><span>gross sales</span><span class="num">' + peso(sums.sales) + '</span></div><div class="tot"><span>returns</span><span class="num">' + peso(sums.returns) + '</span></div><div class="tot"><span><b>net sales</b></span><span class="num"><b>' + peso(net) + '</b></span></div><div class="tot dim"><span>other income</span><span class="num">' + peso(sums.other) + "</span></div>";
+    const box = '<div class="formbox"><span class="lab">2551Q · Q3 2026 · Schedule 1 row 1</span><code>txtATCAmt1</code><span class="val">' + peso(net) + '</span></div><div class="formbox" style="border-style:dashed"><span class="lab">1701-MS · IV.13 other income</span><span class="val" style="font-size:1rem;color:var(--muted)">held for tax review</span></div><span class="same">Same for A, B and C ✓</span>';
+    document.getElementById("flow").innerHTML = '<div class="col"><h3>Their accounts</h3>' + left + '</div><div class="arr">→</div><div class="col"><h3>Kinds (Map 1)</h3>' + kinds + '</div><div class="arr">→</div><div class="col"><h3>Books totals (Map 2)</h3>' + totals + '</div><div class="arr">→</div><div class="col"><h3>BIR box (Map 3)</h3>' + box + "</div>";
+  }
+
+  /* ---------- Map 1 wizard ---------- */
+  const KINDS = [
+    ["sales", "Business sales", "income_class: business_sales"], ["returns", "Returns, allowances, discounts", "income_class: contra_sales"],
+    ["cogs", "Cost of sales", "income_class: cost_of_sales"], ["opex", "Operating expense", "income_class: operating_expense"],
+    ["other", "Other income (interest, rent received)", "income_class: non_operating_income"], ["pay", "Pay to employees", "comp_component: basic_pay"],
+    ["ee", "Employee contributions withheld", "contribution_side: employee"], ["er", "Employer contributions", "contribution_side: employer"],
+    ["wtax", "Tax withheld from employees", "comp_component: tax_withheld"], ["c2307", "2307s received", "document_kind: certificate_2307"],
+    ["money", "Bank, cash or card", "no tax facts"], ["owner", "Owner's money", "no tax facts"], ["loan", "Loans", "no tax facts"],
+    ["vat", "VAT collected", "liability, never sales"], ["mixed", "Mixed: decide per line", "set on each line"], ["unsure", "Not sure yet", "unclassified: holds boxes"],
+  ];
+  const FEEDS = { sales: "gross sales, net sales", returns: "returns, net sales", cogs: "cost of sales", opex: "expenses (reports only)", other: "other income", pay: "gross pay", ee: "employee contributions", er: "employer contributions", wtax: "tax withheld", c2307: "2307 credits", money: "—", owner: "—", loan: "—", vat: "—", mixed: "per line", unsure: "nothing yet" };
+  const WZ = [
+    ["Income:Services", "Income", "sales", 96, 0], ["Income:Product Sales", "Income", "sales", 94, 0], ["Discounts Given", "Income", "returns", 88, 0],
+    ["Other Income:Bank Interest", "Other Income", "other", 91, 0], ["Cost of Goods Sold", "COGS", "cogs", 97, 0], ["Rent Expense", "Expense", "opex", 98, 0],
+    ["Payroll Expenses", "Expense", "pay", 72, 0], ["Payroll Liabilities", "Other Current Liability", "mixed", 64, 0], ["Undeposited Funds", "Other Current Asset", "money", 85, 0],
+    ["Owner Draws", "Equity", "owner", 97, 0], ["Sales Tax Payable", "Other Current Liability", "vat", 81, 0], ["Ask My Accountant", "Expense", "unsure", 30, 0],
+  ];
+  const ST = WZ.map((r) => ({ kind: r[2], ok: r[3] >= 90 }));
+  function drawWiz() {
+    const rows = WZ.map((r, i) => {
+      const s = ST[i];
+      const k = KINDS.find((x) => x[0] === s.kind);
+      const pill = s.kind === "unsure" ? '<span class="pill p-unk">Not matched</span>' : s.kind === "mixed" ? '<span class="pill p-mix">Per line</span>' : s.ok ? '<span class="pill p-ok">Confirmed</span>' : '<span class="pill p-sug">Suggested</span>';
+      return "<tr><td><b>" + esc(r[0]) + '</b><div class="facts">' + esc(r[1]) + '</div></td><td class="conf">' + r[3] + '%</td><td><select data-wz="' + i + '" aria-label="Kind for ' + esc(r[0]) + '">' + KINDS.map((x) => '<option value="' + x[0] + '"' + (x[0] === s.kind ? " selected" : "") + ">" + x[1] + "</option>").join("") + '</select><div class="facts">' + esc(k[2]) + "</div></td><td>" + esc(FEEDS[s.kind]) + "</td><td>" + pill + "</td></tr>";
+    }).join("");
+    const unk = ST.filter((s) => s.kind === "unsure").length, mix = ST.filter((s) => s.kind === "mixed").length, sug = ST.filter((s) => !s.ok && s.kind !== "unsure" && s.kind !== "mixed").length;
+    document.getElementById("wiz").innerHTML = '<div class="tb"><b>Match your accounts</b><span>Imported from QuickBooks · 12 accounts · 1,284 lines</span></div><table><thead><tr><th>Their account</th><th>Sure</th><th>Kind in Books</th><th>Feeds</th><th>Status</th></tr></thead><tbody>' + rows + '</tbody></table><div class="foot"><span><b>' + sug + "</b> to confirm · <b>" + mix + "</b> per line · <b>" + unk + '</b> not matched</span><span class="sp"></span><span>' + (unk ? "Boxes that could read unmatched lines are held." : "Ready: every account has a kind.") + '</span><button class="btn" data-confirm="1">Confirm all suggested</button></div>';
+  }
+
+  /* ---------- Map 3 sheets ---------- */
+  const SECT = {
+    "2551Q": { H: "Header", I: "Part I · Background", II: "Part II · Total tax payable", S1: "Schedule 1 · tax due by ATC (6 rows)", III: "Part III · Payment details", DECL: "Signature" },
+    "1601C": { H: "Header", I: "Part I · Background", II: "Part II · Computation of tax", S1: "Schedule I · adjustments from earlier months", III: "Part III · Payment details", DECL: "Signature" },
+    "1701MS": { H: "Header", I: "Part I · Background", IV: "Part IV · Computation of income", V: "Part V · Tax credits", II: "Part II · Total tax payable", III: "Part III · Payment details", VI: "Part VI · Tax relief" },
+  };
+  const ORDER = { "2551Q": ["H", "I", "S1", "II", "III", "DECL"], "1601C": ["H", "I", "II", "S1", "III", "DECL"], "1701MS": ["H", "I", "IV", "V", "II", "III", "VI"] };
+  const META = { "2551Q": ["Percentage tax", "quarterly · Q3 2026"], "1601C": ["Withholding on compensation", "monthly · September 2026"], "1701MS": ["Annual income tax", "yearly · 2026, mixed income or business"] };
+  const VAL = {
+    "2551Q.S1.1.base": [290000, [["Jul 01 · Isla Café · sale", 120000], ["Jul 15 · Santos Hardware · sale", 100000], ["Aug 20 · Bayani Foods · sale", 80000], ["Sep 10 · Bayani Foods · return (OK'd)", -10000]]],
+    "2551Q.II.15": [3000, [["Q3 · Santos Hardware · 2307 WB082 · received", 3000]]],
+    "1601C.H.3": ["Yes", [["Sep 30 · pay run · tax withheld", 2808.4]]],
+    "1601C.II.14": [42000, [["Sep 30 · Ana Cruz · basic pay", 40000], ["Sep 30 · Ana Cruz · de minimis", 2000]]],
+    "1601C.II.15": [0, []], "1601C.II.17": [0, []],
+    "1601C.II.18": [2000, [["Sep 30 · Ana Cruz · de minimis", 2000]]],
+    "1601C.II.19": [2000, [["Sep 30 · Ana Cruz · employee share", 2000]]],
+    "1601C.II.25": [2808.4, [["Sep 30 · Ana Cruz · tax withheld", 2808.4]]],
+    "1701MS.IV.8": [0, []], "1701MS.IV.5": [1200000, [["Jan–Oct · 12 sales", 1200000]]], "1701MS.IV.6": [10000, [["Sep 10 · Bayani Foods · return", 10000]]],
+    "1701MS.IV.19": [1190000, [["Jan–Oct · 12 sales", 1200000], ["Sep 10 · return", -10000]]],
+    "1701MS.V.3": [8900, [["Q1 · 2307 WI010", 3000], ["Q2 · 2307 WI010", 3000], ["Q3 · 2307 WI010", 2900]]], "1701MS.V.4": [3000, [["Q4 · 2307 WI010", 3000]]],
+  };
+  const OWN = [["books", "Books fills", "t-books"], ["forms", "BIR computes or decides", "t-bir"], ["profile", "Your BIR profile", "t-prof"], ["prior_filing", "Past returns", "t-past"], ["user", "You type in BIR", "t-you"]];
+  const ownKey = (o) => (o === "books_ref" ? "books" : o === "identity" ? "profile" : o);
+  const HOW = { forms: "The BIR app computes or decides this box (totals, rates, ATC, tax due, penalties, elections).", profile: "Comes from your BIR tax profile (TIN, RDO, name, address, period).", identity: "Comes from your BIR tax profile (the period or identity of the return).", prior_filing: "Comes from returns you filed before (amounts paid, earlier months).", user: "You type it in the BIR app (amended?, attachments, other items, payment details, signature).", not_fillable: "Not fillable in the BIR app." };
+  let form = "2551Q", show = new Set(OWN.map((o) => o[0])), pick = null, taxopt = "graduated", ded = "osd";
+  const CTX = { "1701MS.IV.5": () => taxopt === "graduated", "1701MS.IV.6": () => taxopt === "graduated", "1701MS.IV.8": () => taxopt === "graduated" && ded === "itemized", "1701MS.IV.13": () => taxopt === "graduated", "1701MS.IV.19": () => taxopt === "eight_percent", "1701MS.IV.20": () => taxopt === "eight_percent" };
+  function sortKey(id) {
+    const p = id.split(".").slice(2);
+    const ord = { ATC: 0, base: 1, rate: 2, tax: 3 };
+    return p.map((x) => (x in ord ? ord[x] : /^\d/.test(x) ? parseInt(x, 10) * 10 + (/[A-Z]$/.test(x) ? x.charCodeAt(x.length - 1) - 64 : 0) : 9999)).concat([0, 0, 0]).slice(0, 3);
+  }
+  const cmp = (a, b) => { const x = sortKey(a[0]), y = sortKey(b[0]); for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] - y[i]; return 0; };
+  const PLANNED = {
+    "2550Q": { t: "VAT, quarterly", when: "only if VAT-registered", rows: [["Vatable sales", "vatable_sales", "Vatable sales box"], ["Zero-rated and exempt sales", "zero_rated_sales · exempt_sales", "Their own boxes"], ["Sales to government", "sales_to_government", "Needs a fact on the customer"], ["Purchases and the VAT on them", "purchases_* · input_vat_on_purchases", "Input VAT boxes; BIR computes the VAT payable"]] },
+    "1701Q": { t: "Income tax, quarterly", when: "Q1 to Q3", rows: [["Gross and net sales, year to date", "gross_sales · net_sales (YTD window)", "Same totals as 1701-MS, cumulative"], ["Cost of sales, year to date", "cost_of_sales (YTD)", "Only when BIR says itemized"], ["2307s received this year", "it_withheld_2307_received", "Credits; BIR checks"]] },
+    "0619-E / 1601-EQ": { t: "Tax you withheld from suppliers", when: "monthly and quarterly", rows: [["Payments to suppliers, by kind of payee", "payments_by_payee_kind (new)", "BIR picks the ATC and rate from the payee"], ["Tax you withheld on them", "ewt_withheld_recorded (new)", "Recorded on the payment line"]] },
+    "1702-RT": { t: "Corporate income tax, yearly", when: "corporations", rows: [["Sales, returns, cost of sales, other income", "same totals as 1701-MS", "Different boxes, same Books totals"], ["2307s received", "it_withheld_2307_received", "Credits"]] },
+    "1604-C": { t: "Yearly list of employees", when: "January", rows: [["Each employee's pay for the year", "gross_compensation per employee (YTD)", "One row per employee; BIR has the TINs"], ["Each employee's tax withheld", "tax_withheld_from_employees per employee", "Per row"]] },
+  };
+  function drawTabs() {
+    document.getElementById("ftabs").innerHTML = Object.keys(FORMS).map((k) => '<button data-form="' + k + '" aria-pressed="' + (form === k) + '"><b>' + (k === "1601C" ? "1601-C" : k === "1701MS" ? "1701-MS" : k) + "</b><span>" + META[k][0] + " · verified</span></button>").join("") +
+      Object.keys(PLANNED).map((k) => '<button class="plan" data-form="' + k + '" aria-pressed="' + (form === k) + '"><b>' + k + "</b><span>" + PLANNED[k].t + " · planned</span></button>").join("");
+  }
+  function drawSheet() {
+    drawTabs();
+    const ctx = document.getElementById("ctx"), leg = document.getElementById("legend"), area = document.getElementById("sheetarea");
+    if (PLANNED[form]) {
+      ctx.innerHTML = ""; leg.innerHTML = "";
+      const P = PLANNED[form];
+      area.innerHTML = '<div class="plan"><p class="lead">' + form + ": " + P.t + " (" + P.when + "). Same three maps; only Map 3 is new. Box keys are not yet checked against the BIR app, so this is the plan, not the rule set.</p>" +
+        '<div class="plhead"><span>Books total</span><span></span><span>Goes to</span><span>Note</span></div>' +
+        P.rows.map(([a, m, b]) => '<div class="prow"><div class="m"><b>' + esc(a) + "</b><code>" + esc(m) + '</code></div><div class="to">→</div><div class="b">' + esc(form) + " box</div><div class=\"w\">" + esc(b) + "</div></div>").join("") + "</div>";
+      return;
+    }
+    ctx.innerHTML = form === "1701MS" ? '<div class="ctxbar"><b>Read from your BIR draft:</b><span>income tax option</span><span class="seg"><button data-opt="graduated" aria-pressed="' + (taxopt === "graduated") + '">Graduated</button><button data-opt="eight_percent" aria-pressed="' + (taxopt === "eight_percent") + '">8%</button></span><span>deduction</span><span class="seg"><button data-ded="osd" aria-pressed="' + (ded === "osd") + '">OSD</button><button data-ded="itemized" aria-pressed="' + (ded === "itemized") + '">Itemized</button></span><span class="note">Books never sets these. Switch to see which boxes Books fills.</span></div>' : "";
+    const rows = FORMS[form];
+    const count = {}; for (const r of rows) { const o = ownKey(r[2]); count[o] = (count[o] || 0) + 1; }
+    leg.innerHTML = OWN.map(([k, l, c]) => '<button class="tag ' + c + '" data-own="' + k + '" aria-pressed="' + show.has(k) + '">' + l + " · " + (count[k] || 0) + "</button>").join("") + '<span class="note">Click to show or hide. ' + rows.length + " boxes on this form.</span>";
+    let parts = "";
+    for (const s of ORDER[form]) {
+      const inPart = rows.filter((r) => r[0].split(".")[1] === s).sort(cmp);
+      if (!inPart.length) continue;
+      const b = inPart.filter((r) => ownKey(r[2]) === "books").length;
+      parts += '<div class="part"><div class="ph"><span>' + SECT[form][s] + "</span><span>" + inPart.length + " boxes" + (b ? " · " + b + " from Books" : "") + '</span></div><div class="cells">' + inPart.map((r) => {
+        const o = ownKey(r[2]);
+        const off = !show.has(o) ? " off" : "";
+        const applies = CTX[r[0]] ? CTX[r[0]]() : true;
+        const held = r[6] === "fail_closed";
+        const v = VAL[r[0]];
+        let val = "";
+        if (o === "books") val = !applies ? "not this year" : held ? "held" : v ? (typeof v[0] === "string" ? v[0] : peso(v[0])) : "";
+        const label = r[1].length > 54 ? r[1].slice(0, 52) + "…" : r[1];
+        return '<button class="cell o-' + r[2] + off + (o === "books" && !applies ? " na" : "") + '" data-cell="' + r[0] + '" aria-pressed="' + (pick === r[0]) + '"><span class="it">' + esc(label) + "</span>" + (val ? '<span class="v">' + esc(val) + "</span>" : "") + "</button>";
+      }).join("") + "</div></div>";
+    }
+    const name = form === "1601C" ? "1601-C" : form === "1701MS" ? "1701-MS" : form;
+    area.innerHTML = '<div class="sheetwrap"><div class="sheet"><div class="fh"><span class="code">' + name + '</span><span class="ttl">' + META[form][0] + "<small>" + META[form][1] + "</small></span></div>" + parts + '</div><div class="detail" id="detail">' + detailHtml() + "</div></div>";
+  }
+  function detailHtml() {
+    const r = pick && FORMS[form] ? FORMS[form].find((x) => x[0] === pick) : null;
+    if (!r) return '<b style="font-family:var(--display);font-size:1.1rem">Click any box</b><span class="note">Green boxes show the Books total, the rule, and the lines behind the number. Other colours say who fills them.</span>';
+    const o = ownKey(r[2]);
+    if (o !== "books") return '<span class="tag ' + OWN.find((x) => x[0] === o)[2] + '" style="align-self:flex-start">' + OWN.find((x) => x[0] === o)[1] + '</span><b style="font-family:var(--display);font-size:1.1rem">' + esc(r[1]) + '</b><span class="note">' + esc(HOW[r[2]] || "") + '</span><div class="kv"><span>Rule id</span><code>' + esc(r[0]) + "</code><span>Books</span><span>Never fills it</span></div>";
+    const v = VAL[r[0]];
+    const applies = CTX[r[0]] ? CTX[r[0]]() : true;
+    const held = r[6] === "fail_closed";
+    const cond = r[5] ? r[5].split(";").map((c) => c.replace("tax_option=", "tax option is ").replace("deduction=", "deduction is ").replace("eight_percent", "8%")).join(" and ") : "always";
+    let lin = "";
+    if (v && v[1].length && applies && !held) {
+      const sum = v[1].reduce((s, x) => s + x[1], 0);
+      lin = '<div class="lineage">' + v[1].map(([w, a]) => "<div><span>" + esc(w) + '</span><span class="num">' + peso(a) + "</span></div>").join("") + '<div class="sum"><span>Total</span><span class="num">' + peso(sum) + "</span></div></div>";
+    }
+    const status = !applies ? '<span class="tag t-mute">Not filled: the BIR draft says otherwise</span>' : held ? '<span class="tag t-stop">Held: needs a tax review first</span>' : r[2] === "books_ref" ? '<span class="tag t-past">Shown for BIR to check, not typed in</span>' : r[7] === "open" ? '<span class="tag t-you">Filled · review still open</span>' : '<span class="tag t-books">Filled</span>';
+    return '<span class="tag t-books" style="align-self:flex-start">Books fills</span><b style="font-family:var(--display);font-size:1.1rem">' + esc(r[1]) + "</b>" + status +
+      '<div class="kv"><span>BIR key</span><code>' + esc(r[3]) + "</code><span>Books total</span><code>" + esc(r[4]) + "</code><span>When</span><span>" + esc(cond) + "</span><span>Rule id</span><code>" + esc(r[0]) + "</code>" + (v && applies && !held ? "<span>Example</span><span class=\"num\">" + (typeof v[0] === "string" ? v[0] : peso(v[0])) + "</span>" : "") + "</div>" + lin;
+  }
+
+  document.addEventListener("click", (e) => {
+    const el = e.target.closest("button");
+    if (!el) return;
+    const d = el.dataset;
+    if (d.biz) { biz = d.biz; drawBiz(); return; }
+    if (d.confirm) { ST.forEach((s) => { if (s.kind !== "unsure" && s.kind !== "mixed") s.ok = true; }); drawWiz(); return; }
+    if (d.form) { form = d.form; pick = null; drawSheet(); return; }
+    if (d.own) { if (show.has(d.own)) show.delete(d.own); else show.add(d.own); drawSheet(); return; }
+    if (d.cell) { pick = d.cell; drawSheet(); if (window.matchMedia("(max-width: 980px)").matches) document.getElementById("detail").scrollIntoView({ block: "nearest", behavior: "smooth" }); return; }
+    if (d.opt) { taxopt = d.opt; drawSheet(); return; }
+    if (d.ded) { ded = d.ded; drawSheet(); return; }
+  });
+  document.addEventListener("change", (e) => {
+    const s = e.target.closest("select[data-wz]");
+    if (!s) return;
+    const i = Number(s.dataset.wz);
+    ST[i].kind = s.value; ST[i].ok = s.value !== "unsure" && s.value !== "mixed";
+    drawWiz();
+  });
+
+  drawBiz(); drawWiz(); drawSheet();
+})();
+</script>

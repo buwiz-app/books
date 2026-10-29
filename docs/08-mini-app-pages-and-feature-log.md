@@ -11,6 +11,7 @@ Source: every route of web Books (BK-TS `src/routes/`, 52 page files at `1662ca3
 | Every page of the mini app | https://claude.ai/artifact/GW3HkSAJw9wQcECqGXTTyp |
 | Inline cards in the chat | https://claude.ai/artifact/PmQm8iZicWFHDW9qjfqyVY |
 | Guided chat: `/books`, `@books:`, templates, routines | https://claude.ai/artifact/LxFB3a2FiSsQ3XDJemx8QW |
+| The tax form bridge: the three maps, any chart of accounts, every box of 2551Q, 1601-C and 1701-MS by owner, planned forms, when, where, earlier records, cross-checks | https://claude.ai/artifact/S9yyJguht6ioPf3ZJKsHFH |
 
 ## 1. Pages (12)
 
@@ -153,3 +154,14 @@ Rox limits: 16 scopes and 8 routines per app (`docs/manifest.md:116-129`). Books
 1. **Amounts on inline cards.** DD-21 and DD-22 said cards carry counts and status only, because first-party inline cards mount without a click (RK-21). The drawings show amounts on cards the user asked for, and counts only on cards that appear on their own. Accept, or keep counts only.
 2. **Build order.** Screens first (Ledger and Accounts, then People and Tags, Reports, Reconcile, cards and chat), with the BIR hand-off last. This replaces P2's position in `docs/05`. Not yet applied to `docs/05`.
 3. **Templates.** Confirm that "TMP" means templates, and which ones ship first.
+4. **Bridge proposals new in the tax-bridge drawing (not yet designed in docs 01 to 07):**
+   - **Map 1 for imported charts.** Each foreign account is matched once to a Books kind: AI suggestion with a confidence score, then user confirmation. "Mixed" accounts are decided per line. "Not sure yet" holds every box those lines could feed.
+   - **Opening figures.** Starting mid-year, the user enters Jan-to-now totals per Books total with proof (filed returns). They show as opening figures in lineage.
+   - **Cross-checks:**
+     - 4 × 2551Q = 1701-MS sales.
+     - P&L sales = gross sales.
+     - The pay run = 1601-C items.
+     - Received 2307s = credits.
+     - Filed returns compared with Books.
+   - **Planned forms** (keys not verified): 2550Q, 1701Q, 0619-E and 1601-EQ, 1702-RT, 1604-C.
+
