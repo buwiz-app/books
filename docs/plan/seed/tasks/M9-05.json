@@ -3,7 +3,7 @@
  "order": 4,
  "title": "Sign with gc-2026-01 and install in your Rox",
  "owner": "You",
- "status": "blocked",
- "evidence": "With you since 2026-10-30: run tools/release/prepare.sh, sign dist/release/manifest.json with --keychain gc-2026-01, install with BOOKS_V1_MANIFEST; then I check /books there. I never touch that key",
+ "status": "done",
+ "evidence": "5bc6282: signed with gc-2026-01 (Keychain, owner's Allow), verified against the trusted key; installed in the owner's Rox (broker 8787): inspect ok, install ok, /books opens Books, signed books_status answered",
  "updated": "2026-10-30"
 }

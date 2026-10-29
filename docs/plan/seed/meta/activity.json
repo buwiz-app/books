@@ -2,6 +2,10 @@
  "entries": [
   {
    "at": "2026-10-30",
+   "text": "M9 closed (5bc6282): at the owner's word, Books 0.1.0 signed with gc-2026-01, trusted and installed in the owner's Rox; /books opens Books, books_status answered"
+  },
+  {
+   "at": "2026-10-30",
    "text": "M7 closed (86b3aff): live Slice B 29/29 on a scratch BIR profile (BIR's own harness recipe, via the rox session); Q3 2551Q in a real BIR draft, a later change marks it out of date"
   },
   {
