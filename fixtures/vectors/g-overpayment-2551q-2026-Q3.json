@@ -1,0 +1,439 @@
+{
+  "description": "Same ledger with a further received WB082 credit of 7000.00: total credit 10000.00 against PT 9000.00. Overpayment -1000.00, signed and not clamped. Ready.",
+  "expected": {
+    "as_of": "2026-10-29",
+    "blocking": [],
+    "discrepancies": [],
+    "due": {
+      "date": "2026-10-25",
+      "overdue": true,
+      "penalties_computed": false,
+      "rule": "25 days after the quarter end (RA 11976 s128(1); rates.v1 due_dates.2551Q)",
+      "rule_status": "CONFIRMED"
+    },
+    "excluded_keys": [],
+    "expected_readback": {
+      "frm2551Qv2018:txt14": "9000.00",
+      "frm2551Qv2018:txt18": "10000.00",
+      "frm2551Qv2018:txt19": "-1000.00",
+      "frm2551Qv2018:txt24": "-1000.00",
+      "txtATCDue1": "9000.00",
+      "txtTotalSched1": "9000.00"
+    },
+    "fill_args": {
+      "frm2551Qv2018:txt15": "10000.00",
+      "schedule_1.0.atc": "PT010",
+      "txtATCAmt1": "300000.00"
+    },
+    "fixture_sha256": "6f5369f0ec62ad7537eb6d3e3c596ce9a7899e3bec5d5fdbe377c2888b9079c5",
+    "form_code": "2551Q",
+    "inputs_hash": "bd32aa2c3ea1d64a4f63733fc617082f3adcb3d9b74512dea57a6baf48aff695",
+    "lineage": {
+      "frm2551Qv2018:txt15": {
+        "fixture_sha256": "6f5369f0ec62ad7537eb6d3e3c596ce9a7899e3bec5d5fdbe377c2888b9079c5",
+        "lines": [
+          {
+            "amount": "3000.00",
+            "entry_id": "G-003",
+            "line_id": "G-003.1"
+          },
+          {
+            "amount": "7000.00",
+            "entry_id": "G-006",
+            "line_id": "G-006.1"
+          }
+        ],
+        "netted_pairs": 0,
+        "rule_id": "2551Q.II.15",
+        "rule_set_version": 1
+      },
+      "schedule_1.0.atc": {
+        "fixture_sha256": "6f5369f0ec62ad7537eb6d3e3c596ce9a7899e3bec5d5fdbe377c2888b9079c5",
+        "lines": [],
+        "netted_pairs": 0,
+        "rule_id": "2551Q.S1.1.ATC",
+        "rule_set_version": 1
+      },
+      "txtATCAmt1": {
+        "fixture_sha256": "6f5369f0ec62ad7537eb6d3e3c596ce9a7899e3bec5d5fdbe377c2888b9079c5",
+        "lines": [
+          {
+            "amount": "200000.00",
+            "entry_id": "G-001",
+            "line_id": "G-001.2"
+          },
+          {
+            "amount": "100000.00",
+            "entry_id": "G-002",
+            "line_id": "G-002.2"
+          }
+        ],
+        "netted_pairs": 0,
+        "rule_id": "2551Q.S1.1.base",
+        "rule_set_version": 1
+      }
+    },
+    "output_sha256": "47a30fbc1bef8bb693aa6a172ccf38058eaa82d10c5f6621783c51cc4a428779",
+    "period_end": "2026-09-30",
+    "period_key": "2026-Q3",
+    "period_start": "2026-07-01",
+    "profile_digest": "84375f70cd6b80bc70635d26f35d90c11274824195da900d630e13236db09f65",
+    "proposal_format": "buwiz-poc-proposal/1",
+    "rate": {
+      "code": "PT010",
+      "effective_from": "2023-07-01",
+      "effective_to": null,
+      "rate_bps": 300
+    },
+    "reference_values": {},
+    "refused_keys": [],
+    "rule_set": {
+      "rule_set_id": "2551Q-v2018-r1",
+      "rule_set_version": 1,
+      "schema_pin": "63267ca3d4d526a8ec490394470f026de82ac385",
+      "schema_sha256": "a206416cabb09c5e1e0ebedf9f7ac635a46856a139ffbbde5f7be88f89005788"
+    },
+    "status": "ready",
+    "tax_year": 2026,
+    "warnings": [
+      {
+        "code": "EXC.UNRECEIVED_CERT",
+        "detail": "certificate status is pending; no credit",
+        "ids": [
+          "G-004.1"
+        ]
+      },
+      {
+        "code": "EXC.WB084_FINAL",
+        "detail": "final withholding (WB084); never credited",
+        "ids": [
+          "G-005.1"
+        ]
+      }
+    ]
+  },
+  "fixture": "g-overpayment-2026",
+  "fixture_sha256": "6f5369f0ec62ad7537eb6d3e3c596ce9a7899e3bec5d5fdbe377c2888b9079c5",
+  "form": "2551Q",
+  "input": {
+    "acknowledged_entry_ids": [],
+    "as_of": "2026-10-29",
+    "entries": [
+      {
+        "entry_date": "2026-07-10",
+        "entry_id": "G-001",
+        "lines": [
+          {
+            "account": "accounts_receivable_gross",
+            "atc": null,
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "0.00",
+            "credit_kind": "none",
+            "debit": "200000.00",
+            "document_kind": "other",
+            "income_class": "none",
+            "line_id": "G-001.1",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": null,
+            "tax_types": [],
+            "treatment": "none"
+          },
+          {
+            "account": "sales_revenue",
+            "atc": "PT010",
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "200000.00",
+            "credit_kind": "none",
+            "debit": "0.00",
+            "document_kind": "sale_invoice",
+            "income_class": "business_sales",
+            "line_id": "G-001.2",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": "credit",
+            "tax_types": [
+              "income_tax",
+              "percentage_tax"
+            ],
+            "treatment": "sale_pt"
+          }
+        ],
+        "reverses_entry_id": null,
+        "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
+      },
+      {
+        "entry_date": "2026-08-12",
+        "entry_id": "G-002",
+        "lines": [
+          {
+            "account": "accounts_receivable_gross",
+            "atc": null,
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "0.00",
+            "credit_kind": "none",
+            "debit": "100000.00",
+            "document_kind": "other",
+            "income_class": "none",
+            "line_id": "G-002.1",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": null,
+            "tax_types": [],
+            "treatment": "none"
+          },
+          {
+            "account": "sales_revenue",
+            "atc": "PT010",
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "100000.00",
+            "credit_kind": "none",
+            "debit": "0.00",
+            "document_kind": "sale_invoice",
+            "income_class": "business_sales",
+            "line_id": "G-002.2",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": "credit",
+            "tax_types": [
+              "income_tax",
+              "percentage_tax"
+            ],
+            "treatment": "sale_pt"
+          }
+        ],
+        "reverses_entry_id": null,
+        "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
+      },
+      {
+        "entry_date": "2026-09-30",
+        "entry_id": "G-003",
+        "lines": [
+          {
+            "account": "pct_tax_credit_receivable",
+            "atc": "WB082",
+            "certificate_status": "received",
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "0.00",
+            "credit_kind": "pt",
+            "debit": "3000.00",
+            "document_kind": "certificate_2307",
+            "income_class": "none",
+            "line_id": "G-003.1",
+            "period_end": "2026-09-30",
+            "period_start": "2026-07-01",
+            "person_scope": "self",
+            "tax_side": "debit",
+            "tax_types": [
+              "percentage_tax"
+            ],
+            "treatment": "cwt_credit"
+          },
+          {
+            "account": "accounts_receivable_gross",
+            "atc": null,
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "3000.00",
+            "credit_kind": "none",
+            "debit": "0.00",
+            "document_kind": "other",
+            "income_class": "none",
+            "line_id": "G-003.2",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": null,
+            "tax_types": [],
+            "treatment": "none"
+          }
+        ],
+        "reverses_entry_id": null,
+        "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
+      },
+      {
+        "entry_date": "2026-09-28",
+        "entry_id": "G-004",
+        "lines": [
+          {
+            "account": "pct_tax_credit_receivable",
+            "atc": "WB082",
+            "certificate_status": "pending",
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "0.00",
+            "credit_kind": "pt",
+            "debit": "2000.00",
+            "document_kind": "certificate_2307",
+            "income_class": "none",
+            "line_id": "G-004.1",
+            "period_end": "2026-09-30",
+            "period_start": "2026-07-01",
+            "person_scope": "self",
+            "tax_side": "debit",
+            "tax_types": [
+              "percentage_tax"
+            ],
+            "treatment": "cwt_credit"
+          },
+          {
+            "account": "accounts_receivable_gross",
+            "atc": null,
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "2000.00",
+            "credit_kind": "none",
+            "debit": "0.00",
+            "document_kind": "other",
+            "income_class": "none",
+            "line_id": "G-004.2",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": null,
+            "tax_types": [],
+            "treatment": "none"
+          }
+        ],
+        "reverses_entry_id": null,
+        "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
+      },
+      {
+        "entry_date": "2026-09-29",
+        "entry_id": "G-005",
+        "lines": [
+          {
+            "account": "pct_tax_credit_receivable",
+            "atc": "WB084",
+            "certificate_status": "received",
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "0.00",
+            "credit_kind": "pt",
+            "debit": "1500.00",
+            "document_kind": "certificate_2307",
+            "income_class": "none",
+            "line_id": "G-005.1",
+            "period_end": "2026-09-30",
+            "period_start": "2026-07-01",
+            "person_scope": "self",
+            "tax_side": "debit",
+            "tax_types": [
+              "percentage_tax"
+            ],
+            "treatment": "cwt_credit"
+          },
+          {
+            "account": "accounts_receivable_gross",
+            "atc": null,
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "1500.00",
+            "credit_kind": "none",
+            "debit": "0.00",
+            "document_kind": "other",
+            "income_class": "none",
+            "line_id": "G-005.2",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": null,
+            "tax_types": [],
+            "treatment": "none"
+          }
+        ],
+        "reverses_entry_id": null,
+        "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
+      },
+      {
+        "entry_date": "2026-09-30",
+        "entry_id": "G-006",
+        "lines": [
+          {
+            "account": "pct_tax_credit_receivable",
+            "atc": "WB082",
+            "certificate_status": "received",
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "0.00",
+            "credit_kind": "pt",
+            "debit": "7000.00",
+            "document_kind": "certificate_2307",
+            "income_class": "none",
+            "line_id": "G-006.1",
+            "period_end": "2026-09-30",
+            "period_start": "2026-07-01",
+            "person_scope": "self",
+            "tax_side": "debit",
+            "tax_types": [
+              "percentage_tax"
+            ],
+            "treatment": "cwt_credit"
+          },
+          {
+            "account": "accounts_receivable_gross",
+            "atc": null,
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "7000.00",
+            "credit_kind": "none",
+            "debit": "0.00",
+            "document_kind": "other",
+            "income_class": "none",
+            "line_id": "G-006.2",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": null,
+            "tax_types": [],
+            "treatment": "none"
+          }
+        ],
+        "reverses_entry_id": null,
+        "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
+      }
+    ],
+    "input_format": "buwiz-poc-input/1",
+    "profiles": [
+      {
+        "facts": {
+          "2026": {
+            "deduction_method": "osd",
+            "owner_taxable_compensation_2316": "0.00",
+            "regime": "graduated",
+            "vat_status": "non_vat"
+          }
+        },
+        "periods": {
+          "2026-Q3": "closed"
+        },
+        "prior_filings": {
+          "2026": {
+            "1701q_q1_q3_tax_payments": "0.00"
+          }
+        },
+        "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
+      }
+    ]
+  },
+  "period": "2026-Q3",
+  "vector_format": "buwiz-poc-vector/1",
+  "vector_id": "g-overpayment-2551q-2026-Q3"
+}

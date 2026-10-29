@@ -1,0 +1,176 @@
+{
+  "rule_set_id": "rates-v1",
+  "version": 1,
+  "effective_from": "2018-01-01",
+  "effective_to": null,
+  "units": {
+    "money": "decimal text with exactly two places in JSON (for example \"200000.00\"); Books stores integer centavos internally",
+    "rate": "integer basis points (300 = 3.00%)",
+    "dates": "calendar dates in Asia/Manila"
+  },
+  "pt_rate_rows": [
+    {
+      "code": "PT010",
+      "rate_bps": 100,
+      "effective_from": "2020-07-01",
+      "effective_to": "2023-06-30",
+      "default_on": true,
+      "status": "CONFIRMED",
+      "citations": [
+        "RA 11534 s13 proviso (bir.md PT-2)",
+        "verify.md s2 #35: window hard-coded in Books percentage-tax.ts:65-68"
+      ],
+      "notes": "Reduced 1% window for Sec. 116 persons."
+    },
+    {
+      "code": "PT010",
+      "rate_bps": 300,
+      "effective_from": "2023-07-01",
+      "effective_to": null,
+      "default_on": true,
+      "status": "CONFIRMED",
+      "citations": [
+        "RMC 69-2023 (bir.md PT-2)",
+        "verify.md s2 #62 (RMC 69-2023; RA 11534 proviso ends 30 Jun 2023)"
+      ],
+      "notes": "Current 3% rate. Q3 2026 uses this row (300 bps)."
+    },
+    {
+      "code": "PT010",
+      "rate_bps": 100,
+      "effective_from": "2023-07-01",
+      "effective_to": "2025-12-31",
+      "default_on": false,
+      "disputed": true,
+      "status": "UNCONFIRMED",
+      "citations": [
+        "respicio.ph commentary only (verify.md s2 #63; bir.md PT-2 and s4 do not confirm)"
+      ],
+      "notes": "Claimed extension of the 1% rate. No enacting law was found. Stored disputed and OFF. Books warns for 2023-07-01 to 2025-12-31 periods (decision D6). Q3 2026 is unaffected."
+    }
+  ],
+  "pt_rate_lookup": "Use the rate row whose window contains the filing period's effective date. Windows apply to the filing period, not the transaction date (PROPOSAL, consistent with the period rules).",
+  "vat_threshold": {
+    "amount_text": "3000000.00",
+    "test": "posted sales year-to-date strictly greater than the threshold blocks the 8% option and forces VAT status",
+    "status": "CONFIRMED",
+    "citations": [
+      "RA 11976 text, threshold 'three million pesos' (verify.md s2 #65; bir.md PT-7)",
+      "Books percentage-tax.ts:50 and vat.ts:70 (defined twice; do not port)"
+    ],
+    "cpi_adjustment": "UNKNOWN: the statute says the amount is CPI-adjusted every three years; no adjusted figure found (bir.md PT-7). Keep it as a dated fact, not a constant."
+  },
+  "eight_percent": {
+    "rate_bps": 800,
+    "reduction_text": "250000.00",
+    "base": "gross sales/receipts plus other non-operating income, minus the reduction, floored at zero",
+    "reduction_applies_only_to": "purely self-employed or professional individuals without compensation income",
+    "mixed_income": "no reduction (RMO 23-2018 pts 10-12; bir.md 8-8)",
+    "status": "CONFIRMED",
+    "citations": [
+      "RMO 23-2018 pts 2-5, 9-12 (verify.md s2 #72, #74, #75)",
+      "TRAIN s5 / NIRC s24(A)(2)(b) (bir.md 8-1)"
+    ],
+    "books_gap": "Books omits other non-operating income from the base (verify.md s2 #36, CONFIRMED)."
+  },
+  "graduated_income_tax_2023": {
+    "status": "CONFIRMED",
+    "citations": [
+      "1701-MS printed Table 2 (bir.md s2)",
+      "sheets.md s2 recomputation (workbook C33 = 85,300 for 714,000)",
+      "form_1701ms.rs:293-305 (sheets.md s5)"
+    ],
+    "brackets": [
+      {
+        "base_tax_text": "0.00",
+        "rate_bps": 0,
+        "over_text": "0.00",
+        "not_over_text": "250000.00"
+      },
+      {
+        "base_tax_text": "0.00",
+        "rate_bps": 1500,
+        "over_text": "250000.00",
+        "not_over_text": "400000.00"
+      },
+      {
+        "base_tax_text": "22500.00",
+        "rate_bps": 2000,
+        "over_text": "400000.00",
+        "not_over_text": "800000.00"
+      },
+      {
+        "base_tax_text": "102500.00",
+        "rate_bps": 2500,
+        "over_text": "800000.00",
+        "not_over_text": "2000000.00"
+      },
+      {
+        "base_tax_text": "402500.00",
+        "rate_bps": 3000,
+        "over_text": "2000000.00",
+        "not_over_text": "8000000.00"
+      },
+      {
+        "base_tax_text": "2202500.00",
+        "rate_bps": 3500,
+        "over_text": "8000000.00",
+        "not_over_text": null
+      }
+    ],
+    "test_vector": {
+      "input_text": "714000.00",
+      "expected_tax_text": "85300.00",
+      "source": "workbook worked example (synthetic)"
+    }
+  },
+  "osd": {
+    "fraction_bps": 4000,
+    "base": "net sales (IV.7 = IV.5 - IV.6) per Part IV item 11 wording",
+    "status": "UNCONFIRMED",
+    "status_detail": "Code (form_1701a.rs:470-471) and the 1701-MS field tab use 40% of net sales. Printed Part I item 17 reads '40% of gross sales' (bir.md s2). The conflict needs review."
+  },
+  "rounding": {
+    "money_internal": "integer centavos; no rounding until the form line",
+    "half_rule": "round half away from zero, applied once at output (decision D7; PROPOSAL)",
+    "pt_example": {
+      "base_text": "1.50",
+      "rate_bps": 300,
+      "gross_centavos_x_rate": 450,
+      "result_centavos": 5,
+      "result_text": "0.05",
+      "note": "Python round() is banker's rounding and would give 0.04; the golden test must assert half-away explicitly."
+    },
+    "whole_peso_1701ms": {
+      "status": "UNCONFIRMED",
+      "status_detail": "The printed 49-centavo rule is listed as image-only (verify.md s2 #83). Do not apply until the printed form is re-read."
+    }
+  },
+  "due_dates": {
+    "2551Q": {
+      "rule": "25 days after the end of the calendar quarter",
+      "example": "2026-Q3 (quarter end 2026-09-30) -> 2026-10-25",
+      "status": "CONFIRMED",
+      "citations": [
+        "RA 11976 s128(1) (verify.md s2 #64; bir.md PT-3, D-1)"
+      ]
+    },
+    "1701Q": {
+      "rule": "Q1 15 May, Q2 15 August, Q3 15 November of the taxable year",
+      "status": "CONFIRMED",
+      "citations": [
+        "1701Q guide Jan 2018 (verify.md s2 #81; bir.md D-2)"
+      ]
+    },
+    "1601C": {
+      "rule": "10th day of the following month; December withholding due 15 January; eFPS group days A15/B14/C13/D12/E11",
+      "status": "UNCONFIRMED",
+      "status_detail": "Code (books.md s4a, form-1601c.ts:178-199) is CONFIRMED; printed due-date text is UNCONFIRMED (verify.md s2 #83, bir.md D-3)."
+    },
+    "1701MS": {
+      "rule": "15 April of the year after the taxable year; second installment of 50% or less, due 15 October (form item 26)",
+      "status": "UNCONFIRMED",
+      "status_detail": "April 15 is CONFIRMED (bir.md M-9, RMC 34-2025 Annex A). The 15 October installment is UNCONFIRMED (verify.md s2 #83). The TY2025 deadline was extended to 15 May 2026 (RMC 30-2026, not read)."
+    }
+  }
+}

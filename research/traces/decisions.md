@@ -1,0 +1,30 @@
+# Decisions and peer contracts (authoritative for phase 2)
+
+Date: 2026-10-29. Sources: the owner (via AskUserQuestion in the buwiz-books session), the `rox` session, the `buwiz-cloud` session.
+
+## Owner decisions (binding)
+
+1. **Books is a separate service**, in the new repo `github.com/buwiz-corp/buwiz-books` (private, empty; local clone `/Volumes/goldcoders/buwiz-books`). It owns business profiles, the ledger, categories, and the Books→Forms bridge. buwiz-cloud is used only for sign-in and to confirm which approved tax profiles the user owns.
+2. **Ledger is local-first**: encrypted local storage inside the Books mini app's own MCP server process (same pattern as BIR's SQLCipher DB). Cloud sync is a later, separate step.
+3. Bookkeeping is universal (business profile); PH tax compliance (tax profile / TIN / COR / BIR forms) is a separate, optional, country-scoped layer that a business profile *links to*.
+4. Goal of the new repo: hold all the research and details needed to build the mini app, so intelligence can be added without hard-coupling to the existing (hard to maintain) TypeScript Books repo at /Volumes/goldcoders/OSS/buwiz-books. That repo is a **reference** for domain logic, not the runtime backend.
+5. Do not deploy, alter real financial data, or file returns. The first slice stops at a reviewable draft.
+
+## From the `rox` session (owner of Rox)
+
+- Live BIR plugin source: `/Volumes/goldcoders/reverse-engineer-ebir-forms/bir` (hexuria/buwiz-forms, branch `rox-mini-app-round2`). Apps `crates/bir-shell/mini-apps/*.tsx` + `apps.json`; manifest generated in `crates/bir-shell/src/mini_app/v1/manifest.rs`, signed with publisher key gc-2026-01 via the broker's `src/v1/sign-manifest.mjs`; backend `bir-mini-app mcp` stdio MCP server; broker spawns it (`rox/server/src/v1/plugins.mjs`, 127.0.0.1:8787, now fronted by a Rust `rox-broker`).
+- Protocol v1 only (v0 retired for BIR). Spec: `drafts/rox-mini-app-protocol-v1.md` (private rox-stow). SDK/template: `rox/server/sdk/mini-app`; smallest example: `rox/server/src/v1/fixture/`.
+- New plugin steps: MCP server exposing tools + `rox://manifest` + app sources → manifest (id, short, version, apps[{id, entry rox-app://…, permissions.tools, props, placement}], scopes/commands/routines) → sign (`node rox/server/src/v1/sign-manifest.mjs <manifest> --keychain gc-2026-01` or `--key-file`) → `npm run plugin-test` → install via Connect apps or `/v1/host/plugins/inspect` + `/install`. A new plugin must also be added to the broker's approved_plugins trust list (Rox-side change).
+- Constraints: tickets never raw IDs; attachments `@short:scope:value` with declared scopes + resolve tool; money as text, signed app calls carry safe integers only, JSON args as `args_json`; content-sized cards (rox.fit); every tool an app calls is in its manifest permissions; same-plugin app opens don't prompt, outside links do; rox.storage per app 1 MB; routines declare reads/writes/params; avoid Keychain in rebuilt binaries (env key file + *_NO_KEYCHAIN=1); agent submits only with a send grant; TINs resolve locally.
+
+## From the `buwiz-cloud` session (status: design only, nothing built)
+
+- Repo `github.com/buwiz-corp/buwiz-server` (private, empty); local `/Volumes/goldcoders/buwiz-cloud` (not yet created). axum + Postgres.
+- v1: email one-time-code sign-in; one account; **no organizations, no workspaces** (owner's direction "make it simple"). Do not contradict.
+- Tax profile = TIN (9-digit root + 5-digit branch). One account owns 1+ TINs; one TIN has one owner. Active only after claim: Form 2303 + ID + docs, manual staff review (awaiting_file → pending → approved/rejected/withdrawn).
+- `GET /api/tax-profiles` → `{"profiles":[{ id (stable opaque UUID, never reused), display (masked e.g. ***-***-054-00000), permissions[] }]}`; approved = non-empty permissions. Any token for the user sees only their own approved TINs; no extra scope in v1.
+- Auth: device-code (`POST /auth/device/start`, `/auth/device/poll`), `POST /oauth/token` refresh w/ rotation, `GET /me` → {user_id, email}. buwiz-cloud will register a sibling public client **`buwiz-books`** (device-code + refresh, same /me).
+- **Books links a business profile to a tax profile by the opaque tax-profile `id` UUID, never by TIN** (the registration key *is* the raw TIN).
+- Accountant-for-client delegation: NOT in v1 (buwiz-oss internal/PLAN.md §5.4 sketches owner-signed revocable delegation later). Submission tickets per buwiz-oss internal/PLAN.md §5 not built.
+- Server decisions: BIR secrets only on server; mini app submits to BIR directly over SFTP today; buwiz-oss internal/DECISIONS.md D2/D3 (server = TIN ownership + submission relay).
+- Rox `tkt_…` tickets are Rox/plugin-local capabilities; nothing on the server maps them.

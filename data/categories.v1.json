@@ -1,0 +1,3000 @@
+{
+  "schema_version": 1,
+  "title": "Bookkeeping categories (v1)",
+  "generated_by": "W2, 2026-10-29",
+  "source": "Buwiz_Tax_Profiles_Categories_Form_Fields.xlsx, sheet 'Category catalog' rows 6-64 (59 categories), plus 3 PH control accounts added by correction 21 (rows 65-67). Corrections in research/spreadsheet-corrections.md.",
+  "books_reference": "Books repo HEAD 1662ca3 (read-only): base.ts and ph-chart.ts keys and numbers (sheets.md s4, verify.md s2 #39-40).",
+  "status": "Categories are PROPOSAL except where marked CONFIRMED. Keys and numbers marked REUSE match Books exactly.",
+  "selection_logic": {
+    "description": "Workbook selection formula (identical in all 59 rows). A category is CORE when its activation rule is Always. It is SUGGESTED when a profile switch matches its activation rule, otherwise OPTIONAL.",
+    "rules": {
+      "Always": "Always shown (CORE).",
+      "INDIVIDUAL": "Shown when Profile C6 = Individual.",
+      "PT": "Shown when Profile C7 = Yes (2551Q selected).",
+      "PAYROLL": "Shown when Profile C8 = Yes (1601-C selected).",
+      "IT": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+      "IT_OR_PAYROLL": "Shown when C8 = Yes (1601-C) or any income-tax form is selected (C9, G6, G7, G10).",
+      "VAT": "Shown when Profile G8 = Yes (2550Q).",
+      "EWT": "Shown when Profile G9 = Yes (0619-E or 1601-EQ)."
+    },
+    "limitation": "The profile does not separate 8% from graduated income tax, and does not read C11-C15 (sheets.md s1.1, s8 #3)."
+  },
+  "type_mapping": {
+    "statement_section": {
+      "asset": "asset",
+      "liability": "liability",
+      "equity": "equity",
+      "revenue": "income",
+      "contra revenue": "income (contra)",
+      "other income": "income",
+      "expense": "expense",
+      "cost": "expense",
+      "other expense": "expense"
+    },
+    "books_account_type": {
+      "asset": "asset",
+      "liability": "liability",
+      "equity": "equity",
+      "revenue": "revenue",
+      "contra revenue": "revenue (subtype refunds_discounts)",
+      "other income": "other_income",
+      "expense": "expense",
+      "cost": "cost_of_revenue",
+      "other expense": "other_expense"
+    },
+    "note": "Books account types are asset, liability, equity, revenue, expense, cost_of_revenue, other_income, other_expense (src/db/schema/account-constants.ts:9-18, re-read by W2)."
+  },
+  "counts": {
+    "categories": 62,
+    "reuse": 54,
+    "new": 5,
+    "new_under_parent": 2,
+    "pending_decision": 1,
+    "core": 13
+  },
+  "categories": [
+    {
+      "id": "bank_accounts",
+      "name": "Bank Accounts",
+      "statement_section": "asset",
+      "workbook_account_type": "asset",
+      "books_account_type": "asset",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "bank_accounts",
+        "account_number": "11000",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "Always",
+      "applicability": {
+        "core": true,
+        "suggested_when": "Always shown (CORE).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Cash and bank movements; reconcile",
+      "workbook_checks_or_tax_dimensions": "No direct sales inference",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 6"
+    },
+    {
+      "id": "accounts_receivable_gross",
+      "name": "Accounts Receivable - Gross",
+      "statement_section": "asset",
+      "workbook_account_type": "asset",
+      "books_account_type": "asset",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "accounts_receivable_gross",
+        "account_number": "12010",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "Always",
+      "applicability": {
+        "core": true,
+        "suggested_when": "Always shown (CORE).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Outstanding customer invoices",
+      "workbook_checks_or_tax_dimensions": "Sales occur separately; do not use collections as revenue",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 7"
+    },
+    {
+      "id": "inventory",
+      "name": "Inventory",
+      "statement_section": "asset",
+      "workbook_account_type": "asset",
+      "books_account_type": "asset",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "inventory",
+        "account_number": "13500",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "Always",
+      "applicability": {
+        "core": true,
+        "suggested_when": "Always shown (CORE).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Stock held for sale",
+      "workbook_checks_or_tax_dimensions": "Use cost of goods sold when goods leave inventory",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 8"
+    },
+    {
+      "id": "prepaid_expenses",
+      "name": "Prepaid Expenses",
+      "statement_section": "asset",
+      "workbook_account_type": "asset",
+      "books_account_type": "asset",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "prepaid_expenses",
+        "account_number": "13000",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "Always",
+      "applicability": {
+        "core": true,
+        "suggested_when": "Always shown (CORE).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Payments for future benefit",
+      "workbook_checks_or_tax_dimensions": "Recognize allowable expense at the proper time",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 9"
+    },
+    {
+      "id": "computer_assets",
+      "name": "Computer Assets",
+      "statement_section": "asset",
+      "workbook_account_type": "asset",
+      "books_account_type": "asset",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "computer_assets",
+        "account_number": "16100",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "Always",
+      "applicability": {
+        "core": true,
+        "suggested_when": "Always shown (CORE).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Capital equipment",
+      "workbook_checks_or_tax_dimensions": "Depreciation / tax adjustments rather than automatic full deduction",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 10"
+    },
+    {
+      "id": "accounts_payable",
+      "name": "Accounts Payable",
+      "statement_section": "liability",
+      "workbook_account_type": "liability",
+      "books_account_type": "liability",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "accounts_payable",
+        "account_number": "21000",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "Always",
+      "applicability": {
+        "core": true,
+        "suggested_when": "Always shown (CORE).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Supplier liability",
+      "workbook_checks_or_tax_dimensions": "Track bill, withholding and payment separately",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 11"
+    },
+    {
+      "id": "owners_equity",
+      "name": "Owners Equity",
+      "statement_section": "equity",
+      "workbook_account_type": "equity",
+      "books_account_type": "equity",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "owners_equity",
+        "account_number": "32000",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "Always",
+      "applicability": {
+        "core": true,
+        "suggested_when": "Always shown (CORE).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Owner capital",
+      "workbook_checks_or_tax_dimensions": "Capital is not sales",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "owner_money",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 12"
+    },
+    {
+      "id": "owner_drawings",
+      "name": "Owner Drawings",
+      "statement_section": "equity",
+      "workbook_account_type": "equity",
+      "books_account_type": "equity",
+      "origin": "Proposed",
+      "coa": {
+        "status": "PENDING_DECISION",
+        "books_key": null,
+        "account_number": null,
+        "candidate_reuse_books_key": "owners_equity",
+        "candidate_account_number": "32000",
+        "note": "Candidate reuse of Books owners_equity 32000 (base.ts: 'distributions to owners'). Owner decision pending (sheets.md s6 #20)."
+      },
+      "activation_rule": "INDIVIDUAL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile C6 = Individual.",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Owner withdrawals in a sole proprietorship",
+      "workbook_checks_or_tax_dimensions": "Not a corporate salary or dividend; no frozen number assigned",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "owner_money",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [
+        "Proposed category: no frozen Books key (Books design decision: keys are assigned on approval).",
+        "Owner decision pending: reuse owners_equity 32000 or keep a new key (correction 20, not applied)."
+      ],
+      "source": "workbook Category catalog row 13"
+    },
+    {
+      "id": "loan_payable",
+      "name": "Loans Payable",
+      "statement_section": "liability",
+      "workbook_account_type": "liability",
+      "books_account_type": "liability",
+      "origin": "Proposed",
+      "coa": {
+        "status": "NEW",
+        "books_key": null,
+        "account_number": null,
+        "note": "No Books key or number exists (sheets.md s4: MISSING in base.ts and ph-chart.ts)."
+      },
+      "activation_rule": "Always",
+      "applicability": {
+        "core": true,
+        "suggested_when": "Always shown (CORE).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Financing principal",
+      "workbook_checks_or_tax_dimensions": "Loan proceeds are not business sales",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [
+        "Proposed category: no frozen Books key (Books design decision: keys are assigned on approval)."
+      ],
+      "source": "workbook Category catalog row 14"
+    },
+    {
+      "id": "sales_revenue",
+      "name": "Sales Revenue",
+      "statement_section": "income",
+      "workbook_account_type": "revenue",
+      "books_account_type": "revenue",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "sales_revenue",
+        "account_number": "41000",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "Always",
+      "applicability": {
+        "core": true,
+        "suggested_when": "Always shown (CORE).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Goods / service sales",
+      "workbook_checks_or_tax_dimensions": "Tax attributes determine form treatment",
+      "default_tax_attributes": {
+        "tax_type": "percentage_tax",
+        "atc": "PT010",
+        "treatment": "sale_pt",
+        "income_class": "business_sales",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": "customer"
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "2551Q.S1.1.base",
+          "workbook_form": "2551Q",
+          "workbook_target": "S1.1.base",
+          "method": "Aggregate tax-tagged revenue",
+          "period": "Quarter",
+          "filter": "PT010 eligible sales, applicable recognition date",
+          "review_or_exclusion": "Other ATCs require their own schedule row",
+          "workbook_row": 6,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        },
+        {
+          "rule_id": "1701MS.IV.5",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.5",
+          "method": "Aggregate income-eligible gross sales",
+          "period": "Year",
+          "filter": "Filer, non-final income, exclude VAT",
+          "review_or_exclusion": "Use leaf accounts; do not also sum parent",
+          "workbook_row": 7,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        },
+        {
+          "rule_id": "1701MS.IV.19",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.19",
+          "method": "Aggregate eligible net sales",
+          "period": "Year",
+          "filter": "8% pathway only; subtract eligible returns",
+          "review_or_exclusion": "Do not use gross bank deposits",
+          "workbook_row": 8,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 15"
+    },
+    {
+      "id": "subscription_revenue",
+      "name": "Subscription Revenue",
+      "statement_section": "income",
+      "workbook_account_type": "revenue",
+      "books_account_type": "revenue",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "subscription_revenue",
+        "account_number": "42000",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "Always",
+      "applicability": {
+        "core": true,
+        "suggested_when": "Always shown (CORE).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Subscription sales",
+      "workbook_checks_or_tax_dimensions": "Tax attributes determine form treatment",
+      "default_tax_attributes": {
+        "tax_type": "percentage_tax",
+        "atc": "PT010",
+        "treatment": "sale_pt",
+        "income_class": "business_sales",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": "customer"
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "2551Q.S1.1.base",
+          "workbook_form": "2551Q",
+          "workbook_target": "S1.1.base",
+          "method": "Aggregate tax-tagged revenue",
+          "period": "Quarter",
+          "filter": "PT010 eligible sales, applicable recognition date",
+          "review_or_exclusion": "Other ATCs require their own schedule row",
+          "workbook_row": 9,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        },
+        {
+          "rule_id": "1701MS.IV.5",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.5",
+          "method": "Aggregate income-eligible gross sales",
+          "period": "Year",
+          "filter": "Filer, non-final income, exclude VAT",
+          "review_or_exclusion": "Use leaf accounts; do not also sum parent",
+          "workbook_row": 10,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        },
+        {
+          "rule_id": "1701MS.IV.19",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.19",
+          "method": "Aggregate eligible net sales",
+          "period": "Year",
+          "filter": "8% pathway only; subtract eligible returns",
+          "review_or_exclusion": "Do not use gross bank deposits",
+          "workbook_row": 11,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 16"
+    },
+    {
+      "id": "transaction_revenue",
+      "name": "Transaction Revenue",
+      "statement_section": "income",
+      "workbook_account_type": "revenue",
+      "books_account_type": "revenue",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "transaction_revenue",
+        "account_number": "43000",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "Always",
+      "applicability": {
+        "core": true,
+        "suggested_when": "Always shown (CORE).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Transaction fees and other sales",
+      "workbook_checks_or_tax_dimensions": "Tax attributes determine form treatment",
+      "default_tax_attributes": {
+        "tax_type": "percentage_tax",
+        "atc": "PT010",
+        "treatment": "sale_pt",
+        "income_class": "business_sales",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": "customer"
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "2551Q.S1.1.base",
+          "workbook_form": "2551Q",
+          "workbook_target": "S1.1.base",
+          "method": "Aggregate tax-tagged revenue",
+          "period": "Quarter",
+          "filter": "PT010 eligible sales, applicable recognition date",
+          "review_or_exclusion": "Other ATCs require their own schedule row",
+          "workbook_row": 12,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        },
+        {
+          "rule_id": "1701MS.IV.5",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.5",
+          "method": "Aggregate income-eligible gross sales",
+          "period": "Year",
+          "filter": "Filer, non-final income, exclude VAT",
+          "review_or_exclusion": "Use leaf accounts; do not also sum parent",
+          "workbook_row": 13,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        },
+        {
+          "rule_id": "1701MS.IV.19",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.19",
+          "method": "Aggregate eligible net sales",
+          "period": "Year",
+          "filter": "8% pathway only; subtract eligible returns",
+          "review_or_exclusion": "Do not use gross bank deposits",
+          "workbook_row": 14,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 17"
+    },
+    {
+      "id": "refunds_and_discounts",
+      "name": "Refunds & Discounts",
+      "statement_section": "income (contra)",
+      "workbook_account_type": "contra revenue",
+      "books_account_type": "revenue (subtype refunds_discounts)",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "refunds_and_discounts",
+        "account_number": "49000",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "Always",
+      "applicability": {
+        "core": true,
+        "suggested_when": "Always shown (CORE).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Sales returns, allowances and discounts",
+      "workbook_checks_or_tax_dimensions": "Link to original sale and apply valid tax treatment",
+      "default_tax_attributes": {
+        "tax_type": "percentage_tax",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "contra_sales",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": "customer"
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "2551Q.S1.1.base",
+          "workbook_form": "2551Q",
+          "workbook_target": "S1.1.base",
+          "method": "Subtract eligible sales adjustments",
+          "period": "Quarter",
+          "filter": "PT010 adjustment to covered sale",
+          "review_or_exclusion": "Confirm recognition and credit note",
+          "workbook_row": 15,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        },
+        {
+          "rule_id": "1701MS.IV.6",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.6",
+          "method": "Sum eligible contra sales",
+          "period": "Year",
+          "filter": "Graduated/special pathway",
+          "review_or_exclusion": "Do not treat as unrelated expense",
+          "workbook_row": 16,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        },
+        {
+          "rule_id": "1701MS.IV.19",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.19",
+          "method": "Subtract eligible contra sales",
+          "period": "Year",
+          "filter": "8% pathway",
+          "review_or_exclusion": "Same adjustment must not be counted twice",
+          "workbook_row": 17,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [
+        "Contra revenue: Books type is revenue with subtype refunds_discounts (sheets.md s4). Blocks 2551Q until acknowledged (GATE.RETURNS_ACK)."
+      ],
+      "source": "workbook Category catalog row 18"
+    },
+    {
+      "id": "other_non_operating_income",
+      "name": "Other Non-Operating Income",
+      "statement_section": "income",
+      "workbook_account_type": "other income",
+      "books_account_type": "other_income",
+      "origin": "Proposed",
+      "coa": {
+        "status": "NEW_UNDER_PARENT",
+        "books_key": null,
+        "account_number": null,
+        "parent_books_key": "other_income",
+        "parent_account_number": "80000",
+        "note": "Parent family 'other_income' 80000 exists in Books base.ts; a child account is still needed."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Separate eligible non-operating income from sales",
+      "workbook_checks_or_tax_dimensions": "Exclude income already subject to final tax when applicable",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "non_operating_income",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.13",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.13",
+          "method": "Aggregate eligible other income",
+          "period": "Year",
+          "filter": "Graduated / special pathway",
+          "review_or_exclusion": "Final-tax income requires separate treatment",
+          "workbook_row": 18,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        },
+        {
+          "rule_id": "1701MS.IV.20",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.20",
+          "method": "Aggregate eligible other income",
+          "period": "Year",
+          "filter": "8% pathway and eligibility test",
+          "review_or_exclusion": "Exclude final-tax income when applicable",
+          "workbook_row": 19,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [
+        "Proposed category: no frozen Books key (Books design decision: keys are assigned on approval).",
+        "Activation cannot tell 8% from graduated; suggested under both (sheets.md s8 #10). Final-tax exclusion needs an attribute (UNKNOWN; correction 18)."
+      ],
+      "source": "workbook Category catalog row 19"
+    },
+    {
+      "id": "interest_income",
+      "name": "Interest Income",
+      "statement_section": "income",
+      "workbook_account_type": "other income",
+      "books_account_type": "other_income",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "interest_income",
+        "account_number": "81000",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Interest income",
+      "workbook_checks_or_tax_dimensions": "Tax attribute must distinguish final-taxed vs income included in return",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "non_operating_income",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.13",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.13",
+          "method": "Aggregate eligible other income",
+          "period": "Year",
+          "filter": "Graduated / special pathway",
+          "review_or_exclusion": "Final-tax income requires separate treatment",
+          "workbook_row": 20,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        },
+        {
+          "rule_id": "1701MS.IV.20",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.20",
+          "method": "Aggregate eligible other income",
+          "period": "Year",
+          "filter": "8% pathway and eligibility test",
+          "review_or_exclusion": "Exclude final-tax income when applicable",
+          "workbook_row": 21,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [
+        "Final-tax attribute UNKNOWN (sheets.md s10). Do not assume final tax."
+      ],
+      "source": "workbook Category catalog row 20"
+    },
+    {
+      "id": "cost_of_goods_sold",
+      "name": "Cost of Goods Sold",
+      "statement_section": "expense",
+      "workbook_account_type": "cost",
+      "books_account_type": "cost_of_revenue",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "cost_of_goods_sold",
+        "account_number": "51000",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "Always",
+      "applicability": {
+        "core": true,
+        "suggested_when": "Always shown (CORE).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Cost of inventory sold",
+      "workbook_checks_or_tax_dimensions": "1701-MS IV.8 only when itemized and eligible",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "cost",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.8",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.8",
+          "method": "Sum allowable cost",
+          "period": "Year",
+          "filter": "Itemized deduction method",
+          "review_or_exclusion": "OSD and 8% do not separately deduct this cost",
+          "workbook_row": 22,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 21"
+    },
+    {
+      "id": "direct_service_cost",
+      "name": "Direct Cost of Services",
+      "statement_section": "expense",
+      "workbook_account_type": "cost",
+      "books_account_type": "cost_of_revenue",
+      "origin": "Proposed",
+      "coa": {
+        "status": "NEW_UNDER_PARENT",
+        "books_key": null,
+        "account_number": null,
+        "parent_books_key": "cost_of_revenue",
+        "parent_account_number": "50000",
+        "note": "Parent 'cost_of_revenue' 50000 exists in Books base.ts; a child account is still needed."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Direct cost of services",
+      "workbook_checks_or_tax_dimensions": "Potential IV.8 itemized cost; no frozen number assigned",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "cost",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.8",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.8",
+          "method": "Sum allowable cost",
+          "period": "Year",
+          "filter": "Itemized deduction method",
+          "review_or_exclusion": "OSD and 8% do not separately deduct this cost",
+          "workbook_row": 23,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [
+        "Proposed category: no frozen Books key (Books design decision: keys are assigned on approval)."
+      ],
+      "source": "workbook Category catalog row 22"
+    },
+    {
+      "id": "salaries",
+      "name": "Salaries",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "salaries",
+        "account_number": "61100",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT_OR_PAYROLL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when C8 = Yes (1601-C) or any income-tax form is selected (C9, G6, G7, G10).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Employee gross compensation expense",
+      "workbook_checks_or_tax_dimensions": "1601-C reads employee detail; reconcile ledger",
+      "default_tax_attributes": {
+        "tax_type": "compensation_withholding",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "compensation",
+        "person_scope": "employee",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": "employee"
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 24,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        },
+        {
+          "rule_id": "1601C.II.14",
+          "workbook_form": "1601-C",
+          "workbook_target": "II.14",
+          "method": "Reconcile to payroll detail",
+          "period": "Month",
+          "filter": "Employee gross compensation",
+          "review_or_exclusion": "Form source is employee payroll, not aggregate GL alone",
+          "workbook_row": 46,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 23"
+    },
+    {
+      "id": "employee_benefits",
+      "name": "Employee Benefits",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "employee_benefits",
+        "account_number": "61400",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT_OR_PAYROLL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when C8 = Yes (1601-C) or any income-tax form is selected (C9, G6, G7, G10).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Employer-paid employee benefits",
+      "workbook_checks_or_tax_dimensions": "A benefit may be taxable, exempt or partially exempt",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "compensation",
+        "person_scope": "employee",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": "thirteenth_month_and_benefits",
+        "counterparty_kind": "employee"
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 25,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        },
+        {
+          "rule_id": "1601C.II.14",
+          "workbook_form": "1601-C",
+          "workbook_target": "II.14",
+          "method": "Reconcile to payroll detail",
+          "period": "Month",
+          "filter": "Employee gross compensation",
+          "review_or_exclusion": "Form source is employee payroll, not aggregate GL alone",
+          "workbook_row": 47,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 24"
+    },
+    {
+      "id": "retirement_contributions",
+      "name": "Retirement Contributions",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "retirement_contributions",
+        "account_number": "61500",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT_OR_PAYROLL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when C8 = Yes (1601-C) or any income-tax form is selected (C9, G6, G7, G10).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Employer contributions",
+      "workbook_checks_or_tax_dimensions": "Do not treat employee-share deductions as employer expense",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "compensation",
+        "person_scope": "employee",
+        "credit_kind": "none",
+        "contribution_side": "employer",
+        "comp_component": null,
+        "counterparty_kind": "employee"
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 26,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 25"
+    },
+    {
+      "id": "employer_payroll_taxes",
+      "name": "Employer Payroll Taxes",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "employer_payroll_taxes",
+        "account_number": "61600",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT_OR_PAYROLL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when C8 = Yes (1601-C) or any income-tax form is selected (C9, G6, G7, G10).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Employer portion when categorized here",
+      "workbook_checks_or_tax_dimensions": "Use distinct employee and employer shares",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "compensation",
+        "person_scope": "employee",
+        "credit_kind": "none",
+        "contribution_side": "employer",
+        "comp_component": null,
+        "counterparty_kind": "employee"
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 27,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 26"
+    },
+    {
+      "id": "payroll_processing_fees",
+      "name": "Payroll Processing Fees",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "payroll_processing_fees",
+        "account_number": "61700",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT_OR_PAYROLL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when C8 = Yes (1601-C) or any income-tax form is selected (C9, G6, G7, G10).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Payroll-service fees",
+      "workbook_checks_or_tax_dimensions": "Potential itemized deduction with support",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "compensation",
+        "person_scope": "employee",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": "employee"
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 28,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 27"
+    },
+    {
+      "id": "payment_processing_fees",
+      "name": "Payment Processing Fees",
+      "statement_section": "expense",
+      "workbook_account_type": "cost",
+      "books_account_type": "cost_of_revenue",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "payment_processing_fees",
+        "account_number": "53000",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Payment processor fees",
+      "workbook_checks_or_tax_dimensions": "Income-tax placement requires accounting/tax review",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.8",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.8",
+          "method": "Review classification",
+          "period": "Year",
+          "filter": "Itemized and treated as cost of services",
+          "review_or_exclusion": "May instead be operating expense; never both",
+          "workbook_row": 44,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 28"
+    },
+    {
+      "id": "hosting_fees",
+      "name": "Hosting Fees",
+      "statement_section": "expense",
+      "workbook_account_type": "cost",
+      "books_account_type": "cost_of_revenue",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "hosting_fees",
+        "account_number": "54000",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Hosting directly categorized as cost",
+      "workbook_checks_or_tax_dimensions": "Income-tax placement requires review",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.8",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.8",
+          "method": "Review classification",
+          "period": "Year",
+          "filter": "Itemized and treated as cost of services",
+          "review_or_exclusion": "May instead be operating expense; never both",
+          "workbook_row": 45,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 29"
+    },
+    {
+      "id": "consultants_and_contractors",
+      "name": "Consultants and Contractors",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "consultants_and_contractors",
+        "account_number": "63100",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Independent contractor fees",
+      "workbook_checks_or_tax_dimensions": "Potential supplier EWT is separate",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 29,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 30"
+    },
+    {
+      "id": "legal",
+      "name": "Legal",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "legal",
+        "account_number": "63200",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Legal services",
+      "workbook_checks_or_tax_dimensions": "Potential supplier EWT is separate",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 30,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 31"
+    },
+    {
+      "id": "tax_and_accounting",
+      "name": "Tax & Accounting",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "tax_and_accounting",
+        "account_number": "63300",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Accountancy and tax preparation",
+      "workbook_checks_or_tax_dimensions": "Potential supplier EWT is separate",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 31,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 32"
+    },
+    {
+      "id": "advertising",
+      "name": "Advertising",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "advertising",
+        "account_number": "64100",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Marketing spend",
+      "workbook_checks_or_tax_dimensions": "Business purpose and invoice required",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 32,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 33"
+    },
+    {
+      "id": "business_applications_and_software",
+      "name": "Business Applications & Software",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "business_applications_and_software",
+        "account_number": "65000",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Software subscriptions",
+      "workbook_checks_or_tax_dimensions": "Check service, tax, cross-border and capitalization facts",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 33,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 34"
+    },
+    {
+      "id": "rent",
+      "name": "Rent",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "rent",
+        "account_number": "66100",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Rent",
+      "workbook_checks_or_tax_dimensions": "Potential supplier EWT is separate",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 34,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 35"
+    },
+    {
+      "id": "utilities",
+      "name": "Utilities",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "utilities",
+        "account_number": "66200",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Utilities",
+      "workbook_checks_or_tax_dimensions": "Check allowable business share",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 35,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 36"
+    },
+    {
+      "id": "repairs_and_maintenance",
+      "name": "Repairs and Maintenance",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "repairs_and_maintenance",
+        "account_number": "66300",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Repairs",
+      "workbook_checks_or_tax_dimensions": "Capital improvements may be assets",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 36,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 37"
+    },
+    {
+      "id": "office_supplies",
+      "name": "Office Supplies",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "office_supplies",
+        "account_number": "67200",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Consumable supplies",
+      "workbook_checks_or_tax_dimensions": "Potential itemized deduction",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 37,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 38"
+    },
+    {
+      "id": "airfare",
+      "name": "Airfare",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "airfare",
+        "account_number": "62100",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Business travel",
+      "workbook_checks_or_tax_dimensions": "Requires business purpose and supporting documents",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 38,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 39"
+    },
+    {
+      "id": "meals",
+      "name": "Meals",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "meals",
+        "account_number": "62400",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Meals",
+      "workbook_checks_or_tax_dimensions": "Deductibility can be limited",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 39,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 40"
+    },
+    {
+      "id": "bank_fees",
+      "name": "Bank Fees",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "bank_fees",
+        "account_number": "68300",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Bank fees",
+      "workbook_checks_or_tax_dimensions": "Separate from bank transfers",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 40,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 41"
+    },
+    {
+      "id": "interest_expense",
+      "name": "Interest Expense",
+      "statement_section": "expense",
+      "workbook_account_type": "other expense",
+      "books_account_type": "other_expense",
+      "origin": "Existing base",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "interest_expense",
+        "account_number": "91000",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Business borrowing cost",
+      "workbook_checks_or_tax_dimensions": "Apply restrictions; principal is not an expense",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 41,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 42"
+    },
+    {
+      "id": "depreciation_expense",
+      "name": "Depreciation Expense",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Proposed",
+      "coa": {
+        "status": "NEW",
+        "books_key": null,
+        "account_number": null,
+        "note": "No Books key or number exists (sheets.md s4: MISSING in base.ts and ph-chart.ts)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Periodic fixed-asset cost",
+      "workbook_checks_or_tax_dimensions": "Use fixed asset schedule and tax adjustment",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 42,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [
+        "Proposed category: no frozen Books key (Books design decision: keys are assigned on approval).",
+        "Source should be the tax-depreciation schedule, not the GL account (correction 17, needs review)."
+      ],
+      "source": "workbook Category catalog row 43"
+    },
+    {
+      "id": "ph_cwt_receivable",
+      "name": "Creditable Withholding Tax Receivable",
+      "statement_section": "asset",
+      "workbook_account_type": "asset",
+      "books_account_type": "asset",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_cwt_receivable",
+        "account_number": "12600",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Income-tax withholding received",
+      "workbook_checks_or_tax_dimensions": "Use income-tax 2307 amount by quarter",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "cwt_credit",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "it",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": "payor"
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.V.3",
+          "workbook_form": "1701-MS",
+          "workbook_target": "V.3",
+          "method": "Aggregate eligible income-tax credits",
+          "period": "Q1–Q3",
+          "filter": "2307 / 1606 income tax",
+          "review_or_exclusion": "Trace certificate, payer, income and period",
+          "workbook_row": 53,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        },
+        {
+          "rule_id": "1701MS.V.4",
+          "workbook_form": "1701-MS",
+          "workbook_target": "V.4",
+          "method": "Aggregate eligible income-tax credits",
+          "period": "Q4",
+          "filter": "2307 / 1606 income tax",
+          "review_or_exclusion": "Not percentage-tax withheld",
+          "workbook_row": 54,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [
+        "Income-tax CWT (WI/WC). Percentage-tax CWT goes to pct_tax_credit_receivable (WB series; sheets.md s8 #2)."
+      ],
+      "source": "workbook Category catalog row 44"
+    },
+    {
+      "id": "pct_tax_credit_receivable",
+      "name": "Percentage Tax Withheld Receivable",
+      "statement_section": "asset",
+      "workbook_account_type": "asset",
+      "books_account_type": "asset",
+      "origin": "Proposed",
+      "coa": {
+        "status": "NEW",
+        "books_key": null,
+        "account_number": null,
+        "note": "No Books key or number exists (sheets.md s4: MISSING in base.ts and ph-chart.ts)."
+      },
+      "activation_rule": "PT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile C7 = Yes (2551Q selected).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Percentage tax withheld from the seller",
+      "workbook_checks_or_tax_dimensions": "Optional separate control; distinguish from income-tax CWT",
+      "default_tax_attributes": {
+        "tax_type": "percentage_tax",
+        "atc": null,
+        "treatment": "cwt_credit",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "pt",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": "payor"
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "2551Q.II.15",
+          "workbook_form": "2551Q",
+          "workbook_target": "II.15",
+          "method": "Aggregate eligible percentage-tax credits",
+          "period": "Quarter",
+          "filter": "2307 percentage-tax withholding",
+          "review_or_exclusion": "Must not mix with income-tax 2307",
+          "workbook_row": 55,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [
+        "Proposed category: no frozen Books key (Books design decision: keys are assigned on approval).",
+        "Keep separate from ph_cwt_receivable (income-tax CWT). Routing is by credit_kind (sheets.md s8 #2)."
+      ],
+      "source": "workbook Category catalog row 45"
+    },
+    {
+      "id": "ph_percentage_tax_payable",
+      "name": "Percentage Tax Payable",
+      "statement_section": "liability",
+      "workbook_account_type": "liability",
+      "books_account_type": "liability",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_percentage_tax_payable",
+        "account_number": "21800",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "PT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile C7 = Yes (2551Q selected).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Accrued percentage tax",
+      "workbook_checks_or_tax_dimensions": "Reconcile to 2551Q; not the taxable-sales base",
+      "default_tax_attributes": {
+        "tax_type": "percentage_tax",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "2551Q.II.14",
+          "workbook_form": "2551Q",
+          "workbook_target": "II.14",
+          "method": "Reconcile tax liability",
+          "period": "Quarter",
+          "filter": "Posted percentage-tax assessment",
+          "review_or_exclusion": "Return tax is computed from ATC base, not payable balance",
+          "workbook_row": 57,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 46"
+    },
+    {
+      "id": "ph_percentage_tax_expense",
+      "name": "Percentage Tax Expense",
+      "statement_section": "expense",
+      "workbook_account_type": "other expense",
+      "books_account_type": "other_expense",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_percentage_tax_expense",
+        "account_number": "94100",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "PT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile C7 = Yes (2551Q selected).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Percentage tax cost",
+      "workbook_checks_or_tax_dimensions": "Potential itemized tax deduction; check conditions",
+      "default_tax_attributes": {
+        "tax_type": "percentage_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.IV.10A",
+          "workbook_form": "1701-MS",
+          "workbook_target": "IV.10A",
+          "method": "Sum tax-eligible expenses",
+          "period": "Year",
+          "filter": "Itemized method + deductible amount + substantiation",
+          "review_or_exclusion": "Not every book expense is deductible; avoid cost-of-sales duplication",
+          "workbook_row": 43,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 47"
+    },
+    {
+      "id": "income_tax_paid",
+      "name": "Income Tax Payments / Credits",
+      "statement_section": "asset",
+      "workbook_account_type": "asset",
+      "books_account_type": "asset",
+      "origin": "Proposed",
+      "coa": {
+        "status": "NEW",
+        "books_key": null,
+        "account_number": null,
+        "note": "No Books key or number exists (sheets.md s4: MISSING in base.ts and ph-chart.ts)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Prior income-tax payments",
+      "workbook_checks_or_tax_dimensions": "Retain return, period, amount and proof",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "it",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1701MS.V.2",
+          "workbook_form": "1701-MS",
+          "workbook_target": "V.2",
+          "method": "Aggregate previous quarterly income tax paid",
+          "period": "Q1–Q3",
+          "filter": "1701Q payment proof",
+          "review_or_exclusion": "Do not add withholding amount as a second cash payment",
+          "workbook_row": 56,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [
+        "Proposed category: no frozen Books key (Books design decision: keys are assigned on approval)."
+      ],
+      "source": "workbook Category catalog row 48"
+    },
+    {
+      "id": "income_tax_payable",
+      "name": "Income Tax Payable",
+      "statement_section": "liability",
+      "workbook_account_type": "liability",
+      "books_account_type": "liability",
+      "origin": "Proposed",
+      "coa": {
+        "status": "NEW",
+        "books_key": null,
+        "account_number": null,
+        "note": "No Books key or number exists (sheets.md s4: MISSING in base.ts and ph-chart.ts)."
+      },
+      "activation_rule": "IT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when an income-tax form is selected: Profile C9 (1701-MS), G6 (1701Q), G7 (1702 group) or G10 (1701/1701A).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Accrued income tax",
+      "workbook_checks_or_tax_dimensions": "Separate from payroll and supplier withholding",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [
+        "Proposed category: no frozen Books key (Books design decision: keys are assigned on approval)."
+      ],
+      "source": "workbook Category catalog row 49"
+    },
+    {
+      "id": "ph_wtc_payable",
+      "name": "Withholding Tax on Compensation Payable",
+      "statement_section": "liability",
+      "workbook_account_type": "liability",
+      "books_account_type": "liability",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_wtc_payable",
+        "account_number": "25110",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "PAYROLL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile C8 = Yes (1601-C selected).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Employee income tax withheld",
+      "workbook_checks_or_tax_dimensions": "Reconcile with 1601-C and payroll detail",
+      "default_tax_attributes": {
+        "tax_type": "compensation_withholding",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1601C.II.25",
+          "workbook_form": "1601-C",
+          "workbook_target": "II.25",
+          "method": "Reconcile withholding postings",
+          "period": "Month",
+          "filter": "Posted withholding by payroll event",
+          "review_or_exclusion": "Use employee withholding sum; exclude remittance and other movements",
+          "workbook_row": 48,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 50"
+    },
+    {
+      "id": "ph_sss_payable",
+      "name": "SSS Contributions Payable",
+      "statement_section": "liability",
+      "workbook_account_type": "liability",
+      "books_account_type": "liability",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_sss_payable",
+        "account_number": "25120",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "PAYROLL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile C8 = Yes (1601-C selected).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Employee plus employer contribution liability",
+      "workbook_checks_or_tax_dimensions": "1601-C item 19 uses employee share only",
+      "default_tax_attributes": {
+        "tax_type": "compensation_withholding",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "employee",
+        "comp_component": "mandatory_contributions_employee",
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1601C.II.19",
+          "workbook_form": "1601-C",
+          "workbook_target": "II.19",
+          "method": "Reconcile to employee-share detail",
+          "period": "Month",
+          "filter": "Payroll employee share only",
+          "review_or_exclusion": "Control balance can include employer share; do not use full account total",
+          "workbook_row": 49,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 51"
+    },
+    {
+      "id": "ph_philhealth_payable",
+      "name": "PhilHealth Contributions Payable",
+      "statement_section": "liability",
+      "workbook_account_type": "liability",
+      "books_account_type": "liability",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_philhealth_payable",
+        "account_number": "25130",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "PAYROLL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile C8 = Yes (1601-C selected).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Employee plus employer contribution liability",
+      "workbook_checks_or_tax_dimensions": "1601-C item 19 uses employee share only",
+      "default_tax_attributes": {
+        "tax_type": "compensation_withholding",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "employee",
+        "comp_component": "mandatory_contributions_employee",
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1601C.II.19",
+          "workbook_form": "1601-C",
+          "workbook_target": "II.19",
+          "method": "Reconcile to employee-share detail",
+          "period": "Month",
+          "filter": "Payroll employee share only",
+          "review_or_exclusion": "Control balance can include employer share; do not use full account total",
+          "workbook_row": 50,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 52"
+    },
+    {
+      "id": "ph_pagibig_payable",
+      "name": "Pag-IBIG Contributions Payable",
+      "statement_section": "liability",
+      "workbook_account_type": "liability",
+      "books_account_type": "liability",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_pagibig_payable",
+        "account_number": "25140",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "PAYROLL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile C8 = Yes (1601-C selected).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Employee plus employer contribution liability",
+      "workbook_checks_or_tax_dimensions": "1601-C item 19 uses employee share only",
+      "default_tax_attributes": {
+        "tax_type": "compensation_withholding",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "employee",
+        "comp_component": "mandatory_contributions_employee",
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1601C.II.19",
+          "workbook_form": "1601-C",
+          "workbook_target": "II.19",
+          "method": "Reconcile to employee-share detail",
+          "period": "Month",
+          "filter": "Payroll employee share only",
+          "review_or_exclusion": "Control balance can include employer share; do not use full account total",
+          "workbook_row": 51,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 53"
+    },
+    {
+      "id": "ph_union_dues_payable",
+      "name": "Union Dues Payable",
+      "statement_section": "liability",
+      "workbook_account_type": "liability",
+      "books_account_type": "liability",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_union_dues_payable",
+        "account_number": "25150",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "PAYROLL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile C8 = Yes (1601-C selected).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Employee union dues withheld",
+      "workbook_checks_or_tax_dimensions": "Track employee deductions separately",
+      "default_tax_attributes": {
+        "tax_type": "compensation_withholding",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "employee",
+        "comp_component": "union_dues",
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [
+        {
+          "rule_id": "1601C.II.19",
+          "workbook_form": "1601-C",
+          "workbook_target": "II.19",
+          "method": "Reconcile to employee-share detail",
+          "period": "Month",
+          "filter": "Payroll employee share only",
+          "review_or_exclusion": "Control balance can include employer share; do not use full account total",
+          "workbook_row": 52,
+          "status": "CONFIRMED that the workbook says this (method text is workbook text); the field rule is UNVERIFIED unless the rule file marks it CONFIRMED"
+        }
+      ],
+      "notes": [],
+      "source": "workbook Category catalog row 54"
+    },
+    {
+      "id": "ph_net_pay_payable",
+      "name": "Net Pay Payable",
+      "statement_section": "liability",
+      "workbook_account_type": "liability",
+      "books_account_type": "liability",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_net_pay_payable",
+        "account_number": "25170",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "PAYROLL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile C8 = Yes (1601-C selected).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Net amount payable to employees",
+      "workbook_checks_or_tax_dimensions": "Not gross compensation",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 55"
+    },
+    {
+      "id": "ph_employee_tax_refund_payable",
+      "name": "Employee Tax Refund Payable",
+      "statement_section": "liability",
+      "workbook_account_type": "liability",
+      "books_account_type": "liability",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_employee_tax_refund_payable",
+        "account_number": "25175",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "PAYROLL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile C8 = Yes (1601-C selected).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Refund owed to employee",
+      "workbook_checks_or_tax_dimensions": "Handle annualization separately",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 56"
+    },
+    {
+      "id": "ph_ewt_payable",
+      "name": "Expanded Withholding Tax Payable",
+      "statement_section": "liability",
+      "workbook_account_type": "liability",
+      "books_account_type": "liability",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_ewt_payable",
+        "account_number": "21600",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "EWT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile G9 = Yes (0619-E or 1601-EQ).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Tax withheld from suppliers",
+      "workbook_checks_or_tax_dimensions": "For 0619-E / 1601-EQ, not 1601-C payroll withholding",
+      "default_tax_attributes": {
+        "tax_type": "expanded_withholding",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 57"
+    },
+    {
+      "id": "ph_input_vat",
+      "name": "Input VAT",
+      "statement_section": "asset",
+      "workbook_account_type": "asset",
+      "books_account_type": "asset",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_input_vat",
+        "account_number": "13800",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "VAT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile G8 = Yes (2550Q).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Potential VAT credit",
+      "workbook_checks_or_tax_dimensions": "For VAT filers / 2550Q; do not create claim from category alone",
+      "default_tax_attributes": {
+        "tax_type": "vat",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 58"
+    },
+    {
+      "id": "ph_input_vat_unpaid",
+      "name": "Input VAT - Unpaid Payables",
+      "statement_section": "asset",
+      "workbook_account_type": "asset",
+      "books_account_type": "asset",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_input_vat_unpaid",
+        "account_number": "13810",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "VAT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile G8 = Yes (2550Q).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Input VAT for unpaid purchase transactions",
+      "workbook_checks_or_tax_dimensions": "Eligibility and timing require current rule review",
+      "default_tax_attributes": {
+        "tax_type": "vat",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 59"
+    },
+    {
+      "id": "ph_output_vat",
+      "name": "Output VAT",
+      "statement_section": "liability",
+      "workbook_account_type": "liability",
+      "books_account_type": "liability",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_output_vat",
+        "account_number": "21700",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "VAT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile G8 = Yes (2550Q).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "VAT on taxable sales",
+      "workbook_checks_or_tax_dimensions": "Not income or percentage tax",
+      "default_tax_attributes": {
+        "tax_type": "vat",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 60"
+    },
+    {
+      "id": "ph_output_vat_uncollected",
+      "name": "Output VAT - Uncollected Receivables",
+      "statement_section": "liability",
+      "workbook_account_type": "liability",
+      "books_account_type": "liability",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_output_vat_uncollected",
+        "account_number": "21710",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "VAT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile G8 = Yes (2550Q).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "VAT on uncollected receivables",
+      "workbook_checks_or_tax_dimensions": "Relief / add-back subject to conditions",
+      "default_tax_attributes": {
+        "tax_type": "vat",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 61"
+    },
+    {
+      "id": "ph_vat_payable_net",
+      "name": "VAT Payable - Net",
+      "statement_section": "liability",
+      "workbook_account_type": "liability",
+      "books_account_type": "liability",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_vat_payable_net",
+        "account_number": "21750",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "VAT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile G8 = Yes (2550Q).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Net VAT obligation",
+      "workbook_checks_or_tax_dimensions": "2550Q details and reconciliations still required",
+      "default_tax_attributes": {
+        "tax_type": "vat",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 62"
+    },
+    {
+      "id": "ph_creditable_vat_withheld",
+      "name": "Creditable VAT Withheld",
+      "statement_section": "asset",
+      "workbook_account_type": "asset",
+      "books_account_type": "asset",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_creditable_vat_withheld",
+        "account_number": "12610",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "VAT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile G8 = Yes (2550Q).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "VAT withheld by eligible payors",
+      "workbook_checks_or_tax_dimensions": "Separate from income and percentage tax credits",
+      "default_tax_attributes": {
+        "tax_type": "vat",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 63"
+    },
+    {
+      "id": "ph_input_vat_exempt_expense",
+      "name": "Input VAT Attributable to Exempt Sales",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_input_vat_exempt_expense",
+        "account_number": "68400",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39)."
+      },
+      "activation_rule": "VAT",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile G8 = Yes (2550Q).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Input VAT not creditable because of exempt sales",
+      "workbook_checks_or_tax_dimensions": "Allocation and deductibility require review",
+      "default_tax_attributes": {
+        "tax_type": "vat",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [],
+      "source": "workbook Category catalog row 64"
+    },
+    {
+      "id": "ph_employee_advances",
+      "name": "Employee Advances & Receivables",
+      "statement_section": "asset",
+      "workbook_account_type": "asset",
+      "books_account_type": "asset",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_employee_advances",
+        "account_number": "12700",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39). Added rows 65-67 match ph-chart.ts."
+      },
+      "activation_rule": "PAYROLL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile C8 = Yes (1601-C selected).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Employee advances and receivables",
+      "workbook_checks_or_tax_dimensions": "Present in Books ph-chart.ts (stage 5b). Not in the workbook catalog before correction 21.",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [
+        "Added to the catalog by correction 21 (confirmed missing by verify.md s2 #40)."
+      ],
+      "source": "added 65"
+    },
+    {
+      "id": "ph_employee_tax_advanced",
+      "name": "Employee Receivable - Tax Advanced",
+      "statement_section": "asset",
+      "workbook_account_type": "asset",
+      "books_account_type": "asset",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_employee_tax_advanced",
+        "account_number": "12800",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39). Added rows 65-67 match ph-chart.ts."
+      },
+      "activation_rule": "PAYROLL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile C8 = Yes (1601-C selected).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Employer-advanced tax recoverable from employees",
+      "workbook_checks_or_tax_dimensions": "Referenced by Books annualization-posting.ts; no posting code outside it.",
+      "default_tax_attributes": {
+        "tax_type": "none",
+        "atc": null,
+        "treatment": "none",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [
+        "Added to the catalog by correction 21 (confirmed missing by verify.md s2 #40)."
+      ],
+      "source": "added 66"
+    },
+    {
+      "id": "ph_unrecovered_employee_tax",
+      "name": "Unrecovered Employee Tax",
+      "statement_section": "expense",
+      "workbook_account_type": "expense",
+      "books_account_type": "expense",
+      "origin": "Existing PH control",
+      "coa": {
+        "status": "REUSE",
+        "books_key": "ph_unrecovered_employee_tax",
+        "account_number": "61950",
+        "note": "Key and number match the pinned Books preset (sheets.md s4; verify.md s2 #39). Added rows 65-67 match ph-chart.ts."
+      },
+      "activation_rule": "PAYROLL",
+      "applicability": {
+        "core": false,
+        "suggested_when": "Shown when Profile C8 = Yes (1601-C selected).",
+        "note": "Suggestion only. The category is not a tax decision; see tax-attributes.v1.json."
+      },
+      "purpose": "Employer-borne tax not recovered from employees",
+      "workbook_checks_or_tax_dimensions": "Matters for 1601-C reconciliation. Referenced by Books annualization-posting.ts.",
+      "default_tax_attributes": {
+        "tax_type": "income_tax",
+        "atc": null,
+        "treatment": "expense",
+        "income_class": "none",
+        "person_scope": "self",
+        "credit_kind": "none",
+        "contribution_side": "none",
+        "comp_component": null,
+        "counterparty_kind": null
+      },
+      "default_attributes_status": "PROPOSAL (suggestions only; the line's own attributes decide)",
+      "form_links": [],
+      "notes": [
+        "Added to the catalog by correction 21 (confirmed missing by verify.md s2 #40)."
+      ],
+      "source": "added 67"
+    }
+  ]
+}

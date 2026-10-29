@@ -1,0 +1,191 @@
+{
+  "acknowledged_entry_ids": [],
+  "as_of": "2026-10-29",
+  "description": "Sales 300000.00 gives PT 9000.00. A received WB082 credit of 3000.00 counts. A pending WB082 (2000.00) and a received WB084 (1500.00, final) do not. Payable 6000.00.",
+  "entries": [
+    {
+      "entry_date": "2026-07-10",
+      "entry_id": "G-001",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "200000.00",
+          "line_id": "G-001.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "200000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "G-001.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-G-001 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
+    },
+    {
+      "entry_date": "2026-08-12",
+      "entry_id": "G-002",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "100000.00",
+          "line_id": "G-002.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "100000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "G-002.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-G-002 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
+    },
+    {
+      "entry_date": "2026-09-30",
+      "entry_id": "G-003",
+      "lines": [
+        {
+          "account": "pct_tax_credit_receivable",
+          "atc": "WB082",
+          "certificate_status": "received",
+          "credit": "0.00",
+          "credit_kind": "pt",
+          "debit": "3000.00",
+          "document_kind": "certificate_2307",
+          "line_id": "G-003.1",
+          "period_end": "2026-09-30",
+          "period_start": "2026-07-01",
+          "tax_side": "debit",
+          "tax_types": [
+            "percentage_tax"
+          ],
+          "treatment": "cwt_credit"
+        },
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "3000.00",
+          "debit": "0.00",
+          "line_id": "G-003.2"
+        }
+      ],
+      "memo": "MEMO-SYNTH-G-003 synthetic percentage-tax 2307 (received)",
+      "reverses_entry_id": null,
+      "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
+    },
+    {
+      "entry_date": "2026-09-28",
+      "entry_id": "G-004",
+      "lines": [
+        {
+          "account": "pct_tax_credit_receivable",
+          "atc": "WB082",
+          "certificate_status": "pending",
+          "credit": "0.00",
+          "credit_kind": "pt",
+          "debit": "2000.00",
+          "document_kind": "certificate_2307",
+          "line_id": "G-004.1",
+          "period_end": "2026-09-30",
+          "period_start": "2026-07-01",
+          "tax_side": "debit",
+          "tax_types": [
+            "percentage_tax"
+          ],
+          "treatment": "cwt_credit"
+        },
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "2000.00",
+          "debit": "0.00",
+          "line_id": "G-004.2"
+        }
+      ],
+      "memo": "MEMO-SYNTH-G-004 synthetic percentage-tax 2307 (pending)",
+      "reverses_entry_id": null,
+      "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
+    },
+    {
+      "entry_date": "2026-09-29",
+      "entry_id": "G-005",
+      "lines": [
+        {
+          "account": "pct_tax_credit_receivable",
+          "atc": "WB084",
+          "certificate_status": "received",
+          "credit": "0.00",
+          "credit_kind": "pt",
+          "debit": "1500.00",
+          "document_kind": "certificate_2307",
+          "line_id": "G-005.1",
+          "period_end": "2026-09-30",
+          "period_start": "2026-07-01",
+          "tax_side": "debit",
+          "tax_types": [
+            "percentage_tax"
+          ],
+          "treatment": "cwt_credit"
+        },
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "1500.00",
+          "debit": "0.00",
+          "line_id": "G-005.2"
+        }
+      ],
+      "memo": "MEMO-SYNTH-G-005 synthetic percentage-tax 2307 (received)",
+      "reverses_entry_id": null,
+      "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
+    }
+  ],
+  "fixture_format": "buwiz-poc-fixture/1",
+  "fixture_id": "g-pt-withholding-2026",
+  "profiles": [
+    {
+      "display": "***-***-***-00000",
+      "facts": {
+        "2026": {
+          "deduction_method": "osd",
+          "owner_taxable_compensation_2316": "0.00",
+          "regime": "graduated",
+          "vat_status": "non_vat"
+        }
+      },
+      "label": "G: percentage-tax credit (DS-H)",
+      "periods": {
+        "2026-Q3": "closed"
+      },
+      "prior_filings": {
+        "2026": {
+          "1701q_q1_q3_tax_payments": "0.00"
+        }
+      },
+      "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
+    }
+  ],
+  "status": "SYNTHETIC: journey worked example (docs/06 DS-H) with percentage-tax credits."
+}

@@ -1,0 +1,184 @@
+{
+  "acknowledged_entry_ids": [],
+  "as_of": "2026-10-29",
+  "description": "Sales 120000.00 (2026-07-01), 100000.00 (2026-07-15), 80000.00 (2026-08-20), rent 25000.00 (2026-08-05). The 100000.00 sale is voided by a reversal dated 2026-07-15. The unbalanced entry N1 is not in the fixture; the ledger test builds it in memory.",
+  "entries": [
+    {
+      "entry_date": "2026-07-01",
+      "entry_id": "F-001",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "120000.00",
+          "line_id": "F-001.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "120000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "F-001.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-F-001 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "5a7b9c1d-4e6f-4a8b-9c0d-1e2f3a4b5c6d"
+    },
+    {
+      "entry_date": "2026-07-15",
+      "entry_id": "F-002",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "100000.00",
+          "line_id": "F-002.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "100000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "F-002.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-F-002 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "5a7b9c1d-4e6f-4a8b-9c0d-1e2f3a4b5c6d"
+    },
+    {
+      "entry_date": "2026-08-20",
+      "entry_id": "F-003",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "80000.00",
+          "line_id": "F-003.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "80000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "F-003.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-F-003 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "5a7b9c1d-4e6f-4a8b-9c0d-1e2f3a4b5c6d"
+    },
+    {
+      "entry_date": "2026-08-05",
+      "entry_id": "F-004",
+      "lines": [
+        {
+          "account": "rent",
+          "credit": "0.00",
+          "debit": "25000.00",
+          "document_kind": "expense_document",
+          "line_id": "F-004.1",
+          "tax_side": "debit",
+          "tax_types": [
+            "income_tax"
+          ],
+          "treatment": "expense"
+        },
+        {
+          "account": "bank_accounts",
+          "credit": "25000.00",
+          "debit": "0.00",
+          "line_id": "F-004.2"
+        }
+      ],
+      "memo": "MEMO-SYNTH-F-004 synthetic supplier invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "5a7b9c1d-4e6f-4a8b-9c0d-1e2f3a4b5c6d"
+    },
+    {
+      "entry_date": "2026-07-15",
+      "entry_id": "F-005",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "100000.00",
+          "debit": "0.00",
+          "line_id": "F-005.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "0.00",
+          "debit": "100000.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "F-005.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-F-005 synthetic void of F-002",
+      "reverses_entry_id": "F-002",
+      "tax_profile_id": "5a7b9c1d-4e6f-4a8b-9c0d-1e2f3a4b5c6d"
+    }
+  ],
+  "fixture_format": "buwiz-poc-fixture/1",
+  "fixture_id": "f-slice-a-2026",
+  "profiles": [
+    {
+      "display": "***-***-***-00000",
+      "facts": {
+        "2026": {
+          "deduction_method": "osd",
+          "owner_taxable_compensation_2316": "0.00",
+          "regime": "graduated",
+          "vat_status": "non_vat"
+        }
+      },
+      "label": "F: Slice A",
+      "periods": {
+        "2026-Q3": "closed"
+      },
+      "prior_filings": {
+        "2026": {
+          "1701q_q1_q3_tax_payments": "0.00"
+        }
+      },
+      "tax_profile_id": "5a7b9c1d-4e6f-4a8b-9c0d-1e2f3a4b5c6d"
+    }
+  ],
+  "status": "SYNTHETIC: design Slice A numbers (docs/06 DS-A)."
+}

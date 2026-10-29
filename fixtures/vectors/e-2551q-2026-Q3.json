@@ -1,0 +1,215 @@
+{
+  "description": "Second business profile (B). Base 999000.00, PT 29970.00. Ready. Used for isolation tests.",
+  "expected": {
+    "as_of": "2026-10-29",
+    "blocking": [],
+    "discrepancies": [],
+    "due": {
+      "date": "2026-10-25",
+      "overdue": true,
+      "penalties_computed": false,
+      "rule": "25 days after the quarter end (RA 11976 s128(1); rates.v1 due_dates.2551Q)",
+      "rule_status": "CONFIRMED"
+    },
+    "excluded_keys": [],
+    "expected_readback": {
+      "frm2551Qv2018:txt14": "29970.00",
+      "frm2551Qv2018:txt18": "0.00",
+      "frm2551Qv2018:txt19": "29970.00",
+      "frm2551Qv2018:txt24": "29970.00",
+      "txtATCDue1": "29970.00",
+      "txtTotalSched1": "29970.00"
+    },
+    "fill_args": {
+      "frm2551Qv2018:txt15": "0.00",
+      "schedule_1.0.atc": "PT010",
+      "txtATCAmt1": "999000.00"
+    },
+    "fixture_sha256": "0538002c466d82c008df5b85d77557f3d9549f8191ee91be4ae0fec80cda3498",
+    "form_code": "2551Q",
+    "inputs_hash": "daa6b2df1bb1a9a22e98e3abdb9b8b9f79a681c62d86e74a920b15675fded087",
+    "lineage": {
+      "frm2551Qv2018:txt15": {
+        "fixture_sha256": "0538002c466d82c008df5b85d77557f3d9549f8191ee91be4ae0fec80cda3498",
+        "lines": [],
+        "netted_pairs": 0,
+        "rule_id": "2551Q.II.15",
+        "rule_set_version": 1
+      },
+      "schedule_1.0.atc": {
+        "fixture_sha256": "0538002c466d82c008df5b85d77557f3d9549f8191ee91be4ae0fec80cda3498",
+        "lines": [],
+        "netted_pairs": 0,
+        "rule_id": "2551Q.S1.1.ATC",
+        "rule_set_version": 1
+      },
+      "txtATCAmt1": {
+        "fixture_sha256": "0538002c466d82c008df5b85d77557f3d9549f8191ee91be4ae0fec80cda3498",
+        "lines": [
+          {
+            "amount": "999000.00",
+            "entry_id": "E-001",
+            "line_id": "E-001.2"
+          }
+        ],
+        "netted_pairs": 0,
+        "rule_id": "2551Q.S1.1.base",
+        "rule_set_version": 1
+      }
+    },
+    "output_sha256": "298148fbaf82670f011a6ae34e9ba3b5d0a6e519edfc2bc83a2242e0d5c64c12",
+    "period_end": "2026-09-30",
+    "period_key": "2026-Q3",
+    "period_start": "2026-07-01",
+    "profile_digest": "2b80d9781e16a2656ff5e7287d059dbe89214fc9a12f80b5c6a85910401f999b",
+    "proposal_format": "buwiz-poc-proposal/1",
+    "rate": {
+      "code": "PT010",
+      "effective_from": "2023-07-01",
+      "effective_to": null,
+      "rate_bps": 300
+    },
+    "reference_values": {},
+    "refused_keys": [],
+    "rule_set": {
+      "rule_set_id": "2551Q-v2018-r1",
+      "rule_set_version": 1,
+      "schema_pin": "63267ca3d4d526a8ec490394470f026de82ac385",
+      "schema_sha256": "a206416cabb09c5e1e0ebedf9f7ac635a46856a139ffbbde5f7be88f89005788"
+    },
+    "status": "ready",
+    "tax_year": 2026,
+    "warnings": []
+  },
+  "fixture": "e-second-profile-2026",
+  "fixture_sha256": "0538002c466d82c008df5b85d77557f3d9549f8191ee91be4ae0fec80cda3498",
+  "form": "2551Q",
+  "input": {
+    "acknowledged_entry_ids": [],
+    "as_of": "2026-10-29",
+    "entries": [
+      {
+        "entry_date": "2026-07-20",
+        "entry_id": "E-001",
+        "lines": [
+          {
+            "account": "accounts_receivable_gross",
+            "atc": null,
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "0.00",
+            "credit_kind": "none",
+            "debit": "999000.00",
+            "document_kind": "other",
+            "income_class": "none",
+            "line_id": "E-001.1",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": null,
+            "tax_types": [],
+            "treatment": "none"
+          },
+          {
+            "account": "sales_revenue",
+            "atc": "PT010",
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "999000.00",
+            "credit_kind": "none",
+            "debit": "0.00",
+            "document_kind": "sale_invoice",
+            "income_class": "business_sales",
+            "line_id": "E-001.2",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": "credit",
+            "tax_types": [
+              "income_tax",
+              "percentage_tax"
+            ],
+            "treatment": "sale_pt"
+          }
+        ],
+        "reverses_entry_id": null,
+        "tax_profile_id": "c0a8e3f1-2b7d-4e9a-9f10-5d6c7b8a9e0f"
+      },
+      {
+        "entry_date": "2026-07-25",
+        "entry_id": "E-002",
+        "lines": [
+          {
+            "account": "rent",
+            "atc": null,
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "0.00",
+            "credit_kind": "none",
+            "debit": "30000.00",
+            "document_kind": "expense_document",
+            "income_class": "none",
+            "line_id": "E-002.1",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": "debit",
+            "tax_types": [
+              "income_tax"
+            ],
+            "treatment": "expense"
+          },
+          {
+            "account": "bank_accounts",
+            "atc": null,
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "30000.00",
+            "credit_kind": "none",
+            "debit": "0.00",
+            "document_kind": "other",
+            "income_class": "none",
+            "line_id": "E-002.2",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": null,
+            "tax_types": [],
+            "treatment": "none"
+          }
+        ],
+        "reverses_entry_id": null,
+        "tax_profile_id": "c0a8e3f1-2b7d-4e9a-9f10-5d6c7b8a9e0f"
+      }
+    ],
+    "input_format": "buwiz-poc-input/1",
+    "profiles": [
+      {
+        "facts": {
+          "2026": {
+            "deduction_method": "osd",
+            "owner_taxable_compensation_2316": "0.00",
+            "regime": "graduated",
+            "vat_status": "non_vat"
+          }
+        },
+        "periods": {
+          "2026-Q3": "closed"
+        },
+        "prior_filings": {
+          "2026": {
+            "1701q_q1_q3_tax_payments": "0.00"
+          }
+        },
+        "tax_profile_id": "c0a8e3f1-2b7d-4e9a-9f10-5d6c7b8a9e0f"
+      }
+    ]
+  },
+  "period": "2026-Q3",
+  "vector_format": "buwiz-poc-vector/1",
+  "vector_id": "e-2551q-2026-Q3"
+}

@@ -1,0 +1,253 @@
+{
+  "acknowledged_entry_ids": [
+    "C-006",
+    "C-007"
+  ],
+  "as_of": "2026-10-29",
+  "description": "Acknowledging C-006 and C-007 regenerates the Q3 proposal: base 155000.00, PT 4650.00.",
+  "entries": [
+    {
+      "entry_date": "2026-06-20",
+      "entry_id": "C-001",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "40000.00",
+          "line_id": "C-001.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "40000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "C-001.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-C-001 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "3e5f7a9b-2c4d-4e6f-9a8b-7c6d5e4f3a2b"
+    },
+    {
+      "entry_date": "2026-07-01",
+      "entry_id": "C-002",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "120000.00",
+          "line_id": "C-002.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "120000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "C-002.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-C-002 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "3e5f7a9b-2c4d-4e6f-9a8b-7c6d5e4f3a2b"
+    },
+    {
+      "entry_date": "2026-07-15",
+      "entry_id": "C-003",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "100000.00",
+          "line_id": "C-003.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "100000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "C-003.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-C-003 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "3e5f7a9b-2c4d-4e6f-9a8b-7c6d5e4f3a2b"
+    },
+    {
+      "entry_date": "2026-07-15",
+      "entry_id": "C-004",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "100000.00",
+          "debit": "0.00",
+          "line_id": "C-004.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "0.00",
+          "debit": "100000.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "C-004.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-C-004 synthetic void of C-003",
+      "reverses_entry_id": "C-003",
+      "tax_profile_id": "3e5f7a9b-2c4d-4e6f-9a8b-7c6d5e4f3a2b"
+    },
+    {
+      "entry_date": "2026-08-20",
+      "entry_id": "C-005",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "80000.00",
+          "line_id": "C-005.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "80000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "C-005.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-C-005 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "3e5f7a9b-2c4d-4e6f-9a8b-7c6d5e4f3a2b"
+    },
+    {
+      "entry_date": "2026-09-02",
+      "entry_id": "C-006",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "40000.00",
+          "debit": "0.00",
+          "line_id": "C-006.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "0.00",
+          "debit": "40000.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "C-006.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-C-006 synthetic void of C-001",
+      "reverses_entry_id": "C-001",
+      "tax_profile_id": "3e5f7a9b-2c4d-4e6f-9a8b-7c6d5e4f3a2b"
+    },
+    {
+      "entry_date": "2026-09-15",
+      "entry_id": "C-007",
+      "lines": [
+        {
+          "account": "refunds_and_discounts",
+          "atc": "PT010",
+          "credit": "0.00",
+          "debit": "5000.00",
+          "document_kind": "credit_note",
+          "income_class": "contra_sales",
+          "line_id": "C-007.1",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        },
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "5000.00",
+          "debit": "0.00",
+          "line_id": "C-007.2"
+        }
+      ],
+      "memo": "MEMO-SYNTH-C-007 synthetic credit note against a Q3 sale",
+      "reverses_entry_id": null,
+      "tax_profile_id": "3e5f7a9b-2c4d-4e6f-9a8b-7c6d5e4f3a2b"
+    }
+  ],
+  "fixture_format": "buwiz-poc-fixture/1",
+  "fixture_id": "c-reversal-credit-note-acknowledged-2026",
+  "profiles": [
+    {
+      "display": "***-***-***-00000",
+      "facts": {
+        "2026": {
+          "deduction_method": "osd",
+          "owner_taxable_compensation_2316": "0.00",
+          "regime": "graduated",
+          "vat_status": "non_vat"
+        }
+      },
+      "label": "C: reversals and a credit note",
+      "periods": {
+        "2026-Q2": "closed",
+        "2026-Q3": "closed"
+      },
+      "prior_filings": {
+        "2026": {
+          "1701q_q1_q3_tax_payments": "0.00"
+        }
+      },
+      "tax_profile_id": "3e5f7a9b-2c4d-4e6f-9a8b-7c6d5e4f3a2b"
+    }
+  ],
+  "status": "SYNTHETIC: the same ledger as c, with the two return events acknowledged."
+}

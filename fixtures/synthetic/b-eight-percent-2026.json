@@ -1,0 +1,696 @@
+{
+  "acknowledged_entry_ids": [
+    "EL-013"
+  ],
+  "as_of": "2026-10-29",
+  "description": "The same ledger as fixture a, with a recorded 8% election for 2026. 2551Q must produce no PT010 proposal and a needs-review discrepancy. 1601-C is unaffected.",
+  "entries": [
+    {
+      "entry_date": "2026-01-15",
+      "entry_id": "EL-001",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "120000.00",
+          "line_id": "EL-001.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "120000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "EL-001.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-001 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-02-10",
+      "entry_id": "EL-002",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "100000.00",
+          "line_id": "EL-002.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "100000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "EL-002.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-002 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-03-20",
+      "entry_id": "EL-003",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "80000.00",
+          "line_id": "EL-003.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "80000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "EL-003.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-003 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-03-31",
+      "entry_id": "EL-004",
+      "lines": [
+        {
+          "account": "ph_cwt_receivable",
+          "atc": "WI010",
+          "certificate_status": "received",
+          "credit": "0.00",
+          "credit_kind": "it",
+          "debit": "3000.00",
+          "document_kind": "certificate_2307",
+          "line_id": "EL-004.1",
+          "period_end": "2026-03-31",
+          "period_start": "2026-01-01",
+          "tax_side": "debit",
+          "tax_types": [
+            "income_tax"
+          ],
+          "treatment": "cwt_credit"
+        },
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "3000.00",
+          "debit": "0.00",
+          "line_id": "EL-004.2"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-004 synthetic income-tax 2307",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-04-10",
+      "entry_id": "EL-005",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "120000.00",
+          "line_id": "EL-005.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "120000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "EL-005.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-005 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-05-15",
+      "entry_id": "EL-006",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "100000.00",
+          "line_id": "EL-006.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "100000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "EL-006.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-006 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-06-20",
+      "entry_id": "EL-007",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "80000.00",
+          "line_id": "EL-007.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "80000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "EL-007.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-007 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-06-30",
+      "entry_id": "EL-008",
+      "lines": [
+        {
+          "account": "ph_cwt_receivable",
+          "atc": "WI010",
+          "certificate_status": "received",
+          "credit": "0.00",
+          "credit_kind": "it",
+          "debit": "3000.00",
+          "document_kind": "certificate_2307",
+          "line_id": "EL-008.1",
+          "period_end": "2026-06-30",
+          "period_start": "2026-04-01",
+          "tax_side": "debit",
+          "tax_types": [
+            "income_tax"
+          ],
+          "treatment": "cwt_credit"
+        },
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "3000.00",
+          "debit": "0.00",
+          "line_id": "EL-008.2"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-008 synthetic income-tax 2307",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-07-01",
+      "entry_id": "EL-009",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "120000.00",
+          "line_id": "EL-009.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "120000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "EL-009.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-009 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-07-15",
+      "entry_id": "EL-010",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "100000.00",
+          "line_id": "EL-010.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "100000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "EL-010.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-010 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-08-20",
+      "entry_id": "EL-011",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "80000.00",
+          "line_id": "EL-011.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "80000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "EL-011.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-011 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-08-05",
+      "entry_id": "EL-012",
+      "lines": [
+        {
+          "account": "office_supplies",
+          "credit": "0.00",
+          "debit": "20000.00",
+          "document_kind": "expense_document",
+          "line_id": "EL-012.1",
+          "tax_side": "debit",
+          "tax_types": [
+            "income_tax"
+          ],
+          "treatment": "expense"
+        },
+        {
+          "account": "bank_accounts",
+          "credit": "20000.00",
+          "debit": "0.00",
+          "line_id": "EL-012.2"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-012 synthetic supplier invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-09-10",
+      "entry_id": "EL-013",
+      "lines": [
+        {
+          "account": "refunds_and_discounts",
+          "atc": "PT010",
+          "credit": "0.00",
+          "debit": "10000.00",
+          "document_kind": "credit_note",
+          "income_class": "contra_sales",
+          "line_id": "EL-013.1",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        },
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "10000.00",
+          "debit": "0.00",
+          "line_id": "EL-013.2"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-013 synthetic credit note against a Q3 sale",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-09-30",
+      "entry_id": "EL-014",
+      "lines": [
+        {
+          "account": "ph_cwt_receivable",
+          "atc": "WI010",
+          "certificate_status": "received",
+          "credit": "0.00",
+          "credit_kind": "it",
+          "debit": "2900.00",
+          "document_kind": "certificate_2307",
+          "line_id": "EL-014.1",
+          "period_end": "2026-09-30",
+          "period_start": "2026-07-01",
+          "tax_side": "debit",
+          "tax_types": [
+            "income_tax"
+          ],
+          "treatment": "cwt_credit"
+        },
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "2900.00",
+          "debit": "0.00",
+          "line_id": "EL-014.2"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-014 synthetic income-tax 2307",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-09-30",
+      "entry_id": "EL-015",
+      "lines": [
+        {
+          "account": "salaries",
+          "comp_component": "taxable_basic",
+          "credit": "0.00",
+          "debit": "40000.00",
+          "document_kind": "payroll_register",
+          "line_id": "EL-015.1",
+          "person_scope": "employee",
+          "tax_side": "debit",
+          "tax_types": [
+            "compensation_withholding"
+          ],
+          "treatment": "comp_income"
+        },
+        {
+          "account": "employee_benefits",
+          "comp_component": "de_minimis",
+          "credit": "0.00",
+          "debit": "2000.00",
+          "document_kind": "payroll_register",
+          "line_id": "EL-015.2",
+          "person_scope": "employee",
+          "tax_side": "debit",
+          "tax_types": [
+            "compensation_withholding"
+          ],
+          "treatment": "comp_income"
+        },
+        {
+          "account": "employer_payroll_taxes",
+          "contribution_side": "employer",
+          "credit": "0.00",
+          "debit": "1500.00",
+          "document_kind": "payroll_register",
+          "line_id": "EL-015.3",
+          "person_scope": "employee",
+          "tax_side": "debit",
+          "tax_types": [
+            "compensation_withholding"
+          ],
+          "treatment": "expense"
+        },
+        {
+          "account": "ph_sss_payable",
+          "comp_component": "mandatory_contributions_employee",
+          "contribution_side": "employee",
+          "credit": "2000.00",
+          "debit": "0.00",
+          "document_kind": "payroll_register",
+          "line_id": "EL-015.4",
+          "person_scope": "employee",
+          "tax_side": "credit",
+          "tax_types": [
+            "compensation_withholding"
+          ],
+          "treatment": "contribution"
+        },
+        {
+          "account": "ph_sss_payable",
+          "contribution_side": "employer",
+          "credit": "1500.00",
+          "debit": "0.00",
+          "document_kind": "payroll_register",
+          "line_id": "EL-015.5",
+          "person_scope": "employee",
+          "tax_side": "credit",
+          "tax_types": [
+            "compensation_withholding"
+          ],
+          "treatment": "none"
+        },
+        {
+          "account": "ph_wtc_payable",
+          "atc": "WW010",
+          "credit": "2808.40",
+          "debit": "0.00",
+          "document_kind": "payroll_register",
+          "line_id": "EL-015.6",
+          "person_scope": "employee",
+          "tax_side": "credit",
+          "tax_types": [
+            "compensation_withholding"
+          ],
+          "treatment": "none"
+        },
+        {
+          "account": "ph_net_pay_payable",
+          "credit": "37191.60",
+          "debit": "0.00",
+          "line_id": "EL-015.7"
+        }
+      ],
+      "memo": "MEMO-SYNTH-PAYROLL one synthetic employee, September",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-10-05",
+      "entry_id": "EL-016",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "120000.00",
+          "line_id": "EL-016.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "120000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "EL-016.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-016 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-10-20",
+      "entry_id": "EL-017",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "100000.00",
+          "line_id": "EL-017.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "100000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "EL-017.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-017 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-10-28",
+      "entry_id": "EL-018",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "80000.00",
+          "line_id": "EL-018.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "80000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "EL-018.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-018 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    },
+    {
+      "entry_date": "2026-10-28",
+      "entry_id": "EL-019",
+      "lines": [
+        {
+          "account": "ph_cwt_receivable",
+          "atc": "WI010",
+          "certificate_status": "received",
+          "credit": "0.00",
+          "credit_kind": "it",
+          "debit": "3000.00",
+          "document_kind": "certificate_2307",
+          "line_id": "EL-019.1",
+          "period_end": "2026-10-28",
+          "period_start": "2026-10-01",
+          "tax_side": "debit",
+          "tax_types": [
+            "income_tax"
+          ],
+          "treatment": "cwt_credit"
+        },
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "3000.00",
+          "debit": "0.00",
+          "line_id": "EL-019.2"
+        }
+      ],
+      "memo": "MEMO-SYNTH-EL-019 synthetic income-tax 2307",
+      "reverses_entry_id": null,
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    }
+  ],
+  "fixture_format": "buwiz-poc-fixture/1",
+  "fixture_id": "b-eight-percent-2026",
+  "profiles": [
+    {
+      "display": "***-***-***-00000",
+      "facts": {
+        "2026": {
+          "deduction_method": "osd",
+          "owner_taxable_compensation_2316": "0.00",
+          "regime": "eight_percent",
+          "vat_status": "non_vat"
+        }
+      },
+      "label": "B-elector: 8% election for 2026",
+      "periods": {
+        "2026": "closed",
+        "2026-09": "closed",
+        "2026-Q1": "closed",
+        "2026-Q2": "closed",
+        "2026-Q3": "closed"
+      },
+      "prior_filings": {
+        "2026": {
+          "1701q_q1_q3_tax_payments": "40400.00"
+        }
+      },
+      "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
+    }
+  ],
+  "status": "SYNTHETIC: 8%-elector variant of fixture a."
+}

@@ -1,0 +1,199 @@
+{
+  "description": "A spouse-scoped sales line is refused in MVP. Blocked, no values.",
+  "expected": {
+    "as_of": "2026-10-29",
+    "blocking": [
+      {
+        "code": "EXC.SPOUSE_MVP",
+        "detail": "spouse-scoped tax lines are refused in MVP (phase P7)",
+        "ids": [
+          "D-002.2"
+        ]
+      }
+    ],
+    "discrepancies": [],
+    "due": {
+      "date": "2026-10-25",
+      "overdue": true,
+      "penalties_computed": false,
+      "rule": "25 days after the quarter end (RA 11976 s128(1); rates.v1 due_dates.2551Q)",
+      "rule_status": "CONFIRMED"
+    },
+    "excluded_keys": [
+      {
+        "key": "frm2551Qv2018:txt15",
+        "reason": "proposal blocked: EXC.SPOUSE_MVP"
+      },
+      {
+        "key": "schedule_1.0.atc",
+        "reason": "proposal blocked: EXC.SPOUSE_MVP"
+      },
+      {
+        "key": "txtATCAmt1",
+        "reason": "proposal blocked: EXC.SPOUSE_MVP"
+      }
+    ],
+    "expected_readback": {},
+    "fill_args": {},
+    "fixture_sha256": "83d6f752a4801755f3f6f94997977ad8f113d80f419883c595149e908c4a1afa",
+    "form_code": "2551Q",
+    "inputs_hash": "6b0f19c68a2ad902d419d3d95394b58c2674d44896d2766b549844ce9f3105bf",
+    "lineage": {},
+    "output_sha256": "c990c9d548fdbf5f2d338308d40d17f3a87f3de159d5e6e6acd4fda0fba2e727",
+    "period_end": "2026-09-30",
+    "period_key": "2026-Q3",
+    "period_start": "2026-07-01",
+    "profile_digest": "f95bc058146ecc32a0597bd7716c03bdb3c87507c9288bb8df0fbce5ad4ec015",
+    "proposal_format": "buwiz-poc-proposal/1",
+    "rate": {
+      "code": "PT010",
+      "effective_from": "2023-07-01",
+      "effective_to": null,
+      "rate_bps": 300
+    },
+    "reference_values": {},
+    "refused_keys": [],
+    "rule_set": {
+      "rule_set_id": "2551Q-v2018-r1",
+      "rule_set_version": 1,
+      "schema_pin": "63267ca3d4d526a8ec490394470f026de82ac385",
+      "schema_sha256": "a206416cabb09c5e1e0ebedf9f7ac635a46856a139ffbbde5f7be88f89005788"
+    },
+    "status": "blocked",
+    "tax_year": 2026,
+    "warnings": []
+  },
+  "fixture": "d-spouse-scope-2026",
+  "fixture_sha256": "83d6f752a4801755f3f6f94997977ad8f113d80f419883c595149e908c4a1afa",
+  "form": "2551Q",
+  "input": {
+    "acknowledged_entry_ids": [],
+    "as_of": "2026-10-29",
+    "entries": [
+      {
+        "entry_date": "2026-07-10",
+        "entry_id": "D-001",
+        "lines": [
+          {
+            "account": "accounts_receivable_gross",
+            "atc": null,
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "0.00",
+            "credit_kind": "none",
+            "debit": "100000.00",
+            "document_kind": "other",
+            "income_class": "none",
+            "line_id": "D-001.1",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": null,
+            "tax_types": [],
+            "treatment": "none"
+          },
+          {
+            "account": "sales_revenue",
+            "atc": "PT010",
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "100000.00",
+            "credit_kind": "none",
+            "debit": "0.00",
+            "document_kind": "sale_invoice",
+            "income_class": "business_sales",
+            "line_id": "D-001.2",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": "credit",
+            "tax_types": [
+              "income_tax",
+              "percentage_tax"
+            ],
+            "treatment": "sale_pt"
+          }
+        ],
+        "reverses_entry_id": null,
+        "tax_profile_id": "4f6a8b0c-3d5e-4f7a-8b9c-0d1e2f3a4b5c"
+      },
+      {
+        "entry_date": "2026-08-10",
+        "entry_id": "D-002",
+        "lines": [
+          {
+            "account": "accounts_receivable_gross",
+            "atc": null,
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "0.00",
+            "credit_kind": "none",
+            "debit": "50000.00",
+            "document_kind": "other",
+            "income_class": "none",
+            "line_id": "D-002.1",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": null,
+            "tax_types": [],
+            "treatment": "none"
+          },
+          {
+            "account": "sales_revenue",
+            "atc": "PT010",
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "50000.00",
+            "credit_kind": "none",
+            "debit": "0.00",
+            "document_kind": "sale_invoice",
+            "income_class": "business_sales",
+            "line_id": "D-002.2",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "spouse",
+            "tax_side": "credit",
+            "tax_types": [
+              "income_tax",
+              "percentage_tax"
+            ],
+            "treatment": "sale_pt"
+          }
+        ],
+        "reverses_entry_id": null,
+        "tax_profile_id": "4f6a8b0c-3d5e-4f7a-8b9c-0d1e2f3a4b5c"
+      }
+    ],
+    "input_format": "buwiz-poc-input/1",
+    "profiles": [
+      {
+        "facts": {
+          "2026": {
+            "deduction_method": "osd",
+            "owner_taxable_compensation_2316": "0.00",
+            "regime": "graduated",
+            "vat_status": "non_vat"
+          }
+        },
+        "periods": {
+          "2026": "closed",
+          "2026-Q3": "closed"
+        },
+        "prior_filings": {
+          "2026": {
+            "1701q_q1_q3_tax_payments": "0.00"
+          }
+        },
+        "tax_profile_id": "4f6a8b0c-3d5e-4f7a-8b9c-0d1e2f3a4b5c"
+      }
+    ]
+  },
+  "period": "2026-Q3",
+  "vector_format": "buwiz-poc-vector/1",
+  "vector_id": "d-2551q-2026-Q3"
+}

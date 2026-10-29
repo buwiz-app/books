@@ -1,0 +1,137 @@
+import { describe, expect, test } from "bun:test";
+import { postLedger, LedgerError } from "../src/ledger.ts";
+import { normalizeEntry } from "../src/load.ts";
+import { sumText, data, fixture, memoryInput, proposal, saleEntry, creditNoteEntry, reversalEntry, PROFILE_A } from "./support.ts";
+
+/* Design Slice A (docs/04, acceptance A3-A5) on fixture f, which carries DS-A exactly. */
+
+const f = fixture("f-slice-a-2026");
+
+describe("Slice A ledger (A3, A4)", () => {
+  test("A3: an entry with debit 100.00 and credit 99.99 is refused as unbalanced", () => {
+    const bad = normalizeEntry(
+      {
+        entry_id: "N1",
+        tax_profile_id: PROFILE_A,
+        entry_date: "2026-07-20",
+        lines: [
+          { line_id: "N1.1", account: "bank_accounts", debit: "100.00", credit: "0.00" },
+          { line_id: "N1.2", account: "sales_revenue", debit: "0.00", credit: "99.99", tax_types: ["percentage_tax"], treatment: "sale_pt", tax_side: "credit", income_class: "business_sales", atc: "PT010" },
+        ],
+      },
+      new Set([PROFILE_A]),
+      data.vocab,
+    );
+    expect(() => postLedger([bad])).toThrow(LedgerError);
+    try {
+      postLedger([bad]);
+    } catch (error) {
+      expect((error as LedgerError).code).toBe("unbalanced");
+    }
+  });
+
+  test("A3: a line with both debit and credit is refused", () => {
+    const bad = normalizeEntry(
+      {
+        entry_id: "N2",
+        tax_profile_id: PROFILE_A,
+        entry_date: "2026-07-20",
+        lines: [
+          { line_id: "N2.1", account: "bank_accounts", debit: "10.00", credit: "10.00" },
+          { line_id: "N2.2", account: "sales_revenue", debit: "0.00", credit: "0.00" },
+        ],
+      },
+      new Set([PROFILE_A]),
+      data.vocab,
+    );
+    expect(() => postLedger([bad])).toThrow(/line_sides|exactly one/);
+  });
+
+  test("A4: voiding the 100000.00 sale posts a reversal dated the original entry date, and Q3 gross is 200000.00", () => {
+    const { lines, reversedBy } = postLedger(f.entries);
+    expect(reversedBy.get("F-002")).toBe("F-005");
+    const reversal = f.entries.find((e) => e.entry_id === "F-005");
+    expect(reversal?.entry_date).toBe("2026-07-15");
+    const q3Sales = lines.filter((l) => l.income_class === "business_sales" && l.entry_date >= "2026-07-01" && l.entry_date <= "2026-09-30");
+    const gross = q3Sales.reduce((total, l) => total + l.measure, 0n);
+    expect(gross.toString()).toBe("20000000"); // 200000.00 in centavos
+  });
+});
+
+describe("Slice A proposal (A5)", () => {
+  test("A5: 2026-Q3 is ready; base 200000.00; PT 6000.00; due 2026-10-25; overdue as of 2026-10-29", () => {
+    const p = proposal(f, "2551Q", "2026-Q3");
+    expect(p.status).toBe("ready");
+    expect(p.fill_args["txtATCAmt1"]).toBe("200000.00");
+    expect(p.expected_readback["frm2551Qv2018:txt14"]).toBe("6000.00");
+    expect(p.due).toMatchObject({ date: "2026-10-25", overdue: true, penalties_computed: false });
+  });
+
+  test("A5: lineage lists the 120000.00 and 80000.00 sales and not the voided pair", () => {
+    const p = proposal(f, "2551Q", "2026-Q3");
+    const lines = (p.lineage["txtATCAmt1"] as { lines: Array<{ entry_id: string; amount: string }>; netted_pairs: number }).lines;
+    expect(lines.map((l) => l.entry_id).sort()).toEqual(["F-001", "F-003"]);
+    expect(sumText(lines.map((l) => l.amount))).toBe("200000.00");
+    expect((p.lineage["txtATCAmt1"] as { netted_pairs: number }).netted_pairs).toBe(1);
+  });
+
+  test("the rent expense does not reach the 2551Q base or the output", () => {
+    const p = proposal(f, "2551Q", "2026-Q3");
+    expect(JSON.stringify(p)).not.toContain("F-004");
+  });
+});
+
+describe("reversal rules: mirror, orphan and count-once", () => {
+  const original = saleEntry(PROFILE_A, "R-1", "2026-07-10", "50000.00");
+
+  test("a reversal must mirror its original line by line", () => {
+    const wrong = reversalEntry("R-2", original, "2026-07-10");
+    (wrong.lines as Array<Record<string, string>>)[1].debit = "49999.00";
+    const input = memoryInput({ entries: [original, wrong] });
+    expect(() => postLedger(input.entries)).toThrow(/reversal_not_mirror|unbalanced/);
+  });
+
+  test("an orphan reversal (its original is not in scope) is refused: no double counting by omission", () => {
+    const orphan = reversalEntry("R-3", original, "2026-07-10");
+    const input = memoryInput({ entries: [orphan] });
+    expect(() => postLedger(input.entries)).toThrow(/orphan_reversal/);
+  });
+
+  test("a second reversal of the same entry is refused", () => {
+    const first = reversalEntry("R-4", original, "2026-07-10");
+    const second = reversalEntry("R-5", original, "2026-07-11");
+    const input = memoryInput({ entries: [original, first, second] });
+    expect(() => postLedger(input.entries)).toThrow(/reversed_twice/);
+  });
+
+  test("a reversal dated before its original is refused", () => {
+    const early = reversalEntry("R-6", original, "2026-07-01");
+    const input = memoryInput({ entries: [original, early] });
+    expect(() => postLedger(input.entries)).toThrow(/reversal_before_original/);
+  });
+});
+
+describe("negative base is blocked, never clamped (DS-J)", () => {
+  test("refunds larger than sales in one quarter block with negative_base", () => {
+    const input = memoryInput({
+      entries: [saleEntry(PROFILE_A, "S-1", "2026-07-10", "1000.00"), creditNoteEntry(PROFILE_A, "CN-1", "2026-07-20", "2000.00")],
+      acks: ["CN-1"],
+    });
+    const p = proposal(input, "2551Q", "2026-Q3");
+    expect(p.status).toBe("blocked");
+    expect(p.blocking.map((b) => b.code)).toContain("negative_base");
+    expect(p.fill_args).toEqual({});
+  });
+});
+
+describe("the input is validated before any proposal (privacy and shape)", () => {
+  test("a money field given as a JS number is refused at normalization", () => {
+    expect(() =>
+      normalizeEntry(
+        { entry_id: "X", tax_profile_id: PROFILE_A, entry_date: "2026-07-01", lines: [{ line_id: "X.1", account: "bank_accounts", debit: 100, credit: "0.00" }, { line_id: "X.2", account: "bank_accounts", debit: "0.00", credit: "100.00" }] },
+        new Set([PROFILE_A]),
+        data.vocab,
+      ),
+    ).toThrow(/decimal text/);
+  });
+});

@@ -1,0 +1,399 @@
+{
+  "description": "A spouse-scoped sales line is refused in MVP. Blocked, no values.",
+  "expected": {
+    "as_of": "2026-10-29",
+    "blocking": [
+      {
+        "code": "EXC.SPOUSE_MVP",
+        "detail": "spouse-scoped tax lines are refused in MVP (phase P7)",
+        "ids": [
+          "D-002.2"
+        ]
+      }
+    ],
+    "discrepancies": [
+      {
+        "citations": [
+          "research/traces/bir.md section 2",
+          "data/rules/rates.v1.json osd",
+          "research/spreadsheet-corrections.md item 38"
+        ],
+        "id": "DISC-OSD-BASE-1701MS",
+        "status": "needs_review",
+        "summary": "OSD base conflict: printed Part I item 17 says 40% of gross sales; Part IV item 11 says 40% of IV.7 (net sales). The PoC follows the rules file and the workbook worked example (net sales). UNCONFIRMED."
+      }
+    ],
+    "due": {
+      "date": "2027-04-15",
+      "overdue": false,
+      "penalties_computed": false,
+      "rule": "15 April after the taxable year (rates.v1 due_dates.1701MS; April 15 CONFIRMED)",
+      "rule_status": "CONFIRMED"
+    },
+    "excluded_keys": [
+      {
+        "key": "frm1701MS:txtAllowableItemizedDeductionsNo10a",
+        "reason": "proposal blocked: EXC.SPOUSE_MVP"
+      },
+      {
+        "key": "frm1701MS:txtCostofSalesNo8a",
+        "reason": "proposal blocked: EXC.SPOUSE_MVP"
+      },
+      {
+        "key": "frm1701MS:txtNonOperatingIncomeNo13a",
+        "reason": "proposal blocked: EXC.SPOUSE_MVP"
+      },
+      {
+        "key": "frm1701MS:txtOtherNonOperatingIncomeNo20a",
+        "reason": "proposal blocked: EXC.SPOUSE_MVP"
+      },
+      {
+        "key": "frm1701MS:txtSalesReturnsNo6a",
+        "reason": "proposal blocked: EXC.SPOUSE_MVP"
+      },
+      {
+        "key": "frm1701MS:txtSalesRevenueNo5a",
+        "reason": "proposal blocked: EXC.SPOUSE_MVP"
+      },
+      {
+        "key": "frm1701MS:txtSalesRevenuesFeesANo19a",
+        "reason": "proposal blocked: EXC.SPOUSE_MVP"
+      }
+    ],
+    "expected_readback": {},
+    "fill_args": {},
+    "fixture_sha256": "83d6f752a4801755f3f6f94997977ad8f113d80f419883c595149e908c4a1afa",
+    "form_code": "1701MS",
+    "inputs_hash": "701699d4161017cbf7ee232a31f1eda70869cf7dba315e329002060ac8751378",
+    "lineage": {},
+    "output_sha256": "1e0b7b62349da08915a6a7b97ff03fbd56e92b8bc18227074ab32d8691ddc1d0",
+    "period_end": "2026-12-31",
+    "period_key": "2026",
+    "period_start": "2026-01-01",
+    "profile_digest": "f95bc058146ecc32a0597bd7716c03bdb3c87507c9288bb8df0fbce5ad4ec015",
+    "proposal_format": "buwiz-poc-proposal/1",
+    "rate": null,
+    "reference_values": {},
+    "refused_keys": [
+      {
+        "key": "frm1701MS:txtAllowableItemizedDeductionsNo10aSpouse",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtCompromise28b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtCostofSalesNo8b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtCreditableForm2316No5b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtCreditableFourthQuarterNo4b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtCreditableTaxNo3b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtEmailb",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtForeignTaxCreditsNo7b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtGrossb",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtInterestNo28b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtLessNonTaxableb",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtNetOperatingLossNo10b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtNonOperatingIncomeNo13b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtOtherCreditsPaymentsNo9b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtOtherNonOperatingIncomeNo20b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtPriorYearsNo1b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtRDOCodeb",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtSalesReturnsNo6b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtSalesRevenueNo5b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtSalesRevenuesFeesANo19b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtShareOfOtherNo20b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtSpecialAllowableNo10b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtSpecialTaxCreditsNo8b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtSpouseNo17",
+        "reason": "election box with no Forms lock; Books never fills it (blocker B7)"
+      },
+      {
+        "key": "frm1701MS:txtSurchangeNo28b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtTaxDueAllowedNo26b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtTaxPaidPreviouslyFiledNo6b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtTaxPaymentsNo2b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtTaxpayerNo11",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtTaxpayerNo12",
+        "reason": "election box with no Forms lock; Books never fills it (blocker B7)"
+      },
+      {
+        "key": "frm1701MS:txtTaxpayerNo12b",
+        "reason": "election box with no Forms lock; Books never fills it (blocker B7)"
+      },
+      {
+        "key": "frm1701MS:txtTaxpayerNo13b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtTaxpayerNo14b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtTaxpayerNo15b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtTaxpayerNo16b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtTaxpayerNo16b1",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtTaxpayerNo17",
+        "reason": "election box with no Forms lock; Books never fills it (blocker B7)"
+      },
+      {
+        "key": "frm1701MS:txtTaxpayerNo8b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "frm1701MS:txtTelNum10b",
+        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+      },
+      {
+        "key": "taxCodeDropdown",
+        "reason": "election box with no Forms lock; Books never fills it (blocker B7)"
+      },
+      {
+        "key": "taxCodeDropdownSpouse",
+        "reason": "election box with no Forms lock; Books never fills it (blocker B7)"
+      }
+    ],
+    "rule_set": {
+      "rule_set_id": "1701MS-v2024-r1",
+      "rule_set_version": 1,
+      "schema_pin": "63267ca3d4d526a8ec490394470f026de82ac385",
+      "schema_sha256": "6cf45329d89a09d6436de58df4b0e65acb7d68d91a91bf299c3b3b635dcaab84"
+    },
+    "status": "blocked",
+    "tax_year": 2026,
+    "warnings": [
+      {
+        "code": "ELECTION_BOXES_NOT_LOCKED",
+        "detail": "items I.12, I.17 and I.18 have no Forms lock and are not compared with the profile election (blocker B7); Books never fills them"
+      },
+      {
+        "code": "II19_IV18A_UNCONFIRMED",
+        "detail": "II.19 (IV.18A) is not produced; zero because no special-rate or direct-remittance input exists"
+      },
+      {
+        "code": "V10_SUMMATION_UNCONFIRMED",
+        "detail": "V.10 sums V.1 to V.9 per the field tab; the printed summation is UNCONFIRMED (verify.md s2 #54)"
+      }
+    ]
+  },
+  "fixture": "d-spouse-scope-2026",
+  "fixture_sha256": "83d6f752a4801755f3f6f94997977ad8f113d80f419883c595149e908c4a1afa",
+  "form": "1701MS",
+  "input": {
+    "acknowledged_entry_ids": [],
+    "as_of": "2026-10-29",
+    "entries": [
+      {
+        "entry_date": "2026-07-10",
+        "entry_id": "D-001",
+        "lines": [
+          {
+            "account": "accounts_receivable_gross",
+            "atc": null,
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "0.00",
+            "credit_kind": "none",
+            "debit": "100000.00",
+            "document_kind": "other",
+            "income_class": "none",
+            "line_id": "D-001.1",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": null,
+            "tax_types": [],
+            "treatment": "none"
+          },
+          {
+            "account": "sales_revenue",
+            "atc": "PT010",
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "100000.00",
+            "credit_kind": "none",
+            "debit": "0.00",
+            "document_kind": "sale_invoice",
+            "income_class": "business_sales",
+            "line_id": "D-001.2",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": "credit",
+            "tax_types": [
+              "income_tax",
+              "percentage_tax"
+            ],
+            "treatment": "sale_pt"
+          }
+        ],
+        "reverses_entry_id": null,
+        "tax_profile_id": "4f6a8b0c-3d5e-4f7a-8b9c-0d1e2f3a4b5c"
+      },
+      {
+        "entry_date": "2026-08-10",
+        "entry_id": "D-002",
+        "lines": [
+          {
+            "account": "accounts_receivable_gross",
+            "atc": null,
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "0.00",
+            "credit_kind": "none",
+            "debit": "50000.00",
+            "document_kind": "other",
+            "income_class": "none",
+            "line_id": "D-002.1",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "self",
+            "tax_side": null,
+            "tax_types": [],
+            "treatment": "none"
+          },
+          {
+            "account": "sales_revenue",
+            "atc": "PT010",
+            "certificate_status": null,
+            "comp_component": null,
+            "contribution_side": "none",
+            "credit": "50000.00",
+            "credit_kind": "none",
+            "debit": "0.00",
+            "document_kind": "sale_invoice",
+            "income_class": "business_sales",
+            "line_id": "D-002.2",
+            "period_end": null,
+            "period_start": null,
+            "person_scope": "spouse",
+            "tax_side": "credit",
+            "tax_types": [
+              "income_tax",
+              "percentage_tax"
+            ],
+            "treatment": "sale_pt"
+          }
+        ],
+        "reverses_entry_id": null,
+        "tax_profile_id": "4f6a8b0c-3d5e-4f7a-8b9c-0d1e2f3a4b5c"
+      }
+    ],
+    "input_format": "buwiz-poc-input/1",
+    "profiles": [
+      {
+        "facts": {
+          "2026": {
+            "deduction_method": "osd",
+            "owner_taxable_compensation_2316": "0.00",
+            "regime": "graduated",
+            "vat_status": "non_vat"
+          }
+        },
+        "periods": {
+          "2026": "closed",
+          "2026-Q3": "closed"
+        },
+        "prior_filings": {
+          "2026": {
+            "1701q_q1_q3_tax_payments": "0.00"
+          }
+        },
+        "tax_profile_id": "4f6a8b0c-3d5e-4f7a-8b9c-0d1e2f3a4b5c"
+      }
+    ]
+  },
+  "period": "2026",
+  "vector_format": "buwiz-poc-vector/1",
+  "vector_id": "d-1701ms-2026"
+}

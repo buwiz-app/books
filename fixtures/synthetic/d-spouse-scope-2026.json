@@ -1,0 +1,96 @@
+{
+  "acknowledged_entry_ids": [],
+  "as_of": "2026-10-29",
+  "description": "One self-scoped sale and one spouse-scoped sale in Q3. Spouse lines are refused in MVP, so both forms block and produce no values.",
+  "entries": [
+    {
+      "entry_date": "2026-07-10",
+      "entry_id": "D-001",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "100000.00",
+          "line_id": "D-001.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "100000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "D-001.2",
+          "person_scope": "self",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-D-001 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "4f6a8b0c-3d5e-4f7a-8b9c-0d1e2f3a4b5c"
+    },
+    {
+      "entry_date": "2026-08-10",
+      "entry_id": "D-002",
+      "lines": [
+        {
+          "account": "accounts_receivable_gross",
+          "credit": "0.00",
+          "debit": "50000.00",
+          "line_id": "D-002.1"
+        },
+        {
+          "account": "sales_revenue",
+          "atc": "PT010",
+          "credit": "50000.00",
+          "debit": "0.00",
+          "document_kind": "sale_invoice",
+          "income_class": "business_sales",
+          "line_id": "D-002.2",
+          "person_scope": "spouse",
+          "tax_side": "credit",
+          "tax_types": [
+            "income_tax",
+            "percentage_tax"
+          ],
+          "treatment": "sale_pt"
+        }
+      ],
+      "memo": "MEMO-SYNTH-D-002 synthetic sales invoice",
+      "reverses_entry_id": null,
+      "tax_profile_id": "4f6a8b0c-3d5e-4f7a-8b9c-0d1e2f3a4b5c"
+    }
+  ],
+  "fixture_format": "buwiz-poc-fixture/1",
+  "fixture_id": "d-spouse-scope-2026",
+  "profiles": [
+    {
+      "display": "***-***-***-00000",
+      "facts": {
+        "2026": {
+          "deduction_method": "osd",
+          "owner_taxable_compensation_2316": "0.00",
+          "regime": "graduated",
+          "vat_status": "non_vat"
+        }
+      },
+      "label": "D: spouse-scoped sale",
+      "periods": {
+        "2026": "closed",
+        "2026-Q3": "closed"
+      },
+      "prior_filings": {
+        "2026": {
+          "1701q_q1_q3_tax_payments": "0.00"
+        }
+      },
+      "tax_profile_id": "4f6a8b0c-3d5e-4f7a-8b9c-0d1e2f3a4b5c"
+    }
+  ],
+  "status": "SYNTHETIC: spouse-scope refusal case."
+}

@@ -1,0 +1,12 @@
+{
+  "name": "buwiz-books-poc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Throwaway proof of concept: ledger lines to form proposals for the pure tax rules. Synthetic data only. Zero dependencies; run with bun.",
+  "scripts": {
+    "test": "bun test",
+    "fixtures": "bun run tools/gen-fixtures.ts",
+    "vectors": "bun run tools/emit-vectors.ts"
+  }
+}
