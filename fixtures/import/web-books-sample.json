@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "version": 4,
+    "exportedAt": "2026-10-28T09:15:00.000Z",
+    "organizationName": "Isla Demo Trading (synthetic)",
+    "organizationSlug": "isla-demo-trading",
+    "entities": ["categories", "departments", "locations", "customers", "vendors", "shareholders", "banks", "transactions", "bills", "phOrgTaxProfile", "phTaxCertificates"]
+  },
+  "data": {
+    "categories": [
+      { "accountNumber": "11000", "name": "Bank Accounts", "description": "Synthetic", "accountType": "asset", "subtype": "bank", "parentName": null, "icon": null, "status": "active", "isActive": true },
+      { "accountNumber": "21000", "name": "Accounts Payable", "description": null, "accountType": "liability", "subtype": "accounts_payable", "parentName": null, "icon": null, "status": "active", "isActive": true },
+      { "accountNumber": "32000", "name": "Owners Equity", "description": null, "accountType": "equity", "subtype": null, "parentName": null, "icon": null, "status": "active", "isActive": true },
+      { "accountNumber": "40000", "name": "Revenue", "description": null, "accountType": "revenue", "subtype": null, "parentName": null, "icon": null, "status": "active", "isActive": true },
+      { "accountNumber": "41000", "name": "Sales Revenue", "description": null, "accountType": "revenue", "subtype": "sales", "parentName": "Revenue", "icon": null, "status": "active", "isActive": true },
+      { "accountNumber": "49000", "name": "Refunds & Discounts", "description": null, "accountType": "revenue", "subtype": "refunds_discounts", "parentName": "Revenue", "icon": null, "status": "active", "isActive": true },
+      { "accountNumber": "51000", "name": "Cost of Goods Sold", "description": null, "accountType": "cost_of_revenue", "subtype": null, "parentName": null, "icon": null, "status": "active", "isActive": true },
+      { "accountNumber": "66100", "name": "Rent", "description": null, "accountType": "expense", "subtype": null, "parentName": null, "icon": null, "status": "active", "isActive": true },
+      { "accountNumber": "68300", "name": "Bank Fees", "description": null, "accountType": "expense", "subtype": null, "parentName": null, "icon": null, "status": "active", "isActive": true },
+      { "accountNumber": "69999", "name": "Uncategorized Expense", "description": null, "accountType": "expense", "subtype": null, "parentName": null, "icon": null, "status": "active", "isActive": true },
+      { "accountNumber": "81000", "name": "Interest Income", "description": null, "accountType": "other_income", "subtype": null, "parentName": null, "icon": null, "status": "archived", "isActive": false }
+    ],
+    "departments": [
+      { "name": "Store", "code": "ST", "description": null, "parentName": null, "isActive": true }
+    ],
+    "locations": [
+      { "name": "Cebu branch", "code": "CEB", "description": null, "parentName": null, "isActive": true }
+    ],
+    "customers": [
+      { "name": "Bayani Foods", "partyType": "customer", "email": "orders@bayani.example", "phone": null, "taxId": "SYNTH-NOT-A-TIN", "isActive": true },
+      { "name": "Luntian Cafe", "partyType": "customer", "email": null, "phone": null, "taxId": null, "isActive": true }
+    ],
+    "vendors": [
+      { "name": "Lumen Property Leasing", "partyType": "vendor", "email": null, "taxId": "SYNTH-NOT-A-TIN", "bankAccountNumber": "XXXX-0042", "isActive": true }
+    ],
+    "shareholders": [
+      { "name": "Ana Dela Cruz", "partyType": "shareholder", "email": null, "isActive": true }
+    ],
+    "banks": [
+      { "accountName": "Isla Checking", "accountType": "checking", "accountNumber": "XXXX-4021", "ledgerAccountNumber": "11000" }
+    ],
+    "transactions": {
+      "headers": [
+        { "transactionNumber": "JE-0007", "referenceNumber": null, "transactionDate": "2026-09-30", "transactionType": "pay_out", "source": "manual", "memo": "Voided duplicate", "partyName": null, "totalAmount": "500.00000000", "status": "voided" },
+        { "transactionNumber": "JE-0006", "referenceNumber": null, "transactionDate": "2026-09-25", "transactionType": "pay_out", "source": "manual", "memo": "Not sorted yet", "partyName": null, "totalAmount": "1500.00000000", "status": "draft" },
+        { "transactionNumber": "JE-0004", "referenceNumber": "CM-0001", "transactionDate": "2026-09-10", "transactionType": "pay_out", "source": "manual", "memo": "Customer return", "partyName": "Luntian Cafe", "totalAmount": "10000.00000000", "status": "posted" },
+        { "transactionNumber": "JE-0003", "referenceNumber": null, "transactionDate": "2026-08-20", "transactionType": "pay_in", "source": "manual", "memo": "Cash sales", "partyName": "Bayani Foods", "totalAmount": "80000.00000000", "status": "posted" },
+        { "transactionNumber": "JE-0002", "referenceNumber": null, "transactionDate": "2026-07-15", "transactionType": "pay_in", "source": "manual", "memo": "Cash sales", "partyName": "Luntian Cafe", "totalAmount": "100000.00000000", "status": "posted" },
+        { "transactionNumber": "JE-0005", "referenceNumber": "CHK-0101", "transactionDate": "2026-07-05", "transactionType": "pay_out", "source": "manual", "memo": "July shop rent", "partyName": "Lumen Property Leasing", "totalAmount": "25000.00000000", "status": "posted" },
+        { "transactionNumber": "JE-0001", "referenceNumber": null, "transactionDate": "2026-07-01", "transactionType": "pay_in", "source": "manual", "memo": "Cash sales", "partyName": "Bayani Foods", "totalAmount": "120000.00000000", "status": "posted" }
+      ],
+      "lines": [
+        { "transactionNumber": "JE-0007", "accountName": "Bank Fees", "accountNumber": "68300", "debit": "500.00000000", "credit": "0.00000000", "lineDescription": null, "partyName": null, "departmentName": null, "locationName": null, "sortOrder": 0 },
+        { "transactionNumber": "JE-0007", "accountName": "Bank Accounts", "accountNumber": "11000", "debit": "0.00000000", "credit": "500.00000000", "lineDescription": null, "partyName": null, "departmentName": null, "locationName": null, "sortOrder": 1 },
+        { "transactionNumber": "JE-0006", "accountName": "Uncategorized Expense", "accountNumber": "69999", "debit": "1500.00000000", "credit": "0.00000000", "lineDescription": "Hardware store", "partyName": null, "departmentName": null, "locationName": null, "sortOrder": 0 },
+        { "transactionNumber": "JE-0006", "accountName": "Bank Accounts", "accountNumber": "11000", "debit": "0.00000000", "credit": "1500.00000000", "lineDescription": null, "partyName": null, "departmentName": null, "locationName": null, "sortOrder": 1 },
+        { "transactionNumber": "JE-0004", "accountName": "Refunds & Discounts", "accountNumber": "49000", "debit": "10000.00000000", "credit": "0.00000000", "lineDescription": "Returned goods", "partyName": "Luntian Cafe", "departmentName": "Store", "locationName": "Cebu branch", "sortOrder": 0 },
+        { "transactionNumber": "JE-0004", "accountName": "Bank Accounts", "accountNumber": "11000", "debit": "0.00000000", "credit": "10000.00000000", "lineDescription": "Refund paid", "partyName": null, "departmentName": null, "locationName": null, "sortOrder": 1 },
+        { "transactionNumber": "JE-0003", "accountName": "Bank Accounts", "accountNumber": "11000", "debit": "80000.00000000", "credit": "0.00000000", "lineDescription": "Deposit", "partyName": null, "departmentName": null, "locationName": null, "sortOrder": 0 },
+        { "transactionNumber": "JE-0003", "accountName": "Sales Revenue", "accountNumber": "41000", "debit": "0.00000000", "credit": "80000.00000000", "lineDescription": "August sales", "partyName": "Bayani Foods", "departmentName": "Store", "locationName": "Cebu branch", "sortOrder": 1 },
+        { "transactionNumber": "JE-0002", "accountName": "Bank Accounts", "accountNumber": "11000", "debit": "100000.00000000", "credit": "0.00000000", "lineDescription": "Deposit", "partyName": null, "departmentName": null, "locationName": null, "sortOrder": 0 },
+        { "transactionNumber": "JE-0002", "accountName": "Sales Revenue", "accountNumber": "41000", "debit": "0.00000000", "credit": "100000.00000000", "lineDescription": "Mid-July sales", "partyName": "Luntian Cafe", "departmentName": "Store", "locationName": null, "sortOrder": 1 },
+        { "transactionNumber": "JE-0005", "accountName": "Rent", "accountNumber": "66100", "debit": "25000.00000000", "credit": "0.00000000", "lineDescription": "Shop rent, July", "partyName": "Lumen Property Leasing", "departmentName": null, "locationName": "Cebu branch", "sortOrder": 0 },
+        { "transactionNumber": "JE-0005", "accountName": "Bank Accounts", "accountNumber": "11000", "debit": "0.00000000", "credit": "25000.00000000", "lineDescription": null, "partyName": null, "departmentName": null, "locationName": null, "sortOrder": 1 },
+        { "transactionNumber": "JE-0001", "accountName": "Bank Accounts", "accountNumber": "11000", "debit": "120000.00000000", "credit": "0.00000000", "lineDescription": "Deposit", "partyName": null, "departmentName": null, "locationName": null, "sortOrder": 0 },
+        { "transactionNumber": "JE-0001", "accountName": "Sales Revenue", "accountNumber": "41000", "debit": "0.00000000", "credit": "120000.00000000", "lineDescription": "Early July sales", "partyName": "Bayani Foods", "departmentName": "Store", "locationName": "Cebu branch", "sortOrder": 1 }
+      ]
+    },
+    "bills": [
+      { "billNumber": "BILL-0012", "vendorName": "Lumen Property Leasing", "billDate": "2026-10-01", "dueDate": "2026-10-31", "status": "open", "totalAmount": "25000.00000000", "lines": [ { "accountName": "Rent", "accountNumber": "66100", "amount": "25000.00000000", "description": "October shop rent" } ] }
+    ],
+    "phOrgTaxProfile": [
+      { "registeredName": "Isla Demo Trading (synthetic)", "tinMasked": "XXX-XXX-X01", "rdoCode": "SYN", "taxpayerType": "sole_proprietor" }
+    ],
+    "phTaxCertificates": [
+      { "formCode": "2307", "payorName": "Bayani Foods", "periodStart": "2026-07-01", "periodEnd": "2026-09-30", "status": "received", "taxWithheld": "200.00000000" }
+    ]
+  }
+}

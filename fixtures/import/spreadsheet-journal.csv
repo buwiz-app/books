@@ -1,0 +1,13 @@
+Date,Account,Amount,Description
+2026-07-01,Cash in bank,120000.00,Cash sales
+2026-07-01,Sales,-120000.00,Cash sales
+2026-07-15,Cash in bank,100000.00,Cash sales
+2026-07-15,Sales,-100000.00,Cash sales
+2026-07-31,Shop rent,"18,000.00",July rent
+2026-07-31,Cash in bank,"-18,000.00",July rent
+2026-08-03,Supplies,1250.50,Paper and ink
+2026-08-03,Cash in bank,-1250.50,Paper and ink
+2026-08-20,Cash in bank,80000.00,Cash sales
+2026-08-20,Sales,-80000.00,Cash sales
+2026-09-10,Returns,10000.00,Customer return
+2026-09-10,Cash in bank,-10000.00,Customer return

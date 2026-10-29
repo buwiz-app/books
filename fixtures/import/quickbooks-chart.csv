@@ -1,0 +1,17 @@
+Account List
+Isla Demo Trading (synthetic)
+
+Account,Type,Detail Type,Description,Balance
+Checking,Bank,Checking,Synthetic operating account,
+Accounts Receivable (A/R),Accounts receivable (A/R),Accounts Receivable (A/R),,
+Undeposited Funds,Other Current Asset,Undeposited Funds,,
+Accounts Payable (A/P),Accounts payable (A/P),Accounts Payable (A/P),,
+Payroll Liabilities,Other Current Liability,Payroll Tax Payable,,
+Opening Balance Equity,Equity,Opening Balance Equity,,
+Owner's Equity,Equity,Owner's Equity,,
+Income,Income,Service/Fee Income,,
+Income:Services,Income,Service/Fee Income,,
+Sales Returns,Income,Discounts/Refunds Given,,
+Rent Expense,Expense,Rent or Lease of Buildings,,
+Bank Service Charges,Expense,Bank Charges,,
+Ask My Accountant,Expense,Other Miscellaneous Service Cost,,

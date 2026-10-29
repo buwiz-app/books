@@ -15,5 +15,9 @@ sha2 = "0.10"
 name = "vectors"
 path = "../../tests/vectors.rs"
 
+[[test]]
+name = "import_samples"
+path = "../../tests/import_samples.rs"
+
 [lints]
 workspace = true

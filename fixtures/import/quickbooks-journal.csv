@@ -1,0 +1,26 @@
+Journal
+Isla Demo Trading (synthetic)
+"July - September, 2026"
+
+Date,Transaction Type,Num,Name,Memo/Description,Account,Debit,Credit
+07/01/2026,Sales Receipt,1001,Bayani Foods,Early July sales,Checking,"120,000.00",
+,,,,Early July sales,Income:Services,,"120,000.00"
+,,,,,,"120,000.00","120,000.00"
+
+07/05/2026,Check,,Lumen Property Leasing,"Shop rent, July",Rent Expense,"25,000.00",
+,,,,,Checking,,"25,000.00"
+,,,,,,"25,000.00","25,000.00"
+
+07/15/2026,Sales Receipt,1002,Luntian Cafe,Mid-July sales,Checking,"100,000.00",
+,,,,Mid-July sales,Income:Services,,"100,000.00"
+,,,,,,"100,000.00","100,000.00"
+
+08/20/2026,Sales Receipt,1003,Bayani Foods,August sales,Checking,"80,000.00",
+,,,,August sales,Income:Services,,"80,000.00"
+,,,,,,"80,000.00","80,000.00"
+
+09/10/2026,Refund Receipt,1004,Luntian Cafe,Returned goods,Sales Returns,"10,000.00",
+,,,,Refund paid,Checking,,"10,000.00"
+,,,,,,"10,000.00","10,000.00"
+
+TOTAL,,,,,,"335,000.00","335,000.00"

@@ -23,7 +23,7 @@ pub struct Parsed {
 }
 
 /// One CSV record: commas, double quotes, `""` inside quotes.
-fn record(line: &str) -> Vec<String> {
+pub(crate) fn record(line: &str) -> Vec<String> {
     let mut out = Vec::new();
     let mut cell = String::new();
     let mut quoted = false;
