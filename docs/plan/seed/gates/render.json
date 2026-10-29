@@ -2,7 +2,7 @@
  "order": 8,
  "name": "Card renders in a test Rox app",
  "result": "pass",
- "value": "9 pages",
+ "value": "13 pages",
  "at": "2026-10-29",
- "note": "Today, Ledger, Unpaid, Reconcile, Reports, People, Accounts, Tags, Settings in Rox 016f63c"
+ "note": "+ Forms, Payroll, Certificates, Old books (Match your accounts) in Rox 016f63c"
 }

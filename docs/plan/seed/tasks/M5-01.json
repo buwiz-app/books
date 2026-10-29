@@ -3,7 +3,7 @@
  "order": 0,
  "title": "Import from web Buwiz Books export",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Depends on decision: first import",
+ "status": "done",
+ "evidence": "28e60d3: web Books export v1-4 parsed (b59af50); import_samples 4 tests, forms_bridge web sample",
  "updated": "2026-10-29"
 }

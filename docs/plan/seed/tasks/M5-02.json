@@ -3,7 +3,7 @@
  "order": 1,
  "title": "CSV import: accounts and transactions",
  "owner": "Claude",
- "status": "todo",
- "evidence": "",
+ "status": "done",
+ "evidence": "28e60d3: QuickBooks and spreadsheet CSV chart and journal; files sent in parts (256 KiB per call)",
  "updated": "2026-10-29"
 }

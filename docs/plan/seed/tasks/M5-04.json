@@ -3,7 +3,7 @@
  "order": 3,
  "title": "Holds: unmatched or mixed lines hold their boxes",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Plan 2.2",
+ "status": "done",
+ "evidence": "28e60d3: unmatched lines hold every box their side could feed; forms_bridge asserts held before confirm",
  "updated": "2026-10-29"
 }

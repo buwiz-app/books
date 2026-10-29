@@ -3,7 +3,7 @@
  "order": 7,
  "title": "Payroll page: pay runs, amounts only",
  "owner": "Claude",
- "status": "todo",
- "evidence": "No TINs, no 2316",
+ "status": "done",
+ "evidence": "28e60d3: pay runs as payroll_register entries; 1601-C 14/18/19/25 from a run; no TIN, no 2316; shot m6-05",
  "updated": "2026-10-29"
 }

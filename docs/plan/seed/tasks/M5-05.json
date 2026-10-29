@@ -3,7 +3,7 @@
  "order": 4,
  "title": "Opening totals with proof for a mid-year start",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Depends on decision: mid-year",
+ "status": "done",
+ "evidence": "28e60d3: opening totals with proof; 2551Q Q2 = 250,000.00 from an opening; no proof or overlap refused",
  "updated": "2026-10-29"
 }

@@ -3,7 +3,7 @@
  "order": 6,
  "title": "Certificates page: 2307s with status",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Only received counts",
+ "status": "done",
+ "evidence": "28e60d3: 2307 status changes; only received counts, 2306 never (txt15 3,000 then 5,000); shot m6-07",
  "updated": "2026-10-29"
 }

@@ -3,7 +3,7 @@
  "order": 5,
  "title": "Forms page",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Drawing: Forms page",
+ "status": "done",
+ "evidence": "28e60d3: Forms page over the ported bridge, lineage app-only, tax option read from BIR; shots m6-01..04",
  "updated": "2026-10-29"
 }

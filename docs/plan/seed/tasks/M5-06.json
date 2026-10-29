@@ -3,7 +3,7 @@
  "order": 5,
  "title": "Test: three sample charts give the same 2551Q box",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Plan 2.4",
+ "status": "done",
+ "evidence": "28e60d3: web, QuickBooks and spreadsheet samples each give txtATCAmt1 290,000.00 (forms_bridge); seen in test Rox (m5-05)",
  "updated": "2026-10-29"
 }

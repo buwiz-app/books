@@ -2,7 +2,7 @@
  "order": 6,
  "code": "M6",
  "title": "Bridge in Rust",
- "status": "later",
+ "status": "done",
  "goal": "Books totals and BIR boxes, with lineage.",
  "claim": "3.1, 3.3",
  "exit": "Rust reproduces all 17 PoC vectors byte for byte; Forms page shows the boxes."
