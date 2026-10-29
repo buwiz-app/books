@@ -3,6 +3,6 @@
  "name": "Rox conformance",
  "result": "pass",
  "value": "182 pass, 7 skipped",
- "at": "2026-10-29",
- "note": "runner from rox 9c106cc"
+ "at": "2026-10-30",
+ "note": "runner from rox 9c106cc (temporary worktree, removed); 5de7f90"
 }

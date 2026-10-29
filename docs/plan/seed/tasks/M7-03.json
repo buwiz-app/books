@@ -4,6 +4,6 @@
  "title": "Scratch BIR profile for tests",
  "owner": "BIR owner",
  "status": "blocked",
- "evidence": "No scratch BIR profile exists (B2). Asked the BIR and Rox owners (decision scratchbir). Live BIR database never opened.",
- "updated": "2026-10-29"
+ "evidence": "No scratch BIR profile yet (B2). 2026-10-30: at the owner's word, asked the rox session for a recipe (where BIR lives, BIR_DATABASE_PATH on a scratch file, test signing, draft-only tools). Live BIR database never opened.",
+ "updated": "2026-10-30"
 }

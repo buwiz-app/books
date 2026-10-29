@@ -4,6 +4,6 @@
  "title": "Trust entry for dev.goldcoders.books",
  "owner": "Rox owner",
  "status": "blocked",
- "evidence": "Waiting on the Rox owner: add dev.goldcoders.books (gc-2026-01) to server/src/v1/trust.json",
- "updated": "2026-10-29"
+ "evidence": "With the owner since 2026-10-30: tools/release/prepare.sh (c148d31) prints the entry {\"id\": \"dev.goldcoders.books\", \"publisher_key_id\": \"gc-2026-01\"} for server/src/v1/trust.json; gates green at 5de7f90",
+ "updated": "2026-10-30"
 }

@@ -4,6 +4,6 @@
  "title": "Sign with gc-2026-01 and install in your Rox",
  "owner": "You",
  "status": "blocked",
- "evidence": "Waiting on you: sign with gc-2026-01 (Keychain) and install in your Rox; I do not touch that key",
- "updated": "2026-10-29"
+ "evidence": "With you since 2026-10-30: run tools/release/prepare.sh, sign dist/release/manifest.json with --keychain gc-2026-01, install with BOOKS_V1_MANIFEST; then I check /books there. I never touch that key",
+ "updated": "2026-10-30"
 }
