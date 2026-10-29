@@ -93,14 +93,24 @@ for _ in $(seq 1 150); do
 done
 [ -s "$TMP/data/host-token" ] || { tail -20 "$TMP/broker.log" >&2; die "the broker did not start"; }
 
+# The owner's own Rox keeps Books' plugin key in the login Keychain once Books is installed there (M9-05), so the
+# check is that this run left that entry as it was (its attributes only, never the secret) and used the file keystore.
+keychain_stamp() {
+  security find-generic-password -s dev.goldcoders.rox.plugin-key -a "$PLUGIN_ID" 2>/dev/null | grep '"mdat"' || echo none
+}
+KEYCHAIN_BEFORE="$(keychain_stamp)"
+
 set +e
 node --disable-warning=ExperimentalWarning "$REPO/tests/host/books-host-test.mjs" "$WT" "$TMP" "$BIN" "$PORT"
 STATUS=$?
 set -e
-if security find-generic-password -s dev.goldcoders.rox.plugin-key -a "$PLUGIN_ID" >/dev/null 2>&1; then
-  echo "FAIL  a $PLUGIN_ID plugin key is in the login Keychain" >&2
+if [ "$(keychain_stamp)" != "$KEYCHAIN_BEFORE" ]; then
+  echo "FAIL  the run wrote a $PLUGIN_ID plugin key to the login Keychain" >&2
+  STATUS=1
+elif [ ! -s "$TMP/keys/$PLUGIN_ID.key" ]; then
+  echo "FAIL  the file keystore holds no $PLUGIN_ID plugin key" >&2
   STATUS=1
 else
-  echo "PASS  no $PLUGIN_ID plugin key in the login Keychain (file keystore used)"
+  echo "PASS  the plugin key is in the file keystore; the login Keychain is unchanged"
 fi
 exit "$STATUS"

@@ -466,11 +466,25 @@ owner), the signature with `gc-2026-01` from the login Keychain, and the install
 Run the conformance gate with a Rox runner that has the pacing and INV-04 fixes (`ROX_DIR` at `9c106cc` or later, PR
 #13): the runner at older Rox commits hits the broker's 20 calls a second in BRG-03 and fails with `rate_limited`.
 
+### Released (2026-10-30, at the owner's explicit word)
+
+The owner asked the agent to do the release steps the goal had kept for them (M9-04, M9-05):
+
+- **Signed**: `dist/release/manifest.signed.json` (Books 0.1.0, ed25519, `gc-2026-01` from the login Keychain after
+  the owner's Allow, the 7 apps fingerprinted). It verifies against the `gc-2026-01` public key the owner's Rox trusts.
+- **Trusted**: `{ "id": "dev.goldcoders.books", "publisher_key_id": "gc-2026-01" }` added to `approved_plugins` in
+  the trust file the owner's everyday Rox reads, the one bundled in `Grok Shell.app/Contents/Resources/server/` (an
+  ad-hoc-signed local build; the hand edit is the only change, backed up first). The rox session is asked to add
+  the same entry to `server/src/v1/trust.json`, so a rebuilt Grok Shell keeps it.
+- **Installed** in the running broker (port 8787) through its host routes, with no restart: inspect verifies the
+  signed manifest, install succeeds, `/books` opens the Books window (Today, title "Books"), and a signed
+  `books_status` call from home is answered. The installed command is `dist/release/books-mini-app mcp` (a copy of
+  the release binary, so a later `cargo build` cannot change what the signed manifest covers), with
+  `BOOKS_V1_MANIFEST` naming the signed file. The store is the default one (`~/Library/Application Support/dev.goldcoders.books`).
+
 ### Not done here, by design
 
 - A live sign-in: it needs the owner's Buwiz account and the cloud's address (U-20); the agent has neither.
-- M9-04, the trust entry for `dev.goldcoders.books` (Rox owner), and M9-05, signing with `gc-2026-01` and installing
-  in the owner's Rox (the owner). The release manifest already carries `publisher.key_id` `gc-2026-01`.
 
 ### Gates
 
@@ -479,4 +493,5 @@ Run the conformance gate with a Rox runner that has the pacing and INV-04 fixes 
 
 ## Not yet built
 
-M9-04 and M9-05 are the Rox owner's and the owner's: see the tracker.
+Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox
+owner), PR #16, PR #13 and the two nsh fixes (Rox owner).
