@@ -30,6 +30,7 @@ use books_store::certificates;
 use books_store::entries::{self, Filter};
 use books_store::imports;
 use books_store::months;
+use books_store::rusqlite::Connection;
 use serde_json::{Map, Value, json};
 
 use crate::service::{Origin, Refusal, text};
@@ -100,11 +101,15 @@ fn measures_of_type(ty: AccountType) -> BTreeSet<String> {
 
 /// A stable opaque id for the book's profile in the bridge input: the
 /// linked tax profile's id, else one derived from the store (never a TIN).
-fn profile_id(store: &Store, book: &Book) -> String {
+fn profile_id(c: &Connection, book: &Book) -> String {
     if let Some(id) = &book.cloud_tax_profile_id {
         return id.clone();
     }
-    let seed = store.meta("store_id").ok().flatten().unwrap_or_default();
+    let seed: String = c
+        .query_row("SELECT value FROM meta WHERE key = 'store_id'", [], |r| {
+            r.get(0)
+        })
+        .unwrap_or_default();
     let digest = crate::jcs::sha256_hex(format!("{seed}:{}", book.id).as_bytes());
     format!(
         "{}-{}-4{}-8{}-{}",
@@ -151,9 +156,8 @@ fn opening_shape(measure: &str) -> Option<(&'static str, bool, Facts)> {
 }
 
 /// The book as the bridge's input, and the lines it holds.
-pub fn fixture(store: &Store, book: &Book) -> Result<(Value, Vec<Held>), Refusal> {
-    let c = store.conn();
-    let pid = profile_id(store, book);
+pub fn fixture(c: &Connection, book: &Book) -> Result<(Value, Vec<Held>), Refusal> {
+    let pid = profile_id(c, book);
     let accounts: BTreeMap<i64, Account> = books::accounts(c, book.id)?
         .into_iter()
         .map(|a| (a.id, a))
@@ -369,14 +373,14 @@ const PARTS: [&str; 9] = [
 ];
 
 pub fn build(
-    store: &Store,
+    c: &Connection,
     book: &Book,
     form: FormCode,
     period: &str,
     ctx: &Value,
 ) -> Result<Built, Refusal> {
     let data = rules::shared().map_err(|e| Refusal::new("engine", e.to_string()))?;
-    let (fx, held_lines) = fixture(store, book)?;
+    let (fx, held_lines) = fixture(c, book)?;
     let vocab = &data.vocab;
     let input =
         normalize_fixture(&fx, vocab).map_err(|e| Refusal::new("bridge_input", e.to_string()))?;
@@ -684,7 +688,7 @@ pub fn form_view(
     origin: Origin,
 ) -> Result<Value, Refusal> {
     let data = rules::shared().map_err(|e| Refusal::new("engine", e.to_string()))?;
-    let built = build(store, book, form, period, ctx)?;
+    let built = build(store.conn(), book, form, period, ctx)?;
     let p = &built.proposal;
     let context = form_context_from_value(ctx).map_err(|e| Refusal::invalid(e.to_string()))?;
     let pp = Period::parse(period).ok_or_else(|| Refusal::invalid("No such period."))?;
@@ -848,6 +852,7 @@ pub fn form_view(
         "blocking": blocking,
         "warnings": warnings,
         "returns": returns,
+        "handoff": crate::handoff::state(store.conn(), book, form, period, &built)?,
         "owners": owners(form),
         "basis": p.accounting_basis,
         "fill_args": if p.status == "ready" { json!(p.fill_args) } else { json!({}) },
@@ -892,7 +897,14 @@ pub fn overview(store: &Store, book: Book, args: &Map<String, Value>) -> Result<
             json!({})
         };
         let v = form_view(store, &book, form, &period, &ctx, Origin::App)?;
-        cards.push(json!({ "form": v["form"], "code": v["code"], "title": v["title"], "period": period, "period_label": v["period_label"], "status": v["status"], "status_label": v["status_label"] }));
+        // a hand-off's state is the card's, once there is one
+        let (status, label) = match v["handoff"]["status"].as_str() {
+            Some("confirmed") => (json!("in_bir"), v["handoff"]["label"].clone()),
+            Some("stale") => (json!("stale"), v["handoff"]["label"].clone()),
+            Some("handed") => (json!("handed"), v["handoff"]["label"].clone()),
+            _ => (v["status"].clone(), v["status_label"].clone()),
+        };
+        cards.push(json!({ "form": v["form"], "code": v["code"], "title": v["title"], "period": period, "period_label": v["period_label"], "status": status, "status_label": label }));
     }
     Ok(json!({ "cards": cards }))
 }
@@ -906,7 +918,7 @@ pub fn lineage(store: &Store, book: Book, args: &Map<String, Value>) -> Result<V
         .cloned()
         .unwrap_or_else(|| json!({}));
     let key = crate::service::required(args, "key")?;
-    let built = build(store, &book, form, &period, &ctx)?;
+    let built = build(store.conn(), &book, form, &period, &ctx)?;
     let lin = built
         .proposal
         .lineage

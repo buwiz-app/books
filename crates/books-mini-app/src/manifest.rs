@@ -46,6 +46,10 @@ fn permissions(app: &apps::App) -> Value {
     }
     // Reconcile picks a CSV bank statement (M4); Import picks old books,
     // a web Books export or CSV files (M5)
+    // Forms attaches a hand-off to the chat (M7)
+    if app.source.contains("rox.attach(") {
+        p["attach"] = json!(["proposal"]);
+    }
     if app.source.contains("rox.pickFile(") {
         p["pick_file"] = json!({ "extensions": [".csv", ".json"], "max_bytes": 52_428_800 });
     }
@@ -114,6 +118,16 @@ pub fn unsigned(key_id: &str) -> Value {
         "publisher": { "id": PUBLISHER_ID, "key_id": key_id, "name": "Goldcoders" },
         "commands": [
             { "name": "books", "description": "Open your books", "resolve": tools::RESOLVE }
+        ],
+        // M7: a hand-off the owner attaches from the Forms page (rox.attach)
+        "scopes": [
+            {
+                "name": "proposal",
+                "description": "proposal of Books totals for a BIR form",
+                "resolve": tools::RESOLVE,
+                "attach": true,
+                "hint": "A Books proposal holds the input boxes of one BIR form. Read it with books_handoff_get. Open that form's BIR draft, fill the boxes once with source \"document\" (never \"user\"), read them back and compare each value exactly, then validate and save the draft. Never send or file. If Books says it is out of date, do not fill it."
+            }
         ],
         "apps": apps::APPS.iter().map(app_entry).collect::<Vec<_>>(),
     })

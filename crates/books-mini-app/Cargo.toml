@@ -40,6 +40,10 @@ name = "months_reconcile"
 path = "../../tests/months_reconcile.rs"
 
 [[test]]
+name = "handoff_slice_b"
+path = "../../tests/handoff_slice_b.rs"
+
+[[test]]
 name = "forms_bridge"
 path = "../../tests/forms_bridge.rs"
 

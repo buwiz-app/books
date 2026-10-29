@@ -12,8 +12,10 @@
 
 pub mod apps;
 pub mod b64;
+pub mod checks;
 pub mod demo;
 pub mod forms;
+pub mod handoff;
 pub mod jcs;
 pub mod jsonrpc;
 pub mod manifest;

@@ -195,6 +195,9 @@ fn title(store: &Store, kind: &str, id: i64) -> Option<String> {
         }),
         "sline" => Some("Statement line".into()),
         "cert" => Some("Certificate".into()),
+        "handoff" => books_store::handoffs::get(c, id)
+            .ok()?
+            .map(|h| crate::handoff::title(&h.form, &h.period_key)),
         _ => None,
     }
 }

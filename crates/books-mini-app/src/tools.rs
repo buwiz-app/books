@@ -14,7 +14,9 @@ use serde_json::{Map, Value, json};
 use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
-use crate::{forms, oldbooks, payroll, reconcile, records, reports, views, writes};
+use crate::{
+    checks, forms, handoff, oldbooks, payroll, reconcile, records, reports, views, writes,
+};
 
 pub const STATUS: &str = "books_status";
 pub const RESOLVE: &str = "books_resolve";
@@ -54,7 +56,7 @@ pub const MONTH_CLOSE: &str = "books_app_month_close";
 pub const MONTH_REOPEN: &str = "books_app_month_reopen";
 pub const DEFAULT_SET: &str = "books_app_default_set";
 pub const BOOK_UPDATE: &str = "books_app_book_update";
-pub const FILE_PART: &str = "books_app_upload_part";
+pub const UPLOAD_PART: &str = "books_app_upload_part";
 pub const IMPORT: &str = "books_app_import";
 pub const IMPORT_GET: &str = "books_import_get";
 pub const ACCOUNT_MATCH: &str = "books_app_account_match";
@@ -67,8 +69,12 @@ pub const FORM_LINEAGE: &str = "books_app_form_lineage";
 pub const CERTIFICATES: &str = "books_certificates_list";
 pub const CERTIFICATE_ADD: &str = "books_app_certificate_add";
 pub const CERTIFICATE_SET: &str = "books_app_certificate_set";
-pub const PAYROLL: &str = "books_wages_list";
-pub const PAYRUN_SAVE: &str = "books_app_wage_run_save";
+pub const WAGES: &str = "books_wages_list";
+pub const WAGE_RUN_SAVE: &str = "books_app_wage_run_save";
+pub const HANDOFF_CREATE: &str = "books_app_handoff_create";
+pub const HANDOFF_GET: &str = "books_handoff_get";
+pub const HANDOFF_CONFIRM: &str = "books_app_handoff_confirm";
+pub const CROSS_CHECKS: &str = "books_cross_checks";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -350,6 +356,24 @@ fn wage_run_schema() -> Value {
             "ee_sss": { "type": "string" }, "ee_philhealth": { "type": "string" }, "ee_pagibig": { "type": "string" },
             "er_sss": { "type": "string" }, "er_philhealth": { "type": "string" }, "er_pagibig": { "type": "string" },
             "tax_withheld": { "type": "string", "description": "As payroll recorded it; Books does not compute it." } } } } } })
+}
+
+fn handoff_ref() -> Value {
+    json!({ "type": "object", "required": ["handoff"], "properties": { "book": { "type": "string" }, "handoff": { "type": "string", "description": "A hand-off ticket (the proposal the owner attached)." }, "client_request_id": { "type": "string" } } })
+}
+
+fn handoff_create_schema() -> Value {
+    json!({ "type": "object", "required": ["client_request_id", "form"], "properties": {
+        "client_request_id": { "type": "string" }, "book": { "type": "string" },
+        "form": { "type": "string", "enum": ["2551Q", "1601C", "1701MS"] }, "period": { "type": "string" },
+        "form_context": { "type": "object" } } })
+}
+
+fn cross_checks_schema() -> Value {
+    json!({ "type": "object", "properties": {
+        "book": { "type": "string" }, "year": { "type": "string" },
+        "filed": { "type": "array", "description": "Values BIR shows as filed, read from the BIR app: [{form, period, key, value}].",
+            "items": { "type": "object", "properties": { "form": { "type": "string" }, "period": { "type": "string" }, "key": { "type": "string" }, "value": { "type": "string" } } } } } })
 }
 
 fn write_ref() -> Value {
@@ -657,7 +681,35 @@ pub const TOOLS: &[Tool] = &[
         description: "Rename the book, move its fiscal year, or change its basis (only from the start of a year with nothing posted).",
     },
     Tool {
-        name: FILE_PART,
+        name: HANDOFF_CREATE,
+        reach: Reach::App,
+        write: true,
+        schema: handoff_create_schema,
+        description: "Hand a ready form's input boxes to the BIR draft: records them for the owner to attach to the chat.",
+    },
+    Tool {
+        name: HANDOFF_GET,
+        reach: Reach::Everyone,
+        write: false,
+        schema: handoff_ref,
+        description: "The input boxes of an attached Books proposal, to fill once into the BIR draft with source document. Refuses one the books no longer match.",
+    },
+    Tool {
+        name: HANDOFF_CONFIRM,
+        reach: Reach::App,
+        write: true,
+        schema: handoff_ref,
+        description: "The owner's OK that the BIR draft shows the handed values.",
+    },
+    Tool {
+        name: CROSS_CHECKS,
+        reach: Reach::Everyone,
+        write: false,
+        schema: cross_checks_schema,
+        description: "Cross-checks: quarters against the year, P&L sales against gross sales, pay runs against 1601-C, 2307s against 1701-MS, and filed returns you read from BIR against Books.",
+    },
+    Tool {
+        name: UPLOAD_PART,
         reach: Reach::App,
         write: true,
         schema: upload_part_schema,
@@ -748,14 +800,14 @@ pub const TOOLS: &[Tool] = &[
         description: "A certificate's paper arrived, or was lost or disputed.",
     },
     Tool {
-        name: PAYROLL,
+        name: WAGES,
         reach: Reach::Everyone,
         write: false,
         schema: book_only,
         description: "Pay runs with gross pay and status. Amounts only.",
     },
     Tool {
-        name: PAYRUN_SAVE,
+        name: WAGE_RUN_SAVE,
         reach: Reach::App,
         write: true,
         schema: wage_run_schema,
@@ -957,7 +1009,7 @@ pub fn call(
         BOOK_UPDATE => write(books, name, origin, arguments, |tx| {
             reconcile::book_update(tx, arguments)
         }),
-        FILE_PART => answer(oldbooks::upload_part(&mut books.uploads, arguments)),
+        UPLOAD_PART => answer(oldbooks::upload_part(&mut books.uploads, arguments)),
         IMPORT => {
             let plan = match oldbooks::files(&mut books.uploads, arguments)
                 .and_then(|f| oldbooks::plan(arguments, f))
@@ -1002,11 +1054,23 @@ pub fn call(
         CERTIFICATE_SET => write(books, name, origin, arguments, |tx| {
             payroll::set_certificate(tx, arguments)
         }),
-        PAYROLL => read(books, arguments, |store, book, _| {
+        WAGES => read(books, arguments, |store, book, _| {
             payroll::list(store, book)
         }),
-        PAYRUN_SAVE => write(books, name, origin, arguments, |tx| {
+        WAGE_RUN_SAVE => write(books, name, origin, arguments, |tx| {
             payroll::save(tx, arguments)
+        }),
+        HANDOFF_CREATE => write(books, name, origin, arguments, |tx| {
+            handoff::create(tx, arguments)
+        }),
+        HANDOFF_GET => read(books, arguments, |store, book, args| {
+            handoff::get(store, book, args, origin)
+        }),
+        HANDOFF_CONFIRM => write(books, name, origin, arguments, |tx| {
+            handoff::confirm(tx, arguments)
+        }),
+        CROSS_CHECKS => read(books, arguments, |store, book, args| {
+            checks::cross_checks(store, book, args)
         }),
         _ => fail("internal", "Books has no handler for that tool."),
     })
@@ -1059,6 +1123,33 @@ fn status(books: &mut Books) -> Value {
     })())
 }
 
+/// The `proposal` scope: a hand-off ticket resolves to its token; no value
+/// lists the current hand-offs.
+fn proposal_scope(arguments: &Map<String, Value>, books: &mut Books) -> Value {
+    if !books.exists() {
+        return json!({ "result": "error", "message": "There is no book yet." });
+    }
+    let Ok(store) = books.store() else {
+        return json!({ "result": "error", "message": "Books could not open right now." });
+    };
+    let value = arguments.get("value").and_then(Value::as_str).unwrap_or("");
+    if !value.is_empty() {
+        return match handoff::ticket_title(store, value) {
+            Some(title) => json!({ "result": "token", "ticket": value, "title": title }),
+            None => json!({ "result": "error", "message": "That is not a Books hand-off." }),
+        };
+    }
+    match handoff::choices(store) {
+        Ok(c) if !c.is_empty() => json!({ "result": "choices", "choices": c }),
+        Ok(_) => {
+            json!({ "result": "error", "message": "No hand-off yet. Open Forms in Books and click Hand to BIR draft." })
+        }
+        Err(_) => {
+            json!({ "result": "error", "message": "Books could not list hand-offs right now." })
+        }
+    }
+}
+
 /// Spec 9.2: `{kind, name, value, complete, context}` in, one `result` out.
 fn resolve(arguments: &Map<String, Value>, books: &mut Books) -> Value {
     let kind = arguments.get("kind").and_then(Value::as_str).unwrap_or("");
@@ -1075,6 +1166,7 @@ fn resolve(arguments: &Map<String, Value>, books: &mut Books) -> Value {
             })),
             Err(_) => fail("internal", "Books could not open right now."),
         },
+        ("scope", "proposal") => ok(proposal_scope(arguments, books)),
         _ => ok(
             json!({ "result": "error", "message": "Books does not know that command or scope." }),
         ),

@@ -285,6 +285,58 @@ Certificates with what each counts toward, and its sheet.
 fmt clean; clippy clean; cargo test 109; PoC 177; conformance 92/92 (one of three runs hit the broker's 20 calls a
 second in BRG-03, which paces at exactly that rate; told the rox session); host test 17/17; privacy scan 0 findings.
 
+## M7 Hand-off to the BIR app
+
+### What exists
+
+- The v1 hand-off, model-mediated (docs/01 9.2, DD-11). Books never calls BIR:
+  1. **Hand to BIR draft** (`books_app_handoff_create`, app only) records the ready proposal's input boxes and their
+     lineage (schema 6, `handoff`); the app attaches it to the chat with `rox.attach("proposal", ticket)` after Rox's
+     consent dialog ("Attach BIR hand-off · 2551Q Q3 2026 to this chat?").
+  2. The assistant reads it with `books_handoff_get`: form, year, BIR period, `fill_args` and `source: "document"`, no
+     TIN, no Books id. The scope `proposal` (attachable) resolves a hand-off ticket to its token and lists the current
+     ones; its hint tells the assistant to fill once with source `document`, read back, validate, save, and never send.
+  3. **BIR shows these values** (`books_app_handoff_confirm`, app only) records `fill_args_sha256` and the time (B5).
+- **Out of date** (M7-05): a hand-off is current while the proposal's inputs hash is unchanged. Otherwise the card says
+  so and why ("September reopened", "Sep 20 · Isla Café: 1 line changed"); `books_handoff_get` and the confirm refuse
+  it; **Refresh** makes a new one and the old one is superseded.
+- **Cross-checks** (M7-06, `books_cross_checks`): the four quarters' net sales against the year's (2551Q against
+  1701-MS IV.19), sales by account against gross sales by facts, each month's pay runs against 1601-C items 14, 19 and
+  25, received income-tax 2307s against 1701-MS V.3, and filed returns the assistant reads from BIR (`filed`) against
+  Books now. Display only.
+- **The BIR tax option** (M7-01) is read by the assistant and passed as `form_context` (owner decision); no BIR
+  read-only tool is needed.
+
+### Blocked, and who must act
+
+- **No scratch BIR profile exists** (B2, D12). Slice B ran against a test harness instead
+  (`tests/handoff_slice_b.rs`: a fake BIR draft that takes a fill only with source `document` and only on 2551Q input
+  keys, and has no send). The live step, Q3 2551Q in a scratch BIR draft, waits for a documented scratch install from
+  the BIR and Rox owners. Asked in the tracker (decision "scratchbir"). The live BIR database was never opened.
+- **D3, the source label**: `document` is used; the Forms owner's confirmation is asked in the tracker ("d3label").
+
+### Exit (tests/handoff_slice_b.rs, passing)
+
+The demo book's Q3 2551Q is refused while the September return waits; after the OK, the hand-off carries
+`{"txtATCAmt1": "290000.00", "frm2551Qv2018:txt15": "0.00"}` for 2551Q 2026 period 3 with source `document`; the
+harness refuses source `user`, takes the fill once, and reads back the same strings; the confirm records a 64-hex
+digest and the card shows In BIR draft. Reopening September makes it out of date ("September reopened"); a late sale
+of 5,000.00 on Sep 20 makes it "Sep 20 · Isla Café: 1 line changed"; the old ticket is refused, the refreshed one
+carries 295000.00. On the demo the cross-checks agree (1,190,000.00; 1,200,000.00; September's pay run; 8,900.00), and
+a filed 2551Q Q1 of 295,000.00 shows as one difference.
+
+### Checked in the test Rox
+
+[docs/shots/m7/](shots/m7/): 2551Q Ready with the cross-checks; Rox's consent dialog on Hand to BIR draft; Handed over
+with "BIR shows these values"; In BIR draft, Handed over Oct 29, 2 boxes; then, after September was reopened and a late
+sale posted through signed host calls, Out of date with what changed and Refresh.
+
+### Gates
+
+fmt clean; clippy clean; cargo test 111; PoC 177; conformance 97 pass, 1 skipped (rox `9c106cc`: INV-04's attachable
+scope check skips while there are no hand-offs; BRG-03's pacer fixed in `3214010`); host test 17/17; privacy scan 0
+findings.
+
 ## Not yet built
 
-M7 to M9: see the tracker.
+M8 and M9: see the tracker.

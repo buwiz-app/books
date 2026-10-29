@@ -17,7 +17,19 @@ function formContext(form: string): Record<string, string> {
   return ctx;
 }
 
-const STATUS_TONE: Record<string, string> = { ready: "ok", ready_held: "ok", blocked: "draft" };
+const STATUS_TONE: Record<string, string> = { ready: "ok", ready_held: "ok", blocked: "draft", in_bir: "bir", confirmed: "bir", handed: "in", stale: "rev" };
+
+/** "Hand to BIR draft": record the boxes, then attach them to the chat for
+ * the assistant to fill into the BIR draft (source document). */
+function handTo(form: string, period: string) {
+  act("books_app_handoff_create", { form, period, form_context: formContext(form) })
+    .then((r: Any) => {
+      if (!rox.attach) return toast("Saved. This Rox cannot attach it to a chat.");
+      const attached = rox.attach("proposal", r.ticket);
+      return attached.then(() => toast("Attached to the chat · ask the assistant to fill the BIR draft")).catch((e: Any) => toast(errText(e)));
+    })
+    .catch(() => null);
+}
 
 function FormsPage(p: { go: (page: string, filter?: string) => void }) {
   const cards = resource(
@@ -215,12 +227,62 @@ function FormsPage(p: { go: (page: string, filter?: string) => void }) {
         </View>
         <Panel pad class="flex-row items-center gap-3">
           <Text class={`flex-1 text-[12.5px] ${C.mute}`}>{v()?.bir_note || ""}</Text>
-          <Btn label="Hand to BIR draft" tone="vi" disabled={true} onPress={() => null} />
+          <If when={!v()?.handoff || v()?.handoff?.status === "stale"}>
+            <Btn
+              label={v()?.handoff ? "Refresh" : "Hand to BIR draft"}
+              tone="vi"
+              disabled={!(v()?.status === "ready" || v()?.status === "ready_held")}
+              onPress={() => handTo(formNow(), v()?.period)}
+            />
+          </If>
         </Panel>
+        <If when={Boolean(v()?.handoff)}>
+          <Panel pad class="flex-row items-center gap-3">
+            <Pill tone={STATUS_TONE[v()?.handoff?.status] || "mute"} label={v()?.handoff?.label || ""} />
+            <Text class={`flex-1 text-[12.5px] ${C.mute}`}>{v()?.handoff?.detail || ""}</Text>
+            <If when={v()?.handoff?.status === "handed"}>
+              <Btn label="BIR shows these values" tone="go" onPress={() => act("books_app_handoff_confirm", { handoff: v()?.handoff?.ticket }).then(() => toast("Recorded: the BIR draft shows these values")).catch(() => null)} />
+            </If>
+          </Panel>
+        </If>
+        <CrossChecks />
         <If when={locked()}>
           <Text class={`text-[12px] ${C.dim}`}>{`${v()?.code || ""} can be handed over once ${v()?.period_label || "the period"} is closed. Until then it is a preview.`}</Text>
         </If>
       </If>
     </View>
+  );
+}
+
+/** Cross-checks: two ways to the same total, ok or how far apart. */
+function CrossChecks() {
+  const data = resource(
+    () => ({ v: ver() }),
+    () => rox.call("books_cross_checks", {}),
+  );
+  const d = () => data() as Any;
+  return (
+    <If when={Boolean(d())}>
+      <Panel>
+        <View class={`flex-row items-center justify-between px-3.5 pt-3 pb-2 border-b ${C.line}`}>
+          <Text class={`text-[13px] font-bold ${C.ink}`}>Cross-checks</Text>
+          <Text class={`text-[12px] ${C.dim}`}>{d()?.differences ? `${String(d()?.differences)} to look at` : "all agree"}</Text>
+        </View>
+        <Each of={d()?.rows || []} key={rowKey}>
+          {(r: Any) => (
+            <View class={`flex-row items-center gap-3 px-3.5 py-1.5 border-b ${C.line}`}>
+              <Text class={`flex-1 text-[12.5px] ${C.ink}`}>{r().check}</Text>
+              <Text class={`w-[260px] text-right text-[12px] font-mono ${C.mute}`} numberOfLines={1}>
+                {r().left_shown === r().right_shown ? r().left_shown : `${String(r().left_shown)} / ${String(r().right_shown)}`}
+              </Text>
+              <View class="w-[190px] items-end">
+                <Pill tone={r().ok ? "ok" : "rev"} label={r().note} />
+              </View>
+            </View>
+          )}
+        </Each>
+        <Text class={`text-[11.5px] px-3.5 py-2 ${C.dim}`}>Filed returns are compared when the assistant reads them from the BIR app.</Text>
+      </Panel>
+    </If>
   );
 }
