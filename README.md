@@ -77,6 +77,14 @@ tools/rox/conformance.sh   # needs a Rox checkout or worktree (ROX_DIR) with ser
 tools/rox/host-test.sh     # installs Books in a throwaway Rox broker (port 8810+, file keystore) and calls it
 ```
 
+Slice B live (not a commit gate: it needs a `bir-mini-app` debug build you make yourself, see the script's header)
+puts the demo's Q3 2551Q into a real BIR draft on a scratch BIR profile and checks that a later change marks it out
+of date:
+
+```sh
+BIR_MINI_APP_BIN=<target>/debug/bir-mini-app BIR_DIR=<bir worktree> tools/bir/slice-b-live.sh
+```
+
 The plugin keeps its store in `BOOKS_DATA_DIR` (default `~/Library/Application Support/dev.goldcoders.books`) with
 the key file `BOOKS_DB_KEY_FILE` (default `<dir>/books.key`, mode 0600). Tests and the host test always point both
 at a temp folder.

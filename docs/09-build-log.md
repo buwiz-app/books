@@ -309,10 +309,9 @@ second in BRG-03, which paces at exactly that rate; told the rox session); host 
 
 ### Blocked, and who must act
 
-- **No scratch BIR profile exists** (B2, D12). Slice B ran against a test harness instead
-  (`tests/handoff_slice_b.rs`: a fake BIR draft that takes a fill only with source `document` and only on 2551Q input
-  keys, and has no send). The live step, Q3 2551Q in a scratch BIR draft, waits for a documented scratch install from
-  the BIR and Rox owners. Asked in the tracker (decision "scratchbir"). The live BIR database was never opened.
+- ~~No scratch BIR profile exists~~ (B2, D12). **Answered 2026-10-30**: the rox session pointed at BIR's own broker
+  harness (`crates/bir-shell/v1-tests/broker.test.mjs` at BIR 42163e3e), and the live step now passes against it; see
+  "Live" below. The live BIR database was never opened.
 - **D3, the source label**: `document` is used; the Forms owner's confirmation is asked in the tracker ("d3label").
 
 ### Exit (tests/handoff_slice_b.rs, passing)
@@ -324,6 +323,27 @@ digest and the card shows In BIR draft. Reopening September makes it out of date
 of 5,000.00 on Sep 20 makes it "Sep 20 · Isla Café: 1 line changed"; the old ticket is refused, the refreshed one
 carries 295000.00. On the demo the cross-checks agree (1,190,000.00; 1,200,000.00; September's pay run; 8,900.00), and
 a filed 2551Q Q1 of 295,000.00 shows as one difference.
+
+### Live, on a scratch BIR profile (tools/bir/slice-b-live.sh, 29 of 29)
+
+Books and a real `bir-mini-app` (a debug build with `--features agent`, made in a detached BIR worktree at 42163e3e
+with its own target dir, under Rox's `scripts/wait-build`) run under Rox's own v1 broker modules in one process, from
+a detached Rox worktree at origin/main, with no port. BIR's HOME, `BIR_DATABASE_PATH` and a throwaway `BIR_DB_KEY`
+are in the run's temp dir (asserted before BIR starts), with `EBIR_TEST_ENV`, the debug build's auth bypass and
+dry-run filing, so BIR never reaches the owner's database or the Keychain. One throwaway key, books-test-01, signs
+both manifests (BIR's re-labelled from its release key id for the run), trusted by a trust file of this run only.
+BIR's own made-up test taxpayer is read from BIR's harness at run time, so no TIN is in this repo.
+
+The owner closes Q3, confirms the September return and hands Q3 2551Q over. The assistant reads `books_handoff_get`
+and, on Rox's agent path, opens BIR's 2551Q 2026 Q3 for the taxpayer's ticket, finds both fill keys among the boxes
+BIR lets it fill, fills `{"txtATCAmt1": "290000.00", "frm2551Qv2018:txt15": "0.00"}` once with source `document`
+(nothing refused, hidden or kept), reads both back to the centavo with source `document` (BIR shows 290,000.00) and
+saves the draft, which BIR then lists. The owner's confirm shows In BIR draft. Reopening September makes it out of
+date, the late sale makes it "Sep 20 · Isla Café: 1 line changed" and the old hand-off cannot be confirmed. The
+refresh carries 295000.00; the saved draft reopens with 290000.00, takes the new value and is In BIR draft again. No
+TIN is in any Books result or in BIR's answers to the assistant, and no TIN, plugin key or BIR database key is in
+the broker's logs. The assistant never calls BIR's validate-and-send. The run is headless; the cards' states were
+checked in the test Rox below.
 
 ### Checked in the test Rox
 
