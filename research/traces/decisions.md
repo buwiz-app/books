@@ -56,3 +56,15 @@ Source: the owner, in the buwiz-books session on 2026-10-29, answering the quest
 - **D4, accounting basis.** Owner: "default should always cash as that is the simplest". Every business profile has an accounting basis, cash or accrual; the default is cash. A cash-basis book posts income when money is received and expenses when they are paid. This replaces the earlier "entry date with a `period_override`" recommendation. Recorded in `docs/adr/0008-cash-basis-by-default.md` and `docs/07` as O7. Which basis a tax return needs stays with Forms (ADR 0007).
 - **D9, publisher key.** Owner: "then we can just use the same key, im the only one publishing on goldcoders". Books is signed at release with `gc-2026-01`. Recorded in `docs/07` as O8. Tests and stage A sign with a throwaway key under a test key id (`docs/06` section 13).
 - Observed while answering: the TypeScript Books repo has an `accrual`/`cash` report parameter (`src/db/validation/reports.ts:4`) that its report handlers parse and drop (`src/routes/api/-reports.ts:59, 68`). Recorded in `docs/00` section 4.
+
+## Update 2026-10-29: buwiz-server PR #4 merged; Books cloud contract confirmed
+
+Sources: `gh pr view 4 -R buwiz-corp/buwiz-server` (state MERGED, 2026-10-29 07:01:52 UTC, head `42190a5`), and the `buwiz-cloud` session's reply to this session.
+
+- B1, B11 and F-50 are closed.
+- The v1 contract for Books is sign-in plus `GET /api/tax-profiles`, nothing more. Nothing else for Books is on the cloud's v1 plan. Sync comes to the cloud session first.
+- Sign-in: client `buwiz-books`, scope `books`; `POST /oauth/device/code`, then poll `POST /oauth/token`. Refresh rotates, and reusing an old refresh token revokes the whole grant.
+- `books` tokens get 403 `insufficient_scope` on `/api/submissions` and the relay.
+- Ignore unknown profile fields; the cloud may add non-sensitive ones, such as `activated_at` (unix seconds). Stable: `id`, the `tin_masked` format, no `tin` for `books`, `permissions:["profile.view"]`. A withdrawn claim drops its profile from the list.
+- D18 (`tin_root` at rest) is still open and needs the owner's sign-off. The cloud recommends an HMAC of root and branch under a server key for the uniqueness indexes, plus AES-GCM encryption of the TIN. It does not affect Books.
+

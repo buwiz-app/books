@@ -14,7 +14,7 @@ These cannot be inferred from the file tree.
 2. Money is integer centavos (`i64`; `i128` for intermediates). JSON carries two-decimal text such as `"200000.00"`. No floats: no `f64`, no `parseFloat`, no JS `number` for money. Measures are exact sums and are never rounded.
 3. Never put a raw TIN, a BIR ticket value (`tkt_...`), a key or a memo into a link, log, title, Rox prop, store file, fixture or doc. Use synthetic values only.
 4. Books stores no TIN in any phase. The cloud link is the opaque tax-profile `id` only. Never join on a TIN.
-5. Read the cloud tax-profile response as `id`, `tin_masked`, `registered_name` and `permissions`. Refuse any response with a `tin` field or other TIN-shaped fields. Never rely on `filing.submit`. Sign in only as the `buwiz-books` client, whose `books` scope gets `profile.view` and no `tin` once buwiz-server PR #4 is merged (`docs/07` B1).
+5. Read the cloud tax-profile response as `id`, `tin_masked`, `registered_name` and `permissions`. Ignore other fields, but refuse any response with a `tin` field or other TIN-shaped fields. Never rely on `filing.submit`. Sign in only as the `buwiz-books` client, whose `books` scope gets `profile.view` and no `tin` since buwiz-server PR #4 merged (`docs/07` B1, closed).
 6. Values Books gives to BIR use fill source `document` (label pending owner decision D3). Never `user`, never `from_card`. BIR keeps provenance only for the session.
 7. Books never sends, submits, files, queues or pays. Never call `bir_form_send`. Never call a tool whose name contains submit, queue, pay, paid, file or send.
 8. The chart of accounts is not form meaning. Accounting facts live on the line attribute (income class, contra kind, person scope, payroll component, contribution side, certificate evidence); measures select lines by attribute; versioned mapping rules map measures to input keys. Never infer a form field from an account number or subtype. A line or profile never carries a compliance choice (tax type, ATC selection, treatment, regime, VAT status).
@@ -59,6 +59,7 @@ Do not edit these. Re-check HEAD and state before you rely on a citation. HEADs 
 
 - Use `bun` for any TypeScript in this repo (`poc/`). Do not use npm, npx or node here.
 - Rox's signing and conformance tools are Node. Run them from the Rox repo. Do not copy them here.
+- Rust (the plugin, `crates/`): `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` must pass clean. `tools/rox/conformance.sh` signs with a throwaway test key (`books-test-01`, never `gc-2026-01`) and runs Rox's `rox-plugin-test`; it needs the Rox checkout (`ROX_DIR`) with its `server/node_modules` present. No floats: the crate denies float lints.
 
 ## Do not
 

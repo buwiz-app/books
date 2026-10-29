@@ -1,6 +1,6 @@
 # ADR 0005: Stack for the Books repo and mini app
 
-Status: Proposed. The Rust choice follows the BIR pattern. The crates are not yet chosen or build-tested.
+Status: Proposed. The Rust choice follows the BIR pattern. P0 (2026-10-29) built `crates/books-mini-app` on Rust 1.99.1 with `serde_json`, `ed25519-dalek` 2, `sha2` 0.10 and `getrandom` 0.3. `books-core` and `books-store` are not created yet.
 Date: 2026-10-29. Writer: W3.
 
 ## Context
@@ -40,7 +40,7 @@ Date: 2026-10-29. Writer: W3.
 
 - Rust toolchain and `cargo` in CI. The repo's own `CLAUDE.md` (W1) sets the commands.
 - Node is needed only to run Rox's tools on a machine that has the Rox checkout (tier T4 in [06](../06-testing-plan.md#11-test-tiers)).
-- The `node:sqlite` requirement of the conformance runner sets a minimum Node version (UNKNOWN; check at P0).
+- The `node:sqlite` requirement of the conformance runner sets a minimum Node version. Node 24.11.1 works (P0, 2026-10-29); the minimum is not established.
 - Crate choices are open and need a spike (RK-7).
 
 ## Evidence

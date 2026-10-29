@@ -11,14 +11,14 @@ Date: 2026-10-29. Writer: W3.
   - `tin_claims.tin_root` is plaintext in buwiz-cloud `migrations/0001_init.sql:79` [V];
   - `device_filings.tin` is plaintext in buwiz-server `migrations/postgres/0014_device_filings.sql:15` `[identity §2.4]`;
   - the TypeScript Books repo stores the org TIN in plaintext at `src/db/schema/tax-reference.ts:168` `[identity §2.4]`.
-- At 9f5ee16 the cloud response carried `tin`, `tin_masked`, `registered_name` and `activated_at` in every profile `src/claims.rs:429-432` [V]. buwiz-server PR #4 (head `42190a5`, open, CI running on 2026-10-29) gives a `books`-scope token `{id, tin_masked, registered_name, activated_at, permissions:["profile.view"]}`, with no `tin`.
+- At 9f5ee16 the cloud response carried `tin`, `tin_masked`, `registered_name` and `activated_at` in every profile `src/claims.rs:429-432` [V]. buwiz-server PR #4 (head `42190a5`, merged 2026-10-29 07:01 UTC) gives a `books`-scope token `{id, tin_masked, registered_name, activated_at, permissions:["profile.view"]}`, with no `tin`.
 - No system records another system's ID today `[identity §3]`.
 
 ## Decision
 
 - Books stores the cloud `id` (`business.cloud_tax_profile_id`) and nothing else from the tax profile, except a masked display for the UI cache.
 - Books never stores a TIN, and never joins on TIN equality.
-- Books reads `id`, `tin_masked`, `registered_name` and `permissions` only. It refuses any response with a `tin` field or other TIN-shaped fields.
+- Books reads `id`, `tin_masked`, `registered_name` and `permissions` only. It ignores other fields, and refuses any response with a `tin` field or other TIN-shaped fields.
 - Books never relies on `filing.submit`.
 - Approval state comes from the list. An id that leaves the list makes the link inactive, and fills are refused. The list filters `status = 'approved'` `[src/claims.rs:418]` [V].
 
@@ -33,7 +33,7 @@ Date: 2026-10-29. Writer: W3.
 ## Consequences
 
 - Books depends on the cloud for the link. Offline use still works. A link is not verified offline, and the UI says so.
-- B1 must close before P5: confirm buwiz-server PR #4 is merged.
+- B1 closed on 2026-10-29: buwiz-server PR #4 is merged.
 - If an approval is withdrawn, the id leaves the list. Books must show the link as inactive and refuse fills `[claims.rs:418]` [V].
 - The link needs one `/me` call only if Books needs the user's id. The user id is optional and hashed (`[01 section 5.3]`).
 

@@ -1,6 +1,6 @@
 # Buwiz Books: research, design and proof of concept
 
-**Status: research and design only. Not production code. Not deployed.**
+**Status: design, a proof of concept, and the P0 plugin plumbing (Rust). Not production code. Not deployed.**
 
 This repo holds the evidence and the design for Buwiz Books, a bookkeeping mini app for the Rox host (plugin id `dev.goldcoders.books`). It also holds a small proof of concept of the accounting measures and the bridge that maps them onto Forms input boxes. It does not file, send, submit or pay anything, and it contains no tax-compliance logic.
 
@@ -58,7 +58,15 @@ Design decisions (proposed; the full list and open items are in `docs/07-decisio
 | `research/corrected/`, `research/spreadsheet-corrections.md` | Corrected workbook figures, labels and formulas. |
 | `poc/` | Bun and TypeScript proof of concept: ledger → measures → mapping → fill args with lineage. |
 | `fixtures/` | Synthetic fixtures for the PoC. Never real data. |
-| `tools/` | Helper scripts used in the research. |
+| `tools/` | Helper scripts used in the research. `tools/rox/conformance.sh` runs Rox's conformance tool against the plugin with a throwaway test key. |
+| `Cargo.toml`, `crates/books-mini-app/`, `apps/`, `tests/` | The Rust Rox plugin (P0): stdio MCP server, the protocol v1 reserved tools, the manifest generator and the `home` stub app. |
+
+## Run the plugin checks (P0)
+
+```sh
+cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
+tools/rox/conformance.sh   # needs the Rox checkout (ROX_DIR) with server/node_modules
+```
 
 ## Run the proof of concept
 
@@ -81,4 +89,4 @@ The proof of concept in `poc/` is TypeScript and runs on Bun. Use `bun`, not npm
 - Tests: the source repos' test suites were not run. Last PoC run (2026-10-29, after ADR 0008, `cd poc && bun test`): 177 pass, 0 fail, 2378 expect() calls, 11 files. The verbatim output is in `poc/README.md`.
 - Git: the first commit holds this research, design and PoC. Pushing to `github.com/buwiz-corp/buwiz-books` is the owner's call.
 - Owner decisions D4 (cash basis by default) and D9 (reuse `gc-2026-01`) are settled.
-- Open questions that block parts of the build: the BIR source label (D3), the 1701-MS election locks in Forms (B7), the tax review of the open mappings (2551Q row 1 net or gross sales, former D20), the owner of the 1601-C item 17 cap (DD-29), and the cloud repo of record (D13). Cloud blocker B1 closes when buwiz-server PR #4 merges. D5, D6, D7 and D14 are handed to Forms. See `docs/07-decisions-and-blockers.md`.
+- Open questions that block parts of the build: the BIR source label (D3), the 1701-MS election locks in Forms (B7), the tax review of the open mappings (2551Q row 1 net or gross sales, former D20), the owner of the 1601-C item 17 cap (DD-29), and the cloud repo of record (D13). Cloud blockers B1 and B11 are closed: buwiz-server PR #4 merged on 2026-10-29. D5, D6, D7 and D14 are handed to Forms. See `docs/07-decisions-and-blockers.md`.

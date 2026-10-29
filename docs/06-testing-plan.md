@@ -357,7 +357,9 @@ Nothing in this section has been run. The steps follow BIR's `broker.test.mjs` p
 - The conformance runner spawns the plugin the way the broker does, uses an in-memory database, a file keystore in a temp folder, and a trust file written for the run. It opens no port and does not touch the Keychain `[rox-plugin-test.mjs header]`.
 - `sign-manifest.mjs` takes `--key-file` (a 0600 file holding a base64url seed) or `--keychain`. It refuses a key file readable by others `[sign-manifest.mjs header]`.
 
-### 13.2 Steps (PROPOSED)
+### 13.2 Steps
+
+Steps 1 to 5 run in `tools/rox/conformance.sh`, which then runs `rox-plugin-test` (33 pass on 2026-10-29). In `--manifest`/`--key-file` mode the runner trusts the key under the manifest's own key id in memory and never reads `ROX_TRUST_FILE` (`rox-plugin-test.mjs:305-310`). The per-run trust file therefore matters only from step 6. Steps 6 to 11 follow the rox session's recipe of 2026-10-29: a rox worktree at `origin/main` `1205f7a`; ports 8810 and up (17441 and up for a test app's agent port); `ROX_KEYSTORE=file:<dir>`, so nothing reaches the login Keychain; its own `GROK_DATA_DIR`.
 
 1. Build the Books binary: `cargo build --release -p books-mini-app`.
 2. Make a temp folder with mode 0700: `<tmp>`.

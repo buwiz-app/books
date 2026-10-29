@@ -63,9 +63,10 @@ Parallel work that is safe now: P0 with the design of P5, and the P2 measures ca
 
 ### P0 Plumbing (S)
 
+- **Status (2026-10-29).** Built and merged (`bcb6431`). `cargo fmt`, `clippy -D warnings` and `cargo test` (20 tests) pass. `tools/rox/conformance.sh` passes Rox's `rox-plugin-test`: 33 pass, 0 fail, including RSV-01 (P7), RSV-03 (P4) and RSV-04 (P3). A1, in a real Rox host, is the second-instance test in [06 section 13](06-testing-plan.md#13-host-level-e2e-a-broker-with-a-per-run-trust-file).
 - **Goal.** A signed `books` plugin installs in the real Rox host and shows a neutral label.
 - **Deliverables.** Cargo workspace. `books-mini-app` with the reserved `rox.*` tools (`rox.provision`, `rox.session.open`, `rox.session.close`, `rox.ticket.resolve`, `rox.uninstall` `[rox §7]`). JCS manifest generator. `home` stub app. Signing run. Per-run trust file. Conformance run.
-- **Files (this repo).** `Cargo.toml`; `crates/books-mini-app/src/main.rs`, `jsonrpc.rs`, `reserved.rs`, `jcs.rs`, `manifest.rs`, `apps.rs`; `apps/home.tsx`; `tests/`. `CLAUDE.md` is written by W1.
+- **Files (this repo).** `Cargo.toml`; `crates/books-mini-app/src/main.rs`, `lib.rs`, `jsonrpc.rs`, `reserved.rs` (keys and session certificates), `jcs.rs` (float-free JCS), `manifest.rs`, `apps.rs`, `tools.rs`, `tickets.rs`, `b64.rs`; `apps/home.tsx`; `tests/` (`jcs_vectors.rs`, `manifest_shape.rs`, `stdio_roundtrip.rs`, vendored Rox JCS vectors); `tools/rox/conformance.sh`. The signed manifest is served through `BOOKS_V1_MANIFEST`. `CLAUDE.md` is written by W1.
 - **Files (Rox, release only).** `server/src/v1/trust.json:11-23` gets an `approved_plugins` entry. Packaging copies it at `server/tools/package-server.sh:54` `[V]`. Rox tests that cover trust and install get a `dev.goldcoders.books` case. The file that owns those tests is UNKNOWN; check `server/test/v1-plugins.test.mjs` and `v1-manifest.test.mjs` at release time. In stage A, nothing in Rox changes. The per-run file is set with `ROX_TRUST_FILE` (`server/src/v1/trust.mjs:14` [V]).
 - **Conformance.** `rox-plugin-test` checks P3, P4 and P7 mechanically. It runs the broker's real v1 code in process with a temp trust store and never touches the Keychain or the broker data folder `[rox §9; sdk docs/testing.md]`. Its usage takes `--command`, `--args`, `--sign-with` or `--manifest` with `--key-file`, and `--keygen` `[rox-plugin-test.mjs header]`. Books runs its own tests in Rust.
 - **Depends on.** Rox owner for release only. Publisher key: decided (O8). The release is signed with `gc-2026-01`; stage A and conformance runs use a throwaway test key under a test key id ([06 section 13](06-testing-plan.md)).
@@ -123,7 +124,7 @@ Parallel work that is safe now: P0 with the design of P5, and the P2 measures ca
 - **Depends on.** B1 (cloud contract drift). D13 (repo naming). D19 (sign-in optional).
 - **Exit.** Link survives restart. No TIN in any Books store or output. B1 closed (the live response matches the decisions contract).
 - **Risks.** RK-3 (live response has `tin`, `tin_masked`, `registered_name`, `activated_at`, and `filing.submit` for every client). Refresh token storage: Books process only, 0600 file or Keychain (decision Q-3 in 07). Approval withdrawn: id leaves the list, so the link must show inactive (`src/claims.rs:413` [V]).
-- **Contract drift, resolved.** The earlier decisions wording named the field `display`; the contract now names `tin_masked` (P-C3). The cloud-side fixes listed above are in buwiz-server PR #4 (head `42190a5`, open, CI running on 2026-10-29); check it is merged before starting P5.
+- **Contract drift, resolved.** The earlier decisions wording named the field `display`; the contract now names `tin_masked` (P-C3). The cloud-side fixes listed above are in buwiz-server PR #4 (head `42190a5`, merged 2026-10-29 07:01 UTC).
 
 ### P6 Payroll and 1601-C (L)
 
@@ -181,7 +182,7 @@ Two ID families appear in these docs:
 |---|---|---|---|---|---|
 | RK-1 | Installed BIR reads the live database by default. `BIR_DATABASE_PATH` is not in the installed env. | P3 | Rox owner, BIR owner | Second broker with its own data folder and trust file. Assert the scratch path before any call (B0). | `[rox §6]` env keys; `crates/bir-core/src/db/mod.rs:355-370` [V] |
 | RK-2 | A second broker on another port and data folder may not be a supported setup. | P3 | Rox owner | Test it on a clean path first. If unsupported, use BIR's own harness (D12 option 2). | UNKNOWN (no test run) |
-| RK-3 | Cloud contract drift. Live response has `tin`, `tin_masked`, `registered_name`, `activated_at`. Every client gets `filing.submit`. | P5 | Cloud session | Fix pending merge: buwiz-server PR #4 (head `42190a5`, open, CI running on 2026-10-29). | `src/claims.rs:27, 410-433` [V]; `README.md:74` [V] |
+| RK-3 | Cloud contract drift. Live response has `tin`, `tin_masked`, `registered_name`, `activated_at`. Every client gets `filing.submit`. | P5 | Cloud session | Fixed by buwiz-server PR #4 (head `42190a5`, merged 2026-10-29 07:01 UTC). | `src/claims.rs:27, 410-433` [V]; `README.md:74` [V] |
 | RK-4 | Refusal codes differ by path (`permission_denied` at Rox, `tool_error` from a plugin). | P1, P3 | Books | Treat all refusals the same. Test both (A12). | `bridge.rs:457` [V]; `sessions.mjs:300` [V] |
 | RK-5 | Tool names that do not start with `books_` or that collide are skipped silently. | P0 | Books | Check names against the installed set. Test the list. | `server/src/v1/agent.mjs:65` [V] |
 | RK-6 | Void semantics are unclear (original `posted` or `voided`). | P1 | Books, owner | Decide Q-1 before P1 exit. Test A4 under the chosen reading. | [01 section 7.6](01-architecture.md#76-void-rule-proposal-open-question-q-1) |
