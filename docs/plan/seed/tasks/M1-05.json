@@ -1,0 +1,9 @@
+{
+ "milestone": "M1",
+ "order": 4,
+ "title": "Philippines chart preset and 62 kinds with default facts",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "data/categories.v1.json",
+ "updated": "2026-10-29"
+}

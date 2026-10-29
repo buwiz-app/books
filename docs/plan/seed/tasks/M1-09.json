@@ -1,0 +1,9 @@
+{
+ "milestone": "M1",
+ "order": 8,
+ "title": "Check in a test Rox: post, void, see it in the Ledger",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "tools/rox/host-test.sh plus the app check",
+ "updated": "2026-10-29"
+}

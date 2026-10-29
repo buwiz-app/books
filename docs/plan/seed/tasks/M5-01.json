@@ -1,0 +1,9 @@
+{
+ "milestone": "M5",
+ "order": 0,
+ "title": "Import from web Buwiz Books export",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "Depends on decision: first import",
+ "updated": "2026-10-29"
+}

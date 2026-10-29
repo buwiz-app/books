@@ -1,0 +1,9 @@
+{
+ "order": 4,
+ "code": "M4",
+ "title": "Reconcile and months",
+ "status": "later",
+ "goal": "Match the bank. Close and reopen months.",
+ "claim": "1.1, 1.4",
+ "exit": "October matches the bank in the demo; a closed month refuses changes."
+}

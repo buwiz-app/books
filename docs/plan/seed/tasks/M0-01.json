@@ -1,0 +1,9 @@
+{
+ "milestone": "M0",
+ "order": 0,
+ "title": "Rust plugin with the protocol v1 reserved tools",
+ "owner": "Claude",
+ "status": "done",
+ "evidence": "bcb6431 · cargo test 20 pass",
+ "updated": "2026-10-29"
+}

@@ -1,0 +1,32 @@
+{
+ "entries": [
+  {
+   "at": "2026-10-29",
+   "text": "Plan and tracker published"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "Tax bridge drawing published (86f2ca8)"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "Pages, cards and guided chat drawn (fd659a2)"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "Books card renders in a test Rox app"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "Host test 10 / 10 in a throwaway broker (59596b8)"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "P0 merged (ffcf3fe); buwiz-server PR #4 merged"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "Cash basis by default; reuse gc-2026-01 (fa174d5)"
+  }
+ ]
+}

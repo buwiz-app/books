@@ -1,0 +1,9 @@
+{
+ "milestone": "M1",
+ "order": 2,
+ "title": "books-core: centavos, entries, balance, void by reversal",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "Port of poc/src/ledger.ts postLedger()",
+ "updated": "2026-10-29"
+}

@@ -1,0 +1,8 @@
+{
+ "order": 0,
+ "name": "cargo fmt --check",
+ "result": "pass",
+ "value": "clean",
+ "at": "2026-10-29",
+ "note": ""
+}

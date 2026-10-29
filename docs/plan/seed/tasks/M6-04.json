@@ -1,0 +1,9 @@
+{
+ "milestone": "M6",
+ "order": 3,
+ "title": "Proposals with lineage, inputs hash and stale check",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "poc/src/proposal.ts",
+ "updated": "2026-10-29"
+}

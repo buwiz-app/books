@@ -1,0 +1,9 @@
+{
+ "milestone": "M6",
+ "order": 4,
+ "title": "Rust = PoC: 17 of 17 vectors byte for byte",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "fixtures/vectors",
+ "updated": "2026-10-29"
+}

@@ -1,0 +1,9 @@
+{
+ "order": 0,
+ "code": "M0",
+ "title": "Plumbing in Rox",
+ "status": "done",
+ "goal": "Rox installs, signs and runs Books.",
+ "claim": "P0",
+ "exit": "Conformance 33/33, host test 10/10, card renders in a test Rox app."
+}

@@ -1,0 +1,9 @@
+{
+ "milestone": "M9",
+ "order": 1,
+ "title": "Sign-in (device code) and refresh rotation",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "Save the new refresh token first",
+ "updated": "2026-10-29"
+}

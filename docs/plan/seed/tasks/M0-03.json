@@ -1,0 +1,9 @@
+{
+ "milestone": "M0",
+ "order": 2,
+ "title": "Host test in a throwaway Rox broker",
+ "owner": "Claude",
+ "status": "done",
+ "evidence": "59596b8 · tools/rox/host-test.sh · 10 / 10",
+ "updated": "2026-10-29"
+}

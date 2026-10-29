@@ -1,0 +1,9 @@
+{
+ "milestone": "M6",
+ "order": 1,
+ "title": "Load rule sets r2 and crosswalk pins",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "data/rules, data/crosswalk",
+ "updated": "2026-10-29"
+}

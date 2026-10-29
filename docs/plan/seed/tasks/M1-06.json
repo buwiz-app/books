@@ -1,0 +1,9 @@
+{
+ "milestone": "M1",
+ "order": 5,
+ "title": "Tools: book, accounts, ledger list, entry draft, post, void",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "Post and void are app only",
+ "updated": "2026-10-29"
+}

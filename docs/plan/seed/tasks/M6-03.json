@@ -1,0 +1,9 @@
+{
+ "milestone": "M6",
+ "order": 2,
+ "title": "Port the bridge: BIR choices, held boxes, item 17, return OK",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "poc/src/bridge.ts",
+ "updated": "2026-10-29"
+}

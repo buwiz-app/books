@@ -1,0 +1,9 @@
+{
+ "milestone": "M8",
+ "order": 5,
+ "title": "Three routines; routines may draft only",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "Change jsonrpc.rs authorize()",
+ "updated": "2026-10-29"
+}

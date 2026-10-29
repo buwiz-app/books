@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Books Build Plan</title>
+<link rel="stylesheet" href="htmlplan.css">
+<script src="htmlplan.js" defer></script>
+<style data-mock-shared>
+  .rx { font: 13px/1.4 -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif; color: #f0f0f0; background: #161616; border: 1px solid #2c2c2c; border-radius: 12px; overflow: hidden; }
+  .rx .tb { display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: #0f0f0f; border-bottom: 1px solid #2c2c2c; font-weight: 600; }
+  .rx .tb span { color: #9b9b9b; font-weight: 400; }
+  .rx .two { display: grid; grid-template-columns: 130px 1fr; }
+  .rx .rail { background: #0f0f0f; border-right: 1px solid #2c2c2c; padding: 6px; display: flex; flex-direction: column; gap: 1px; font-size: 12px; }
+  .rx .rail div { padding: 4px 8px; border-radius: 6px; color: #a0a0a0; }
+  .rx .rail .on { background: #282828; color: #fff; font-weight: 600; }
+  .rx .rail .g { color: #6e6e6e; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; padding-top: 8px; }
+  .rx .row { display: grid; grid-template-columns: 52px 1fr auto auto; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid #2c2c2c; }
+  .rx .row small { color: #707070; display: block; font-size: 11px; }
+  .rx .n { font-family: ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .rx .g2 { color: #3fcf89; }
+  .rx .st { font-size: 10.5px; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
+  .rx .ok { background: #123423; color: #3fcf89; } .rx .dr { background: #3a2e12; color: #f3b64c; } .rx .rv { background: #3a1a17; color: #ff7d75; }
+  .rx .bi { background: #2a2142; color: #b79bff; } .rx .mu { background: #282828; color: #a0a0a0; } .rx .in { background: #15253f; color: #7fb2ff; }
+  .rx .card { margin: 10px; background: #1e1e1e; border: 1px solid #2d2d2d; border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .rx .ch { display: flex; gap: 8px; align-items: center; color: #a3a3a3; font-size: 12px; }
+  .rx .ch i { width: 16px; height: 16px; border-radius: 4px; background: #157a48; color: #fff; font-style: normal; font-size: 9px; font-weight: 800; display: grid; place-items: center; }
+  .rx .ch .sp { flex: 1; }
+  .rx .kv { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px solid #2d2d2d; }
+  .rx .kv:first-of-type { border-top: 0; }
+  .rx .kv code { color: #b79bff; font-size: 10.5px; }
+  .rx .btn { align-self: flex-start; padding: 5px 10px; border-radius: 7px; font-weight: 700; font-size: 12px; }
+  .rx .go { background: #3fcf89; color: #06281a; } .rx .vi { background: #b79bff; color: #1a1033; } .rx .gr { background: #282828; color: #f0f0f0; }
+  .rx .me { margin: 10px 10px 0 auto; width: max-content; max-width: 70%; background: #282828; padding: 7px 11px; border-radius: 12px 12px 3px 12px; }
+  .rx .mx { display: grid; grid-template-columns: 1fr 18px 1fr 18px 1fr; gap: 6px; align-items: center; padding: 12px; font-size: 12px; }
+  .rx .mx .c { display: flex; flex-direction: column; gap: 5px; }
+  .rx .mx .c div { padding: 6px 8px; border-radius: 8px; background: #1e1e1e; border: 1px solid #2d2d2d; }
+  .rx .mx .k { border-color: #a2650f; color: #f3b64c; }
+  .rx .mx .b { border-color: #6a46c9; color: #b79bff; }
+  .rx .mx .a { color: #707070; text-align: center; }
+  .rx select { background: #222; color: #eee; border: 1px solid #3a3a3a; border-radius: 6px; padding: 3px 6px; font: inherit; font-size: 12px; }
+</style>
+<body>
+
+<header>
+  <h1>Building the Books Mini App in Rox</h1>
+  <doc-changes new="56" changed="12"></doc-changes>
+  <details class="thread"><summary>Why · 5 requests</summary>
+    <doc-quote via="prompt" from="the user">using all this artifacts we have , craft a /plan we will track , monitor and build</doc-quote>
+    <doc-quote via="prompt" from="the user">We are building the Perfect Pair with Buwiz Forms … UI UX is important</doc-quote>
+    <doc-quote via="prompt" from="the user">not all people are the same chart of accounts when they already have previous record ... this is the most important part of integration.</doc-quote>
+    <doc-quote via="prompt" from="the user">the bonus part is the bridge to tax mapping of the form fields</doc-quote>
+    <doc-quote via="prompt" from="the user">default should always cash as that is the simplest</doc-quote>
+  </details>
+</header>
+
+<main>
+<doc-plan>
+
+<!-- ═════ 1 · the book ═════ -->
+<doc-claim id="book">
+  <p>The user keeps a book on 12 pages in <code>/books</code>.</p>
+  <doc-mock frame="none" w="480" caption="The Ledger page. The rail holds all 12 pages."><template>
+<div class="rx">
+  <div class="tb">Books <span>· Ledger</span></div>
+  <div class="two">
+    <div class="rail" data-ref="rail">
+      <div>Today</div><div class="g">Money</div><div class="on">Ledger</div><div>Unpaid</div><div>Reconcile</div>
+      <div class="g">Results</div><div>Reports</div><div>Forms</div>
+      <div class="g">Records</div><div>People</div><div>Accounts</div><div>Tags</div><div>Payroll</div><div>Certificates</div><div>Settings</div>
+    </div>
+    <div>
+      <div class="row"><span class="n">Oct 28</span><span>Sale · Bayani Foods<small>Invoice 0142</small></span><span class="st ok">Posted</span><span class="n g2">+80,000.00</span></div>
+      <div class="row" data-ref="draft"><span class="n">Oct 18</span><span>Office supplies<small>Photo of a receipt</small></span><span class="st dr">Draft</span><span class="n">−1,350.00</span></div>
+      <div class="row"><span class="n">Oct 15</span><span>Lumen Power Co.<small>From the bank statement</small></span><span class="st rv">To review</span><span class="n">−2,499.00</span></div>
+      <div class="row"><span class="n">Oct 05</span><span>Sale · Isla Café<small>Invoice 0136</small></span><span class="st ok">Posted</span><span class="n g2">+120,000.00</span></div>
+    </div>
+  </div>
+</div></template>
+    <doc-pin ref="rail" anchor="tr" title="12 pages">They replace 52 web pages.</doc-pin>
+    <doc-pin ref="draft" anchor="r" title="A draft">The assistant can draft. Only the user posts.</doc-pin>
+  </doc-mock>
+  <doc-note tone="info"><a href="https://claude.ai/artifact/GW3HkSAJw9wQcECqGXTTyp">Books Mini App</a> · M1 to M4</doc-note>
+
+  <doc-claim>
+    <p>A posted entry always balances. It never changes in place.</p>
+    <doc-machine name="entry" caption="A void adds a reversal entry. A closed month locks its entries.">
+<script type="text/plain">
+machine entry initial draft
+state draft          # Saved by the user or the assistant. Not in any total.
+state posted         # In the ledger, in reports and in every Books total.
+state locked         # Its month is closed. Nothing in it can change.
+state voided   final # A reversal entry cancels it. Both entries stay.
+state discarded final # The draft goes away.
+
+| draft     | posted | locked |
+| discarded | voided | .      |
+
+draft  -post->    posted    : Post
+draft  -discard-> discarded : Discard
+posted -void->    voided    : Void
+posted -close->   locked    : Close month
+locked -reopen->  posted    : Reopen + reason
+</script>
+      <div data-state="draft"><doc-mock frame="none" w="420"><template><div class="rx"><div class="row"><span class="n">Oct 18</span><span>Office supplies<small>Photo of a receipt</small></span><span class="st dr">Draft</span><span class="n">−1,350.00</span></div></div></template></doc-mock></div>
+      <div data-state="posted"><doc-mock frame="none" w="420"><template><div class="rx"><div class="row"><span class="n">Oct 18</span><span>Office supplies<small>Dr 67000 · Cr 11000</small></span><span class="st ok">Posted</span><span class="n">−1,350.00</span></div></div></template></doc-mock></div>
+      <div data-state="locked"><doc-mock frame="none" w="420"><template><div class="rx"><div class="row"><span class="n">Oct 18</span><span>Office supplies<small>October is closed</small></span><span class="st mu">Locked</span><span class="n">−1,350.00</span></div></div></template></doc-mock></div>
+      <div data-state="voided"><doc-mock frame="none" w="420"><template><div class="rx"><div class="row"><span class="n">Oct 18</span><span>Office supplies<small>Cancelled by entry 0187</small></span><span class="st mu">Voided</span><span class="n">−1,350.00</span></div><div class="row"><span class="n">Oct 19</span><span>Void of Office supplies<small>Reversal</small></span><span class="st ok">Posted</span><span class="n">+1,350.00</span></div></div></template></doc-mock></div>
+      <div data-state="discarded"><doc-mock frame="none" w="420"><template><div class="rx"><div class="row"><span class="n">—</span><span>No row<small>The draft is gone</small></span><span></span><span></span></div></div></template></doc-mock></div>
+    </doc-machine>
+    <doc-ask id="void">
+      <p>After a void, what status does the original entry show?</p>
+      <label><input type="radio" name="void" value="voided" checked> Voided <small>Totals skip it and its reversal</small></label>
+      <label><input type="radio" name="void" value="posted"> Posted <small>Totals add both. They sum to zero</small></label>
+    </doc-ask>
+    <doc-claim>
+      <p><b>ledger.ts:68</b> · postLedger(), the rule to port to Rust</p>
+      <doc-code src="poc/src/ledger.ts" lines="68-90" hl="80-86">
+        <doc-pin line="84" title="Debits must equal credits"></doc-pin>
+      </doc-code>
+    </doc-claim>
+  </doc-claim>
+
+  <doc-claim>
+    <p>Each page is a TSX app that calls <code>books_</code> tools only.</p>
+    <doc-calls title="One page, one path" caption="The Ledger page reads lines through one tool.">
+<script type="text/plain">
++ <**Ledger**/>                                  @ apps/ledger.tsx:1
++   rox.call("books_ledger_list", {account, month})
+~ call(name, arguments, tickets)                 @ crates/books-mini-app/src/tools.rs:53   -- one new arm per tool
++   **ledger::list**(store, account, month)      @ crates/books-core/src/ledger.rs:1
++     **store.lines**(book, account, window)     @ crates/books-store/src/lines.rs:1
+</script>
+    </doc-calls>
+    <doc-claim at="crates/books-mini-app/src/tools.rs:53">
+      <p><b>tools.rs:53</b> · call()</p>
+      <doc-code src="crates/books-mini-app/src/tools.rs" lines="53-60">
+        <doc-pin line="56" title="New tools go here"></doc-pin>
+      </doc-code>
+    </doc-claim>
+  </doc-claim>
+
+  <doc-claim>
+    <p>A cash book refuses receivable and payable lines.</p>
+    <doc-code src="poc/src/load.ts" lines="374-388" title="load.ts · the rule to port">
+      <doc-pin line="377" title="Accrual-only accounts"></doc-pin>
+    </doc-code>
+  </doc-claim>
+
+  <doc-claim>
+    <p>Twelve pages replace the 52 pages of web Books.</p>
+    <doc-tree caption="The comment names the web pages it replaces.">
+<script type="text/plain">
+apps/
+  ~ home.tsx           # Today · replaces / and /inbox
+  + ledger.tsx         # /transactions, /ai-proposals
+  + unpaid.tsx         # /bills, /invoices
+  + reconcile.tsx      # /reconciliations
+  + reports.tsx        # /financials
+  + forms.tsx          # new: the bridge
+  + people.tsx         # 7 /entities pages
+  + accounts.tsx       # /accounts
+  + tags.tsx           # /departments, /locations
+  + payroll.tsx        # /payroll, amounts only
+  + certificates.tsx   # /tax/certificates, the list
+  + settings.tsx       # /organization settings and mappings
+</script>
+    </doc-tree>
+  </doc-claim>
+</doc-claim>
+
+<!-- ═════ 2 · any chart ═════ -->
+<doc-claim id="charts">
+  <p>Any chart of accounts gives the same BIR boxes.</p>
+  <doc-mock frame="none" w="480" caption="Three charts. One kind per account. One box."><template>
+<div class="rx"><div class="mx">
+  <div class="c"><div>41000 Sales Revenue</div><div>Income:Services</div><div>Revenue (mixed)</div></div>
+  <span class="a">→</span>
+  <div class="c"><div class="k" data-ref="kind">business sale</div><div class="k">return</div><div class="k">other income</div></div>
+  <span class="a">→</span>
+  <div class="c"><div class="b">2551Q row 1<br><span class="n">290,000.00</span></div></div>
+</div></div></template>
+    <doc-pin ref="kind" anchor="tr" title="Map 1">The only part that differs per business.</doc-pin>
+  </doc-mock>
+  <doc-note tone="info"><a href="https://claude.ai/artifact/S9yyJguht6ioPf3ZJKsHFH">Books Tax Bridge</a> · M5</doc-note>
+
+  <doc-claim>
+    <p>The user matches each imported account to one kind.</p>
+    <doc-mock frame="none" w="460"><template>
+<div class="rx">
+  <div class="tb">Match your accounts <span>· 12 imported</span></div>
+  <div class="row" style="grid-template-columns:1fr auto auto"><span>Income:Services<small>96% sure</small></span><select><option>Business sales</option></select><span class="st ok">Confirmed</span></div>
+  <div class="row" style="grid-template-columns:1fr auto auto"><span>Payroll Liabilities<small>64% sure</small></span><select><option>Mixed: per line</option></select><span class="st dr">Per line</span></div>
+  <div class="row" style="grid-template-columns:1fr auto auto" data-ref="unk"><span>Ask My Accountant<small>30% sure</small></span><select><option>Not sure yet</option></select><span class="st rv">Holds boxes</span></div>
+</div></template>
+      <doc-pin ref="unk" anchor="r" title="No guess">Its lines hold every box they can feed.</doc-pin>
+    </doc-mock>
+    <doc-ask id="import">
+      <p>Which import do we build first?</p>
+      <label><input type="radio" name="import" value="web-csv" checked> Web Buwiz Books, then CSV <small>Same categories first, then any spreadsheet</small></label>
+      <label><input type="radio" name="import" value="csv"> CSV first <small>Spreadsheets and most tools</small></label>
+      <label><input type="radio" name="import" value="qbo"> QuickBooks first</label>
+      <label><input type="radio" name="import" value="xero"> Xero first</label>
+    </doc-ask>
+    <doc-claim>
+      <p><b>categories.v1.json:441</b> · the facts that a kind gives</p>
+      <doc-code src="data/categories.v1.json" lines="441-452">
+        <doc-pin line="442" title="Sales lines feed gross sales"></doc-pin>
+      </doc-code>
+    </doc-claim>
+  </doc-claim>
+
+  <doc-claim>
+    <p>An unmatched or mixed account holds the boxes it can feed.</p>
+    <doc-code title="kinds.rs · sketch" lang="rust">
+<script type="text/plain">
+pub enum AccountKind { Kind(KindId), Mixed, Unsure }
+
+/// A line counts toward a Books total only when its kind is known.
+pub fn line_kind(acct: &Account, line: &Line) -> Result<KindId, Hold> {
+    match acct.kind {
+        AccountKind::Kind(k) => Ok(line.kind_override.unwrap_or(k)),
+        AccountKind::Mixed => line.kind_override.ok_or(Hold::LineUnclassified(line.id)),
+        AccountKind::Unsure => Err(Hold::AccountUnmatched(acct.id)),
+    }
+}
+</script>
+      <doc-pin line="8" tone="warn" title="Mixed: each line needs a kind"></doc-pin>
+      <doc-pin line="9" tone="risk" title="Unsure: the bridge holds the boxes"></doc-pin>
+    </doc-code>
+  </doc-claim>
+
+  <doc-claim>
+    <p>A mid-year start uses opening totals with proof.</p>
+    <doc-schema id="opening" lang="sql" title="books-store · opening_total · sketch" caption="One row for each Books total and period before the first entry.">
+<script type="text/plain">
+CREATE TABLE opening_total (
+  book_id     TEXT NOT NULL,
+  measure     TEXT NOT NULL,             -- gross_sales, net_sales, gross_compensation …
+  period_from TEXT NOT NULL,             -- 2026-01-01
+  period_to   TEXT NOT NULL,             -- 2026-09-30
+  centavos    INTEGER NOT NULL,          -- exact, never a float
+  proof       TEXT NOT NULL,             -- filed 2551Q Q1 to Q3, bank statements
+  entered_at  TEXT NOT NULL,
+  PRIMARY KEY (book_id, measure, period_from)
+);
+</script>
+    </doc-schema>
+    <doc-ask id="midyear">
+      <p>How does a book that starts mid-year get January to now?</p>
+      <label><input type="radio" name="midyear" value="opening" checked> Opening totals with proof <small>Fast. Lineage shows them as opening figures</small></label>
+      <label><input type="radio" name="midyear" value="statements"> Bank statements only <small>Slower. Every line is real</small></label>
+      <label><input type="radio" name="midyear" value="both"> The user picks <small>Both paths to build</small></label>
+    </doc-ask>
+  </doc-claim>
+
+  <doc-claim>
+    <p>Three sample books give the same 2551Q box.</p>
+    <doc-mock frame="terminal" title="cargo test --test charts" w="460"><template><span class="dim">running 3 tests</span>
+books_chart  → net_sales Q3 = 290,000.00  <span class="g">ok</span>
+quickbooks   → net_sales Q3 = 290,000.00  <span class="g">ok</span>
+spreadsheet  → net_sales Q3 = 290,000.00  <span class="g">ok</span>
+<span class="g">✓</span> all three give <b>txtATCAmt1 = 290000.00</b></template></doc-mock>
+  </doc-claim>
+</doc-claim>
+
+<!-- ═════ 3 · the bridge ═════ -->
+<doc-claim id="bridge">
+  <p>One click hands checked totals to the BIR draft.</p>
+  <doc-machine name="handoff" caption="A change after the hand-off makes it stale. Refresh builds it again.">
+<script type="text/plain">
+machine handoff initial blocked
+state blocked  # A fact is missing: a return to confirm, an open month, a tax option.
+state ready    # Totals and boxes are set. Each value lists its lines.
+state handed   # The values are in the BIR draft. BIR computes the tax.
+state stale    # A line, a match, a rule or a BIR choice changed.
+
+| blocked | ready | handed |
+| .       | stale | .      |
+
+blocked -fix->      ready  : confirm
+ready   -handover-> handed : Hand to BIR
+ready   -change->   stale  : changed
+handed  -change->   stale  : changed
+stale   -refresh->  ready  : Refresh
+</script>
+    <div data-state="blocked"><doc-mock frame="none" w="420"><template><div class="rx"><div class="card"><div class="ch"><i>B</i><span>2551Q · Q3 2026</span><span class="sp"></span><span class="st rv">Needs your OK</span></div><div class="kv"><span>Sep 10 · Bayani Foods · return</span><span class="n">−10,000.00</span></div><span class="btn go">It is correct</span></div></div></template></doc-mock></div>
+    <div data-state="ready"><doc-mock frame="none" w="420"><template><div class="rx"><div class="card"><div class="ch"><i>B</i><span>2551Q · Q3 2026</span><span class="sp"></span><span class="st ok">Ready</span></div><div class="kv"><span>Net sales <code>txtATCAmt1</code></span><span class="n">290,000.00</span></div><div class="kv"><span>2307s <code>txt15</code></span><span class="n">3,000.00</span></div><span class="btn vi">Hand to BIR draft</span></div></div></template></doc-mock></div>
+    <div data-state="handed"><doc-mock frame="none" w="420"><template><div class="rx"><div class="card"><div class="ch"><i>B</i><span>2551Q · Q3 2026</span><span class="sp"></span><span class="st bi">In BIR draft</span></div><div class="kv"><span>Handed over Oct 29</span><span class="n">2 boxes</span></div></div></div></template></doc-mock></div>
+    <div data-state="stale"><doc-mock frame="none" w="420"><template><div class="rx"><div class="card"><div class="ch"><i>B</i><span>2551Q · Q3 2026</span><span class="sp"></span><span class="st rv">Out of date</span></div><div class="kv"><span>Sep 10 return changed</span><span class="n">1 line</span></div><span class="btn gr">Refresh</span></div></div></template></doc-mock></div>
+  </doc-machine>
+  <doc-note tone="info">Forms page in <a href="https://claude.ai/artifact/GW3HkSAJw9wQcECqGXTTyp">Books Mini App</a> · M6, M7</doc-note>
+
+  <doc-claim>
+    <p>Rust gives the same proposal as each PoC vector.</p>
+    <doc-calls title="One proposal" caption="Each new Rust function ports the TypeScript row under it.">
+<script type="text/plain">
++ **books_form_proposal**(form, period, context) @ crates/books-mini-app/src/tools.rs:53   -- new arm in call()
++   **measures::compute**(ledger, window)        @ crates/books-core/src/measures.rs:1
+    computeMeasure(id, ledger, window)           @ poc/src/measures.ts:128                 -- the source to port
++   **bridge::run**(ctx)                         @ crates/books-core/src/bridge.rs:1
+    runBridge(ctx)                               @ poc/src/bridge.ts:153
++   **proposal::build**(data, input, form)       @ crates/books-core/src/proposal.rs:1
+    buildProposal(data, input, form)             @ poc/src/proposal.ts:344
++ **vectors_match**()                            @ tests/vectors.rs:1                      -- 17 files in fixtures/vectors
+</script>
+    </doc-calls>
+    <doc-claim at="poc/src/bridge.ts:153">
+      <p><b>bridge.ts:153</b> · runBridge()</p>
+      <doc-code src="poc/src/bridge.ts" lines="153-165">
+        <doc-pin line="160" title="Open months block"></doc-pin>
+        <doc-pin line="164" title="The BIR choices are inputs only"></doc-pin>
+      </doc-code>
+    </doc-claim>
+  </doc-claim>
+
+  <doc-claim>
+    <p>The bridge reads the tax option from the BIR draft only.</p>
+    <doc-calls title="Read, then propose" caption="Books never writes a BIR choice.">
+<script type="text/plain">
+? bir draft read (tax option, deduction)          -- a BIR read-only tool; name to confirm with the BIR owner
++ **books_form_proposal**(form, period, context) @ crates/books-mini-app/src/tools.rs:53
++   **bridge::check_form_context**(rules, context) @ crates/books-core/src/bridge.rs:1
+    checkFormContext(rs, ctx)                    @ poc/src/bridge.ts:83                    -- missing or unknown values block
+</script>
+    </doc-calls>
+    <doc-ask id="ctxread">
+      <p>How does Books get the tax option from the BIR app?</p>
+      <label><input type="radio" name="ctxread" value="assistant" checked> The assistant reads it and passes it <small>No new BIR tool; works today</small></label>
+      <label><input type="radio" name="ctxread" value="routine"> A Books routine reads BIR <small>Needs a BIR read-only tool</small></label>
+      <label><input type="radio" name="ctxread" value="both"> Both <small>The routine also flags stale hand-offs</small></label>
+    </doc-ask>
+  </doc-claim>
+
+  <doc-claim>
+    <p>Each Books total picks lines by their facts, never by account.</p>
+    <doc-code src="poc/src/measures.ts" lines="79-90" title="measures.ts · Map 2, the source to port">
+      <doc-pin line="80" title="Gross sales: business-sale lines"></doc-pin>
+    </doc-code>
+  </doc-claim>
+
+  <doc-claim>
+    <p>Cross-checks compare quarters, the year and filed returns.</p>
+    <doc-mock frame="terminal" title="books cross-check 2026" w="470"><template>2551Q Q1+Q2+Q3+Q4 = 1701-MS IV.19   <span class="g">1,190,000.00 ok</span>
+P&amp;L sales       = gross sales       <span class="g">1,200,000.00 ok</span>
+pay run Sep     = 1601-C 14, 19, 25   <span class="g">ok</span>
+2307s received  = 1701-MS V.3       <span class="g">8,900.00 ok</span>
+filed 2551Q Q1  vs Books            <span class="r">295,000.00 / 300,000.00</span>
+<span class="y">!</span> 1 difference · open the lines</template></doc-mock>
+  </doc-claim>
+</doc-claim>
+
+<!-- ═════ 4 · the chat ═════ -->
+<doc-claim id="chat">
+  <p>Books answers and acts inside the Rox chat.</p>
+  <doc-mock frame="none" w="420"><template>
+<div class="rx">
+  <div class="me">How much cash do we have?</div>
+  <div class="card"><div class="ch"><i>B</i><span>Books · Cash now</span><span class="sp"></span><span class="st mu">Oct 29</span></div><span class="n" style="font-size:20px">₱ 417,350.00</span><div class="kv"><span>Bank •••• 4021</span><span class="n">412,350.00</span></div><div class="kv"><span>Cash box</span><span class="n">5,000.00</span></div></div>
+</div></template></doc-mock>
+  <doc-note tone="info"><a href="https://claude.ai/artifact/PmQm8iZicWFHDW9qjfqyVY">Books Inline Cards</a>, <a href="https://claude.ai/artifact/LxFB3a2FiSsQ3XDJemx8QW">Books Guided Chat</a> · M8</doc-note>
+
+  <doc-claim>
+    <p>An answer card shows amounts only when the user asks.</p>
+    <doc-mock frame="none" w="420" caption="A routine card shows counts. An answer shows amounts."><template>
+<div class="rx" style="display:grid;grid-template-columns:1fr 1fr">
+  <div class="card" data-ref="quiet"><div class="ch"><i>B</i><span>Weekly tidy-up</span></div><span>2 new bank lines</span><span>2 drafted · 0 posted</span></div>
+  <div class="card"><div class="ch"><i>B</i><span>Rent · 2026</span></div><span class="n">₱ 250,000.00</span><span>10 payments</span></div>
+</div></template>
+      <doc-pin ref="quiet" anchor="tl" title="Nobody asked">So no amounts.</doc-pin>
+    </doc-mock>
+    <doc-ask id="amounts">
+      <p>Can inline cards show amounts?</p>
+      <label><input type="radio" name="amounts" value="asked" checked> Only on cards the user asked for <small>Routine cards show counts</small></label>
+      <label><input type="radio" name="amounts" value="never"> Never <small>Counts and status only, as DD-22 said</small></label>
+      <label><input type="radio" name="amounts" value="always"> Always</label>
+    </doc-ask>
+  </doc-claim>
+
+  <doc-claim>
+    <p>The manifest adds <code>/books</code> choices, six scopes and three routines.</p>
+    <doc-code title="manifest.rs · sketch of the new parts" lang="json">
+<script type="text/plain">
+"commands": [{ "name": "books", "resolve": "books_resolve" }],
+"scopes": [
+  { "name": "person",  "resolve": "books_scope_resolve", "attach": true },
+  { "name": "account", "resolve": "books_scope_resolve", "attach": true },
+  { "name": "period",  "resolve": "books_scope_resolve", "attach": true },
+  { "name": "entry",   "resolve": "books_scope_resolve", "attach": true },
+  { "name": "form",    "resolve": "books_scope_resolve", "attach": true },
+  { "name": "tag",     "resolve": "books_scope_resolve", "attach": true }
+],
+"routines": [
+  { "id": "weekly-tidy-up", "every_s": 604800,
+    "writes": ["books_entry_draft"] },
+  { "id": "month-end", "every_s": 86400 },
+  { "id": "bir-pair-check", "every_s": 86400,
+    "reads": [{ "plugin": "dev.goldcoders.bir",
+                "tools": ["…"] }] }
+]
+</script>
+      <doc-pin line="12" tone="warn" title="Drafts only"></doc-pin>
+    </doc-code>
+    <doc-claim>
+      <p><b>manifest.rs:82</b> · the commands that exist today</p>
+      <doc-code src="crates/books-mini-app/src/manifest.rs" lines="78-86"></doc-code>
+    </doc-claim>
+  </doc-claim>
+
+  <doc-claim>
+    <p>A routine can draft entries. It cannot post them.</p>
+    <doc-code diff file="crates/books-mini-app/src/jsonrpc.rs" lang="rust" start="199">
+<script type="text/plain">
+         // P6: resolve and routine calls only read
+-        if matches!(caller.origin, Origin::Resolve | Origin::Routine) && !tools::read_only(name) {
++        let routine_may = caller.origin == Origin::Routine
++            && routines::declares_write(&caller.routine, name);
++        if matches!(caller.origin, Origin::Resolve | Origin::Routine)
++            && !tools::read_only(name)
++            && !routine_may
++        {
+             return Err(format!(
+                 "{name} changes Books data, so it does not run here"
+             ));
+         }
+</script>
+      <doc-pin line="202" title="Only writes the routine declares"></doc-pin>
+    </doc-code>
+  </doc-claim>
+
+  <doc-claim>
+    <p>Only the user posts, closes, reopens or hands over.</p>
+    <doc-code title="tools.rs · sketch" lang="rust">
+<script type="text/plain">
+/// These tools run only from a Books app, after a click by the user.
+pub const APP_ONLY: [&str; 6] = [
+    "books_entry_post",
+    "books_entry_void",
+    "books_month_close",
+    "books_month_reopen",
+    "books_return_confirm",
+    "books_form_handoff",
+];
+</script>
+      <doc-pin line="2" title="The assistant gets permission_denied"></doc-pin>
+    </doc-code>
+  </doc-claim>
+</doc-claim>
+
+<!-- ═════ 5 · release ═════ -->
+<doc-claim id="release">
+  <p>The user installs a signed Books in the Rox they use.</p>
+  <doc-mock frame="terminal" title="release" w="470"><template><span class="dim">></span> node sign-manifest.mjs manifest.json <b>--keychain gc-2026-01</b>
+<span class="g">✓</span> signed dev.goldcoders.books 1.0.0
+<span class="dim">></span> Connect apps · install
+<span class="g">✓</span> /books is ready · trust entry: dev.goldcoders.books</template></doc-mock>
+  <doc-note tone="info">M9. The gates in 5.1 run on every milestone.</doc-note>
+
+  <doc-claim>
+    <p>Each change passes eight gates before it merges.</p>
+    <doc-mock frame="terminal" title="tools/check-all.sh · sketch" w="470"><template><span class="g">✓</span> cargo fmt --check
+<span class="g">✓</span> cargo clippy -D warnings
+<span class="g">✓</span> cargo test                       20 pass
+<span class="g">✓</span> PoC bun test                    177 pass
+<span class="y">·</span> Rust = PoC vectors               0 / 17   <span class="dim">until M6</span>
+<span class="g">✓</span> Rox conformance                 33 / 33
+<span class="g">✓</span> Rox host test                   10 / 10
+<span class="g">✓</span> privacy scan                    0 findings</template></doc-mock>
+  </doc-claim>
+
+  <doc-claim>
+    <p>Sign-in links the book to a tax profile by id only.</p>
+    <doc-calls title="Cloud link" caption="Books keeps the id. It never keeps a TIN.">
+<script type="text/plain">
++ **books_cloud_signin**()                       @ crates/books-mini-app/src/cloud.rs:1
++   POST /oauth/device/code                      -- client buwiz-books, scope books
++   POST /oauth/token                            -- save the new refresh token first
++   GET /api/tax-profiles                        -- read id, tin_masked, registered_name
++   **link_profile**(book, id)                   @ crates/books-store/src/link.rs:1
+</script>
+    </doc-calls>
+  </doc-claim>
+
+  <doc-claim>
+    <p>The tracker page shows each milestone, task and gate.</p>
+    <doc-mock frame="none" w="420"><template>
+<div class="rx">
+  <div class="tb">Books Build Tracker <span>· live</span></div>
+  <div class="row" style="grid-template-columns:44px 1fr auto"><span class="n">M0</span><span>Plumbing in Rox</span><span class="st ok">Done</span></div>
+  <div class="row" style="grid-template-columns:44px 1fr auto"><span class="n">M1</span><span>Book and Ledger<small>0 of 9 tasks</small></span><span class="st in">Next</span></div>
+  <div class="row" style="grid-template-columns:44px 1fr auto"><span class="n">M6</span><span>Bridge in Rust<small>vectors 0 / 17</small></span><span class="st mu">Later</span></div>
+</div></template></doc-mock>
+  </doc-claim>
+
+  <doc-claim>
+    <p>The release adds one trust entry in Rox.</p>
+    <doc-code diff file="server/src/v1/trust.json" lang="json" start="19" title="rox · server/src/v1/trust.json">
+<script type="text/plain">
+     {
+       "id": "dev.goldcoders.fixture",
+       "publisher_key_id": "gc-2026-01"
+-    }
++    },
++    {
++      "id": "dev.goldcoders.books",
++      "publisher_key_id": "gc-2026-01"
++    }
+   ]
+</script>
+    </doc-code>
+  </doc-claim>
+</doc-claim>
+
+<!-- ═════ shared · not changing ═════ -->
+<doc-claim aux="shared">
+  <p>Shared: one encrypted store on this Mac.</p>
+  <doc-schema id="store" lang="sql" title="crates/books-store/migrations/0001_init.sql · sketch" caption="SQLCipher file. A 0600 key file. Money is integer centavos.">
+<script type="text/plain">
+CREATE TABLE book (
+  id TEXT PRIMARY KEY, label TEXT NOT NULL,
+  basis TEXT NOT NULL DEFAULT 'cash',    -- ADR 0008
+  tax_profile_id TEXT                    -- opaque id, never a TIN
+);
+CREATE TABLE account (
+  id TEXT PRIMARY KEY, book_id TEXT NOT NULL,
+  number TEXT, name TEXT NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'unsure',   -- Map 1
+  imported_from TEXT
+);
+CREATE TABLE entry (
+  id TEXT PRIMARY KEY, book_id TEXT NOT NULL,
+  date TEXT NOT NULL, status TEXT NOT NULL,
+  reverses TEXT, client_request_id TEXT UNIQUE
+);
+CREATE TABLE line (
+  id TEXT PRIMARY KEY, entry_id TEXT NOT NULL,
+  account_id TEXT NOT NULL,
+  debit INTEGER NOT NULL, credit INTEGER NOT NULL,  -- centavos
+  kind_override TEXT, facts TEXT NOT NULL           -- income_class …
+);
+CREATE TABLE period (
+  book_id TEXT, key TEXT, status TEXT NOT NULL,
+  PRIMARY KEY (book_id, key)
+);
+CREATE TABLE handoff (
+  id TEXT PRIMARY KEY, book_id TEXT, form TEXT, period TEXT,
+  rule_set TEXT, inputs_hash TEXT, fill_args TEXT, lineage TEXT
+);
+-- … 3 more: opening_total, certificate, pay_run
+</script>
+  </doc-schema>
+</doc-claim>
+
+<doc-claim aux="scope">
+  <p>Not changing: tax computation, TINs, web Books, cloud sync.</p>
+  <ul>
+    <li>The BIR app keeps rates, ATC, tax due, elections, deadlines and penalties.</li>
+    <li>Books stores no TIN in any milestone.</li>
+    <li>Web Buwiz Books stays as it is. Books reads its export only.</li>
+    <li>No cloud sync, no accountant access, no branches and no spouse lines in this plan.</li>
+    <li>2550Q, 1701Q, 1601-EQ, 1702-RT and 1604-C come after M9.</li>
+  </ul>
+</doc-claim>
+
+</doc-plan>
+</main>
+</body>
+</html>

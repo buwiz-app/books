@@ -1,0 +1,9 @@
+{
+ "milestone": "M0",
+ "order": 3,
+ "title": "Books card renders in a test Rox app",
+ "owner": "Claude",
+ "status": "done",
+ "evidence": "Rox 1205f7a build · /books opens the home card",
+ "updated": "2026-10-29"
+}

@@ -1,0 +1,9 @@
+{
+ "milestone": "M1",
+ "order": 0,
+ "title": "Spike: SQLCipher build and a strings test",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "Risk RK-7: a cipher mismatch could store plain text",
+ "updated": "2026-10-29"
+}

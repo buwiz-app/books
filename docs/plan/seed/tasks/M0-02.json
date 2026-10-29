@@ -1,0 +1,9 @@
+{
+ "milestone": "M0",
+ "order": 1,
+ "title": "Rox conformance check",
+ "owner": "Claude",
+ "status": "done",
+ "evidence": "tools/rox/conformance.sh · 33 / 33",
+ "updated": "2026-10-29"
+}

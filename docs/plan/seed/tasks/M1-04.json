@@ -1,0 +1,9 @@
+{
+ "milestone": "M1",
+ "order": 3,
+ "title": "books-core: the cash-basis rule",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "Port of poc/src/load.ts checkCashBasis()",
+ "updated": "2026-10-29"
+}

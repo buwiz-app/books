@@ -1,0 +1,8 @@
+{
+ "order": 7,
+ "name": "Privacy scan",
+ "result": "pass",
+ "value": "0 findings",
+ "at": "2026-10-29",
+ "note": "PoC scanner"
+}

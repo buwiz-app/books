@@ -1,0 +1,9 @@
+{
+ "milestone": "M7",
+ "order": 2,
+ "title": "Scratch BIR profile for tests",
+ "owner": "BIR owner",
+ "status": "todo",
+ "evidence": "B2: never the live BIR database",
+ "updated": "2026-10-29"
+}

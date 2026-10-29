@@ -1,0 +1,9 @@
+{
+ "milestone": "M9",
+ "order": 3,
+ "title": "Trust entry for dev.goldcoders.books",
+ "owner": "Rox owner",
+ "status": "todo",
+ "evidence": "server/src/v1/trust.json",
+ "updated": "2026-10-29"
+}

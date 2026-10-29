@@ -1,0 +1,9 @@
+{
+ "milestone": "M6",
+ "order": 0,
+ "title": "Port the 20 Books totals (Map 2)",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "poc/src/measures.ts",
+ "updated": "2026-10-29"
+}

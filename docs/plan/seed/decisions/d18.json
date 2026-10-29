@@ -1,0 +1,8 @@
+{
+ "order": 7,
+ "question": "How does buwiz-cloud store TINs at rest (D18)?",
+ "recommended": "HMAC for uniqueness plus AES-GCM",
+ "answer": "",
+ "status": "open",
+ "where": "Chat, buwiz-cloud"
+}

@@ -1,0 +1,9 @@
+{
+ "milestone": "M4",
+ "order": 0,
+ "title": "Bank statement import (CSV first)",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "PDF through the Rox document viewer later",
+ "updated": "2026-10-29"
+}

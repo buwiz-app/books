@@ -1,0 +1,9 @@
+{
+ "order": 3,
+ "code": "M3",
+ "title": "Reports",
+ "status": "later",
+ "goal": "P&L, balance sheet, cash flow, trial balance.",
+ "claim": "1.4",
+ "exit": "Report numbers match the golden book; a line opens its transactions."
+}

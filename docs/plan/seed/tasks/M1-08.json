@@ -1,0 +1,9 @@
+{
+ "milestone": "M1",
+ "order": 7,
+ "title": "Idempotency (client_request_id) and audit rows",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "A repeat returns the stored result",
+ "updated": "2026-10-29"
+}

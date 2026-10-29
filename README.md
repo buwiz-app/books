@@ -49,6 +49,7 @@ Design decisions (proposed; the full list and open items are in `docs/07-decisio
 | `docs/05-implementation-plan.md` | Phases P0 to P10 and their exit criteria. |
 | `docs/06-testing-plan.md` | Golden, contract, privacy-scanner and Rox conformance tests. |
 | `docs/07-decisions-and-blockers.md` | Owner decisions, blockers, discrepancies, design corrections, and the items handed to Forms (section 2.2). |
+| `docs/plan/` | The build plan (`build-plan.html`, packed copy and published link inside), the live tracker page (`tracker.html`) and its starting data (`seed/`). Milestones M0 to M9 replace the P0 to P10 phases of `docs/05`. |
 | `docs/08-mini-app-pages-and-feature-log.md` | The 12 mini-app pages, inline cards and guided chat as drawn for review, and the log of web features that do not come along (Rox has them, BIR owns them, later, dropped). Sources of the drawings: `research/drawings/`. |
 | `docs/adr/` | Architecture decision records. ADR 0007 sets the Books / bridge / Forms boundary. |
 | `data/` | The measures catalogue (`measures.v1.json`), the mapping rule sets (`rules/`, r2: measure to input key), the category and line-attribute catalogues, the coverage matrix (which measures feed which input boxes) and the crosswalk files. Each crosswalk file records its source commit and digest. No rates or compliance rules. |

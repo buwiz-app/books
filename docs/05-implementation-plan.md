@@ -1,5 +1,7 @@
 # 05 Implementation plan: phases P0 to P10
 
+> **Superseded on 2026-10-29 by the build plan** (`docs/plan/build-plan.html`, published at https://claude.ai/artifact/N7kq2HURtRsAx9wp1PPkBV) and its live tracker (`docs/plan/tracker.html`, https://claude.ai/artifact/GQbvMuPRQ94cyx4Cshw7RK; starting data in `docs/plan/seed/`). The new order puts the screens first (M1 to M5) and the BIR hand-off later (M6, M7). This file stays as the record of the earlier P0 to P10 plan; its risk register (section 5) still applies.
+
 Status: plan, dated 2026-10-29. Writer: W3.
 Read first: [01 architecture](01-architecture.md), [04 first slice](04-first-slice.md). Decisions and blockers: [07](07-decisions-and-blockers.md). Tests: [06](06-testing-plan.md).
 

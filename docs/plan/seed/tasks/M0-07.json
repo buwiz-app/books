@@ -1,0 +1,9 @@
+{
+ "milestone": "M0",
+ "order": 6,
+ "title": "Tear down the test Rox app, broker, worktrees and 7 GB build",
+ "owner": "Claude",
+ "status": "todo",
+ "evidence": "Waiting for your OK; then tell rox",
+ "updated": "2026-10-29"
+}
