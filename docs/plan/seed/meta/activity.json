@@ -1,6 +1,10 @@
 {
  "entries": [
   {
+   "at": "2026-10-30",
+   "text": "M9 release with the owner (trust entry, gc-2026-01 signature, install; tools/release/prepare.sh ready); asked the rox session for a scratch BIR recipe for M7-03/04"
+  },
+  {
    "at": "2026-10-29",
    "text": "M8 closed: the person card checked in a test Rox on workspace 3 (the assistant called books_people_list, then books_show); test Rox torn down, rox session told"
   },
