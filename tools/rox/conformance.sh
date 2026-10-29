@@ -72,8 +72,14 @@ export ROX_TRUST_FILE="$TMP/trust.json"
 
 # 5. generate under the test key id, sign with the test key file
 "$BIN" manifest --key-id "$KEY_ID" >"$TMP/manifest.json"
+# every app the manifest lists, as the binary serves it
+APP_ARGS=()
+for id in $(node -e 'for (const a of JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).apps) console.log(a.id)' "$TMP/manifest.json"); do
+  "$BIN" app-source "$id" >"$TMP/app-$id.tsx"
+  APP_ARGS+=(--app "$id=$TMP/app-$id.tsx")
+done
 node "$SIGNER" "$TMP/manifest.json" --key-file "$TMP/test.key" \
-  --app "home=$REPO/apps/home.tsx" --out "$TMP/signed.json"
+  "${APP_ARGS[@]}" --out "$TMP/signed.json"
 
 # the runner: spawn the binary the way the broker does, serving the signed
 # manifest through BOOKS_V1_MANIFEST; print its result verbatim
@@ -81,7 +87,8 @@ set +e
 node --disable-warning=ExperimentalWarning "$RUNNER" \
   --command "$BIN" --args mcp \
   --manifest "$TMP/signed.json" --key-file "$TMP/test.key" \
-  --manifest-env BOOKS_V1_MANIFEST "$@"
+  --manifest-env BOOKS_V1_MANIFEST \
+  --env "BOOKS_DATA_DIR=$TMP/books-data" "$@"
 STATUS=$?
 set -e
 exit "$STATUS"

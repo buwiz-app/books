@@ -15,7 +15,7 @@ use serde_json::{Map, Value, json};
 
 use crate::jsonrpc::{fail, ok};
 use crate::manifest::{self, Source};
-use crate::tickets::Tickets;
+use crate::service::Books;
 use crate::{b64, jcs};
 
 /// The reserved tools this plugin implements.
@@ -153,7 +153,7 @@ impl Host {
     pub fn call(
         &mut self,
         source: &Source,
-        tickets: &mut Tickets,
+        books: &mut Books,
         name: &str,
         arguments: &Map<String, Value>,
         now_ms: i64,
@@ -178,13 +178,13 @@ impl Host {
                     .get("ticket")
                     .and_then(Value::as_str)
                     .unwrap_or("");
-                match tickets.subject(ticket) {
-                    Some(subject) => ok(json!({ "valid": true, "title": subject.title() })),
+                match books.ticket_title(ticket) {
+                    Some(title) => ok(json!({ "valid": true, "title": title })),
                     None => ok(json!({ "valid": false })),
                 }
             }
             _ => {
-                tickets.clear();
+                books.forget_tickets();
                 self.sessions.clear();
                 ok(json!({ "ok": true }))
             }

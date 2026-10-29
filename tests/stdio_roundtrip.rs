@@ -10,6 +10,7 @@ use ed25519_dalek::{Signature, SigningKey, Verifier as _};
 use serde_json::{Value, json};
 
 struct Plugin {
+    _data: books_store::TempDir,
     child: Child,
     stdin: ChildStdin,
     stdout: BufReader<ChildStdout>,
@@ -18,8 +19,11 @@ struct Plugin {
 
 impl Plugin {
     fn spawn() -> Self {
+        let data = books_store::TempDir::new("stdio");
         let mut child = Command::new(env!("CARGO_BIN_EXE_books-mini-app"))
             .env_remove(manifest::MANIFEST_ENV)
+            .env(books_store::DATA_DIR_ENV, data.0.join("store"))
+            .env_remove(books_store::KEY_FILE_ENV)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -28,6 +32,7 @@ impl Plugin {
         let stdin = child.stdin.take().unwrap();
         let stdout = BufReader::new(child.stdout.take().unwrap());
         Self {
+            _data: data,
             child,
             stdin,
             stdout,
@@ -103,17 +108,16 @@ fn initialize_list_provision_open_and_call() {
         .map(|t| t["name"].as_str().unwrap())
         .collect();
     assert_eq!(
-        names,
+        names[..5],
         [
             "rox.provision",
             "rox.session.open",
             "rox.session.close",
             "rox.ticket.resolve",
             "rox.uninstall",
-            "books_status",
-            "books_resolve"
         ]
     );
+    assert_eq!(names[5..], books_mini_app::tools::names()[..]);
 
     // resources are readable before provision; tools are not (P7)
     let read = plugin.request("resources/read", json!({ "uri": "rox://manifest" }));
@@ -176,7 +180,13 @@ fn initialize_list_provision_open_and_call() {
     );
 
     // rox.session.open: the certificate is the request, signed over JCS
-    let home = manifest::unsigned(manifest::RELEASE_KEY_ID)["apps"][0].clone();
+    let home = manifest::unsigned(manifest::RELEASE_KEY_ID)["apps"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|a| a["id"] == "home")
+        .unwrap()
+        .clone();
     let perms = manifest::permissions_digest(&home).unwrap();
     let open_id = b64::encode(&[1u8; 16]);
     let not_after = now_ms() + 3_600_000;
@@ -237,9 +247,9 @@ fn initialize_list_provision_open_and_call() {
     );
     let data = &resolved["result"]["structuredContent"];
     assert_eq!(data["result"], "open");
-    assert_eq!(data["app"], "home");
+    assert_eq!(data["app"], "books");
     let ticket = data["ticket"].as_str().unwrap().to_string();
-    assert!(books_mini_app::tickets::is_ticket(&ticket));
+    assert!(books_store::plumbing::is_ticket(&ticket));
     let title = plugin.call("rox.ticket.resolve", json!({ "ticket": ticket }));
     assert_eq!(
         title["result"]["structuredContent"],

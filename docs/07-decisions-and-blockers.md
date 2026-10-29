@@ -102,7 +102,7 @@ Each entry gives the options, the recommendation, and what it blocks. The defaul
 | D13 | Repo naming: buwiz-cloud local, buwiz-server remote | Keep / rename | Keep. Settle before first release. | Release |
 | D14 | Overdue Q3 2026 2551Q (due 2026-10-25) | — | — | **Handed to Forms (ADR-0007).** Due dates, overdue status and penalties are Forms'. Section 2.2. |
 | D15 | Accountant access | (a) pass-based; (b) owner-signed delegation | (a). Timeline P9. | P9 |
-| D16 | Assistant may create drafts (`books_entry_draft`) | Yes / no | Yes. Posting is app-only. | P1 |
+| D16 | Assistant may create drafts (`books_entry_draft`) | Yes / no | Yes. Posting is app-only. Applied in M1. | P1 |
 | D17 | Node tooling in a Rust repo | Exempt Rox tools / no | Exempt Rox signing and conformance tools | P0 |
 | D18 | Cloud contract drift (B1) | Per-field decisions | Mostly settled by the cloud session in buwiz-server PR #4 (head `42190a5`, merged 2026-10-29 07:01 UTC): `tin` dropped for `books` and `mcp` tokens; `tin_masked`, `registered_name`, `activated_at` kept; `buwiz-books` gets scope `books` with `profile.view` only. Still open: hash or encrypt stored TINs (`tin_claims.tin_root`, plain 9 digits today; the indexes `tin_claims_one_owner` and `tin_claims_one_open` depend on it). The cloud session recommends an HMAC of root and branch under a server key for the uniqueness indexes, plus the TIN encrypted with AES-GCM like claim documents. A plain hash cannot work, because the BIR app (`app` scope) and reviewers need the full TIN. **Needs the owner's sign-off. It changes nothing Books sees.** (cloud session reply, 2026-10-29) | Cloud only; does not block Books |
 | D19 | Sign-in at first run | Required / optional | Optional. Books works offline. | P5 |
@@ -111,16 +111,18 @@ Each entry gives the options, the recommendation, and what it blocks. The defaul
 | D22 | Canonical tree for any BIR or Forms change | Live `reverse-engineer-ebir-forms/bir`; buwiz-forms pin; buwiz-oss | Live tree for code. Buwiz-forms pin for schema data only. | P3, P8 |
 | D23 | Payor TIN for 2307 matching | Plaintext / HMAC plus masked display | HMAC for matching, masked display only | P4 |
 
+Owner answers given with the build goal (2026-10-29), recorded in [09](09-build-log.md#owner-decisions-applied-given-with-the-build-goal-2026-10-29): void marks the original Voided (Q-1); the first import is web Buwiz Books, then CSV; the owner confirms account matches; a mid-year start uses opening totals with proof; the assistant passes the BIR tax option as `form_context`; inline cards show amounts only on cards the user asked for (amends D22 for answer cards); TMP means templates.
+
 ### 2.1 New open questions (raised while writing)
 
 These are not in the canonical design. Each needs an owner's call.
 
 | ID | Question | Options | Recommendation | Blocks |
 |---|---|---|---|---|
-| Q-1 | How does a void affect the tax base? | (1) original becomes `voided`; base skips voided entries and reversal entries; (2) original stays `posted`; reversal is `posted`; base sums both to zero | (1) | P1 exit. A4 passes under either. [01 section 7.6] |
+| Q-1 | How does a void affect the tax base? | (1) original becomes `voided`; base skips voided entries and reversal entries; (2) original stays `posted`; reversal is `posted`; base sums both to zero | **Decided by the owner (build goal, 2026-10-29): (1), the original shows Voided.** Built in M1 (`books-store` `entries::void`; [09](09-build-log.md)). | P1 exit. A4 passes under either. [01 section 7.6] |
 | Q-2 | Does Books post the PT accrual to the ledger (Dr 94100, Cr 21800)? | (a) no accrual in MVP; (b) post the amount Forms computed, once the user confirms the Forms draft | (a). Under ADR-0007 the amount can only come from Forms; Books never computes it. BK-TS never posts these accounts `[books §3b]`. | P2 exit. Not Slice A. |
 | Q-3 | Where does the refresh token live in the Books process? | (a) 0600 file under the data folder; (b) Keychain | (a). Avoid Keychain per the Rox constraint. | P5 |
-| Q-4 | What happens when a user types a TIN-shaped number into a label or memo? | (a) refuse with an explanation; (b) warn and store; (c) store and never output | (a) | T-PRIV-06 |
+| Q-4 | What happens when a user types a TIN-shaped number into a label or memo? | (a) refuse with an explanation; (b) warn and store; (c) store and never output | (a). Applied in M1 (`books-core` `privacy::tin_like`; code `tin_refused`). | T-PRIV-06 |
 | Q-5 | P6 "per-run keys": what do they protect? | (a) export encryption keys per run; (b) Rox signing keys per run; (c) other | Confirm the meaning. The canonical text does not say. | P6 scope |
 | Q-6 | Is `tax_type` one value per line, or a set? | — | — | **Resolved by ADR-0007:** `tax_type` is removed. A sale is one `business_sales` line; the mapping decides which boxes the measure feeds. |
 | Q-7 | What covers PT rate rows before 2020-07-01? | — | — | **Handed to Forms (ADR-0007).** Section 2.2. |

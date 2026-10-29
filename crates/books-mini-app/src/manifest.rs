@@ -36,17 +36,36 @@ pub fn fingerprint(source: &str) -> String {
     format!("sha256:{}", jcs::sha256_hex(source.as_bytes()))
 }
 
-/// What each app may reach (spec 5.6). `tools` is exactly what its source
-/// calls with `rox.call` (checked in `tests/manifest_shape.rs`).
-fn permissions(id: &str) -> Value {
-    match id {
-        "home" => json!({ "tools": [tools::STATUS] }),
-        _ => json!({}),
-    }
+/// What each app may reach (spec 5.6). `tools` is exactly the Books tools
+/// its source names (checked in `tests/manifest_shape.rs`).
+fn permissions(app: &apps::App) -> Value {
+    json!({ "tools": apps::named_tools(app.source) })
 }
 
 fn app_entry(app: &apps::App) -> Value {
     match app.id {
+        "books" => json!({
+            "id": "books",
+            // neutral: no business name, amount or TIN (D1, RK-10)
+            "title": "Books",
+            "description": "Your books: today, the ledger and the chart of accounts. Only you post, void or close here.",
+            "entry": format!("{}{}", apps::URI_PREFIX, app.id),
+            "mime": apps::MIME,
+            "sdk": "1",
+            "fingerprint": fingerprint(app.source),
+            "props": {
+                "type": "object",
+                "properties": {
+                    TICKET_PROP: { "type": "string", "maxLength": 30 },
+                    "page": { "type": "string", "enum": ["today", "ledger", "unpaid", "reconcile", "reports", "forms", "people", "accounts", "tags", "payroll", "certificates", "settings"] },
+                    "account": { "type": "string", "maxLength": 30 },
+                    "month": { "type": "string", "maxLength": 7 },
+                    "filter": { "type": "string", "enum": ["all", "review", "draft", "posted"] }
+                }
+            },
+            "placement": ["full"],
+            "permissions": permissions(app),
+        }),
         "home" => json!({
             "id": "home",
             // neutral: no business name, amount or TIN (D1, RK-10)
@@ -62,7 +81,7 @@ fn app_entry(app: &apps::App) -> Value {
             },
             "placement": ["full", "inline"],
             "inline": { "width": 360, "height": 120, "min_height": 96, "max_height": 240, "resizable": false },
-            "permissions": permissions(app.id),
+            "permissions": permissions(app),
         }),
         other => unreachable!("no manifest entry for app {other}"),
     }
@@ -77,10 +96,10 @@ pub fn unsigned(key_id: &str) -> Value {
         "short": SHORT,
         "version": VERSION,
         "title": "Buwiz Books",
-        "description": "Bookkeeping on this computer. This build is the P0 plumbing: setup status and counts only.",
+        "description": "Bookkeeping on this computer, cash basis by default. Books records what happened; the BIR app computes and files tax.",
         "publisher": { "id": PUBLISHER_ID, "key_id": key_id, "name": "Goldcoders" },
         "commands": [
-            { "name": "books", "description": "Open Buwiz Books", "resolve": tools::RESOLVE }
+            { "name": "books", "description": "Open your books", "resolve": tools::RESOLVE }
         ],
         "apps": apps::APPS.iter().map(app_entry).collect::<Vec<_>>(),
     })

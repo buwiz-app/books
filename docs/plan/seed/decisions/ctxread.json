@@ -2,7 +2,7 @@
  "order": 3,
  "question": "How does Books get the tax option from the BIR app?",
  "recommended": "The assistant reads it and passes it",
- "answer": "",
- "status": "open",
+ "answer": "The assistant reads the BIR tax option and passes it as form_context",
+ "status": "answered",
  "where": "Plan 3.2"
 }

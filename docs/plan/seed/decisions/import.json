@@ -2,7 +2,7 @@
  "order": 1,
  "question": "Which import do we build first?",
  "recommended": "Web Buwiz Books, then CSV",
- "answer": "",
- "status": "open",
+ "answer": "Web Buwiz Books export first, then CSV",
+ "status": "answered",
  "where": "Plan 2.1"
 }

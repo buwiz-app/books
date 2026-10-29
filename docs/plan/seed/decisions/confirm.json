@@ -2,7 +2,7 @@
  "order": 5,
  "question": "Who confirms account matching?",
  "recommended": "The business owner; the accountant can review",
- "answer": "",
- "status": "open",
+ "answer": "The business owner confirms account matches",
+ "status": "answered",
  "where": "Chat"
 }

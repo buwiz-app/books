@@ -6,8 +6,9 @@
 //! - [`manifest`]: the manifest generator and the served (signed) manifest;
 //! - [`jcs`]: RFC 8785 canonical JSON and I-JSON parsing, integers only;
 //! - [`apps`]: the app sources served as `rox-app://<id>`;
-//! - [`tools`]: Books' own `books_*` tools;
-//! - [`tickets`]: random tickets in place of identifiers.
+//! - [`tools`]: Books' own `books_*` tools, with [`service`] (the store,
+//!   tickets, idempotent audited writes), [`views`] (page data) and
+//!   [`writes`].
 
 pub mod apps;
 pub mod b64;
@@ -15,5 +16,7 @@ pub mod jcs;
 pub mod jsonrpc;
 pub mod manifest;
 pub mod reserved;
-pub mod tickets;
+pub mod service;
 pub mod tools;
+pub mod views;
+pub mod writes;

@@ -56,7 +56,7 @@ trap cleanup EXIT
 # a Rox worktree at the pinned commit; the Rox checkout's own branch is untouched
 git -C "$ROX_DIR" worktree add --detach --quiet "$WT" "$ROX_COMMIT"
 ln -s "$ROX_DIR/server/node_modules" "$WT/server/node_modules"
-mkdir -m 700 "$TMP/data" "$TMP/keys"
+mkdir -m 700 "$TMP/data" "$TMP/keys" "$TMP/books-data"
 
 # throwaway test key, per-run trust file, manifest signed with the test key
 node "$WT/server/sdk/mini-app/bin/rox-plugin-test.mjs" --keygen "$TMP/test.key" >"$TMP/keygen.txt"
@@ -71,8 +71,14 @@ cat >"$TMP/trust.json" <<JSON
 }
 JSON
 "$BIN" manifest --key-id "$KEY_ID" >"$TMP/manifest.json"
+# every app the manifest lists, as the binary serves it
+APP_ARGS=()
+for id in $(node -e 'for (const a of JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).apps) console.log(a.id)' "$TMP/manifest.json"); do
+  "$BIN" app-source "$id" >"$TMP/app-$id.tsx"
+  APP_ARGS+=(--app "$id=$TMP/app-$id.tsx")
+done
 node "$WT/server/src/v1/sign-manifest.mjs" "$TMP/manifest.json" --key-file "$TMP/test.key" \
-  --app "home=$REPO/apps/home.tsx" --out "$TMP/signed.json"
+  "${APP_ARGS[@]}" --out "$TMP/signed.json"
 
 # the throwaway broker
 (

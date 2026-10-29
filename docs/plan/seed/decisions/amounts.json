@@ -2,7 +2,7 @@
  "order": 4,
  "question": "Can inline cards show amounts?",
  "recommended": "Only on cards the user asked for",
- "answer": "",
- "status": "open",
+ "answer": "Only on cards the user asked for; routine cards show counts",
+ "status": "answered",
  "where": "Plan 4.1"
 }

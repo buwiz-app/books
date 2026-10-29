@@ -27,7 +27,17 @@ path = "../../tests/manifest_shape.rs"
 name = "stdio_roundtrip"
 path = "../../tests/stdio_roundtrip.rs"
 
+[[test]]
+name = "ledger_tools"
+path = "../../tests/ledger_tools.rs"
+
+[[test]]
+name = "privacy_outputs"
+path = "../../tests/privacy_outputs.rs"
+
 [dependencies]
+books-core = { path = "../books-core" }
+books-store = { path = "../books-store" }
 # Session certificates are signed with the ed25519 key Rox provisions (spec 4.4).
 ed25519-dalek = { version = "2", default-features = false, features = ["zeroize"] }
 # Tickets: 130 bits from the OS CSPRNG (spec 9.5).

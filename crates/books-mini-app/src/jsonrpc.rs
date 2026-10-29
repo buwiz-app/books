@@ -13,7 +13,7 @@ use serde_json::{Map, Value, json};
 
 use crate::manifest::{self, Source};
 use crate::reserved::{self, Host};
-use crate::tickets::Tickets;
+use crate::service::{Books, Origin};
 use crate::{apps, tools};
 
 pub const SERVER_NAME: &str = "books-mini-app";
@@ -26,9 +26,10 @@ pub const INVALID_PARAMS: i64 = -32602;
 /// MCP protocol revisions this server speaks; the first is the latest.
 const SUPPORTED_PROTOCOLS: [&str; 4] = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
-const INSTRUCTIONS: &str = "Buwiz Books keeps bookkeeping on this computer. This build is the \
-first plumbing step: books_status reports setup status and counts only. It never shows amounts, \
-names or TINs, and it never sends, files or pays anything.";
+const INSTRUCTIONS: &str = "Buwiz Books keeps a small business's books on this computer, on \
+cash basis by default. The assistant can read totals and draft entries (books_entry_draft); only \
+the user posts, voids or closes, in the Books app. Books never computes tax, never stores a TIN, \
+and never sends, files or pays anything.";
 
 /// A tool result whose `structuredContent` is `structured`.
 pub fn ok(structured: Value) -> Value {
@@ -53,20 +54,12 @@ fn error_response(id: Value, code: i64, message: &str) -> Value {
     json!({ "jsonrpc": "2.0", "id": id, "error": { "code": code, "message": message } })
 }
 
-/// Who a `tools/call` comes from (`_meta["rox/caller"]`, spec 8.4).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Origin {
-    App,
-    Agent,
-    Routine,
-    Resolve,
-    Unknown,
-}
-
 struct Caller {
     origin: Origin,
     app: Option<String>,
     open_id: Option<String>,
+    /// The routine whose turn this is (spec 5.9), if any.
+    routine: Option<String>,
 }
 
 impl Caller {
@@ -89,23 +82,24 @@ impl Caller {
             origin,
             app: text("app"),
             open_id: text("open_id"),
+            routine: text("routine"),
         }
     }
 }
 
-/// The server's state: the reserved tools' key and opens, and tickets.
+/// The server's state: the reserved tools' key and opens, and the books.
 pub struct Server {
     source: Source,
     host: Host,
-    tickets: Tickets,
+    books: Books,
 }
 
 impl Server {
-    pub fn new(source: Source) -> Self {
+    pub fn new(source: Source, books: Books) -> Self {
         Self {
             source,
             host: Host::default(),
-            tickets: Tickets::default(),
+            books,
         }
     }
 
@@ -171,7 +165,7 @@ impl Server {
             let now = now_ms();
             return match self
                 .host
-                .call(&self.source, &mut self.tickets, name, arguments, now)
+                .call(&self.source, &mut self.books, name, arguments, now)
             {
                 None => Err((
                     METHOD_NOT_FOUND,
@@ -185,22 +179,35 @@ impl Server {
         if !self.host.provisioned() {
             return Err((INVALID_REQUEST, "rox.provision must come first".into()));
         }
-        if !tools::TOOLS.contains(&name) {
+        if tools::find(name).is_none() {
             return Err((INVALID_PARAMS, "no such tool".into()));
         }
-        if let Err(message) = self.authorize(name, &Caller::of(params)) {
+        let caller = Caller::of(params);
+        if let Err(message) = self.authorize(name, &caller) {
             return Ok(fail("permission_denied", &message));
         }
-        Ok(tools::call(name, arguments, &mut self.tickets).expect("a listed tool"))
+        Ok(tools::call(name, arguments, caller.origin, &mut self.books).expect("a listed tool"))
     }
 
     /// The origin checks Books owns (docs/01 §4.4), as BIR makes them.
     fn authorize(&self, name: &str, caller: &Caller) -> Result<(), String> {
+        let tool = tools::find(name).ok_or("no such tool")?;
+        // DD-20: post, void, close, reopen, confirm and hand-off are the
+        // user's clicks in the Books app
+        if tool.reach == tools::Reach::App && caller.origin != Origin::App {
+            return Err(format!(
+                "{name} needs the user's click in the Books app; the assistant can save a draft instead"
+            ));
+        }
         // P6: resolve and routine calls only read
         if matches!(caller.origin, Origin::Resolve | Origin::Routine) && !tools::read_only(name) {
             return Err(format!(
                 "{name} changes Books data, so it does not run here"
             ));
+        }
+        // a routine's turn writes only what the routine declares (M8)
+        if caller.routine.is_some() && !tools::read_only(name) {
+            return Err(format!("{name} is not a write this routine declares"));
         }
         if caller.origin != Origin::App {
             return Ok(());

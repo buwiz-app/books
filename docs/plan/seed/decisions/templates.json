@@ -2,7 +2,7 @@
  "order": 6,
  "question": "What does TMP mean, and how does Rox run templates?",
  "recommended": "Templates: starter flows",
- "answer": "",
- "status": "open",
+ "answer": "TMP means templates (starter flows)",
+ "status": "answered",
  "where": "Chat, rox"
 }

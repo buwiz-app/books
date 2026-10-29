@@ -1,6 +1,6 @@
 # Buwiz Books: research, design and proof of concept
 
-**Status: design, a proof of concept, and the P0 plugin plumbing (Rust). Not production code. Not deployed.**
+**Status: design, a proof of concept, and the mini app being built milestone by milestone (M1 done: an encrypted book, the ledger, Today, Ledger and Accounts). Not deployed. Synthetic data only.**
 
 This repo holds the evidence and the design for Buwiz Books, a bookkeeping mini app for the Rox host (plugin id `dev.goldcoders.books`). It also holds a small proof of concept of the accounting measures and the bridge that maps them onto Forms input boxes. It does not file, send, submit or pay anything, and it contains no tax-compliance logic.
 
@@ -61,15 +61,22 @@ Design decisions (proposed; the full list and open items are in `docs/07-decisio
 | `poc/` | Bun and TypeScript proof of concept: ledger → measures → mapping → fill args with lineage. |
 | `fixtures/` | Synthetic fixtures for the PoC. Never real data. |
 | `tools/` | Helper scripts used in the research. `tools/rox/conformance.sh` runs Rox's conformance tool against the plugin with a throwaway test key. |
-| `Cargo.toml`, `crates/books-mini-app/`, `apps/`, `tests/` | The Rust Rox plugin (P0): stdio MCP server, the protocol v1 reserved tools, the manifest generator and the `home` stub app. `tests/host/` is the Node harness for the host test. |
+| `Cargo.toml`, `crates/`, `apps/`, `tests/` | The Rust Rox plugin. `crates/books-core`: domain rules with no I/O (centavos, dates, the kind catalogue and chart preset, the ledger's post rules). `crates/books-store`: the SQLCipher store, its 0600 key file and migrations. `crates/books-mini-app`: the stdio MCP server, the protocol v1 reserved tools, the manifest generator and the `books_*` tools. `apps/books/`: the Books window (one app, a file per page); `apps/home.tsx`: the inline status card. `tests/host/` is the Node harness for the host test. |
+| `docs/09-build-log.md` | The mini app as built, milestone by milestone: design choices made while building, gate results, what is blocked. |
 
-## Run the plugin checks (P0)
+## Run the gates
 
 ```sh
 cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
-tools/rox/conformance.sh   # needs the Rox checkout (ROX_DIR) with server/node_modules
+(cd poc && bun test)
+tools/privacy-scan.sh      # the scanner's self-test, the repo scan and what the assistant can read
+tools/rox/conformance.sh   # needs a Rox checkout or worktree (ROX_DIR) with server/node_modules
 tools/rox/host-test.sh     # installs Books in a throwaway Rox broker (port 8810+, file keystore) and calls it
 ```
+
+The plugin keeps its store in `BOOKS_DATA_DIR` (default `~/Library/Application Support/dev.goldcoders.books`) with
+the key file `BOOKS_DB_KEY_FILE` (default `<dir>/books.key`, mode 0600). Tests and the host test always point both
+at a temp folder.
 
 ## Run the proof of concept
 

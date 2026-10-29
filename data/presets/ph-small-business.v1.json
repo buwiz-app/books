@@ -1,0 +1,419 @@
+{
+ "preset_id": "ph_small_business",
+ "version": 1,
+ "title": "Philippines small business",
+ "status": "PROPOSAL. One account per kind of data/categories.v1.json (62), numbered as the catalogue says; the eight kinds the catalogue leaves unnumbered get the numbers listed in proposed_numbers. Four practical accounts are added: Cash Box and Credit Cards (neutral kinds) and two 'Not sure yet' accounts whose lines hold the boxes they could feed.",
+ "kinds_catalog": "data/categories.v1.json",
+ "proposed_numbers": {
+  "owner_drawings": "32100",
+  "loan_payable": "27000",
+  "other_non_operating_income": "89000",
+  "direct_service_cost": "52000",
+  "depreciation_expense": "68500",
+  "pct_tax_credit_receivable": "12650",
+  "income_tax_paid": "12850",
+  "income_tax_payable": "21900"
+ },
+ "accounts": [
+  {
+   "number": "11000",
+   "name": "Bank Accounts",
+   "type": "asset",
+   "kind": "bank_accounts"
+  },
+  {
+   "number": "11100",
+   "name": "Cash Box",
+   "type": "asset",
+   "kind": "bank_accounts",
+   "note": "Petty cash; a cash account like a bank."
+  },
+  {
+   "number": "12010",
+   "name": "Accounts Receivable - Gross",
+   "type": "asset",
+   "kind": "accounts_receivable_gross"
+  },
+  {
+   "number": "12600",
+   "name": "Creditable Withholding Tax Receivable",
+   "type": "asset",
+   "kind": "ph_cwt_receivable"
+  },
+  {
+   "number": "12610",
+   "name": "Creditable VAT Withheld",
+   "type": "asset",
+   "kind": "ph_creditable_vat_withheld"
+  },
+  {
+   "number": "12650",
+   "name": "Percentage Tax Withheld Receivable",
+   "type": "asset",
+   "kind": "pct_tax_credit_receivable"
+  },
+  {
+   "number": "12700",
+   "name": "Employee Advances & Receivables",
+   "type": "asset",
+   "kind": "ph_employee_advances"
+  },
+  {
+   "number": "12800",
+   "name": "Employee Receivable - Tax Advanced",
+   "type": "asset",
+   "kind": "ph_employee_tax_advanced"
+  },
+  {
+   "number": "12850",
+   "name": "Income Tax Payments / Credits",
+   "type": "asset",
+   "kind": "income_tax_paid"
+  },
+  {
+   "number": "13000",
+   "name": "Prepaid Expenses",
+   "type": "asset",
+   "kind": "prepaid_expenses"
+  },
+  {
+   "number": "13500",
+   "name": "Inventory",
+   "type": "asset",
+   "kind": "inventory"
+  },
+  {
+   "number": "13800",
+   "name": "Input VAT",
+   "type": "asset",
+   "kind": "ph_input_vat"
+  },
+  {
+   "number": "13810",
+   "name": "Input VAT - Unpaid Payables",
+   "type": "asset",
+   "kind": "ph_input_vat_unpaid"
+  },
+  {
+   "number": "16100",
+   "name": "Computer Assets",
+   "type": "asset",
+   "kind": "computer_assets"
+  },
+  {
+   "number": "21000",
+   "name": "Accounts Payable",
+   "type": "liability",
+   "kind": "accounts_payable"
+  },
+  {
+   "number": "21600",
+   "name": "Expanded Withholding Tax Payable",
+   "type": "liability",
+   "kind": "ph_ewt_payable"
+  },
+  {
+   "number": "21700",
+   "name": "Output VAT",
+   "type": "liability",
+   "kind": "ph_output_vat"
+  },
+  {
+   "number": "21710",
+   "name": "Output VAT - Uncollected Receivables",
+   "type": "liability",
+   "kind": "ph_output_vat_uncollected"
+  },
+  {
+   "number": "21750",
+   "name": "VAT Payable - Net",
+   "type": "liability",
+   "kind": "ph_vat_payable_net"
+  },
+  {
+   "number": "21800",
+   "name": "Percentage Tax Payable",
+   "type": "liability",
+   "kind": "ph_percentage_tax_payable"
+  },
+  {
+   "number": "21900",
+   "name": "Income Tax Payable",
+   "type": "liability",
+   "kind": "income_tax_payable"
+  },
+  {
+   "number": "22000",
+   "name": "Credit Cards",
+   "type": "liability",
+   "kind": "loan_payable",
+   "note": "Money owed on cards; neutral facts like a loan."
+  },
+  {
+   "number": "25110",
+   "name": "Withholding Tax on Compensation Payable",
+   "type": "liability",
+   "kind": "ph_wtc_payable"
+  },
+  {
+   "number": "25120",
+   "name": "SSS Contributions Payable",
+   "type": "liability",
+   "kind": "ph_sss_payable"
+  },
+  {
+   "number": "25130",
+   "name": "PhilHealth Contributions Payable",
+   "type": "liability",
+   "kind": "ph_philhealth_payable"
+  },
+  {
+   "number": "25140",
+   "name": "Pag-IBIG Contributions Payable",
+   "type": "liability",
+   "kind": "ph_pagibig_payable"
+  },
+  {
+   "number": "25150",
+   "name": "Union Dues Payable",
+   "type": "liability",
+   "kind": "ph_union_dues_payable"
+  },
+  {
+   "number": "25170",
+   "name": "Net Pay Payable",
+   "type": "liability",
+   "kind": "ph_net_pay_payable"
+  },
+  {
+   "number": "25175",
+   "name": "Employee Tax Refund Payable",
+   "type": "liability",
+   "kind": "ph_employee_tax_refund_payable"
+  },
+  {
+   "number": "27000",
+   "name": "Loans Payable",
+   "type": "liability",
+   "kind": "loan_payable"
+  },
+  {
+   "number": "32000",
+   "name": "Owners Equity",
+   "type": "equity",
+   "kind": "owners_equity"
+  },
+  {
+   "number": "32100",
+   "name": "Owner Drawings",
+   "type": "equity",
+   "kind": "owner_drawings"
+  },
+  {
+   "number": "40999",
+   "name": "Uncategorized Income",
+   "type": "revenue",
+   "kind": "unsure",
+   "note": "Money in not sorted yet. Its lines hold every box they could feed."
+  },
+  {
+   "number": "41000",
+   "name": "Sales Revenue",
+   "type": "revenue",
+   "kind": "sales_revenue"
+  },
+  {
+   "number": "42000",
+   "name": "Subscription Revenue",
+   "type": "revenue",
+   "kind": "subscription_revenue"
+  },
+  {
+   "number": "43000",
+   "name": "Transaction Revenue",
+   "type": "revenue",
+   "kind": "transaction_revenue"
+  },
+  {
+   "number": "49000",
+   "name": "Refunds & Discounts",
+   "type": "revenue",
+   "kind": "refunds_and_discounts"
+  },
+  {
+   "number": "51000",
+   "name": "Cost of Goods Sold",
+   "type": "cost_of_revenue",
+   "kind": "cost_of_goods_sold"
+  },
+  {
+   "number": "52000",
+   "name": "Direct Cost of Services",
+   "type": "cost_of_revenue",
+   "kind": "direct_service_cost"
+  },
+  {
+   "number": "53000",
+   "name": "Payment Processing Fees",
+   "type": "cost_of_revenue",
+   "kind": "payment_processing_fees"
+  },
+  {
+   "number": "54000",
+   "name": "Hosting Fees",
+   "type": "cost_of_revenue",
+   "kind": "hosting_fees"
+  },
+  {
+   "number": "61100",
+   "name": "Salaries",
+   "type": "expense",
+   "kind": "salaries"
+  },
+  {
+   "number": "61400",
+   "name": "Employee Benefits",
+   "type": "expense",
+   "kind": "employee_benefits"
+  },
+  {
+   "number": "61500",
+   "name": "Retirement Contributions",
+   "type": "expense",
+   "kind": "retirement_contributions"
+  },
+  {
+   "number": "61600",
+   "name": "Employer Payroll Taxes",
+   "type": "expense",
+   "kind": "employer_payroll_taxes"
+  },
+  {
+   "number": "61700",
+   "name": "Payroll Processing Fees",
+   "type": "expense",
+   "kind": "payroll_processing_fees"
+  },
+  {
+   "number": "61950",
+   "name": "Unrecovered Employee Tax",
+   "type": "expense",
+   "kind": "ph_unrecovered_employee_tax"
+  },
+  {
+   "number": "62100",
+   "name": "Airfare",
+   "type": "expense",
+   "kind": "airfare"
+  },
+  {
+   "number": "62400",
+   "name": "Meals",
+   "type": "expense",
+   "kind": "meals"
+  },
+  {
+   "number": "63100",
+   "name": "Consultants and Contractors",
+   "type": "expense",
+   "kind": "consultants_and_contractors"
+  },
+  {
+   "number": "63200",
+   "name": "Legal",
+   "type": "expense",
+   "kind": "legal"
+  },
+  {
+   "number": "63300",
+   "name": "Tax & Accounting",
+   "type": "expense",
+   "kind": "tax_and_accounting"
+  },
+  {
+   "number": "64100",
+   "name": "Advertising",
+   "type": "expense",
+   "kind": "advertising"
+  },
+  {
+   "number": "65000",
+   "name": "Business Applications & Software",
+   "type": "expense",
+   "kind": "business_applications_and_software"
+  },
+  {
+   "number": "66100",
+   "name": "Rent",
+   "type": "expense",
+   "kind": "rent"
+  },
+  {
+   "number": "66200",
+   "name": "Utilities",
+   "type": "expense",
+   "kind": "utilities"
+  },
+  {
+   "number": "66300",
+   "name": "Repairs and Maintenance",
+   "type": "expense",
+   "kind": "repairs_and_maintenance"
+  },
+  {
+   "number": "67200",
+   "name": "Office Supplies",
+   "type": "expense",
+   "kind": "office_supplies"
+  },
+  {
+   "number": "68300",
+   "name": "Bank Fees",
+   "type": "expense",
+   "kind": "bank_fees"
+  },
+  {
+   "number": "68400",
+   "name": "Input VAT Attributable to Exempt Sales",
+   "type": "expense",
+   "kind": "ph_input_vat_exempt_expense"
+  },
+  {
+   "number": "68500",
+   "name": "Depreciation Expense",
+   "type": "expense",
+   "kind": "depreciation_expense"
+  },
+  {
+   "number": "69999",
+   "name": "Uncategorized Expense",
+   "type": "expense",
+   "kind": "unsure",
+   "note": "Money out not sorted yet. Its lines hold every box they could feed."
+  },
+  {
+   "number": "81000",
+   "name": "Interest Income",
+   "type": "other_income",
+   "kind": "interest_income"
+  },
+  {
+   "number": "89000",
+   "name": "Other Non-Operating Income",
+   "type": "other_income",
+   "kind": "other_non_operating_income"
+  },
+  {
+   "number": "91000",
+   "name": "Interest Expense",
+   "type": "other_expense",
+   "kind": "interest_expense"
+  },
+  {
+   "number": "94100",
+   "name": "Percentage Tax Expense",
+   "type": "other_expense",
+   "kind": "ph_percentage_tax_expense"
+  }
+ ]
+}

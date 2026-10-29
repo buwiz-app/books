@@ -1,0 +1,19 @@
+[package]
+name = "books-store"
+version = "0.1.0"
+description = "Buwiz Books' encrypted local store: SQLCipher, a 0600 key file, migrations"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+books-core = { path = "../books-core" }
+# SQLCipher, built from source with a vendored OpenSSL, as BIR does (RK-7).
+rusqlite = { version = "0.32", features = ["bundled-sqlcipher-vendored-openssl"] }
+getrandom = "0.3"
+serde_json = "1"
+sha2 = "0.10"
+
+[lints]
+workspace = true

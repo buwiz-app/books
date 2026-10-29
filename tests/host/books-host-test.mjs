@@ -24,7 +24,7 @@ const results = [];
 const check = (name, ok, detail) => { results.push({ name, ok: !!ok }); console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? `  ${JSON.stringify(detail)}` : ""}`); };
 const refusal = (r) => ({ status: r.status, code: r.json?.code ?? r.json?.error?.code });
 
-const spec = { command: BIN, args: ["mcp"], env: { BOOKS_V1_MANIFEST: `${RUN}/signed.json` } };
+const spec = { command: BIN, args: ["mcp"], env: { BOOKS_V1_MANIFEST: `${RUN}/signed.json`, BOOKS_DATA_DIR: `${RUN}/books-data`, BOOKS_TODAY: "2026-10-29" } };
 
 // 0. a request without the host token is refused
 const noAuth = await fetch(`${BASE}/v1/host/plugins/inspect`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(spec) });
@@ -47,7 +47,7 @@ check("install with a hash other than the reviewed one is refused", wrong.json.o
 // 4. resolve the /books command
 const res = await post("/v1/host/resolve", { plugin: "dev.goldcoders.books", kind: "command", name: "books", value: "" });
 const r = res.json;
-check("/books resolves to open home with a ticket and a neutral title", r.result === "open" && r.app === "home" && /^tkt_/.test(String(r.ticket ?? r.props?.ticket ?? "")),
+check("/books resolves to open the Books window with a ticket and a neutral title", r.result === "open" && r.app === "books" && r.title === "Books" && /^tkt_/.test(String(r.ticket ?? r.props?.ticket ?? "")),
   { status: res.status, result: r.result, app: r.app, title: r.title, has_ticket: /^tkt_/.test(String(r.ticket ?? r.props?.ticket ?? "")) });
 
 // 5. open the home app the way Rox does (session key, open_id, permissions digest)
@@ -74,6 +74,28 @@ check("a tool outside home's permissions.tools is refused", notGranted === null 
 const { generate } = await import(pathToFileURL(`${WT}/server/src/v1/ed.mjs`).href);
 const forged = await post("/v1/host/call", envelope(open, "books_status", {}, {}, generate().seed));
 check("an envelope signed by another key is refused", forged.json.ok === false, refusal(forged));
+
+// 10. M1 through the broker: the Books window makes a book, drafts, posts, voids and lists
+const win = await openApp(sessions, signed, "books");
+check("the Books window session opens", !!win.res.cert && !!win.res.cert_sig);
+let n = 0;
+const call2 = async (tool, args) => {
+  const c = await post("/v1/host/call", envelope(win, tool, args));
+  return c.json.result?.structuredContent ?? c.json;
+};
+const rid = () => `host-${Date.now()}-${(n += 1)}`;
+const made = await call2("books_app_book_create", { client_request_id: rid(), label: "Test Book" });
+check("books_app_book_create makes a cash book", made.basis === "cash" && /^tkt_/.test(String(made.book)), { basis: made.basis, code: made.code });
+const draft = await call2("books_entry_draft", { client_request_id: rid(), form: "money_out", date: "2026-10-18", amount: "1350.00", account: "11000", category: "67200", payee: "Synthetic Vendor", memo: "MEMO-SYNTH-host" });
+check("books_entry_draft saves a draft", draft.status === "draft", { status: draft.status, code: draft.code });
+const posted = await call2("books_app_post_entry", { client_request_id: rid(), entry: draft.entry });
+check("books_app_post_entry posts it", posted.status === "posted", { status: posted.status, code: posted.code });
+const voided = await call2("books_app_void_entry", { client_request_id: rid(), entry: draft.entry });
+check("books_app_void_entry voids it and posts a reversal", voided.status === "voided" && /^tkt_/.test(String(voided.reversal)), { status: voided.status, code: voided.code });
+const list = await call2("books_ledger_list", { month: "2026-10" });
+check("the Ledger lists the voided entry and its reversal", list.counts?.all === 2 && list.rows?.some((x) => x.status_label === "Voided") && list.rows?.some((x) => x.status_label === "Reversal"), { counts: list.counts });
+const fromHome = await post("/v1/host/call", envelope(open, "books_app_post_entry", { client_request_id: rid(), entry: draft.entry }));
+check("home cannot reach a tool outside its permissions", fromHome.json.ok === false || fromHome.json.result?.isError === true, refusal(fromHome));
 
 const failed = results.filter((x) => !x.ok).length;
 console.log(`\n${results.length - failed} pass, ${failed} fail`);
