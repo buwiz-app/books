@@ -2,6 +2,18 @@
  "entries": [
   {
    "at": "2026-10-29",
+   "text": "M8 started"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "M7-03/M7-04 live step blocked: no scratch BIR profile (B2); Slice B passes against a harness; asked BIR, Rox and Forms owners (decisions scratchbir, d3label)"
+  },
+  {
+   "at": "2026-10-29",
+   "text": "M7 built (4f3bfc3): Hand to BIR draft attaches a proposal token; confirm records fill_args_sha256; out of date says what changed; cross-checks"
+  },
+  {
+   "at": "2026-10-29",
    "text": "M7 started"
   },
   {

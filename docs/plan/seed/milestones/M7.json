@@ -2,7 +2,7 @@
  "order": 7,
  "code": "M7",
  "title": "Hand-off to the BIR app",
- "status": "doing",
+ "status": "blocked",
  "goal": "One click puts the totals in the BIR draft.",
  "claim": "3.2, 3.4, machine 3",
  "exit": "Q3 2551Q in a scratch BIR draft; a later change marks it out of date."

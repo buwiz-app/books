@@ -3,7 +3,7 @@
  "order": 3,
  "title": "Slice B: Q3 2551Q into a scratch BIR draft",
  "owner": "Claude",
- "status": "todo",
- "evidence": "",
+ "status": "blocked",
+ "evidence": "4f3bfc3: Slice B passes against a harness (tests/handoff_slice_b.rs: 290000.00, source document, read-back equal); live step waits for M7-03",
  "updated": "2026-10-29"
 }

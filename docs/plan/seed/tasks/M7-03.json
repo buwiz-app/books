@@ -3,7 +3,7 @@
  "order": 2,
  "title": "Scratch BIR profile for tests",
  "owner": "BIR owner",
- "status": "todo",
- "evidence": "B2: never the live BIR database",
+ "status": "blocked",
+ "evidence": "No scratch BIR profile exists (B2). Asked the BIR and Rox owners (decision scratchbir). Live BIR database never opened.",
  "updated": "2026-10-29"
 }

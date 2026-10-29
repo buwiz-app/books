@@ -3,7 +3,7 @@
  "order": 4,
  "title": "Out of date after a change; refresh",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Plan machine 3",
+ "status": "done",
+ "evidence": "4f3bfc3: reopen or a late line marks Out of date with what changed; get/confirm refuse; Refresh supersedes; shot m7-05",
  "updated": "2026-10-29"
 }

@@ -3,7 +3,7 @@
  "order": 0,
  "title": "Read the BIR tax option (per decision)",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Needs the BIR read-only tool name",
+ "status": "done",
+ "evidence": "4f3bfc3: the assistant reads the option from BIR and passes form_context (decision); Forms shows Read from the BIR draft",
  "updated": "2026-10-29"
 }

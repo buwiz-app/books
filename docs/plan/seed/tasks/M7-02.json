@@ -3,7 +3,7 @@
  "order": 1,
  "title": "Hand-off tool, app only, source document",
  "owner": "Claude",
- "status": "todo",
- "evidence": "D3 label with the Forms owner",
+ "status": "done",
+ "evidence": "4f3bfc3: books_app_handoff_create/confirm app-only, source document, rox.attach proposal; D3 label asked (decision d3label)",
  "updated": "2026-10-29"
 }

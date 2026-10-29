@@ -2,7 +2,7 @@
  "order": 5,
  "name": "Rox conformance",
  "result": "pass",
- "value": "92 / 92",
+ "value": "97 pass, 1 skipped",
  "at": "2026-10-29",
- "note": "runner from rox 2023fa2; BRG-03 hit 20 calls/s in 1 of 3 runs, told rox"
+ "note": "runner from rox 9c106cc (BRG-03 pacer 3214010; INV-04 skips the attachable scope while no hand-off exists)"
 }

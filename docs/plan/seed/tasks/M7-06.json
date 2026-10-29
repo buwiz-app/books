@@ -3,7 +3,7 @@
  "order": 5,
  "title": "Cross-checks: quarters, year, pay run, 2307s, filed returns",
  "owner": "Claude",
- "status": "todo",
- "evidence": "Plan 3.4",
+ "status": "done",
+ "evidence": "4f3bfc3: quarters vs year 1,190,000.00, P&L vs gross 1,200,000.00, pay run Sep, 2307s 8,900.00, filed vs Books",
  "updated": "2026-10-29"
 }

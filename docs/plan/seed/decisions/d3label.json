@@ -1,0 +1,8 @@
+{
+ "order": 9,
+ "question": "Is source \"document\" the right label for Books values in the BIR draft (D3)?",
+ "recommended": "document for v1; a books source later (P8)",
+ "answer": "",
+ "status": "open",
+ "where": "07 D3, B3 · M7-02 (asked by Books build, 2026-10-30)"
+}
