@@ -18,6 +18,7 @@ pub mod canonical;
 pub mod catalog;
 pub mod date;
 pub mod engine_error;
+pub mod import;
 pub mod input;
 pub mod ledger;
 pub mod measures;
