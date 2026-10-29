@@ -337,6 +337,77 @@ fmt clean; clippy clean; cargo test 111; PoC 177; conformance 97 pass, 1 skipped
 scope check skips while there are no hand-offs; BRG-03's pacer fixed in `3214010`); host test 17/17; privacy scan 0
 findings.
 
+## M8 Chat: cards, scopes, routines
+
+### What exists
+
+- **Inline cards** (drawing: Books Inline Cards), five card apps, each granted only the tools its source calls:
+  `answer` (360: cash now, this month, a person, unpaid), `report` (480: the P&L, this month against last), `action`
+  (360: post a draft, categorize bank lines, mark paid, match the bank, close a month, a 2307 received), `pair` (480: a
+  form for the BIR app: the return to OK, Ready, Hand to BIR draft, In BIR draft, Out of date), `quiet` (360: weekly
+  tidy-up, month end, BIR hand-off; `books_nudge` only, so no amount can reach it). Each card reports its height with
+  `rox.fit`.
+- **Offering a card**: `books_show` (its result carries `_meta["rox/open"]`; Rox shows it on a click), `/books <page or
+  card>`, and the five **templates** as commands (`/books-receipt`, `/books-tidy`, `/books-close`, `/books-quarter`,
+  `/books-results`): protocol v1 has no template field, so each is a command whose resolve opens its card (the rox
+  session's answer; a real field is on the Rox owner's list).
+- **Six `@books:` scopes** (person, account, period, entry, form, tag), with the M7 `proposal`: text gives up to 20
+  choices whose values are tickets, a ticket gives a token with a neutral title; a period or form token works wherever
+  a period or form goes. Each carries a hint: read, draft at most, never post.
+- **Three routines**: weekly tidy-up (writes `books_entry_draft` only), month-end nudge and BIR pair check (write
+  nothing). Their query is `books_nudge`: empty text means no turn; each item has an id Rox remembers, so each thing
+  fires once (a line, a month as `close-2026-10`, a stale hand-off with its inputs hash). `every_s` is at most a day,
+  so the tidy-up finds work on Mondays only. Books' own check (P6): a routine's turn may write only what it declares,
+  and Books lets a routine declare drafts only.
+
+### Design choices (PROPOSAL)
+
+- Amounts on answer and action cards (the user asked); quiet cards show counts and status only.
+- `/books choices` (complete: true) list the pages; the rox session cannot confirm the composer asks for them, so a
+  plain `/books` still opens Today and `/books ledger` a page.
+- The BIR pair check reads Books only: the BIR app has no read-only tool shaped `{items: [...]}` for a routine's
+  `reads` (rox session), so reading the BIR draft waits on the BIR owner.
+- A card lays out inside a `Scroll` with `bounces={false} scrollable={false}`: inside it the card measures its natural
+  height for `rox.fit` (BIR's card kit does the same), and it never scrolls or bounces. The owner caught the first
+  version, a plain `Scroll`, pulling and bouncing like a list.
+
+### Found on the way
+
+- The Books window had no `pick_file` grant since M4: the manifest looked for `rox.pickFile(` while the sources split
+  `rox` and `.pickFile(` across lines. Fixed (the method name alone is the signal); the statement and old-books
+  pickers work in Rox now. The same fix covers `attach` and the cards' `open`.
+- An nsh paint issue: with `shrink-0` on a card's measured view, text in later rows painted blank after the frame grew.
+  Avoided by the pattern above; reported to the rox session.
+- Rox shows "A newer version of this app is available" on every open card after a plugin update. That banner is Rox's
+  (stale open, spec 12.2), not Books'; it showed constantly here because the test plugin was reinstalled after each
+  change. The owner wants plugin updates in the plugin modal only; passed to the rox session for the Rox owner.
+
+### Exit (tests/chat_cards.rs, passing)
+
+Every app-only tool, called by the assistant, is refused with "needs the user's click"; the assistant can draft. The
+weekly tidy-up's turn can draft and cannot post or close; the other routines cannot write; a routine's query only
+reads; the manifest declares writes for the tidy-up only. On a Thursday the tidy-up nudge is empty and on request it
+finds the two lines; the month-end nudge fires in the first week (`close-2026-10`); no nudge carries an amount and the
+quiet app reaches `books_nudge` alone. `books_show` offers the cash card on `_meta`; the six scopes give choices and
+neutral tokens; a form token feeds `books_form_proposal`; `/books ledger` opens the page, `/books cash` the card, the
+templates their cards; the answer card cannot post.
+
+### Checked in the test Rox
+
+[docs/shots/m8/](shots/m8/): cash now, the P&L, a draft to post, bank lines with the likely category, mark paid, match
+and close, the tidy-up, a pending 2307 and the 2551Q pair card (Out of date, Refresh for BIR), and the month-end and
+hand-off quiet cards, each opened with `/books …` or a template. The test Rox's assistant also read the attached M7
+hand-off with `books_handoff_get` and said it could not reach a BIR app.
+
+Not checked in the test Rox: the person card (it needs the assistant's `books_show` with a person ticket), the month
+card after its sign fix, and whether a scroll over a card reaches the chat. The owner asked to stop driving the GUI
+(it took focus on their monitor); that waits until they say so.
+
+### Gates
+
+fmt clean; clippy clean; cargo test 115; PoC 177; conformance 179 pass, 7 skipped (rox `9c106cc`); host test 17/17;
+privacy scan 0 findings.
+
 ## Not yet built
 
-M8 and M9: see the tracker.
+M9: see the tracker.

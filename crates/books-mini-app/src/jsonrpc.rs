@@ -205,8 +205,14 @@ impl Server {
                 "{name} changes Books data, so it does not run here"
             ));
         }
-        // a routine's turn writes only what the routine declares (M8)
-        if caller.routine.is_some() && !tools::read_only(name) {
+        // a routine's turn writes only what the routine declares, and Books
+        // lets a routine declare drafts only (P6, M8)
+        if let Some(routine) = &caller.routine
+            && !tools::read_only(name)
+            && !crate::cards::routine_writes(routine)
+                .iter()
+                .any(|w| w == name)
+        {
             return Err(format!("{name} is not a write this routine declares"));
         }
         if caller.origin != Origin::App {

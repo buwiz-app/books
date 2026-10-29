@@ -153,6 +153,12 @@ impl Books {
 }
 
 /// The neutral title of a subject (P3, D1): no amount, TIN or legal name.
+/// A ticket's neutral title, for a scope token.
+pub fn title_of(store: &Store, ticket: &str) -> Option<String> {
+    let (kind, id) = plumbing::subject(store.conn(), ticket).ok()??;
+    title(store, &kind, id)
+}
+
 fn title(store: &Store, kind: &str, id: i64) -> Option<String> {
     let c = store.conn();
     match kind {
@@ -195,6 +201,9 @@ fn title(store: &Store, kind: &str, id: i64) -> Option<String> {
         }),
         "sline" => Some("Statement line".into()),
         "cert" => Some("Certificate".into()),
+        "period" | "form" => crate::cards::title(kind, id),
+        "page" => crate::cards::page_of(id)
+            .map(|p| format!("Books · {}{}", p[..1].to_uppercase(), &p[1..])),
         "handoff" => books_store::handoffs::get(c, id)
             .ok()?
             .map(|h| crate::handoff::title(&h.form, &h.period_key)),

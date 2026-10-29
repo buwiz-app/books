@@ -52,6 +52,19 @@ const BOOKS: &str = concat!(
 );
 
 /// Every app, in manifest order.
+/// An inline card app: the kit, the card shell, then its own cards (M8).
+macro_rules! card_app {
+    ($file:literal) => {
+        concat!(
+            include_str!("../../../apps/books/kit.tsx"),
+            "\n",
+            include_str!("../../../apps/cards/shell.tsx"),
+            "\n",
+            include_str!(concat!("../../../apps/cards/", $file)),
+        )
+    };
+}
+
 pub const APPS: &[App] = &[
     App {
         id: "books",
@@ -60,6 +73,27 @@ pub const APPS: &[App] = &[
     App {
         id: "home",
         source: include_str!("../../../apps/home.tsx"),
+    },
+    // inline cards in the chat (drawing: Books Inline Cards)
+    App {
+        id: "answer",
+        source: card_app!("answer.tsx"),
+    },
+    App {
+        id: "report",
+        source: card_app!("report.tsx"),
+    },
+    App {
+        id: "action",
+        source: card_app!("action.tsx"),
+    },
+    App {
+        id: "pair",
+        source: card_app!("pair.tsx"),
+    },
+    App {
+        id: "quiet",
+        source: card_app!("quiet.tsx"),
     },
 ];
 

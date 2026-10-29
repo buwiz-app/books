@@ -12,6 +12,7 @@
 
 pub mod apps;
 pub mod b64;
+pub mod cards;
 pub mod checks;
 pub mod demo;
 pub mod forms;

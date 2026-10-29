@@ -44,14 +44,19 @@ fn permissions(app: &apps::App) -> Value {
     if app.source.contains("rox.copy(") {
         p["copy"] = json!(true);
     }
-    // Reconcile picks a CSV bank statement (M4); Import picks old books,
-    // a web Books export or CSV files (M5)
+    // Reconcile picks a CSV bank statement (M4); Import picks old books, a
+    // web Books export or CSV files (M5). Sources split `rox` and the
+    // method across lines, so the method's own name is the signal.
+    if app.source.contains(".pickFile(") {
+        p["pick_file"] = json!({ "extensions": [".csv", ".json"], "max_bytes": 52_428_800 });
+    }
     // Forms attaches a hand-off to the chat (M7)
-    if app.source.contains("rox.attach(") {
+    if app.source.contains(".attach(") {
         p["attach"] = json!(["proposal"]);
     }
-    if app.source.contains("rox.pickFile(") {
-        p["pick_file"] = json!({ "extensions": [".csv", ".json"], "max_bytes": 52_428_800 });
+    // a card opens the Books window at a page (M8)
+    if app.id != "books" && app.source.contains(".open({") {
+        p["open"] = json!({ "apps": ["books"] });
     }
     p
 }
@@ -101,6 +106,77 @@ fn app_entry(app: &apps::App) -> Value {
             "inline": { "width": 360, "height": 120, "min_height": 96, "max_height": 240, "resizable": false },
             "permissions": permissions(app),
         }),
+        id => {
+            let (title, description, width, height) = card_kind(id);
+            json!({
+                "id": id,
+                // neutral: no business name, amount or TIN (D1, RK-10)
+                "title": title,
+                "description": description,
+                "entry": format!("{}{}", apps::URI_PREFIX, app.id),
+                "mime": apps::MIME,
+                "sdk": "1",
+                "fingerprint": fingerprint(app.source),
+                "props": {
+                    "type": "object",
+                    "properties": {
+                        TICKET_PROP: { "type": "string", "maxLength": 30 },
+                        "card": { "type": "string", "enum": crate::cards::cards_of(id) },
+                        "person": { "type": "string", "maxLength": 30 },
+                        "account": { "type": "string", "maxLength": 30 },
+                        "entry": { "type": "string", "maxLength": 30 },
+                        "owed": { "type": "string", "maxLength": 30 },
+                        "certificate": { "type": "string", "maxLength": 30 },
+                        "month": { "type": "string", "maxLength": 7 },
+                        "period": { "type": "string", "maxLength": 7 },
+                        "form": { "type": "string", "enum": ["2551Q", "1601C", "1701MS"] },
+                        "side": { "type": "string", "enum": ["collect", "pay"] },
+                        "tax_option": { "type": "string", "enum": ["graduated", "eight_percent"] },
+                        "deduction": { "type": "string", "enum": ["osd", "itemized"] }
+                    }
+                },
+                "placement": ["inline"],
+                "inline": { "width": width, "height": height, "min_height": 96, "max_height": 640, "resizable": false },
+                "permissions": permissions(app),
+            })
+        }
+    }
+}
+
+/// A card app's title, description and inline size (Books uses two widths:
+/// 360 small, 480 main; the drawing's rule).
+fn card_kind(id: &str) -> (&'static str, &'static str, u32, u32) {
+    match id {
+        "answer" => (
+            "Books answer",
+            "A Books answer in the chat: cash, this month, a person, unpaid. Amounts only because you asked.",
+            360,
+            200,
+        ),
+        "report" => (
+            "Books report",
+            "A Books report card in the chat: profit and loss, this month against last.",
+            480,
+            240,
+        ),
+        "action" => (
+            "Books action",
+            "One click to finish in the chat: post a draft, categorize bank lines, mark paid, match the bank, close a month, a 2307 received.",
+            360,
+            220,
+        ),
+        "pair" => (
+            "Books for BIR",
+            "A form's Books totals for the BIR app: a return to confirm, ready, hand to the BIR draft.",
+            480,
+            240,
+        ),
+        "quiet" => (
+            "Books note",
+            "A quiet Books card from a routine: counts and status only.",
+            360,
+            170,
+        ),
         other => unreachable!("no manifest entry for app {other}"),
     }
 }
@@ -117,18 +193,16 @@ pub fn unsigned(key_id: &str) -> Value {
         "description": "Bookkeeping on this computer, cash basis by default. Books records what happened; the BIR app computes and files tax.",
         "publisher": { "id": PUBLISHER_ID, "key_id": key_id, "name": "Goldcoders" },
         "commands": [
-            { "name": "books", "description": "Open your books", "resolve": tools::RESOLVE }
+            { "name": "books", "description": "Open your books: a page (ledger, unpaid, reconcile, forms…) or a card (cash, month, unpaid, pl)", "args": "[page or card]", "resolve": tools::RESOLVE },
+            // templates (TMP): starter flows, each a command that opens its card (M8)
+            { "name": "books-receipt", "description": "Record a receipt: attach the photo or PDF, the assistant drafts it, you post", "resolve": tools::RESOLVE },
+            { "name": "books-tidy", "description": "Tidy up the bank lines: pick a category for each", "resolve": tools::RESOLVE },
+            { "name": "books-close", "description": "Close last month: the checks, then close", "resolve": tools::RESOLVE },
+            { "name": "books-quarter", "description": "Get the quarter ready for BIR: returns to confirm, then hand the totals over", "resolve": tools::RESOLVE },
+            { "name": "books-results", "description": "How did we do? This month against last", "resolve": tools::RESOLVE }
         ],
-        // M7: a hand-off the owner attaches from the Forms page (rox.attach)
-        "scopes": [
-            {
-                "name": "proposal",
-                "description": "proposal of Books totals for a BIR form",
-                "resolve": tools::RESOLVE,
-                "attach": true,
-                "hint": "A Books proposal holds the input boxes of one BIR form. Read it with books_handoff_get. Open that form's BIR draft, fill the boxes once with source \"document\" (never \"user\"), read them back and compare each value exactly, then validate and save the draft. Never send or file. If Books says it is out of date, do not fill it."
-            }
-        ],
+        "scopes": crate::cards::scopes(),
+        "routines": crate::cards::routines(),
         "apps": apps::APPS.iter().map(app_entry).collect::<Vec<_>>(),
     })
 }

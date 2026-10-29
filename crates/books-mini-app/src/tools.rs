@@ -15,7 +15,7 @@ use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
 use crate::{
-    checks, forms, handoff, oldbooks, payroll, reconcile, records, reports, views, writes,
+    cards, checks, forms, handoff, oldbooks, payroll, reconcile, records, reports, views, writes,
 };
 
 pub const STATUS: &str = "books_status";
@@ -75,6 +75,8 @@ pub const HANDOFF_CREATE: &str = "books_app_handoff_create";
 pub const HANDOFF_GET: &str = "books_handoff_get";
 pub const HANDOFF_CONFIRM: &str = "books_app_handoff_confirm";
 pub const CROSS_CHECKS: &str = "books_cross_checks";
+pub const SHOW: &str = "books_show";
+pub const NUDGE: &str = "books_nudge";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -374,6 +376,21 @@ fn cross_checks_schema() -> Value {
         "book": { "type": "string" }, "year": { "type": "string" },
         "filed": { "type": "array", "description": "Values BIR shows as filed, read from the BIR app: [{form, period, key, value}].",
             "items": { "type": "object", "properties": { "form": { "type": "string" }, "period": { "type": "string" }, "key": { "type": "string" }, "value": { "type": "string" } } } } } })
+}
+
+fn show_schema() -> Value {
+    json!({ "type": "object", "required": ["card"], "properties": {
+        "book": { "type": "string" },
+        "card": { "type": "string", "enum": cards::CARDS.map(|c| c.0) },
+        "person": { "type": "string", "description": "A person ticket (person card)." },
+        "account": { "type": "string" }, "entry": { "type": "string" }, "owed": { "type": "string" },
+        "certificate": { "type": "string" }, "month": { "type": "string" }, "period": { "type": "string" },
+        "form": { "type": "string", "enum": ["2551Q", "1601C", "1701MS"] }, "side": { "type": "string", "enum": ["collect", "pay"] },
+        "tax_option": { "type": "string", "enum": ["graduated", "eight_percent"] }, "deduction": { "type": "string", "enum": ["osd", "itemized"] } } })
+}
+
+fn nudge_schema() -> Value {
+    json!({ "type": "object", "properties": { "book": { "type": "string" }, "kind": { "type": "string", "enum": ["tidy", "month_end", "bir_pair"] }, "month": { "type": "string" }, "any_day": { "type": "boolean", "description": "Answer on any day, not only on the routine's day." } } })
 }
 
 fn write_ref() -> Value {
@@ -681,6 +698,20 @@ pub const TOOLS: &[Tool] = &[
         description: "Rename the book, move its fiscal year, or change its basis (only from the start of a year with nothing posted).",
     },
     Tool {
+        name: SHOW,
+        reach: Reach::Everyone,
+        write: false,
+        schema: show_schema,
+        description: "Offer a Books card in the chat: answers (cash, month, person, unpaid, pl) show amounts because the user asked; actions end in the user's one click; quiet cards show counts only.",
+    },
+    Tool {
+        name: NUDGE,
+        reach: Reach::Everyone,
+        write: false,
+        schema: nudge_schema,
+        description: "What a Books routine looks for: bank lines to categorize, last month left open, BIR hand-offs out of date. Counts only.",
+    },
+    Tool {
         name: HANDOFF_CREATE,
         reach: Reach::App,
         write: true,
@@ -860,6 +891,23 @@ pub fn call(
     books: &mut Books,
 ) -> Option<Value> {
     find(name)?;
+    // a scope token for a period or form, passed as the assistant got it
+    let unticked;
+    let arguments = if books.exists()
+        && ["period", "month", "form"].iter().any(|k| {
+            arguments
+                .get(*k)
+                .and_then(Value::as_str)
+                .is_some_and(books_store::plumbing::is_ticket)
+        }) {
+        unticked = match books.store() {
+            Ok(store) => cards::untick(store.conn(), arguments),
+            Err(_) => arguments.clone(),
+        };
+        &unticked
+    } else {
+        arguments
+    };
     Some(match name {
         STATUS => status(books),
         RESOLVE => resolve(arguments, books),
@@ -1060,6 +1108,24 @@ pub fn call(
         WAGE_RUN_SAVE => write(books, name, origin, arguments, |tx| {
             payroll::save(tx, arguments)
         }),
+        SHOW => {
+            let mut out = read(books, arguments, |store, book, args| {
+                cards::show(store, book, args)
+            });
+            // the card offer rides on the result's _meta (spec 9.6), never in the text
+            if let Some(open) = out["structuredContent"]
+                .as_object_mut()
+                .and_then(|o| o.remove("_open"))
+            {
+                out["content"] =
+                    json!([{ "type": "text", "text": out["structuredContent"].to_string() }]);
+                out["_meta"] = json!({ "rox/open": open });
+            }
+            out
+        }
+        NUDGE => read(books, arguments, |store, book, args| {
+            cards::nudge(store, book, args)
+        }),
         HANDOFF_CREATE => write(books, name, origin, arguments, |tx| {
             handoff::create(tx, arguments)
         }),
@@ -1154,21 +1220,90 @@ fn proposal_scope(arguments: &Map<String, Value>, books: &mut Books) -> Value {
 fn resolve(arguments: &Map<String, Value>, books: &mut Books) -> Value {
     let kind = arguments.get("kind").and_then(Value::as_str).unwrap_or("");
     let name = arguments.get("name").and_then(Value::as_str).unwrap_or("");
+    let value = arguments.get("value").and_then(Value::as_str).unwrap_or("");
+    let complete = arguments.get("complete") == Some(&Value::Bool(true));
+    let home = |books: &mut Books, props: Value| match books.home_ticket() {
+        Ok(ticket) => ok(json!({
+            "result": "open",
+            "app": "books",
+            "props": props,
+            "ticket": ticket,
+            "title": service::HOME_TITLE,
+            "placement": "full",
+        })),
+        Err(_) => fail("internal", "Books could not open right now."),
+    };
     match (kind, name) {
-        ("command", "books") => match books.home_ticket() {
-            Ok(ticket) => ok(json!({
-                "result": "open",
-                "app": "books",
-                "props": { "page": "today" },
-                "ticket": ticket,
-                "title": service::HOME_TITLE,
-                "placement": "full",
-            })),
-            Err(_) => fail("internal", "Books could not open right now."),
-        },
+        ("command", "books") => {
+            // a page chosen from the choices comes back as its ticket
+            if let Some(page) = plumbing_page(books, value) {
+                return home(books, json!({ "page": page }));
+            }
+            if complete
+                && books.exists()
+                && let Ok(store) = books.store()
+                && let Ok(choices) = cards::page_choices(store, value)
+                && !choices.is_empty()
+            {
+                return ok(json!({ "result": "choices", "choices": choices }));
+            }
+            match cards::command_open(name, value) {
+                Some(open) if open["app"] == "books" => home(books, open["props"].clone()),
+                Some(open) => ok(card_result(open)),
+                None => home(books, json!({ "page": "today" })),
+            }
+        }
+        (
+            "command",
+            "books-receipt" | "books-tidy" | "books-close" | "books-quarter" | "books-results",
+        ) => {
+            if !books.exists() {
+                return ok(
+                    json!({ "result": "error", "message": "There is no book yet. Type /books to make one." }),
+                );
+            }
+            match cards::command_open(name, value) {
+                Some(open) => ok(card_result(open)),
+                None => ok(
+                    json!({ "result": "error", "message": "Books does not know that template." }),
+                ),
+            }
+        }
         ("scope", "proposal") => ok(proposal_scope(arguments, books)),
+        ("scope", "person" | "account" | "period" | "entry" | "form" | "tag") => {
+            if !books.exists() {
+                return ok(json!({ "result": "error", "message": "There is no book yet." }));
+            }
+            match books.store() {
+                Ok(store) => ok(cards::scope(store, name, value)),
+                Err(_) => {
+                    ok(json!({ "result": "error", "message": "Books could not open right now." }))
+                }
+            }
+        }
         _ => ok(
             json!({ "result": "error", "message": "Books does not know that command or scope." }),
         ),
+    }
+}
+
+/// A card offer as a resolve `open` (spec 9.2).
+fn card_result(open: Value) -> Value {
+    let mut out = json!({ "result": "open", "app": open["app"], "props": open["props"], "title": open["title"], "placement": "inline" });
+    if let Some(t) = open.get("ticket") {
+        out["ticket"] = t.clone();
+    }
+    out
+}
+
+/// The page a `/books` choice's ticket names, if it is one.
+fn plumbing_page(books: &mut Books, value: &str) -> Option<&'static str> {
+    if !books_store::plumbing::is_ticket(value) || !books.exists() {
+        return None;
+    }
+    let store = books.store().ok()?;
+    match books_store::plumbing::subject(store.conn(), value).ok()?? {
+        (k, id) if k == "page" => cards::page_of(id),
+        _ => None,
     }
 }

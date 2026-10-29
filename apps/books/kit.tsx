@@ -85,33 +85,6 @@ async function act(tool: string, args: Record<string, Any>): Promise<Any> {
   }
 }
 
-/** Bytes as base64url, for a file part. */
-function b64url(bytes: Any): string {
-  const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-  let out = "";
-  for (let i = 0; i < bytes.length; i += 3) {
-    const n = (bytes[i] << 16) | ((bytes[i + 1] || 0) << 8) | (bytes[i + 2] || 0);
-    const left = bytes.length - i;
-    out += A[(n >> 18) & 63] + A[(n >> 12) & 63];
-    if (left > 1) out += A[(n >> 6) & 63];
-    if (left > 2) out += A[n & 63];
-  }
-  return out;
-}
-
-/** A picked file to Books in parts (one call's arguments are at most 256 KiB);
- * returns the upload id an import names. */
-async function sendFile(file: Any): Promise<string> {
-  const bytes = await file.read();
-  const size = 96000;
-  const parts = Math.max(1, Math.ceil(bytes.length / size));
-  const upload = `up-${rid().slice(3)}`;
-  for (let i = 0; i < parts; i += 1) {
-    await rox.call("books_app_upload_part", { upload, part: i, parts, data_base64: b64url(bytes.slice(i * size, (i + 1) * size)) });
-  }
-  return upload;
-}
-
 /** Typed money to two-place text with no float: "60,000" -> "60000.00". */
 function moneyText(typed: string): string | null {
   const s = String(typed || "").replace(/[₱,\s]/g, "").replace(/^PHP/i, "");
