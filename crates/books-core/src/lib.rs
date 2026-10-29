@@ -26,3 +26,4 @@ pub mod posting;
 pub mod privacy;
 pub mod proposal;
 pub mod rules;
+pub mod statement;

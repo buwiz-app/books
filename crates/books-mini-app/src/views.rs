@@ -178,7 +178,12 @@ impl Summary {
         let e = &self.entry;
         match e.status {
             Status::Draft => e.needs_review,
-            Status::Posted => self.unsure && e.form != Form::Reversal,
+            Status::Posted => {
+                self.unsure
+                    && e.form != Form::Reversal
+                    && e.recategorized_by.is_none()
+                    && e.recategorizes.is_none()
+            }
             _ => false,
         }
     }
@@ -623,8 +628,61 @@ pub fn entry(
         }
         _ => None,
     };
+    // for a line that needs review: the categories this payee used before,
+    // then what the bank's words name (books_app_recategorize)
+    let mut suggest: Vec<Value> = Vec::new();
+    if s.needs_review() && e.status == Status::Posted && origin.is_app() {
+        let mut ids: Vec<i64> = Vec::new();
+        if let Some(payee) = &e.payee {
+            let mut stmt = store
+                .conn()
+                .prepare(
+                    "SELECT l.account_id, count(*) n FROM entry x JOIN line l ON l.entry_id = x.entry_id JOIN account a ON a.account_id = l.account_id
+                     WHERE x.book_id = ?1 AND x.payee = ?2 AND x.status IN ('posted','voided') AND a.kind NOT IN ('unsure', 'mixed')
+                       AND a.type NOT IN ('asset','liability','equity')
+                     GROUP BY l.account_id ORDER BY n DESC LIMIT 2",
+                )
+                .map_err(books_store::StoreError::from)?;
+            ids = stmt
+                .query_map(books_store::rusqlite::params![chart.book.id, payee], |r| {
+                    r.get::<_, i64>(0)
+                })
+                .map_err(books_store::StoreError::from)?
+                .collect::<Result<_, _>>()
+                .map_err(books_store::StoreError::from)?;
+        }
+        let words = format!(
+            "{} {}",
+            e.memo.clone().unwrap_or_default(),
+            e.payee.clone().unwrap_or_default()
+        );
+        let words = if words.to_ascii_lowercase().contains("fee") {
+            format!("{words} BANK FEE")
+        } else {
+            words
+        };
+        if let Some(kind) = books_core::statement::suggest_kind(&words, s.amount())
+            && let Some(a) = chart
+                .list
+                .iter()
+                .find(|a| a.kind == KindRef::Kind(kind.into()))
+            && !ids.contains(&a.id)
+        {
+            ids.push(a.id);
+        }
+        for (i, id) in ids.iter().take(3).enumerate() {
+            if let Some(a) = chart.by_id.get(id) {
+                suggest.push(json!({ "ticket": ticket(store, "account", a.id)?, "name": a.name, "best": i == 0 }));
+            }
+        }
+    }
     let amount = s.amount();
     let obj = out.as_object_mut().expect("a row is an object");
+    obj.insert("suggest".into(), json!(suggest));
+    obj.insert(
+        "reviewable".into(),
+        json!(s.needs_review() && e.status == Status::Posted),
+    );
     obj.insert("big".into(), json!(signed(amount)));
     obj.insert(
         "date_label".into(),

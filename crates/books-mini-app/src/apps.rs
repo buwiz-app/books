@@ -36,6 +36,10 @@ const BOOKS: &str = concat!(
     "\n",
     include_str!("../../../apps/books/reports.tsx"),
     "\n",
+    include_str!("../../../apps/books/reconcile.tsx"),
+    "\n",
+    include_str!("../../../apps/books/settings.tsx"),
+    "\n",
     include_str!("../../../apps/books/window.tsx"),
 );
 

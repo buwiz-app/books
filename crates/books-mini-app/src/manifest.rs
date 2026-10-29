@@ -44,6 +44,10 @@ fn permissions(app: &apps::App) -> Value {
     if app.source.contains("rox.copy(") {
         p["copy"] = json!(true);
     }
+    // the Reconcile page picks a CSV bank statement (M4)
+    if app.source.contains("rox.pickFile(") {
+        p["pick_file"] = json!({ "extensions": [".csv"], "max_bytes": 2_000_000 });
+    }
     p
 }
 

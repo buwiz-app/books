@@ -63,6 +63,10 @@ pub struct Entry {
     pub needs_review: bool,
     pub created_at: String,
     pub posted_at: Option<String>,
+    /// The entry that gave this one's "not sure yet" lines a category.
+    pub recategorized_by: Option<i64>,
+    /// This entry gives another one's lines a category.
+    pub recategorizes: Option<i64>,
 }
 
 #[derive(Debug, Clone)]
@@ -95,7 +99,7 @@ pub struct DraftInput {
     pub lines: Vec<LineInput>,
 }
 
-const ENTRY_COLUMNS: &str = "entry_id, book_id, entry_no, entry_date, status, form, payee, memo, reference, reverses_entry_id, voided_by_entry_id, origin, needs_review, created_at, posted_at";
+const ENTRY_COLUMNS: &str = "entry_id, book_id, entry_no, entry_date, status, form, payee, memo, reference, reverses_entry_id, voided_by_entry_id, origin, needs_review, created_at, posted_at, recategorized_by_entry_id, recategorizes_entry_id";
 
 fn entry_row(r: &Row<'_>) -> rusqlite::Result<Entry> {
     let date: String = r.get(3)?;
@@ -121,6 +125,8 @@ fn entry_row(r: &Row<'_>) -> rusqlite::Result<Entry> {
         needs_review: r.get::<_, i64>(12)? == 1,
         created_at: r.get(13)?,
         posted_at: r.get(14)?,
+        recategorized_by: r.get(15)?,
+        recategorizes: r.get(16)?,
     })
 }
 

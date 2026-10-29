@@ -7,39 +7,48 @@
 //! person types here, so the money caution of invariant 14 does not arise:
 //! a number with a decimal point is not a TIN.
 
-/// Whether `text` holds a run of nine or more digits, counting single
-/// dashes or spaces between digit groups, outside a decimal number.
+/// Whether `text` holds a TIN shape: nine or more digits in a row, or
+/// groups of 3-3-3 (and an optional branch of 3 to 5) joined by single
+/// dashes or spaces, outside a decimal number. A date or a reference such
+/// as `4021-2026-10` is not one.
 pub fn tin_like(text: &str) -> bool {
-    let bytes = text.as_bytes();
+    let b = text.as_bytes();
+    let digit = |i: usize| b.get(i).is_some_and(u8::is_ascii_digit);
     let mut i = 0;
-    while i < bytes.len() {
-        if !bytes[i].is_ascii_digit() {
+    while i < b.len() {
+        if !digit(i) || (i > 0 && digit(i - 1)) {
             i += 1;
             continue;
         }
-        let start = i;
-        let mut digits = 0;
+        // a run of digits starting here
         let mut j = i;
-        while j < bytes.len() {
-            if bytes[j].is_ascii_digit() {
-                digits += 1;
-                j += 1;
-            } else if (bytes[j] == b'-' || bytes[j] == b' ')
-                && j + 1 < bytes.len()
-                && bytes[j + 1].is_ascii_digit()
-                && j > start
-            {
-                j += 1;
-            } else {
-                break;
-            }
+        while digit(j) {
+            j += 1;
         }
-        let decimal =
-            j < bytes.len() && bytes[j] == b'.' && bytes.get(j + 1).is_some_and(u8::is_ascii_digit);
-        if digits >= 9 && !decimal {
+        let decimal = b.get(j) == Some(&b'.') && digit(j + 1);
+        if j - i >= 9 && !decimal {
             return true;
         }
-        i = j.max(i + 1);
+        // 3-3-3 groups
+        if j - i == 3 {
+            let mut k = j;
+            let mut groups = 1;
+            while groups < 3 && matches!(b.get(k), Some(b'-' | b' ')) && digit(k + 1) {
+                let mut m = k + 1;
+                while digit(m) {
+                    m += 1;
+                }
+                if m - (k + 1) != 3 {
+                    break;
+                }
+                groups += 1;
+                k = m;
+            }
+            if groups == 3 && !(b.get(k) == Some(&b'.') && digit(k + 1)) {
+                return true;
+            }
+        }
+        i = j;
     }
     false
 }
@@ -83,6 +92,8 @@ mod tests {
             "300000000.00",
             "Oct 1-15",
             "Card 7713",
+            "bank-4021-2026-10.csv",
+            "Oct 1-15",
             "",
         ] {
             assert!(!tin_like(t), "{t}");

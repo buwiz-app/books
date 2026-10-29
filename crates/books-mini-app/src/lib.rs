@@ -16,6 +16,7 @@ pub mod demo;
 pub mod jcs;
 pub mod jsonrpc;
 pub mod manifest;
+pub mod reconcile;
 pub mod records;
 pub mod reports;
 pub mod reserved;

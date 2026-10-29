@@ -36,6 +36,11 @@ pub fn decode_exact(text: &str, len: usize) -> Option<Vec<u8>> {
     (out.len() == len && encode(&out) == text).then_some(out)
 }
 
+/// Canonical base64url without padding, of any length.
+pub fn decode(text: &str) -> Option<Vec<u8>> {
+    decode_exact(text, text.len() * 3 / 4)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -49,5 +54,9 @@ mod tests {
         assert_eq!(encode(b"\xfb\xff"), "-_8");
         assert_eq!(decode_exact("-_9", 2), None);
         assert_eq!(decode_exact("AA==", 1), None);
+        assert_eq!(
+            decode(&encode(b"Date,Amount\n")),
+            Some(b"Date,Amount\n".to_vec())
+        );
     }
 }

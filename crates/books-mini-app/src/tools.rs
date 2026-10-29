@@ -14,7 +14,7 @@ use serde_json::{Map, Value, json};
 use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
-use crate::{records, reports, views, writes};
+use crate::{reconcile, records, reports, views, writes};
 
 pub const STATUS: &str = "books_status";
 pub const RESOLVE: &str = "books_resolve";
@@ -42,6 +42,18 @@ pub const TAG_CREATE: &str = "books_app_tag_create";
 pub const OWED_CREATE: &str = "books_app_owed_create";
 pub const OWED_SETTLE: &str = "books_app_owed_settle";
 pub const OWED_CANCEL: &str = "books_app_owed_cancel";
+pub const RECONCILE_GRID: &str = "books_reconcile_grid";
+pub const STATEMENT_GET: &str = "books_statement_get";
+pub const SETTINGS_GET: &str = "books_settings_get";
+pub const STATEMENT_IMPORT: &str = "books_app_statement_import";
+pub const STATEMENT_ACCEPT: &str = "books_app_statement_accept";
+pub const STATEMENT_ADD: &str = "books_app_statement_add_line";
+pub const STATEMENT_FINISH: &str = "books_app_statement_finish";
+pub const RECATEGORIZE: &str = "books_app_recategorize";
+pub const MONTH_CLOSE: &str = "books_app_month_close";
+pub const MONTH_REOPEN: &str = "books_app_month_reopen";
+pub const DEFAULT_SET: &str = "books_app_default_set";
+pub const BOOK_UPDATE: &str = "books_app_book_update";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -211,6 +223,41 @@ fn owed_ref() -> Value {
         "required": ["client_request_id", "owed"],
         "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "owed": { "type": "string" }, "account": { "type": "string" }, "date": { "type": "string" } }
     })
+}
+
+fn statement_ref() -> Value {
+    json!({ "type": "object", "required": ["account", "month"], "properties": { "book": { "type": "string" }, "account": { "type": "string" }, "month": { "type": "string", "description": "YYYY-MM" } } })
+}
+
+fn statement_write() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "account"],
+        "properties": {
+            "client_request_id": { "type": "string" }, "book": { "type": "string" },
+            "account": { "type": "string" }, "month": { "type": "string" },
+            "line": { "type": "string", "description": "A statement line ticket." },
+            "csv_base64": { "type": "string", "description": "The CSV file's bytes, base64url." },
+            "csv_text": { "type": "string" }, "closing": { "type": "string", "description": "The ending balance, two-place text." },
+            "file_name": { "type": "string" }
+        }
+    })
+}
+
+fn recategorize_schema() -> Value {
+    json!({ "type": "object", "required": ["client_request_id", "entry", "category"], "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "entry": { "type": "string" }, "category": { "type": "string" } } })
+}
+
+fn month_write() -> Value {
+    json!({ "type": "object", "required": ["client_request_id", "month"], "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "month": { "type": "string" }, "reason": { "type": "string", "description": "Required to reopen." } } })
+}
+
+fn default_schema() -> Value {
+    json!({ "type": "object", "required": ["client_request_id", "slot", "account"], "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "slot": { "type": "string" }, "account": { "type": "string" } } })
+}
+
+fn book_update_schema() -> Value {
+    json!({ "type": "object", "required": ["client_request_id"], "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "label": { "type": "string" }, "fiscal_year_start": { "type": "integer" }, "basis": { "type": "string", "enum": ["cash", "accrual"] } } })
 }
 
 fn write_ref() -> Value {
@@ -433,6 +480,90 @@ pub const TOOLS: &[Tool] = &[
         schema: owed_ref,
         description: "Cancel an open invoice or bill after the user's click.",
     },
+    Tool {
+        name: RECONCILE_GRID,
+        reach: Reach::Everyone,
+        write: false,
+        schema: book_only,
+        description: "Bank, cash and card accounts by month: matched, draft or to do, with counts.",
+    },
+    Tool {
+        name: STATEMENT_GET,
+        reach: Reach::Everyone,
+        write: false,
+        schema: statement_ref,
+        description: "One imported statement beside the ledger: each line's match (same, suggested, missing) and the difference.",
+    },
+    Tool {
+        name: SETTINGS_GET,
+        reach: Reach::Everyone,
+        write: false,
+        schema: book_only,
+        description: "The book's settings: name, basis, fiscal year, months open or closed with their history, default categories, and what is linked.",
+    },
+    Tool {
+        name: STATEMENT_IMPORT,
+        reach: Reach::App,
+        write: true,
+        schema: statement_write,
+        description: "Import a CSV bank or card statement for one account and month after the user picks the file.",
+    },
+    Tool {
+        name: STATEMENT_ACCEPT,
+        reach: Reach::App,
+        write: true,
+        schema: statement_write,
+        description: "Accept every suggested match of a statement after the user's click.",
+    },
+    Tool {
+        name: STATEMENT_ADD,
+        reach: Reach::App,
+        write: true,
+        schema: statement_write,
+        description: "Post a statement line that is not in Books, on its date, after the user's click.",
+    },
+    Tool {
+        name: STATEMENT_FINISH,
+        reach: Reach::App,
+        write: true,
+        schema: statement_write,
+        description: "Finish a month when every line matches and the difference is 0.00.",
+    },
+    Tool {
+        name: RECATEGORIZE,
+        reach: Reach::App,
+        write: true,
+        schema: recategorize_schema,
+        description: "Give a posted line on a not-sure-yet account its category, by a reclassifying entry on its date.",
+    },
+    Tool {
+        name: MONTH_CLOSE,
+        reach: Reach::App,
+        write: true,
+        schema: month_write,
+        description: "Close a month after the user's click. A closed month refuses every post and void dated in it.",
+    },
+    Tool {
+        name: MONTH_REOPEN,
+        reach: Reach::App,
+        write: true,
+        schema: month_write,
+        description: "Reopen a closed month with the user's reason.",
+    },
+    Tool {
+        name: DEFAULT_SET,
+        reach: Reach::App,
+        write: true,
+        schema: default_schema,
+        description: "Set the account a default category uses.",
+    },
+    Tool {
+        name: BOOK_UPDATE,
+        reach: Reach::App,
+        write: true,
+        schema: book_update_schema,
+        description: "Rename the book, move its fiscal year, or change its basis (only from the start of a year with nothing posted).",
+    },
 ];
 
 pub fn find(name: &str) -> Option<&'static Tool> {
@@ -500,7 +631,8 @@ pub fn call(
             out["to_review"] = json!(count(
                 "SELECT count(*) FROM entry e WHERE e.book_id = ?1 AND (
                    (e.status = 'draft' AND e.needs_review = 1)
-                   OR (e.status = 'posted' AND e.form <> 'reversal' AND EXISTS (
+                   OR (e.status = 'posted' AND e.form <> 'reversal'
+                       AND e.recategorized_by_entry_id IS NULL AND e.recategorizes_entry_id IS NULL AND EXISTS (
                      SELECT 1 FROM line l JOIN account a ON a.account_id = l.account_id
                      WHERE l.entry_id = e.entry_id AND a.kind = 'unsure')))"
             )?);
@@ -577,6 +709,42 @@ pub fn call(
         }),
         OWED_CANCEL => write(books, name, origin, arguments, |tx| {
             records::owed_cancel(tx, arguments)
+        }),
+        RECONCILE_GRID => read(books, arguments, |store, book, _| {
+            reconcile::grid(store, book)
+        }),
+        STATEMENT_GET => read(books, arguments, |store, book, args| {
+            reconcile::statement_view(store, book, args)
+        }),
+        SETTINGS_GET => read(books, arguments, |store, book, _| {
+            reconcile::settings(store, book)
+        }),
+        STATEMENT_IMPORT => write(books, name, origin, arguments, |tx| {
+            reconcile::statement_import(tx, arguments)
+        }),
+        STATEMENT_ACCEPT => write(books, name, origin, arguments, |tx| {
+            reconcile::statement_accept(tx, arguments)
+        }),
+        STATEMENT_ADD => write(books, name, origin, arguments, |tx| {
+            reconcile::statement_add(tx, arguments)
+        }),
+        STATEMENT_FINISH => write(books, name, origin, arguments, |tx| {
+            reconcile::statement_finish(tx, arguments)
+        }),
+        RECATEGORIZE => write(books, name, origin, arguments, |tx| {
+            reconcile::recategorize(tx, arguments)
+        }),
+        MONTH_CLOSE => write(books, name, origin, arguments, |tx| {
+            reconcile::month_close(tx, arguments)
+        }),
+        MONTH_REOPEN => write(books, name, origin, arguments, |tx| {
+            reconcile::month_reopen(tx, arguments)
+        }),
+        DEFAULT_SET => write(books, name, origin, arguments, |tx| {
+            reconcile::default_set(tx, arguments)
+        }),
+        BOOK_UPDATE => write(books, name, origin, arguments, |tx| {
+            reconcile::book_update(tx, arguments)
         }),
         _ => fail("internal", "Books has no handler for that tool."),
     })

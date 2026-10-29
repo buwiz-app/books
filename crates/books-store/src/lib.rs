@@ -9,6 +9,7 @@
 //! - [`Store`]: open, migrate, and one transaction per tool call;
 //! - [`books`], [`entries`]: the book, its chart and the ledger;
 //! - [`people`]: people, tags and unpaid documents;
+//! - [`months`]: month locks, statements, defaults and book settings;
 //! - [`plumbing`]: idempotency, audit rows and tickets.
 
 use std::fmt;
@@ -21,6 +22,7 @@ use rusqlite::{Connection, OptionalExtension as _, params};
 
 pub mod books;
 pub mod entries;
+pub mod months;
 pub mod people;
 pub mod plumbing;
 
@@ -30,6 +32,7 @@ pub use rusqlite;
 const MIGRATIONS: &[(i64, &str)] = &[
     (1, include_str!("../migrations/0001_init.sql")),
     (2, include_str!("../migrations/0002_people_tags_unpaid.sql")),
+    (3, include_str!("../migrations/0003_months_statements.sql")),
 ];
 
 pub const DATA_DIR_ENV: &str = "BOOKS_DATA_DIR";
@@ -409,7 +412,7 @@ mod tests {
         assert_eq!(mode, 0o700);
         let store = Store::open(&paths).unwrap();
         assert_eq!(store.meta("canary").unwrap().as_deref(), Some(CANARY));
-        assert_eq!(store.meta("schema_version").unwrap().as_deref(), Some("2"));
+        assert_eq!(store.meta("schema_version").unwrap().as_deref(), Some("3"));
         drop(store);
         let other = Paths {
             dir: paths.dir.clone(),

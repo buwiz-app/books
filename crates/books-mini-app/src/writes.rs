@@ -212,9 +212,14 @@ fn draft_input(
     })
 }
 
-/// The month gate: always open until months can close (M4).
-pub fn gate(_conn: &Connection, _book: &Book) -> impl Fn(Date) -> books_store::Result<()> {
-    |_| Ok(())
+/// The month gate: a post or void dated in a closed month is refused
+/// (DD-16).
+pub fn gate<'a>(
+    conn: &'a Connection,
+    book: &Book,
+) -> impl Fn(Date) -> books_store::Result<()> + 'a {
+    let book_id = book.id;
+    move |d| books_store::months::check_open(conn, book_id, d)
 }
 
 /// A person and tags named by a request: `person` (a ticket), or `payee`

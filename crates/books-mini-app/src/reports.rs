@@ -68,6 +68,7 @@ fn to_review(store: &Store, account: &Account, p: &Period) -> Result<i64, Refusa
         .query_row(
             "SELECT count(*) FROM line l JOIN entry e ON e.entry_id = l.entry_id
              WHERE l.account_id = ?1 AND e.status IN ('posted','voided') AND e.form <> 'reversal' AND e.voided_by_entry_id IS NULL
+               AND e.recategorized_by_entry_id IS NULL AND e.recategorizes_entry_id IS NULL
                AND e.entry_date >= ?2 AND e.entry_date <= ?3",
             params![account.id, p.start.to_string(), p.end.to_string()],
             |r| r.get(0),

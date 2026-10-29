@@ -128,11 +128,59 @@ Rox `016f63c` (a detached worktree, its own target folder), plain-Node broker on
 ### Gates
 
 fmt clean; clippy clean; cargo test 85 (with the M6 port's 48); PoC 177; host test 17/17; privacy scan 0 findings.
-**Conformance 61/65:** the four failures are BRG-03 `rate_limited`. The runner sends one signed call per granted tool on
-one open, back to back, and the broker allows 20 new calls per second per open (`sessions.mjs:240`); the window grants
-24 tools. The four tools pass in the unit, golden and host tests. Asked the rox session to pace BRG-03.
+**Conformance 61/65 on rox `016f63c`:** the four failures were BRG-03 `rate_limited`. The runner sent one signed call
+per granted tool on one open, back to back, and the broker allows 20 new calls per second per open
+(`sessions.mjs:240`); the window grants 24 tools. The rox session paced BRG-03 (`2023fa2`, PR #13, not merged yet);
+with that runner Books conforms 65/65, and the runner prints the per-run trust store (M1-11).
 
 Checked in the test Rox: [docs/shots/m2/](shots/m2/), [docs/shots/m3/](shots/m3/).
+
+## M4 Reconcile and months
+
+### What exists
+
+| Part | Where | Notes |
+|---|---|---|
+| Schema 0003 | `crates/books-store/migrations/0003_months_statements.sql` | `period` and `period_event` (close, reopen, reason), `statement` and `statement_line`, `category_default`, and an entry's link to the entry that gave its "not sure yet" lines a category. |
+| Statements, pure | `crates/books-core/src/statement.rs` | CSV with a Date, a Description and either a signed Amount or Debit and Credit columns, and an optional running Balance; dates `YYYY-MM-DD`, `MM/DD/YYYY`, `Oct 03, 2026`, `03 Oct 2026`; amounts with commas, parentheses or a peso sign, two decimals at most, no float. Any run of nine or more digits in a description is masked before it is stored. Matching: same amount and day is a match; same amount within five days is a suggestion the user accepts; anything else is missing. |
+| Months, statements, defaults, settings | `crates/books-store/src/months.rs` | The month gate every post and void passes (`writes::gate`). Closing refuses a month with drafts dated in it; reopening needs a reason; both are events. Finish needs every line matched and a 0.00 difference. A missing line is added as a posted entry on its date, on the kind its words name (interest, bank charges) or else on the "not sure yet" default. |
+| Pages | `apps/books/{reconcile,settings}.tsx` | Reconcile: the grid and the match view. Settings: Book, Months, Defaults, Link & data. The Ledger drawer offers category chips for a line that needs review. |
+| Test | `tests/months_reconcile.rs` | On the golden book. |
+
+### Design choices (PROPOSAL)
+
+- **A void in a closed month is refused**, with a pointer to reopen. Under the owner's void rule the original becomes
+  Voided, which would change a closed month's totals; a closed entry is immutable (invariant 10).
+- **Giving a "not sure yet" line a category posts a reclassifying entry** on the same date (Dr the category, Cr the
+  not-sure account). The posted original never changes; both entries link to each other, and the original no longer
+  needs review.
+- **One statement per account and month.** Importing again replaces an unfinished one; a finished month refuses.
+- **The file arrives as bytes.** `rox.pickFile` gives a `Uint8Array`, which the app sends as base64url; the plugin
+  decodes it and refuses anything that is not UTF-8 or larger than 2 MB. `pick_file` grants `.csv` only.
+- **A TIN shape** in typed text is now nine or more digits in a row, or 3-3-3 groups (with an optional branch); a file
+  name such as `bank-4021-2026-10.csv` is not one.
+
+### Exit (tests/months_reconcile.rs, passing)
+
+October's synthetic statement (`fixtures/demo/bank-4021-2026-10.csv`) shows ten matches, the bank fee a day off as a
+suggestion, and the 42.18 interest missing; statement 412,392.18, Books 412,350.00, difference 42.18, Finish refused.
+After accepting the suggestion and adding the interest (to Interest Income), the difference is 0.00 and October is
+matched. Closing October is refused while a draft is dated in it; once closed, a post and a void dated in October are
+refused; reopening without a reason is refused and with one is recorded. The two review lines take Utilities and Bank
+Fees; October's net becomes 251,193.18 (the interest), and the trial balance still balances. A basis change in a year
+with entries is refused.
+
+### Checked in the test Rox
+
+[docs/shots/m4/](shots/m4/): the grid (October Draft after the import), the match view (`=`, `≈`, `?`), Accept and
+"+ Add" by presses, difference 0.00 and Finish, October ✓ Matched, September closed from Settings › Months, October's
+close refused with its reason, and Defaults. The statement went in through a signed host call: `rox.pickFile` opens the
+native file dialog, which the agent cannot drive.
+
+### Gates
+
+fmt clean; clippy clean; cargo test 92; PoC 177; conformance 77/77 (runner from rox `2023fa2`); host test 17/17;
+privacy scan 0 findings.
 
 ## M6 (part): the bridge in Rust
 
@@ -145,4 +193,4 @@ catalogue and fails closed, as in the PoC; Rust sums in i128 and refuses a measu
 
 ## Not yet built
 
-M4, M5, the rest of M6 (Forms, Certificates, Payroll pages), M7 to M9: see the tracker.
+M5, the rest of M6 (Forms, Certificates, Payroll pages), M7 to M9: see the tracker.

@@ -16,7 +16,7 @@ const PAGES: { id: string; label: string; group?: string; bir?: boolean }[] = [
   { id: "certificates", label: "Certificates", group: "Records" },
   { id: "settings", label: "Settings", group: "end" },
 ];
-const BUILT = ["today", "ledger", "unpaid", "reports", "people", "accounts", "tags"];
+const BUILT = ["today", "ledger", "unpaid", "reconcile", "reports", "people", "accounts", "tags", "settings"];
 
 const page = signal(PAGES.some((x) => x.id === PROPS.page) ? String(PROPS.page) : "today");
 const sheetMode = signal("");
@@ -188,6 +188,12 @@ export default function Books() {
               </If>
               <If when={page() === "unpaid"}>
                 <UnpaidPage go={go} />
+              </If>
+              <If when={page() === "reconcile"}>
+                <ReconcilePage go={go} />
+              </If>
+              <If when={page() === "settings"}>
+                <SettingsPage go={go} />
               </If>
               <If when={page() === "reports"}>
                 <ReportsPage go={go} />

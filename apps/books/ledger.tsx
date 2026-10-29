@@ -192,6 +192,27 @@ function EntryDrawer() {
                   <Kv k="Linked" v={e()?.related} />
                 </If>
               </View>
+              <If when={Boolean(e()?.reviewable)}>
+                <View class="gap-1.5">
+                  <Text class={`text-[12px] ${C.dim}`}>Pick a category</Text>
+                  <View class="flex-row gap-1.5 flex-wrap">
+                    <Each of={e()?.suggest || []} key={rowKey}>
+                      {(c: Any) => (
+                        <View
+                          class={`rounded-full border px-2.5 py-1 ${C.raise} ${c().best ? "border-[#157a48] dark:border-[#3fcf89]" : C.line}`}
+                          onPress={() =>
+                            act("books_app_recategorize", { entry: drawerEntry(), category: c().ticket })
+                              .then(() => toast(`Now ${c().name}`))
+                              .catch(() => null)
+                          }
+                        >
+                          <Text class={`text-[12px] ${c().best ? C.green : C.ink}`}>{c().best ? `${c().name} · likely` : c().name}</Text>
+                        </View>
+                      )}
+                    </Each>
+                  </View>
+                </View>
+              </If>
               <View class="gap-1.5">
                 <Text class={`text-[12px] ${C.dim}`}>Behind the scenes</Text>
                 <View class={`rounded-[10px] border overflow-hidden ${C.line}`}>

@@ -160,6 +160,37 @@ fn title(store: &Store, kind: &str, id: i64) -> Option<String> {
         "entry" => books_store::entries::get(c, id)
             .ok()?
             .map(|e| format!("Entry {:04}", e.no)),
+        // a person's name may be a legal name: the title stays neutral
+        "person" => books_store::people::person(c, id).ok()?.map(|p| {
+            let kind = match p.kind.as_str() {
+                "vendor" => "Vendor",
+                "customer" => "Customer",
+                "employee" => "Employee",
+                "owner" => "Owner",
+                "lender" => "Lender",
+                _ => "Government",
+            };
+            kind.to_string()
+        }),
+        "tag" => books_store::people::tag(c, id).ok()?.map(|t| {
+            format!(
+                "{} · {}",
+                if t.kind == "department" {
+                    "Department"
+                } else {
+                    "Location"
+                },
+                t.name
+            )
+        }),
+        "owed" => books_store::people::unpaid(c, id).ok()?.map(|u| {
+            if u.side == "collect" {
+                "Invoice to collect".into()
+            } else {
+                "Bill to pay".into()
+            }
+        }),
+        "sline" => Some("Statement line".into()),
         _ => None,
     }
 }
