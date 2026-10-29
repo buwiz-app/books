@@ -77,6 +77,9 @@ pub const HANDOFF_CONFIRM: &str = "books_app_handoff_confirm";
 pub const CROSS_CHECKS: &str = "books_cross_checks";
 pub const SHOW: &str = "books_show";
 pub const NUDGE: &str = "books_nudge";
+pub const SIGNIN: &str = "books_app_signin";
+pub const TAX_PROFILES: &str = "books_app_tax_list";
+pub const PROFILE_LINK: &str = "books_app_tax_link";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -393,6 +396,17 @@ fn nudge_schema() -> Value {
     json!({ "type": "object", "properties": { "book": { "type": "string" }, "kind": { "type": "string", "enum": ["tidy", "month_end", "bir_pair"] }, "month": { "type": "string" }, "any_day": { "type": "boolean", "description": "Answer on any day, not only on the routine's day." } } })
 }
 
+fn signin_schema() -> Value {
+    json!({ "type": "object", "properties": { "step": { "type": "string", "enum": ["start", "poll", "out"] } } })
+}
+
+fn profile_link_schema() -> Value {
+    json!({ "type": "object", "required": ["client_request_id"], "properties": {
+        "client_request_id": { "type": "string" }, "book": { "type": "string" },
+        "profile": { "type": "string", "description": "The tax profile's opaque id from the Buwiz list." },
+        "unlink": { "type": "boolean" } } })
+}
+
 fn write_ref() -> Value {
     json!({
         "type": "object",
@@ -696,6 +710,27 @@ pub const TOOLS: &[Tool] = &[
         write: true,
         schema: book_update_schema,
         description: "Rename the book, move its fiscal year, or change its basis (only from the start of a year with nothing posted).",
+    },
+    Tool {
+        name: SIGNIN,
+        reach: Reach::App,
+        write: true,
+        schema: signin_schema,
+        description: "Sign in to Buwiz with a device code (optional), check it, or sign out.",
+    },
+    Tool {
+        name: TAX_PROFILES,
+        reach: Reach::App,
+        write: false,
+        schema: book_only,
+        description: "The approved Buwiz tax profiles you own: id, masked TIN and registered name only.",
+    },
+    Tool {
+        name: PROFILE_LINK,
+        reach: Reach::App,
+        write: true,
+        schema: profile_link_schema,
+        description: "Link the book to one of your tax profiles by its id, or unlink it.",
     },
     Tool {
         name: SHOW,
@@ -1108,6 +1143,64 @@ pub fn call(
         WAGE_RUN_SAVE => write(books, name, origin, arguments, |tx| {
             payroll::save(tx, arguments)
         }),
+        SIGNIN => answer((|| {
+            let (store, session, transport) = books.cloud_parts()?;
+            crate::cloud::signin(transport, store.conn(), session, arguments)
+        })()),
+        TAX_PROFILES => answer((|| {
+            let (store, session, transport) = books.cloud_parts()?;
+            let book = service::book(store, arguments)?;
+            if !crate::cloud::signed_in(store.conn())? || transport.is_none() {
+                return Ok(
+                    json!({ "signed_in": false, "linked": book.cloud_tax_profile_id.is_some(), "profiles": [] }),
+                );
+            }
+            let transport = transport.expect("checked");
+            let mut list = crate::cloud::profiles(transport, store.conn(), session)?;
+            for p in &mut list {
+                p["linked"] = json!(book.cloud_tax_profile_id.as_deref() == p["id"].as_str());
+            }
+            Ok(
+                json!({ "signed_in": true, "linked": book.cloud_tax_profile_id.is_some(), "profiles": list }),
+            )
+        })()),
+        PROFILE_LINK => {
+            let unlink = arguments.get("unlink") == Some(&Value::Bool(true));
+            // a link names a profile the cloud lists for this user now
+            let chosen = if unlink {
+                None
+            } else {
+                let checked = (|| -> Result<String, Refusal> {
+                    let id = service::required(arguments, "profile")?.to_lowercase();
+                    let (store, session, transport) = books.cloud_parts()?;
+                    let transport = transport.ok_or_else(|| {
+                        Refusal::new("cloud_off", "Sign-in is not set up in this Books.")
+                    })?;
+                    let list = crate::cloud::profiles(transport, store.conn(), session)?;
+                    if list.iter().any(|p| p["id"] == id.as_str()) {
+                        Ok(id)
+                    } else {
+                        Err(Refusal::new(
+                            "not_found",
+                            "That tax profile is not one of your approved profiles.",
+                        ))
+                    }
+                })();
+                match checked {
+                    Ok(id) => Some(id),
+                    Err(r) => return Some(r.into_result()),
+                }
+            };
+            write(books, name, origin, arguments, |tx| {
+                let book = writes::book_in(tx, arguments)?;
+                books_store::link::link_profile(tx, &book, chosen.as_deref())?;
+                Ok(service::with_subject(
+                    json!({ "linked": chosen.is_some() }),
+                    "book",
+                    book.id,
+                ))
+            })
+        }
         SHOW => {
             let mut out = read(books, arguments, |store, book, args| {
                 cards::show(store, book, args)

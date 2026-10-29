@@ -40,6 +40,10 @@ name = "months_reconcile"
 path = "../../tests/months_reconcile.rs"
 
 [[test]]
+name = "cloud_link"
+path = "../../tests/cloud_link.rs"
+
+[[test]]
 name = "chat_cards"
 path = "../../tests/chat_cards.rs"
 
@@ -65,6 +69,9 @@ getrandom = "0.3"
 # Manifest hash, permissions digest and app fingerprints (spec 4.4, 5.2, 6.2).
 sha2 = "0.10"
 serde_json = "1"
+# M9: device sign-in to buwiz-cloud and the tax-profile list, over TLS
+# (rustls); used only when BOOKS_CLOUD_URL is set.
+ureq = { version = "2.12", default-features = false, features = ["tls"] }
 
 [lints]
 workspace = true

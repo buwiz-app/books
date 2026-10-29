@@ -88,6 +88,10 @@ pub struct Books {
     home_ticket: Option<String>,
     /// Picked files arriving in parts (M5).
     pub uploads: crate::oldbooks::Uploads,
+    /// The cloud sign-in (M9): memory only; the refresh token is in the store.
+    pub cloud: crate::cloud::Session,
+    /// How Books reaches buwiz-cloud; `None` when no cloud is set (D19).
+    pub transport: Option<Box<dyn crate::cloud::Transport>>,
 }
 
 pub const HOME_TITLE: &str = "Books";
@@ -99,11 +103,16 @@ impl Books {
             store: None,
             home_ticket: None,
             uploads: crate::oldbooks::Uploads::default(),
+            cloud: crate::cloud::Session::default(),
+            transport: None,
         }
     }
 
     pub fn from_env() -> Self {
-        Self::new(Paths::from_env())
+        let mut books = Self::new(Paths::from_env());
+        books.transport =
+            crate::cloud::Http::from_env().map(|t| Box::new(t) as Box<dyn crate::cloud::Transport>);
+        books
     }
 
     /// Whether a store file exists (without making one).
@@ -116,6 +125,24 @@ impl Books {
             self.store = Some(Store::open(&self.paths)?);
         }
         Ok(self.store.as_mut().expect("just opened"))
+    }
+
+    /// The store, the cloud session and the transport at once (M9).
+    pub fn cloud_parts(
+        &mut self,
+    ) -> Result<
+        (
+            &Store,
+            &mut crate::cloud::Session,
+            Option<&dyn crate::cloud::Transport>,
+        ),
+        Refusal,
+    > {
+        if self.store.is_none() {
+            self.store = Some(Store::open(&self.paths)?);
+        }
+        let store = self.store.as_ref().expect("just opened");
+        Ok((store, &mut self.cloud, self.transport.as_deref()))
     }
 
     /// The home ticket (no store needed).

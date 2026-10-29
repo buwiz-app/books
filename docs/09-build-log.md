@@ -408,6 +408,42 @@ card after its sign fix, and whether a scroll over a card reaches the chat. The 
 fmt clean; clippy clean; cargo test 115; PoC 177; conformance 179 pass, 7 skipped (rox `9c106cc`); host test 17/17;
 privacy scan 0 findings.
 
+## M9 Release work
+
+### What exists
+
+- `tools/check-all.sh` (M9-01): fmt, clippy, the Rust tests with the 17 vectors, the PoC tests, Rox conformance, the
+  Rox host test and the privacy scan, one line each, non-zero on any failure (`SKIP_ROX=1` never counts as green).
+- **Buwiz sign-in** (M9-02, `books-mini-app::cloud`, docs/01 5.7, P-C4, P-C8), optional (D19) and off unless
+  `BOOKS_CLOUD_URL` names the cloud: device sign-in as `buwiz-books`, scope `books` (`POST /oauth/device/code`, then
+  polls of `POST /oauth/token`); the device and user codes stay in memory; each new refresh token is saved in the
+  encrypted store before its access token is used; a refused refresh ends the sign-in. Tools `books_app_signin`
+  (start, poll, out) and `books_app_tax_list`, app only.
+- **The link** (M9-03, `books-store::link`, `books_app_tax_link`): the book links to one approved tax profile by its
+  opaque UUID only, and only to one the cloud lists for the user at that moment. The list is read as `id`, `tin_masked`,
+  `registered_name` and `permissions`; any other field is ignored, and a response with a `tin` field or a TIN-shaped
+  value is refused whole. Settings › Link & data has the sign-in, the code, the list and Link / Unlink.
+- The tool names avoid the forbidden verbs even inside words ("profiles" holds "file"), as the manifest test checks.
+
+### Exit (tests/cloud_link.rs, passing, against a fake cloud)
+
+Without a cloud address sign-in is refused plainly and Books works. The device flow waits, then signs in; neither the
+device code nor a token appears in a result or the replay table; the refresh token is in the store. The list keeps
+four fields; the link takes a listed id and refuses an unlisted one. In a new process the refresh token rotates
+(`REF-1` sent, `REF-2` saved) before the list is read with the new access token. A `tin` field or a TIN-shaped value
+refuses the list; an expired access token refreshes once; a refused refresh signs out and forgets the token.
+
+### Not done here, by design
+
+- A live sign-in: it needs the owner's Buwiz account and the cloud's address (U-20); the agent has neither.
+- M9-04, the trust entry for `dev.goldcoders.books` (Rox owner), and M9-05, signing with `gc-2026-01` and installing
+  in the owner's Rox (the owner). The release manifest already carries `publisher.key_id` `gc-2026-01`.
+
+### Gates
+
+`tools/check-all.sh`: fmt clean; clippy clean; cargo test 117; PoC 177; conformance 182 pass, 7 skipped (rox
+`9c106cc`); host test 17/17; privacy scan 0 findings.
+
 ## Not yet built
 
-M9: see the tracker.
+M9-04 and M9-05 are the Rox owner's and the owner's: see the tracker.

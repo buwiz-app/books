@@ -26,6 +26,7 @@ pub mod certificates;
 pub mod entries;
 pub mod handoffs;
 pub mod imports;
+pub mod link;
 pub mod months;
 pub mod people;
 pub mod plumbing;

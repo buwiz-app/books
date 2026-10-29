@@ -173,20 +173,108 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
               </View>
             </If>
             <If when={setTab() === "link"}>
-              <Panel pad class="gap-3">
-                <Kv k="Tax profile" v={d()?.link.tax_profile} />
-                <Kv k="BIR app" v={d()?.link.bir} />
-                <Kv k="Stored where" v={d()?.link.stored} />
-                <View class="flex-row gap-2 flex-wrap">
-                  <Btn label="Import from web Books" onPress={() => p.go("import")} />
-                  <Btn label="Import CSV files" onPress={() => p.go("import")} />
-                </View>
-                <Text class={`text-[12px] ${C.dim}`}>No TIN is stored here. A tax profile links by its ID only, through Buwiz sign-in.</Text>
-              </Panel>
+              <View class="gap-3">
+                <Panel pad class="gap-3">
+                  <Kv k="Tax profile" v={d()?.link.tax_profile} />
+                  <Kv k="BIR app" v={d()?.link.bir} />
+                  <Kv k="Stored where" v={d()?.link.stored} />
+                  <View class="flex-row gap-2 flex-wrap">
+                    <Btn label="Import from web Books" onPress={() => p.go("import")} />
+                    <Btn label="Import CSV files" onPress={() => p.go("import")} />
+                  </View>
+                  <Text class={`text-[12px] ${C.dim}`}>No TIN is stored here. A tax profile links by its ID only, through Buwiz sign-in.</Text>
+                </Panel>
+                <CloudLink />
+              </View>
             </If>
           </View>
         </View>
       </If>
     </View>
+  );
+}
+
+/** Buwiz sign-in (optional, D19) and the link to one tax profile by ID. */
+function CloudLink() {
+  const code = signal(null as Any);
+  const note = signal("");
+  const list = resource(
+    () => ({ v: ver() }),
+    () => rox.call("books_app_tax_list", {}),
+  );
+  const l = () => list() as Any;
+  let tries = 0;
+  const poll = () =>
+    rox
+      .call("books_app_signin", { step: "poll" })
+      .then((r: Any) => {
+        if (r.status === "signed_in") {
+          code.set(null);
+          note.set("Signed in to Buwiz.");
+          bump();
+        } else if (r.status === "waiting" && code() && (tries += 1) < 120) {
+          setTimeout(poll, (code()?.interval || 5) * 1000);
+        } else if (r.status !== "waiting") {
+          code.set(null);
+          note.set(r.status === "denied" ? "The sign-in was declined." : "The code expired. Start again.");
+        }
+      })
+      .catch((e: Any) => note.set(errText(e)));
+  const start = () => {
+    note.set("");
+    tries = 0;
+    rox
+      .call("books_app_signin", { step: "start" })
+      .then((r: Any) => {
+        code.set(r);
+        setTimeout(poll, (r.interval || 5) * 1000);
+      })
+      .catch((e: Any) => note.set(errText(e)));
+  };
+  return (
+    <Panel pad class="gap-2.5">
+      <Text class={`text-[13.5px] font-bold ${C.ink}`}>Buwiz sign-in</Text>
+      <Text class={`text-[12px] ${C.mute}`}>Optional. Books works without it. Signing in lets you link this book to one of your approved tax profiles, by its ID.</Text>
+      <If when={Boolean(code())}>
+        <View class={`rounded-lg p-3 gap-1 ${C.raise}`}>
+          <Text class={`text-[12px] ${C.mute}`}>{`Open ${String(code()?.verification_uri || "")} and type this code:`}</Text>
+          <Text class={`text-[20px] font-mono font-bold ${C.ink}`}>{code()?.user_code || ""}</Text>
+          <View class="flex-row gap-2">
+            <Btn label="Copy the code" small onPress={() => (rox.copy ? rox.copy(String(code()?.user_code || "")) : null)} />
+            <Btn label="I approved it" small onPress={poll} />
+          </View>
+        </View>
+      </If>
+      <If when={Boolean(l()) && !l()?.signed_in && !code()}>
+        <View class="flex-row">
+          <Btn label="Sign in to Buwiz" tone="go" onPress={start} />
+        </View>
+      </If>
+      <If when={Boolean(l()?.signed_in)}>
+        <Each of={l()?.profiles || []} key={rowKey}>
+          {(x: Any) => (
+            <View class={`flex-row items-center gap-3 py-1.5 border-t ${C.line}`}>
+              <Text class={`text-[13px] font-mono ${C.ink}`}>{x().tin_masked || "—"}</Text>
+              <Text class={`flex-1 text-[12.5px] ${C.mute}`} numberOfLines={1}>
+                {x().registered_name || ""}
+              </Text>
+              <If when={Boolean(x().linked)}>
+                <Pill tone="ok" label="Linked" />
+                <Btn label="Unlink" small onPress={() => act("books_app_tax_link", { unlink: true }).catch(() => null)} />
+              </If>
+              <If when={!x().linked}>
+                <Btn label="Link this book" small tone="go" onPress={() => act("books_app_tax_link", { profile: x().id }).catch(() => null)} />
+              </If>
+            </View>
+          )}
+        </Each>
+        <View class="flex-row">
+          <Btn label="Sign out" small onPress={() => rox.call("books_app_signin", { step: "out" }).then(bump).catch(() => null)} />
+        </View>
+      </If>
+      <If when={Boolean(note())}>
+        <Text class={`text-[12.5px] ${C.mute}`}>{note()}</Text>
+      </If>
+    </Panel>
   );
 }

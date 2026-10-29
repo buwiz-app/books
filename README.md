@@ -66,6 +66,9 @@ Design decisions (proposed; the full list and open items are in `docs/07-decisio
 
 ## Run the gates
 
+`tools/check-all.sh` runs every gate below in order and prints one line each (`ROX_DIR` names the Rox checkout or
+worktree, `BOOKS_HOST_PORT` the host test's port; it exits non-zero on any failure). One by one:
+
 ```sh
 cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
 (cd poc && bun test)
@@ -77,6 +80,10 @@ tools/rox/host-test.sh     # installs Books in a throwaway Rox broker (port 8810
 The plugin keeps its store in `BOOKS_DATA_DIR` (default `~/Library/Application Support/dev.goldcoders.books`) with
 the key file `BOOKS_DB_KEY_FILE` (default `<dir>/books.key`, mode 0600). Tests and the host test always point both
 at a temp folder.
+
+Buwiz sign-in is optional (Books works offline) and runs only when `BOOKS_CLOUD_URL` names the cloud (`https://…`):
+device sign-in as `buwiz-books`, scope `books`; the rotating refresh token lives in the encrypted store; the book
+links to a tax profile by its id only.
 
 ## Run the proof of concept
 
