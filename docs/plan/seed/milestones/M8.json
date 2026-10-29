@@ -2,7 +2,7 @@
  "order": 8,
  "code": "M8",
  "title": "Chat: cards, scopes, routines",
- "status": "doing",
+ "status": "done",
  "goal": "Answers and one-click actions in the Rox chat.",
  "claim": "4.1 to 4.4",
  "exit": "Every card in the drawing renders at size; routines draft only."

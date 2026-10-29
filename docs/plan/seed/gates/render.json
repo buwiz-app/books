@@ -2,7 +2,7 @@
  "order": 8,
  "name": "Card renders in a test Rox app",
  "result": "pass",
- "value": "13 pages, 14 of 15 cards",
+ "value": "13 pages, 15 of 15 cards",
  "at": "2026-10-29",
- "note": "person card unchecked in a test Rox (GUI driving stopped at the owner request). Wheel over a card: nsh swallows it (events.rs:301-326), told rox"
+ "note": "all checked in a test Rox (016f63c, workspace 3). A wheel over any card stops at the card: nsh events.rs:301-326, on the Rox owner list"
 }

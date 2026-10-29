@@ -2,6 +2,10 @@
  "entries": [
   {
    "at": "2026-10-29",
+   "text": "M8 closed: the person card checked in a test Rox on workspace 3 (the assistant called books_people_list, then books_show); test Rox torn down, rox session told"
+  },
+  {
+   "at": "2026-10-29",
    "text": "Wheel pass-through answered from nsh source: the app surface stops every wheel, so a scroll over any card never reaches the chat; Rox/nsh fix, told the rox session"
   },
   {

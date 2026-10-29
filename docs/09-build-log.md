@@ -399,9 +399,9 @@ and close, the tidy-up, a pending 2307 and the 2551Q pair card (Out of date, Ref
 hand-off quiet cards, each opened with `/books …` or a template. The test Rox's assistant also read the attached M7
 hand-off with `books_handoff_get` and said it could not reach a BIR app.
 
-Not checked in the test Rox: the person card (it needs the assistant's `books_show` with a person ticket) and the
-month card after its sign fix. The owner asked to stop driving the GUI (it took focus on their monitor); that waits
-until they say so. Whether a scroll over a card reaches the chat was answered from nsh's source instead: the app
+The person card was checked last, with the owner's go-ahead, in a fresh test Rox on workspace 3: asked for Lumen Power
+Co., the test Rox's assistant called `books_people_list`, then `books_show`, and the card rendered at its size
+(m8-09). Whether a scroll over a card reaches the chat was answered from nsh's source instead: the app
 surface's wheel handler stops every wheel over it (`crates/gpui/nsh-platform-gpui/src/events.rs:301-326` calls
 `cx.stop_propagation()` whatever the content), so no inline card passes a scroll to the chat. That is nsh's and Rox's
 to change (stop only when a scroll view under the pointer can move); passed to the rox session.
