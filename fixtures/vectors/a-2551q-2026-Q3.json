@@ -1,6 +1,7 @@
 {
   "description": "Workbook worked example, quarter 3: gross sales 300000.00, returns 10000.00 (acknowledged), net sales 290000.00 to txtATCAmt1 (the mapping uses net_sales; open for tax review). Ready.",
   "expected": {
+    "accounting_basis": "accrual",
     "as_of": "2026-10-29",
     "blocking": [],
     "excluded_keys": [],
@@ -8,13 +9,13 @@
       "frm2551Qv2018:txt15": "0.00",
       "txtATCAmt1": "290000.00"
     },
-    "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+    "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
     "form_code": "2551Q",
     "form_context": {},
-    "inputs_hash": "63651f12dc022dee0f8d6071654b46eebb7b0471e4be72cb383a04f0f99638a4",
+    "inputs_hash": "9a566f6654e7c03169cabed96c7f2e31a98606e7cebb17c9bdd222f990f6b352",
     "lineage": {
       "frm2551Qv2018:txt15": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [],
         "mapping_id": "2551Q.II.15",
         "measures": [
@@ -24,7 +25,7 @@
         "rule_set_version": 2
       },
       "txtATCAmt1": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [
           {
             "amount": "120000.00",
@@ -100,12 +101,12 @@
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "b7b85d077a4dbae1e2ab0709341db008bd9df738e1f1e117b8e2e1cb4bb9ff8e",
+    "output_sha256": "5f6f4d896ce43c5bc96322ddd923a525af40017e3f51fd74664cba26c9e15c05",
     "period_end": "2026-09-30",
     "period_key": "2026-Q3",
     "period_start": "2026-07-01",
     "profile_digest": "2636cb8da22859953ea2c8e937ec3b187bf749d2b2d8d52784c47888d431eb74",
-    "proposal_format": "buwiz-poc-proposal/2",
+    "proposal_format": "buwiz-poc-proposal/3",
     "reference_values": {},
     "refused_keys": [
       {
@@ -165,7 +166,7 @@
     }
   },
   "fixture": "a-sole-prop-2026",
-  "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+  "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
   "form": "2551Q",
   "form_context": {},
   "input": {
@@ -1230,9 +1231,10 @@
         "tax_profile_id": "6b1d2f3a-4c5e-4f60-8a71-92b3c4d5e6f7"
       }
     ],
-    "input_format": "buwiz-poc-input/2",
+    "input_format": "buwiz-poc-input/3",
     "profiles": [
       {
+        "accounting_basis": "accrual",
         "periods": {
           "2026": "closed",
           "2026-09": "closed",
@@ -1245,6 +1247,6 @@
     ]
   },
   "period": "2026-Q3",
-  "vector_format": "buwiz-poc-vector/2",
+  "vector_format": "buwiz-poc-vector/3",
   "vector_id": "a-2551q-2026-Q3"
 }

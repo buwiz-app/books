@@ -1,6 +1,7 @@
 {
   "description": "A spouse-scoped sales line is refused in MVP. Blocked, no values.",
   "expected": {
+    "accounting_basis": "cash",
     "as_of": "2026-10-29",
     "blocking": [
       {
@@ -38,25 +39,25 @@
       }
     ],
     "fill_args": {},
-    "fixture_sha256": "65ac42f1e68905c90662643c9cec901b8157b86da3c0f52aa0fa8a884e56bb5b",
+    "fixture_sha256": "251bef163fea4b8995904a8801b13330d43b445cfaff930231c673d640326951",
     "form_code": "1701MS",
     "form_context": {
       "/taxpayer/deduction": "osd",
       "/taxpayer/tax_option": "graduated"
     },
-    "inputs_hash": "c9ebe01f6fdc3f6548ebebe37fa2eab76c1f5cdec3fa05db3e0cdba57cd909ec",
+    "inputs_hash": "b093cd3697e517be3ffcf9a7c89f1bd34a65da1bde0311bee74eda2c187534cd",
     "lineage": {},
     "measures": {},
     "measures_catalog": {
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "e770a3899972ffd00acb7d1c1e60aad86a0e66518bc53cac05315c3ffef31b94",
+    "output_sha256": "367074e503c374a402d67f4d9cbdb0d9e76282e27ea04b3047083b4cdce63725",
     "period_end": "2026-12-31",
     "period_key": "2026",
     "period_start": "2026-01-01",
     "profile_digest": "f95bc058146ecc32a0597bd7716c03bdb3c87507c9288bb8df0fbce5ad4ec015",
-    "proposal_format": "buwiz-poc-proposal/2",
+    "proposal_format": "buwiz-poc-proposal/3",
     "reference_values": {},
     "refused_keys": [
       {
@@ -240,7 +241,7 @@
     ]
   },
   "fixture": "d-spouse-scope-2026",
-  "fixture_sha256": "65ac42f1e68905c90662643c9cec901b8157b86da3c0f52aa0fa8a884e56bb5b",
+  "fixture_sha256": "251bef163fea4b8995904a8801b13330d43b445cfaff930231c673d640326951",
   "form": "1701MS",
   "form_context": {
     "/taxpayer/deduction": "osd",
@@ -255,7 +256,7 @@
         "entry_id": "D-001",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -305,7 +306,7 @@
         "entry_id": "D-002",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -351,9 +352,10 @@
         "tax_profile_id": "4f6a8b0c-3d5e-4f7a-8b9c-0d1e2f3a4b5c"
       }
     ],
-    "input_format": "buwiz-poc-input/2",
+    "input_format": "buwiz-poc-input/3",
     "profiles": [
       {
+        "accounting_basis": "cash",
         "periods": {
           "2026": "closed",
           "2026-Q3": "closed"
@@ -363,6 +365,6 @@
     ]
   },
   "period": "2026",
-  "vector_format": "buwiz-poc-vector/2",
+  "vector_format": "buwiz-poc-vector/3",
   "vector_id": "d-1701ms-2026"
 }

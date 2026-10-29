@@ -123,13 +123,13 @@ context, the expected proposal, and for some cases `expected_forms_computed` wit
 
 ## Test output
 
-The summary below is verbatim from the final `bun test` run in `poc/` (2026-10-29, after the ADR 0007 refactor).
+The summary below is verbatim from the final `bun test` run in `poc/` (2026-10-29, after ADR 0008: cash basis by default).
 
 ```
 bun test v1.4.2 (744846f84)
 
- 166 pass
+ 177 pass
  0 fail
- 2353 expect() calls
-Ran 166 tests across 10 files.
+ 2378 expect() calls
+Ran 177 tests across 11 files.
 ```

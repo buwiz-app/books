@@ -7,9 +7,10 @@
     "money": "integer centavos internally; decimal text with exactly two places in JSON (for example \"290000.00\"); no floats",
     "dates": "calendar days in Asia/Manila"
   },
+  "accounting_basis": "Every measure follows the book's accounting basis (ADR 0008). Cash (the default): sales measures are the amounts received in the period and expense measures the amounts paid. Accrual: amounts invoiced and billed. The basis decides which entries the book posts, never how a measure reads them, and every proposal records it.",
   "vocabulary": {
     "period_basis": {
-      "quarter": "calendar quarter of the line's entry date (revenue-recognition date; D4 keeps the date policy with Books)",
+      "quarter": "calendar quarter of the line's entry date. The entry date is the recognition date set by the book's accounting basis (ADR 0008): on a cash-basis book (the default) the day the money was received or paid, on an accrual book the invoice or bill date",
       "month": "calendar month of the entry date",
       "year": "calendar year of the entry date",
       "year_to_date_before_period": "from 1 January of the period's year up to the day before the period starts",
@@ -34,7 +35,7 @@
     "Selection is by line attributes (data/tax-attributes.v1.json), never by account number or subtype (ADR-0006).",
     "Posted entries only. Memos never reach a measure.",
     "Output VAT is a liability line, never a sales line (EXC.VAT_NOT_IN_SALES).",
-    "Payment receipts and bank deposits are not sales (EXC.BANK_DEPOSIT_NOT_SALES).",
+    "Payment receipts and bank deposits are not sales (EXC.BANK_DEPOSIT_NOT_SALES). On a cash-basis book the sale itself is posted when the money arrives, and its sales line carries the invoice it settles (sale_invoice); a sales line tagged payment_receipt is refused there, never dropped silently.",
     "Measures come from transaction lines, never from a payable or receivable balance (EXC.PAYABLE_NOT_BASE).",
     "A reversal of a sale dated in a later period counts once, in the reversal's period, as a negative line (REV.COUNT_ONCE, REV.LATER_PERIOD_RETURN_EVENT)."
   ],

@@ -21,6 +21,8 @@ Source: [decisions.md](../research/traces/decisions.md), "Owner decisions (bindi
 | O4 | The new repo holds the research and details needed to build the mini app. The TypeScript Books repo at `/Volumes/goldcoders/OSS/buwiz-books` is a reference for domain logic, not the runtime backend. | ADR 0005. [05 section 1](05-implementation-plan.md#1-principles). |
 | O5 | Do not deploy, alter real financial data, or file returns. The first slice stops at a reviewable draft. | [04 section 1](04-first-slice.md#1-goal). Slice B stops at a draft. |
 | O6 | (2026-10-29, scope correction) Books is bookkeeping and accounting: it records transactions, payroll facts and evidence and produces accounting measures with lineage. The bridge maps measures onto Forms input boxes only, reading taxpayer choices from Forms. Buwiz Forms / the BIR mini app owns elections, applicability, ATC selection, rates, tax due, thresholds, OSD, graduated tax, tax rounding, penalties, due dates and overdue status. | [ADR 0007](adr/0007-books-supplies-measures-forms-owns-compliance.md). Section 2.2. Source: [decisions.md](../research/traces/decisions.md) addendum 2026-10-29. |
+| O7 | (2026-10-29, decides D4) Every business profile has an accounting basis, cash or accrual. **The default is cash**, "as that is the simplest". A cash-basis book posts income when money is received and expenses when they are paid, and refuses trade receivable and payable lines. Measures read the entry date; every proposal records the basis. `period_override` is removed. | [ADR 0008](adr/0008-cash-basis-by-default.md). PoC: `poc/src/load.ts` `checkCashBasis`; `poc/test/accounting-basis.test.ts`. Source: [decisions.md](../research/traces/decisions.md) addendum "Owner decisions D4 and D9". |
+| O8 | (2026-10-29, decides D9) Books is signed with the existing Goldcoders publisher key `gc-2026-01` at release. The owner is the only Goldcoders publisher. Books is first-party, so its inline cards mount without a click and stay counts-and-status only (D22, RK-21). Tests and stage A sign with a throwaway key under a test key id. | [01 section 5.3](01-architecture.md#53-identity-and-secret-table-proposal-unless-marked); [05 P0](05-implementation-plan.md#p0-plumbing-s); [06 section 13](06-testing-plan.md). Source: as O7. |
 
 ### 1.2 Peer contracts (binding)
 
@@ -87,12 +89,12 @@ Each entry gives the options, the recommendation, and what it blocks. The defaul
 | D1 | Titles: neutral label or business name | (a) neutral label; (b) business name | (a) neutral label | A2; P1 release |
 | D2 | Key custody | (a) key file now; (b) passphrase-wrapped key (Argon2id) with a backup prompt; (c) Keychain | (a) for MVP; (b) before release. Avoid (c), per the Rox constraint. | Release. Also P8 envelope key (see C5). |
 | D3 | Hand-off source label | `document`, `ai`, or a new `books` value in P8 | `document`, confirmed by the Forms owner. `books` in P8. | B8 (label). Slice B. |
-| D4 | Revenue-recognition date for measures: entry, receipt or invoice date (accounting policy). | (a) entry date with an override; (b) receipt date; (c) invoice date | (a), with an override (`period_override`). | P2 non-default cases. **Split by ADR-0007:** the tax timing basis and the treatment of returns and non-operating income moved to section 2.2. |
+| D4 | Accounting basis (when income and expenses are recognized) | — | — | **Decided by the owner (O7): cash by default, accrual available ([ADR 0008](adr/0008-cash-basis-by-default.md)).** The tax timing basis and the treatment of returns and non-operating income stay in section 2.2 (ADR 0007). |
 | D5 | 2551Q in an 8% year | — | — | **Handed to Forms (ADR-0007).** Section 2.2. |
 | D6 | Authoritative source for the 1% extension to 2025-12-31 | — | — | **Handed to Forms (ADR-0007).** Section 2.2. |
 | D7 | Rounding of tax amounts | — | — | **Handed to Forms (ADR-0007).** Section 2.2. Books measures are exact centavos and never rounded. |
 | D8 | Routine writes for Books | None / some | None | P9 |
-| D9 | Publisher key | (a) reuse `gc-2026-01` (first-party inline behaviour); (b) separate key (cards need a click) | (a), with counts-only cards (D22) | P0 signing |
+| D9 | Publisher key | — | — | **Decided by the owner (O8): reuse `gc-2026-01`.** Counts-only inline cards (D22). |
 | D10 | Uninstall: keep or delete data | Keep / delete | Keep | None |
 | D11 | Model visibility of lineage and entry references | (a) totals and tickets only; (b) entry references too | (a). Lineage app-only. | P1 tool schemas |
 | D12 | Slice B isolation | (a) scratch BIR through a second broker; (b) BIR's own harness | (b) if (a) cannot be shown to be safe (UNKNOWN). See B2. | Slice B on the Rox host |
@@ -134,7 +136,7 @@ Moved out of Books by the owner correction of 2026-10-29 ([ADR 0007](adr/0007-bo
 | D6 | Source for the claimed 1% PT extension to 2025-12-31 | Commentary only; no enacting law `[verify §2 item 63]`. Stored OFF in `rates-reference.v1.json`. | Forms |
 | D7 | Rounding of tax amounts | Live cents helper is f64 (`form_2551q.rs:1467`); golden ties 1.50 → 0.05, 1.49 → 0.04, −1.50 → −0.05 at 3% (R-11). | Forms |
 | D14 | Overdue status and penalties (Q3 2026 2551Q was due 2026-10-25) | Workbook II.23 "Do not invent penalties"; `[verify §2 item 9]`. | Forms |
-| D4 (tax part) | Tax timing basis for 2551Q; returns and non-operating income treatment | `[bir PT-3, PT-8]` | Forms (the recognition date stays with Books, D4 above) |
+| D4 (tax part) | Tax timing basis for 2551Q; returns and non-operating income treatment | `[bir PT-3, PT-8]` | Forms (the book's accounting basis stays with Books: O7, ADR 0008) |
 | Q-7 | PT rate rows before 2020-07-01 | No cited row | Forms |
 | DD-9, DD-10, DD-14 | Rate rows, VAT gate, 8%-year block | `rates-reference.v1.json`; `compliance-notes.md` §3 | Forms |
 | B7 (Forms bug) | 1701-MS items 12 and 17 and `taxCodeDropdown` II015-II017 are not locked against the profile election | `[verify §1 item 3, §2 item 10]` | Forms. Still blocks any 1701-MS fill: the bridge reads `/taxpayer/tax_option` and `/taxpayer/deduction` from the draft. |

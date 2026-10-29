@@ -1,6 +1,7 @@
 {
   "description": "Journey worked example (DS-H): net sales 300000.00; received WB082 2307 of 3000.00 to item 15; a pending WB082 and a WB084 2306 are excluded. Ready.",
   "expected": {
+    "accounting_basis": "accrual",
     "as_of": "2026-10-29",
     "blocking": [],
     "excluded_keys": [],
@@ -8,13 +9,13 @@
       "frm2551Qv2018:txt15": "3000.00",
       "txtATCAmt1": "300000.00"
     },
-    "fixture_sha256": "e5a25054e53466c2fa33f371e6a45425d21eb1bba404c36d17d3a7d58b497928",
+    "fixture_sha256": "2d7b32f6e312856fe8b1e1056f6f9a27cd7bef0e44617a541fd9d3d8fe5ec24e",
     "form_code": "2551Q",
     "form_context": {},
-    "inputs_hash": "d5cb77395d31e71fbd88eed3693ac47802bd2012d104de3c7fa9d7f4d283fd6a",
+    "inputs_hash": "a3693c4c9838d73a4867defba9550af8dca904cb532a9a7db0fa54649b294b6a",
     "lineage": {
       "frm2551Qv2018:txt15": {
-        "fixture_sha256": "e5a25054e53466c2fa33f371e6a45425d21eb1bba404c36d17d3a7d58b497928",
+        "fixture_sha256": "2d7b32f6e312856fe8b1e1056f6f9a27cd7bef0e44617a541fd9d3d8fe5ec24e",
         "lines": [
           {
             "amount": "3000.00",
@@ -30,7 +31,7 @@
         "rule_set_version": 2
       },
       "txtATCAmt1": {
-        "fixture_sha256": "e5a25054e53466c2fa33f371e6a45425d21eb1bba404c36d17d3a7d58b497928",
+        "fixture_sha256": "2d7b32f6e312856fe8b1e1056f6f9a27cd7bef0e44617a541fd9d3d8fe5ec24e",
         "lines": [
           {
             "amount": "200000.00",
@@ -92,12 +93,12 @@
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "893f4844ad6c5d2f755e1293825fadc9f2c34233f5248ed1e61c2162064839d6",
+    "output_sha256": "8f7b6364f66f6e520de3d5ae74ccaf88369b57a8ac695974f2320f074b933056",
     "period_end": "2026-09-30",
     "period_key": "2026-Q3",
     "period_start": "2026-07-01",
     "profile_digest": "84375f70cd6b80bc70635d26f35d90c11274824195da900d630e13236db09f65",
-    "proposal_format": "buwiz-poc-proposal/2",
+    "proposal_format": "buwiz-poc-proposal/3",
     "reference_values": {},
     "refused_keys": [
       {
@@ -164,7 +165,7 @@
     }
   },
   "fixture": "g-pt-withholding-2026",
-  "fixture_sha256": "e5a25054e53466c2fa33f371e6a45425d21eb1bba404c36d17d3a7d58b497928",
+  "fixture_sha256": "2d7b32f6e312856fe8b1e1056f6f9a27cd7bef0e44617a541fd9d3d8fe5ec24e",
   "form": "2551Q",
   "form_context": {},
   "input": {
@@ -422,9 +423,10 @@
         "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
       }
     ],
-    "input_format": "buwiz-poc-input/2",
+    "input_format": "buwiz-poc-input/3",
     "profiles": [
       {
+        "accounting_basis": "accrual",
         "periods": {
           "2026-Q3": "closed"
         },
@@ -433,6 +435,6 @@
     ]
   },
   "period": "2026-Q3",
-  "vector_format": "buwiz-poc-vector/2",
+  "vector_format": "buwiz-poc-vector/3",
   "vector_id": "g-2551q-2026-Q3"
 }

@@ -2,9 +2,12 @@
 /**
  * Writes the synthetic fixtures to fixtures/synthetic/. Run from poc/: bun run fixtures
  *
- * Every value is invented. Profiles carry an opaque UUID, a masked display and period statuses only: no tax facts,
- * elections or prior filings (those are Forms', ADR-0007). Lines carry accounting attributes only. Money is decimal
- * text. Memos carry a MEMO-SYNTH- marker so the privacy tests can prove they never reach a proposal.
+ * Every value is invented. Profiles carry an opaque UUID, a masked display, the accounting basis and period statuses
+ * only: no tax facts, elections or prior filings (those are Forms', ADR-0007). Every profile states its basis
+ * (ADR 0008): fixtures c, d, e and f are cash-basis books (the default; a sale is posted the day the money is
+ * received), and a, b and g are accrual books (a sale is posted at invoice against accounts receivable, and
+ * certificates clear that receivable). Lines carry accounting attributes only. Money is decimal text. Memos carry a
+ * MEMO-SYNTH- marker so the privacy tests can prove they never reach a proposal.
  */
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -24,13 +27,13 @@ const PROFILE_E = "c0a8e3f1-2b7d-4e9a-9f10-5d6c7b8a9e0f";
 const PROFILE_F = "5a7b9c1d-4e6f-4a8b-9c0d-1e2f3a4b5c6d";
 const PROFILE_G = "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f";
 
-function profile(id: string, label: string, periods: Record<string, string>): Obj {
-  return { tax_profile_id: id, display: MASK, label, periods };
+function profile(id: string, label: string, basis: "cash" | "accrual", periods: Record<string, string>): Obj {
+  return { tax_profile_id: id, display: MASK, label, accounting_basis: basis, periods };
 }
 
 function fixture(id: string, status: string, description: string, profiles: Obj[], acks: string[], entries: Obj[]): Obj {
   return {
-    fixture_format: "buwiz-poc-fixture/2",
+    fixture_format: "buwiz-poc-fixture/3",
     fixture_id: id,
     status,
     description,
@@ -63,9 +66,18 @@ function saleLine(lineId: string, amount: string, personScope = "self"): Obj {
   };
 }
 
+/** Accrual book: the sale is posted at invoice, against accounts receivable. */
 function sale(profileId: string, entryId: string, date: string, amount: string, personScope = "self"): Obj {
   return entry(profileId, entryId, date, `MEMO-SYNTH-${entryId} synthetic sales invoice`, [
     arDebit(`${entryId}.1`, amount),
+    saleLine(`${entryId}.2`, amount, personScope),
+  ]);
+}
+
+/** Cash book: the sale is posted the day the money is received. The sales line carries the invoice it settles. */
+function cashSale(profileId: string, entryId: string, date: string, amount: string, personScope = "self"): Obj {
+  return entry(profileId, entryId, date, `MEMO-SYNTH-${entryId} synthetic sale, paid`, [
+    { line_id: `${entryId}.1`, account: "bank_accounts", debit: amount, credit: "0.00" },
     saleLine(`${entryId}.2`, amount, personScope),
   ]);
 }
@@ -119,7 +131,9 @@ function ptCert(
   ]);
 }
 
-function creditNote(profileId: string, entryId: string, date: string, amount: string): Obj {
+/** A return. On an accrual book the credit note reduces the receivable; on a cash book the refund leaves the bank. */
+function creditNote(profileId: string, entryId: string, date: string, amount: string, basis: "cash" | "accrual" = "accrual"): Obj {
+  const counter = basis === "cash" ? "bank_accounts" : "accounts_receivable_gross";
   return entry(profileId, entryId, date, `MEMO-SYNTH-${entryId} synthetic credit note against a Q3 sale`, [
     {
       line_id: `${entryId}.1`,
@@ -131,7 +145,7 @@ function creditNote(profileId: string, entryId: string, date: string, amount: st
       contra_kind: "return",
       document_kind: "credit_note",
     },
-    arCredit(`${entryId}.2`, amount),
+    { line_id: `${entryId}.2`, account: counter, debit: "0.00", credit: amount },
   ]);
 }
 
@@ -248,8 +262,8 @@ export function buildFixtures(): Map<string, Obj> {
     fixture(
       "a-sole-prop-2026",
       "SYNTHETIC: no real person, TIN, amount or filing. Modelled on the workbook worked example.",
-      "Fictional sole proprietor with sales, a sales return, expenses, income-tax and payroll records and one employee. Q4 invoices are hypothetical, as in the workbook. The year is marked closed so the annual measures run. The credit note A-013 (a return) is acknowledged. Elections are not in the fixture: the cases pass the Forms context (tax option, deduction method).",
-      [profile(PROFILE_A, "A: sole proprietor", STANDARD_PERIODS)],
+      "Fictional sole proprietor on an accrual book: sales are posted at invoice against accounts receivable, and income-tax 2307s clear that receivable. Sales, a sales return, expenses, income-tax and payroll records and one employee. Q4 invoices are hypothetical, as in the workbook. The year is marked closed so the annual measures run. The credit note A-013 (a return) is acknowledged. Elections are not in the fixture: the cases pass the Forms context (tax option, deduction method).",
+      [profile(PROFILE_A, "A: sole proprietor", "accrual", STANDARD_PERIODS)],
       ["A-013"],
       standardYear(PROFILE_A, "A"),
     ),
@@ -261,32 +275,32 @@ export function buildFixtures(): Map<string, Obj> {
       "b-eight-percent-2026",
       "SYNTHETIC: second copy of fixture a's ledger, used with an 8% Forms context.",
       "The same ledger as fixture a under its own profile. The 8% election lives in the Forms tax profile, not in Books: the cases read /taxpayer/tax_option = eight_percent from the Forms context. Books measures are identical to fixture a; only the 1701-MS mapping changes (IV.19 instead of IV.5 and IV.6). Whether a 2551Q is required in an 8% year is Forms' decision.",
-      [profile(PROFILE_B, "B: same ledger, 8% Forms context", STANDARD_PERIODS)],
+      [profile(PROFILE_B, "B: same ledger, 8% Forms context", "accrual", STANDARD_PERIODS)],
       ["EL-013"],
       standardYear(PROFILE_B, "EL"),
     ),
   );
 
   const cEntries: Obj[] = [];
-  const c1 = sale(PROFILE_C, "C-001", "2026-06-20", "40000.00");
-  const c3 = sale(PROFILE_C, "C-003", "2026-07-15", "100000.00");
+  const c1 = cashSale(PROFILE_C, "C-001", "2026-06-20", "40000.00");
+  const c3 = cashSale(PROFILE_C, "C-003", "2026-07-15", "100000.00");
   const c6 = reversalOf(PROFILE_C, "C-006", c1, "2026-09-02");
   cEntries.push(
     c1,
-    sale(PROFILE_C, "C-002", "2026-07-01", "120000.00"),
+    cashSale(PROFILE_C, "C-002", "2026-07-01", "120000.00"),
     c3,
     reversalOf(PROFILE_C, "C-004", c3, "2026-07-15"),
-    sale(PROFILE_C, "C-005", "2026-08-20", "80000.00"),
+    cashSale(PROFILE_C, "C-005", "2026-08-20", "80000.00"),
     c6,
-    creditNote(PROFILE_C, "C-007", "2026-09-15", "5000.00"),
+    creditNote(PROFILE_C, "C-007", "2026-09-15", "5000.00", "cash"),
   );
-  const cProfile = profile(PROFILE_C, "C: reversals and a credit note", { "2026-Q2": "closed", "2026-Q3": "closed" });
+  const cProfile = profile(PROFILE_C, "C: reversals and a credit note", "cash", { "2026-Q2": "closed", "2026-Q3": "closed" });
   out.set(
     "c-reversal-credit-note-2026",
     fixture(
       "c-reversal-credit-note-2026",
       "SYNTHETIC: reversal and credit-note case.",
-      "Q2 sale 40000.00 (C-001) is voided by a reversal dated in Q3 (C-006), which is a return event. Q3 sale 100000.00 (C-003) is voided in the same quarter (C-004), which nets to zero. A credit note of 5000.00 (C-007) is a return event. None is acknowledged, so Q3 is blocked.",
+      "Cash book. Q2 sale 40000.00 (C-001) is voided by a reversal dated in Q3 (C-006), which is a return event. Q3 sale 100000.00 (C-003) is voided in the same quarter (C-004), which nets to zero. A credit note of 5000.00 (C-007) is a return event. None is acknowledged, so Q3 is blocked.",
       [cProfile],
       [],
       cEntries,
@@ -309,10 +323,10 @@ export function buildFixtures(): Map<string, Obj> {
     fixture(
       "d-spouse-scope-2026",
       "SYNTHETIC: spouse-scope refusal case.",
-      "One self-scoped sale and one spouse-scoped sale in Q3. Spouse lines are refused in MVP, so both forms block and produce no values.",
-      [profile(PROFILE_D, "D: spouse-scoped sale", { "2026-Q3": "closed", "2026": "closed" })],
+      "Cash book. One self-scoped sale and one spouse-scoped sale in Q3. Spouse lines are refused in MVP, so both forms block and produce no values.",
+      [profile(PROFILE_D, "D: spouse-scoped sale", "cash", { "2026-Q3": "closed", "2026": "closed" })],
       [],
-      [sale(PROFILE_D, "D-001", "2026-07-10", "100000.00"), sale(PROFILE_D, "D-002", "2026-08-10", "50000.00", "spouse")],
+      [cashSale(PROFILE_D, "D-001", "2026-07-10", "100000.00"), cashSale(PROFILE_D, "D-002", "2026-08-10", "50000.00", "spouse")],
     ),
   );
 
@@ -321,10 +335,10 @@ export function buildFixtures(): Map<string, Obj> {
     fixture(
       "e-second-profile-2026",
       "SYNTHETIC: second business profile for isolation tests.",
-      "Profile B. Its amounts are chosen so that any leak into profile A would be visible.",
-      [profile(PROFILE_E, "E: second business profile", { "2026-Q3": "closed" })],
+      "Profile B, a cash book. Its amounts are chosen so that any leak into profile A would be visible.",
+      [profile(PROFILE_E, "E: second business profile", "cash", { "2026-Q3": "closed" })],
       [],
-      [sale(PROFILE_E, "E-001", "2026-07-20", "999000.00"), expense(PROFILE_E, "E-002", "2026-07-25", "30000.00", "rent")],
+      [cashSale(PROFILE_E, "E-001", "2026-07-20", "999000.00"), expense(PROFILE_E, "E-002", "2026-07-25", "30000.00", "rent")],
     ),
   );
 
@@ -333,15 +347,15 @@ export function buildFixtures(): Map<string, Obj> {
     fixture(
       "f-slice-a-2026",
       "SYNTHETIC: design Slice A numbers (docs/06 DS-A).",
-      "Sales 120000.00 (2026-07-01), 100000.00 (2026-07-15), 80000.00 (2026-08-20), rent 25000.00 (2026-08-05). The 100000.00 sale is voided by a reversal dated 2026-07-15. The unbalanced entry N1 is not in the fixture; the ledger test builds it in memory.",
-      [profile(PROFILE_F, "F: Slice A", { "2026-Q3": "closed" })],
+      "Cash book (the default basis): each sale is posted the day the money is received. Sales 120000.00 (2026-07-01), 100000.00 (2026-07-15), 80000.00 (2026-08-20), rent 25000.00 paid (2026-08-05). The 100000.00 sale is voided by a reversal dated 2026-07-15. The unbalanced entry N1 is not in the fixture; the ledger test builds it in memory.",
+      [profile(PROFILE_F, "F: Slice A", "cash", { "2026-Q3": "closed" })],
       [],
       [
-        sale(PROFILE_F, "F-001", "2026-07-01", "120000.00"),
-        sale(PROFILE_F, "F-002", "2026-07-15", "100000.00"),
-        sale(PROFILE_F, "F-003", "2026-08-20", "80000.00"),
+        cashSale(PROFILE_F, "F-001", "2026-07-01", "120000.00"),
+        cashSale(PROFILE_F, "F-002", "2026-07-15", "100000.00"),
+        cashSale(PROFILE_F, "F-003", "2026-08-20", "80000.00"),
         expense(PROFILE_F, "F-004", "2026-08-05", "25000.00", "rent"),
-        reversalOf(PROFILE_F, "F-005", sale(PROFILE_F, "F-002", "2026-07-15", "100000.00"), "2026-07-15"),
+        reversalOf(PROFILE_F, "F-005", cashSale(PROFILE_F, "F-002", "2026-07-15", "100000.00"), "2026-07-15"),
       ],
     ),
   );
@@ -353,13 +367,13 @@ export function buildFixtures(): Map<string, Obj> {
     ptCert(PROFILE_G, "G-004", "2026-09-28", "2000.00", "WB082", "pending", "2026-07-01", "2026-09-30"),
     ptCert(PROFILE_G, "G-005", "2026-09-29", "1500.00", "WB084", "received", "2026-07-01", "2026-09-30"),
   ];
-  const gProfile = profile(PROFILE_G, "G: percentage-tax credit (DS-H)", { "2026-Q3": "closed" });
+  const gProfile = profile(PROFILE_G, "G: percentage-tax credit (DS-H)", "accrual", { "2026-Q3": "closed" });
   out.set(
     "g-pt-withholding-2026",
     fixture(
       "g-pt-withholding-2026",
       "SYNTHETIC: journey worked example (docs/06 DS-H) with percentage-tax credits.",
-      "Sales 300000.00. A received WB082 2307 of 3000.00 counts in the percentage-tax certificate measure. A pending WB082 (2000.00) and a received WB084 2306 (1500.00, final withholding) do not.",
+      "Accrual book. Sales 300000.00. A received WB082 2307 of 3000.00 counts in the percentage-tax certificate measure. A pending WB082 (2000.00) and a received WB084 2306 (1500.00, final withholding) do not.",
       [gProfile],
       [],
       gBase,

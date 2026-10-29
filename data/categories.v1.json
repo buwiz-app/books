@@ -99,6 +99,7 @@
       "statement_section": "asset",
       "workbook_account_type": "asset",
       "books_account_type": "asset",
+      "accrual_only": true,
       "origin": "Existing base",
       "coa": {
         "status": "REUSE",
@@ -255,6 +256,7 @@
       "statement_section": "liability",
       "workbook_account_type": "liability",
       "books_account_type": "liability",
+      "accrual_only": true,
       "origin": "Existing base",
       "coa": {
         "status": "REUSE",
@@ -3194,5 +3196,6 @@
       "workbook_form_links": []
     }
   ],
-  "workbook_form_links_note": "workbook_form_links reproduce the workbook's method and filter text. Some of that text describes compliance choices (8% pathway, itemized method, eligibility). Those choices belong to Buwiz Forms; Books does not apply them. The measure-to-box mapping is data/rules/*.rules.json."
+  "workbook_form_links_note": "workbook_form_links reproduce the workbook's method and filter text. Some of that text describes compliance choices (8% pathway, itemized method, eligibility). Those choices belong to Buwiz Forms; Books does not apply them. The measure-to-box mapping is data/rules/*.rules.json.",
+  "accrual_only_note": "Categories with accrual_only true are trade receivables and payables. They exist only on an accrual-basis book. A cash-basis book (the default, ADR 0008) posts income when money is received and expenses when they are paid, so it refuses lines on these accounts. Payroll and statutory withholding liabilities and tax credits are not accrual-only."
 }

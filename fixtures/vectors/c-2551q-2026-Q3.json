@@ -1,6 +1,7 @@
 {
   "description": "Quarter 3 with a same-quarter void (nets to zero), a later-period reversal and a credit note, none acknowledged. Blocked on GATE.RETURNS_ACK.",
   "expected": {
+    "accounting_basis": "cash",
     "as_of": "2026-10-29",
     "blocking": [
       {
@@ -23,22 +24,22 @@
       }
     ],
     "fill_args": {},
-    "fixture_sha256": "9cd5853091a4829ea1ded668aad93c11effeaf5848e9e53abf4c067e2ba883c7",
+    "fixture_sha256": "786f639b45c78398b7c25f918386d042b9890593286015db37e018070fdd2920",
     "form_code": "2551Q",
     "form_context": {},
-    "inputs_hash": "87b06cd58d249082608456a78d6b47cbae05e24e516c66eeb765eecbdf2eaf02",
+    "inputs_hash": "00e3515b78f4d28987c943e58609927a429cc0bb3e0404482e25cd7c93647d08",
     "lineage": {},
     "measures": {},
     "measures_catalog": {
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "d2ff06fdb1bcf664a81fdb75bb3b80671e1dcbea06ccdd88b608995cc1d28381",
+    "output_sha256": "73f71d54bb7046a053e9828a0bf10920d41d78328b385fc7c305faa233f401fc",
     "period_end": "2026-09-30",
     "period_key": "2026-Q3",
     "period_start": "2026-07-01",
     "profile_digest": "93da5c0556c245d3e4b6977075a9e9c0bd04a2db28a0a6fbe78b4f9ac1470ae3",
-    "proposal_format": "buwiz-poc-proposal/2",
+    "proposal_format": "buwiz-poc-proposal/3",
     "reference_values": {},
     "refused_keys": [
       {
@@ -82,7 +83,7 @@
     ]
   },
   "fixture": "c-reversal-credit-note-2026",
-  "fixture_sha256": "9cd5853091a4829ea1ded668aad93c11effeaf5848e9e53abf4c067e2ba883c7",
+  "fixture_sha256": "786f639b45c78398b7c25f918386d042b9890593286015db37e018070fdd2920",
   "form": "2551Q",
   "form_context": {},
   "input": {
@@ -94,7 +95,7 @@
         "entry_id": "C-001",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -144,7 +145,7 @@
         "entry_id": "C-002",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -194,7 +195,7 @@
         "entry_id": "C-003",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -244,7 +245,7 @@
         "entry_id": "C-004",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -294,7 +295,7 @@
         "entry_id": "C-005",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -344,7 +345,7 @@
         "entry_id": "C-006",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -415,7 +416,7 @@
             "person_scope": "self"
           },
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -440,9 +441,10 @@
         "tax_profile_id": "3e5f7a9b-2c4d-4e6f-9a8b-7c6d5e4f3a2b"
       }
     ],
-    "input_format": "buwiz-poc-input/2",
+    "input_format": "buwiz-poc-input/3",
     "profiles": [
       {
+        "accounting_basis": "cash",
         "periods": {
           "2026-Q2": "closed",
           "2026-Q3": "closed"
@@ -452,6 +454,6 @@
     ]
   },
   "period": "2026-Q3",
-  "vector_format": "buwiz-poc-vector/2",
+  "vector_format": "buwiz-poc-vector/3",
   "vector_id": "c-2551q-2026-Q3"
 }

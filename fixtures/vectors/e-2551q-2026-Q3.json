@@ -1,6 +1,7 @@
 {
   "description": "Second business profile (B). Net sales 999000.00. Ready. Used for isolation tests.",
   "expected": {
+    "accounting_basis": "cash",
     "as_of": "2026-10-29",
     "blocking": [],
     "excluded_keys": [],
@@ -8,13 +9,13 @@
       "frm2551Qv2018:txt15": "0.00",
       "txtATCAmt1": "999000.00"
     },
-    "fixture_sha256": "d3077200bf1688dc9265248e4b60f8f92e1f0e123bc2706ec434e109d412ac39",
+    "fixture_sha256": "5f1d85ce80b3d61a9620438de65a78e59b96f1058982bcf3739aff500fc0e3c4",
     "form_code": "2551Q",
     "form_context": {},
-    "inputs_hash": "88f3dae589aeea33151e83ab478b387be4a45fa9836dadffaf2673864721f9d1",
+    "inputs_hash": "bff63c2c01e6dee1738b1983cbcc693e12791fab3ea48c9d14e76a7533632595",
     "lineage": {
       "frm2551Qv2018:txt15": {
-        "fixture_sha256": "d3077200bf1688dc9265248e4b60f8f92e1f0e123bc2706ec434e109d412ac39",
+        "fixture_sha256": "5f1d85ce80b3d61a9620438de65a78e59b96f1058982bcf3739aff500fc0e3c4",
         "lines": [],
         "mapping_id": "2551Q.II.15",
         "measures": [
@@ -24,7 +25,7 @@
         "rule_set_version": 2
       },
       "txtATCAmt1": {
-        "fixture_sha256": "d3077200bf1688dc9265248e4b60f8f92e1f0e123bc2706ec434e109d412ac39",
+        "fixture_sha256": "5f1d85ce80b3d61a9620438de65a78e59b96f1058982bcf3739aff500fc0e3c4",
         "lines": [
           {
             "amount": "999000.00",
@@ -70,12 +71,12 @@
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "c96c76664a23c3682df5a12b0f867ebe98ac6491dbd1de0c4ecc162930f74e28",
+    "output_sha256": "0172a4bb37453785edb685de4ac26782681253c8564607d56cb27a37211832bd",
     "period_end": "2026-09-30",
     "period_key": "2026-Q3",
     "period_start": "2026-07-01",
     "profile_digest": "2b80d9781e16a2656ff5e7287d059dbe89214fc9a12f80b5c6a85910401f999b",
-    "proposal_format": "buwiz-poc-proposal/2",
+    "proposal_format": "buwiz-poc-proposal/3",
     "reference_values": {},
     "refused_keys": [
       {
@@ -119,7 +120,7 @@
     ]
   },
   "fixture": "e-second-profile-2026",
-  "fixture_sha256": "d3077200bf1688dc9265248e4b60f8f92e1f0e123bc2706ec434e109d412ac39",
+  "fixture_sha256": "5f1d85ce80b3d61a9620438de65a78e59b96f1058982bcf3739aff500fc0e3c4",
   "form": "2551Q",
   "form_context": {},
   "input": {
@@ -131,7 +132,7 @@
         "entry_id": "E-001",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -227,9 +228,10 @@
         "tax_profile_id": "c0a8e3f1-2b7d-4e9a-9f10-5d6c7b8a9e0f"
       }
     ],
-    "input_format": "buwiz-poc-input/2",
+    "input_format": "buwiz-poc-input/3",
     "profiles": [
       {
+        "accounting_basis": "cash",
         "periods": {
           "2026-Q3": "closed"
         },
@@ -238,6 +240,6 @@
     ]
   },
   "period": "2026-Q3",
-  "vector_format": "buwiz-poc-vector/2",
+  "vector_format": "buwiz-poc-vector/3",
   "vector_id": "e-2551q-2026-Q3"
 }

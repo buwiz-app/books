@@ -1,6 +1,7 @@
 {
   "description": "Workbook worked example, September: gross compensation 42000.00, de minimis 2000.00, employee contributions 2000.00 to item 19, employer share 1500.00 kept separate, tax withheld 2808.40 as recorded by payroll. Ready.",
   "expected": {
+    "accounting_basis": "accrual",
     "as_of": "2026-10-29",
     "blocking": [],
     "excluded_keys": [
@@ -18,13 +19,13 @@
       "frm1601c:txtTax19": "2000.00",
       "frm1601c:txtTax25": "2808.40"
     },
-    "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+    "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
     "form_code": "1601C",
     "form_context": {},
-    "inputs_hash": "157f3090adf283aa6e3cccfe1123afad0dc627f9b504425f0eb0eacd8057a105",
+    "inputs_hash": "aaad48c2abc07f76016ec136bf6797c9256ba422cf0c820e8765c5cbc0b8e394",
     "lineage": {
       "frm1601c:TaxWithheld": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [
           {
             "amount": "2808.40",
@@ -41,7 +42,7 @@
         "rule_set_version": 2
       },
       "frm1601c:txtTax14": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [
           {
             "amount": "40000.00",
@@ -62,7 +63,7 @@
         "rule_set_version": 2
       },
       "frm1601c:txtTax15": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [],
         "mapping_id": "1601C.II.15",
         "measures": [
@@ -72,7 +73,7 @@
         "rule_set_version": 2
       },
       "frm1601c:txtTax17": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [],
         "mapping_id": "1601C.II.17",
         "measures": [
@@ -83,7 +84,7 @@
         "rule_set_version": 2
       },
       "frm1601c:txtTax18": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [
           {
             "amount": "2000.00",
@@ -99,7 +100,7 @@
         "rule_set_version": 2
       },
       "frm1601c:txtTax19": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [
           {
             "amount": "2000.00",
@@ -115,7 +116,7 @@
         "rule_set_version": 2
       },
       "frm1601c:txtTax25": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [
           {
             "amount": "2808.40",
@@ -241,12 +242,12 @@
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "a74f46ab31343bacdfb0ac57b386d15bf089bb3db1089d82ec5f27b16f397154",
+    "output_sha256": "21f4d949e91c6b4d33106ef06908dada222692014461656b940b9831fd873cf4",
     "period_end": "2026-09-30",
     "period_key": "2026-09",
     "period_start": "2026-09-01",
     "profile_digest": "2636cb8da22859953ea2c8e937ec3b187bf749d2b2d8d52784c47888d431eb74",
-    "proposal_format": "buwiz-poc-proposal/2",
+    "proposal_format": "buwiz-poc-proposal/3",
     "reference_values": {},
     "refused_keys": [
       {
@@ -299,7 +300,7 @@
     }
   },
   "fixture": "a-sole-prop-2026",
-  "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+  "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
   "form": "1601C",
   "form_context": {},
   "input": {
@@ -1364,9 +1365,10 @@
         "tax_profile_id": "6b1d2f3a-4c5e-4f60-8a71-92b3c4d5e6f7"
       }
     ],
-    "input_format": "buwiz-poc-input/2",
+    "input_format": "buwiz-poc-input/3",
     "profiles": [
       {
+        "accounting_basis": "accrual",
         "periods": {
           "2026": "closed",
           "2026-09": "closed",
@@ -1379,6 +1381,6 @@
     ]
   },
   "period": "2026-09",
-  "vector_format": "buwiz-poc-vector/2",
+  "vector_format": "buwiz-poc-vector/3",
   "vector_id": "a-1601c-2026-09"
 }

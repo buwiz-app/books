@@ -1,7 +1,7 @@
 {
   "acknowledged_entry_ids": [],
   "as_of": "2026-10-29",
-  "description": "Sales 300000.00. A received WB082 2307 of 3000.00 counts in the percentage-tax certificate measure. A pending WB082 (2000.00) and a received WB084 2306 (1500.00, final withholding) do not.",
+  "description": "Accrual book. Sales 300000.00. A received WB082 2307 of 3000.00 counts in the percentage-tax certificate measure. A pending WB082 (2000.00) and a received WB084 2306 (1500.00, final withholding) do not.",
   "entries": [
     {
       "entry_date": "2026-07-10",
@@ -138,10 +138,11 @@
       "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
     }
   ],
-  "fixture_format": "buwiz-poc-fixture/2",
+  "fixture_format": "buwiz-poc-fixture/3",
   "fixture_id": "g-pt-withholding-2026",
   "profiles": [
     {
+      "accounting_basis": "accrual",
       "display": "***-***-***-00000",
       "label": "G: percentage-tax credit (DS-H)",
       "periods": {

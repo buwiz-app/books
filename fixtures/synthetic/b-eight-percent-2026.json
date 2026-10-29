@@ -554,10 +554,11 @@
       "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
     }
   ],
-  "fixture_format": "buwiz-poc-fixture/2",
+  "fixture_format": "buwiz-poc-fixture/3",
   "fixture_id": "b-eight-percent-2026",
   "profiles": [
     {
+      "accounting_basis": "accrual",
       "display": "***-***-***-00000",
       "label": "B: same ledger, 8% Forms context",
       "periods": {

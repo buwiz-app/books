@@ -1,6 +1,7 @@
 {
   "description": "Same ledger with a further received WB082 2307 of 7000.00: item 15 is 10000.00. Ready.",
   "expected": {
+    "accounting_basis": "accrual",
     "as_of": "2026-10-29",
     "blocking": [],
     "excluded_keys": [],
@@ -8,13 +9,13 @@
       "frm2551Qv2018:txt15": "10000.00",
       "txtATCAmt1": "300000.00"
     },
-    "fixture_sha256": "5f48590b2cc63f92cc24beffdea911b304c087c07a78af5bfc88e1e102808462",
+    "fixture_sha256": "03f1bb87d52556bcaee019e9f574dcabf8b774afcde67959a42b3b9a35790313",
     "form_code": "2551Q",
     "form_context": {},
-    "inputs_hash": "719fd684f3355c6d7158d761aceb510ad5e2e05a9dbba2d54293a6dadfd6478e",
+    "inputs_hash": "acaea9e65fd0e3842bc494eef451166b7f74599bf5c0b9f43f438251c6e071ef",
     "lineage": {
       "frm2551Qv2018:txt15": {
-        "fixture_sha256": "5f48590b2cc63f92cc24beffdea911b304c087c07a78af5bfc88e1e102808462",
+        "fixture_sha256": "03f1bb87d52556bcaee019e9f574dcabf8b774afcde67959a42b3b9a35790313",
         "lines": [
           {
             "amount": "3000.00",
@@ -35,7 +36,7 @@
         "rule_set_version": 2
       },
       "txtATCAmt1": {
-        "fixture_sha256": "5f48590b2cc63f92cc24beffdea911b304c087c07a78af5bfc88e1e102808462",
+        "fixture_sha256": "03f1bb87d52556bcaee019e9f574dcabf8b774afcde67959a42b3b9a35790313",
         "lines": [
           {
             "amount": "200000.00",
@@ -102,12 +103,12 @@
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "4672ca2b2dc2a7f3a6b55c8df9279bf0cc58bbc3ebe9edf305b249722ddecf45",
+    "output_sha256": "26c9a50dae6079bcb8fdfb0b7cf237b259794b084087bbef2a899e8a6398de94",
     "period_end": "2026-09-30",
     "period_key": "2026-Q3",
     "period_start": "2026-07-01",
     "profile_digest": "84375f70cd6b80bc70635d26f35d90c11274824195da900d630e13236db09f65",
-    "proposal_format": "buwiz-poc-proposal/2",
+    "proposal_format": "buwiz-poc-proposal/3",
     "reference_values": {},
     "refused_keys": [
       {
@@ -172,7 +173,7 @@
     }
   },
   "fixture": "g-overpayment-2026",
-  "fixture_sha256": "5f48590b2cc63f92cc24beffdea911b304c087c07a78af5bfc88e1e102808462",
+  "fixture_sha256": "03f1bb87d52556bcaee019e9f574dcabf8b774afcde67959a42b3b9a35790313",
   "form": "2551Q",
   "form_context": {},
   "input": {
@@ -480,9 +481,10 @@
         "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
       }
     ],
-    "input_format": "buwiz-poc-input/2",
+    "input_format": "buwiz-poc-input/3",
     "profiles": [
       {
+        "accounting_basis": "accrual",
         "periods": {
           "2026-Q3": "closed"
         },
@@ -491,6 +493,6 @@
     ]
   },
   "period": "2026-Q3",
-  "vector_format": "buwiz-poc-vector/2",
+  "vector_format": "buwiz-poc-vector/3",
   "vector_id": "g-overpayment-2551q-2026-Q3"
 }

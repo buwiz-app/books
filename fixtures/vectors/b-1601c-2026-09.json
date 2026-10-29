@@ -1,6 +1,7 @@
 {
   "description": "Payroll measures do not depend on any election. Ready, same figures as fixture a.",
   "expected": {
+    "accounting_basis": "accrual",
     "as_of": "2026-10-29",
     "blocking": [],
     "excluded_keys": [
@@ -18,13 +19,13 @@
       "frm1601c:txtTax19": "2000.00",
       "frm1601c:txtTax25": "2808.40"
     },
-    "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+    "fixture_sha256": "a48e7c8f5b309db9fa76433f066e45df8820692213e25b651c20cda5bbdbecdb",
     "form_code": "1601C",
     "form_context": {},
-    "inputs_hash": "7ebcb3b1f8111644154a7b329c6d46529d98347c8479ec82e062fcfb1daca258",
+    "inputs_hash": "8d3e01fcdc6b6f0573554424edf68e820c47b1bc70e9e0cc5cd0a3145d2dede7",
     "lineage": {
       "frm1601c:TaxWithheld": {
-        "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+        "fixture_sha256": "a48e7c8f5b309db9fa76433f066e45df8820692213e25b651c20cda5bbdbecdb",
         "lines": [
           {
             "amount": "2808.40",
@@ -41,7 +42,7 @@
         "rule_set_version": 2
       },
       "frm1601c:txtTax14": {
-        "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+        "fixture_sha256": "a48e7c8f5b309db9fa76433f066e45df8820692213e25b651c20cda5bbdbecdb",
         "lines": [
           {
             "amount": "40000.00",
@@ -62,7 +63,7 @@
         "rule_set_version": 2
       },
       "frm1601c:txtTax15": {
-        "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+        "fixture_sha256": "a48e7c8f5b309db9fa76433f066e45df8820692213e25b651c20cda5bbdbecdb",
         "lines": [],
         "mapping_id": "1601C.II.15",
         "measures": [
@@ -72,7 +73,7 @@
         "rule_set_version": 2
       },
       "frm1601c:txtTax17": {
-        "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+        "fixture_sha256": "a48e7c8f5b309db9fa76433f066e45df8820692213e25b651c20cda5bbdbecdb",
         "lines": [],
         "mapping_id": "1601C.II.17",
         "measures": [
@@ -83,7 +84,7 @@
         "rule_set_version": 2
       },
       "frm1601c:txtTax18": {
-        "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+        "fixture_sha256": "a48e7c8f5b309db9fa76433f066e45df8820692213e25b651c20cda5bbdbecdb",
         "lines": [
           {
             "amount": "2000.00",
@@ -99,7 +100,7 @@
         "rule_set_version": 2
       },
       "frm1601c:txtTax19": {
-        "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+        "fixture_sha256": "a48e7c8f5b309db9fa76433f066e45df8820692213e25b651c20cda5bbdbecdb",
         "lines": [
           {
             "amount": "2000.00",
@@ -115,7 +116,7 @@
         "rule_set_version": 2
       },
       "frm1601c:txtTax25": {
-        "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+        "fixture_sha256": "a48e7c8f5b309db9fa76433f066e45df8820692213e25b651c20cda5bbdbecdb",
         "lines": [
           {
             "amount": "2808.40",
@@ -241,12 +242,12 @@
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "a4cbac9af10225806bd083a8b58d6561d88c36c97a3438f1d666490ca2bd5bf2",
+    "output_sha256": "d7550b4b20e67786460c0ddc817b39d4352780c384b14c47f92c8595d98d2511",
     "period_end": "2026-09-30",
     "period_key": "2026-09",
     "period_start": "2026-09-01",
     "profile_digest": "bcfa1b24bf610bb7e145f65fe105f9c419a6068e32eb2c26b77a240793b0695b",
-    "proposal_format": "buwiz-poc-proposal/2",
+    "proposal_format": "buwiz-poc-proposal/3",
     "reference_values": {},
     "refused_keys": [
       {
@@ -290,7 +291,7 @@
     ]
   },
   "fixture": "b-eight-percent-2026",
-  "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+  "fixture_sha256": "a48e7c8f5b309db9fa76433f066e45df8820692213e25b651c20cda5bbdbecdb",
   "form": "1601C",
   "form_context": {},
   "input": {
@@ -1355,9 +1356,10 @@
         "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
       }
     ],
-    "input_format": "buwiz-poc-input/2",
+    "input_format": "buwiz-poc-input/3",
     "profiles": [
       {
+        "accounting_basis": "accrual",
         "periods": {
           "2026": "closed",
           "2026-09": "closed",
@@ -1370,6 +1372,6 @@
     ]
   },
   "period": "2026-09",
-  "vector_format": "buwiz-poc-vector/2",
+  "vector_format": "buwiz-poc-vector/3",
   "vector_id": "b-1601c-2026-09"
 }

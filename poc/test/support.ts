@@ -67,16 +67,25 @@ export function lineageOf(p: Proposal, key: string): { lines: LineageEntry[]; ne
 
 type Obj = Record<string, unknown>;
 
-export function memoryInput(opts: { profileId?: string; periods?: Obj; acks?: string[]; entries: Obj[]; asOf?: string }): NormInput {
+/** An in-memory input with one profile. Without `basis` the profile takes the loader's default (cash). */
+export function memoryInput(opts: {
+  profileId?: string;
+  basis?: "cash" | "accrual";
+  periods?: Obj;
+  acks?: string[];
+  entries: Obj[];
+  asOf?: string;
+}): NormInput {
   const profileId = opts.profileId ?? PROFILE_A;
   const raw = {
-    fixture_format: "buwiz-poc-fixture/2",
+    fixture_format: "buwiz-poc-fixture/3",
     fixture_id: "in-memory",
     as_of: opts.asOf ?? "2026-10-29",
     profiles: [
       {
         tax_profile_id: profileId,
         display: "***-***-***-00000",
+        ...(opts.basis ? { accounting_basis: opts.basis } : {}),
         periods: opts.periods ?? { "2026-Q3": "closed", "2026-09": "closed", "2026-12": "closed", "2026": "closed" },
       },
     ],
@@ -86,7 +95,7 @@ export function memoryInput(opts: { profileId?: string; periods?: Obj; acks?: st
   return normalizeFixture(raw, data.vocab);
 }
 
-/** A plain sale: receivable debit, sales credit. */
+/** A sale paid on the day: bank debit, sales credit. Valid on a cash or an accrual book. */
 export function saleEntry(profileId: string, entryId: string, date: string, amount: string): Obj {
   return {
     entry_id: entryId,
@@ -94,7 +103,7 @@ export function saleEntry(profileId: string, entryId: string, date: string, amou
     entry_date: date,
     memo: `in-memory sale ${entryId}`,
     lines: [
-      { line_id: `${entryId}.1`, account: "accounts_receivable_gross", debit: amount, credit: "0.00" },
+      { line_id: `${entryId}.1`, account: "bank_accounts", debit: amount, credit: "0.00" },
       {
         line_id: `${entryId}.2`,
         account: "sales_revenue",
@@ -108,7 +117,7 @@ export function saleEntry(profileId: string, entryId: string, date: string, amou
   };
 }
 
-/** A contra-sales debit (return by default), acknowledged by entry id. */
+/** A contra-sales debit (return by default) refunded from the bank. Valid on a cash or an accrual book. */
 export function creditNoteEntry(profileId: string, entryId: string, date: string, amount: string, contraKind = "return"): Obj {
   return {
     entry_id: entryId,
@@ -126,12 +135,15 @@ export function creditNoteEntry(profileId: string, entryId: string, date: string
         contra_kind: contraKind,
         document_kind: "credit_note",
       },
-      { line_id: `${entryId}.2`, account: "accounts_receivable_gross", debit: "0.00", credit: amount },
+      { line_id: `${entryId}.2`, account: "bank_accounts", debit: "0.00", credit: amount },
     ],
   };
 }
 
-/** Certificate posting: receivable debit with the certificate's evidence attributes. */
+/**
+ * Certificate posting against the customer's receivable, as on an accrual book: tax-credit debit with the
+ * certificate's evidence attributes. Use it with an accrual input (memoryInput basis "accrual" or an accrual fixture).
+ */
 export function certEntry(
   profileId: string,
   entryId: string,

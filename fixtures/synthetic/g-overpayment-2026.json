@@ -166,10 +166,11 @@
       "tax_profile_id": "7c9d1e3f-5a7b-4c9d-8e1f-2a3b4c5d6e7f"
     }
   ],
-  "fixture_format": "buwiz-poc-fixture/2",
+  "fixture_format": "buwiz-poc-fixture/3",
   "fixture_id": "g-overpayment-2026",
   "profiles": [
     {
+      "accounting_basis": "accrual",
       "display": "***-***-***-00000",
       "label": "G: percentage-tax credit (DS-H)",
       "periods": {

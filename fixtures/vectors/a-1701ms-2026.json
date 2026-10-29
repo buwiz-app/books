@@ -1,6 +1,7 @@
 {
   "description": "Workbook worked example, annual 1701-MS, Forms context graduated + OSD: gross sales 1200000.00 to IV.5 (/taxpayer/sales) and returns 10000.00 to IV.6; net sales measure 1190000.00. Ready.",
   "expected": {
+    "accounting_basis": "accrual",
     "as_of": "2026-10-29",
     "blocking": [],
     "excluded_keys": [
@@ -25,16 +26,16 @@
       "frm1701MS:txtSalesReturnsNo6a": "10000.00",
       "frm1701MS:txtSalesRevenueNo5a": "1200000.00"
     },
-    "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+    "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
     "form_code": "1701MS",
     "form_context": {
       "/taxpayer/deduction": "osd",
       "/taxpayer/tax_option": "graduated"
     },
-    "inputs_hash": "10ff5f271175a8c9d7eb06de72fd0bc129e1aabbf880d900c913ecb83e0df217",
+    "inputs_hash": "de00f3dd65df6ebf868b34b91a3b918b71d247a701ff44cdbcbf753804634063",
     "lineage": {
       "frm1701MS:txtCreditableFourthQuarterNo4a": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [
           {
             "amount": "3000.00",
@@ -50,7 +51,7 @@
         "rule_set_version": 2
       },
       "frm1701MS:txtCreditableTaxNo3a": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [
           {
             "amount": "3000.00",
@@ -76,7 +77,7 @@
         "rule_set_version": 2
       },
       "frm1701MS:txtSalesReturnsNo6a": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [
           {
             "amount": "10000.00",
@@ -94,7 +95,7 @@
         "rule_set_version": 2
       },
       "frm1701MS:txtSalesRevenueNo5a": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [
           {
             "amount": "120000.00",
@@ -323,12 +324,12 @@
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "5a78bda3eebb9b23173cfab8e1e46aa62b8bd9a79897313049b92c3538e5fea4",
+    "output_sha256": "36adbc57a4ba1f71814643be5ab6aa21fcf2641c9fb8d900446f89bd5f496834",
     "period_end": "2026-12-31",
     "period_key": "2026",
     "period_start": "2026-01-01",
     "profile_digest": "2636cb8da22859953ea2c8e937ec3b187bf749d2b2d8d52784c47888d431eb74",
-    "proposal_format": "buwiz-poc-proposal/2",
+    "proposal_format": "buwiz-poc-proposal/3",
     "reference_values": {
       "frm1701MS:txtCreditableFourthQuarterNo4a": "3000.00",
       "frm1701MS:txtCreditableTaxNo3a": "8900.00"
@@ -525,7 +526,7 @@
     }
   },
   "fixture": "a-sole-prop-2026",
-  "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+  "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
   "form": "1701MS",
   "form_context": {
     "/taxpayer/deduction": "osd",
@@ -1593,9 +1594,10 @@
         "tax_profile_id": "6b1d2f3a-4c5e-4f60-8a71-92b3c4d5e6f7"
       }
     ],
-    "input_format": "buwiz-poc-input/2",
+    "input_format": "buwiz-poc-input/3",
     "profiles": [
       {
+        "accounting_basis": "accrual",
         "periods": {
           "2026": "closed",
           "2026-09": "closed",
@@ -1608,6 +1610,6 @@
     ]
   },
   "period": "2026",
-  "vector_format": "buwiz-poc-vector/2",
+  "vector_format": "buwiz-poc-vector/3",
   "vector_id": "a-1701ms-2026"
 }

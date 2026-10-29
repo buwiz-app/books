@@ -74,7 +74,11 @@ Superseded by ADR-0007 (2026-10-29): the rate, due-date, VAT-gate, 8%-block and 
 | T-MEAS-06 | Returns, allowances and discounts | Three separate measures; 1701-MS IV.6 sums them once | Owner correction |
 | T-CALC-09 | Time zone. Entry at 2026-09-30T23:30+08:00 | Q3 2026 | Asia/Manila calendar day (PROPOSAL) |
 | T-CALC-10 | Time zone. Entry at 2026-10-01T00:30+08:00 (2026-09-30T16:30Z) | Q4 2026. A UTC-based implementation would wrongly put it in Q3. | Same |
-| T-CALC-12 | Period override `period_override` moves an entry to another period | The measures for each period change. Both inputs hashes change. | D4 (accounting policy) |
+| T-BASIS-01 | A business profile with no basis chosen | It is a cash-basis book | ADR 0008 (owner default) |
+| T-BASIS-02 | A cash-basis book given an unpaid invoice (receivable line) or unpaid bill (payable line) | Refused; an accrual book accepts both | ADR 0008 |
+| T-BASIS-03 | A cash-basis sales line tagged `payment_receipt` | Refused, not dropped from the sales measures | ADR 0008; `EXC.BANK_DEPOSIT_NOT_SALES` |
+| T-BASIS-04 | One sale invoiced 2026-09-25 and paid 2026-10-05 | Accrual: gross sales 50,000.00 in Q3, nothing in Q4. Cash: nothing in Q3, 50,000.00 in Q4. | ADR 0008 |
+| T-BASIS-05 | The book's basis changes after a proposal is made | The proposal records the basis; the stored proposal goes stale | ADR 0008 |
 
 ### 3.2 Blocking matrix
 

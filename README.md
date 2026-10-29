@@ -22,6 +22,8 @@ Owner decisions (binding; source: `research/traces/decisions.md`):
 - The TypeScript Books repo is a reference for domain logic only. Do not import it.
 - No deploy, no change to real financial data, no filing. The first slice stops at a reviewable draft.
 - (2026-10-29, scope correction) Books is bookkeeping and accounting and supplies measures; the bridge maps them onto Forms input boxes only and reads taxpayer choices from Forms; Buwiz Forms / the BIR mini app owns all compliance. See `docs/adr/0007-books-supplies-measures-forms-owns-compliance.md`.
+- (2026-10-29, D4) Every book has an accounting basis, **cash by default** (income when received, expenses when paid), accrual available. Every proposal records the basis. See `docs/adr/0008-cash-basis-by-default.md`.
+- (2026-10-29, D9) Books is signed at release with the existing Goldcoders publisher key `gc-2026-01`. Tests use a throwaway key under a test key id.
 
 Design decisions (proposed; the full list and open items are in `docs/07-decisions-and-blockers.md`):
 
@@ -52,6 +54,7 @@ Design decisions (proposed; the full list and open items are in `docs/07-decisio
 | `research/traces/` | Raw investigation reports: `rox`, `bir-shell`, `books`, `forms`, `identity`, `sheets`, `bir`, `verify`, `decisions` (with the 2026-10-29 scope-correction addendum). |
 | `research/handoff-to-forms/` | Compliance material handed to the Forms owner: the former rate table, the removed gates and eligibility notes, the r1 rule sets, and `compliance-notes.md` with evidence. Books code does not load it. |
 | `research/inputs/` | The two research workbooks. |
+| `research/workbook-form-links.md` | The workbook's category-to-form-line rows, kept as evidence. Not a Books rule. |
 | `research/corrected/`, `research/spreadsheet-corrections.md` | Corrected workbook figures, labels and formulas. |
 | `poc/` | Bun and TypeScript proof of concept: ledger → measures → mapping → fill args with lineage. |
 | `fixtures/` | Synthetic fixtures for the PoC. Never real data. |
@@ -75,6 +78,7 @@ The proof of concept in `poc/` is TypeScript and runs on Bun. Use `bun`, not npm
 
 - Research: nine investigation reports are in `research/traces/`. Read-only work dated 2026-10-29.
 - Live checks: none. No live Rox, BIR or cloud call was made, and the live BIR database was not opened.
-- Tests: the source repos' test suites were not run. Last PoC run (2026-10-29, after the ADR 0007 refactor, `cd poc && bun test`): 166 pass, 0 fail, 2353 expect() calls, 10 files. The verbatim output is in `poc/README.md`.
+- Tests: the source repos' test suites were not run. Last PoC run (2026-10-29, after ADR 0008, `cd poc && bun test`): 177 pass, 0 fail, 2378 expect() calls, 11 files. The verbatim output is in `poc/README.md`.
 - Git: the first commit holds this research, design and PoC. Pushing to `github.com/buwiz-corp/buwiz-books` is the owner's call.
+- Owner decisions D4 (cash basis by default) and D9 (reuse `gc-2026-01`) are settled.
 - Open questions that block parts of the build: the BIR source label (D3), the 1701-MS election locks in Forms (B7), the tax review of the open mappings (2551Q row 1 net or gross sales, former D20), the owner of the 1601-C item 17 cap (DD-29), and the cloud repo of record (D13). Cloud blocker B1 closes when buwiz-server PR #4 merges. D5, D6, D7 and D14 are handed to Forms. See `docs/07-decisions-and-blockers.md`.

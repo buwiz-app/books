@@ -43,16 +43,29 @@ export interface NormEntry {
   lines: NormLine[];
 }
 
-/** A business profile as Books sees it: an opaque link id and its period statuses. No tax facts, no elections. */
+/**
+ * When the book recognizes income and expenses (ADR 0008). An accounting policy of the business profile, not a tax
+ * election. "cash" (the default): income is posted when the money is received and expenses when they are paid, so an
+ * entry's date is the day money moved. "accrual": income is posted at invoice and expenses at bill.
+ */
+export type AccountingBasis = "cash" | "accrual";
+
+export const ACCOUNTING_BASES: readonly AccountingBasis[] = ["cash", "accrual"];
+
+/** The basis a profile gets when none is chosen (owner decision, 2026-10-29). */
+export const DEFAULT_ACCOUNTING_BASIS: AccountingBasis = "cash";
+
+/** A business profile as Books sees it: an opaque link id, its accounting basis and period statuses. No tax facts, no elections. */
 export interface NormProfile {
   tax_profile_id: string;
+  accounting_basis: AccountingBasis;
   /** Period key to "open" or "closed". */
   periods: Record<string, string>;
 }
 
 /** The normalized input. Memos and labels are dropped here, so they cannot reach a hash or a proposal. */
 export interface NormInput {
-  input_format: "buwiz-poc-input/2";
+  input_format: "buwiz-poc-input/3";
   as_of: string;
   profiles: NormProfile[];
   acknowledged_entry_ids: string[];

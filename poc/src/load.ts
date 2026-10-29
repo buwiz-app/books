@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { DATA_DIR, SYNTHETIC_DIR } from "./paths.ts";
 import { isValidDate } from "./dates.ts";
 import { parseMoney } from "./money.ts";
-import type { FormCode, NormEntry, NormInput, NormLine, NormProfile } from "./types.ts";
-import { FORM_CODES } from "./types.ts";
+import type { AccountingBasis, FormCode, NormEntry, NormInput, NormLine, NormProfile } from "./types.ts";
+import { ACCOUNTING_BASES, DEFAULT_ACCOUNTING_BASIS, FORM_CODES } from "./types.ts";
 
 export class InputError extends Error {
   constructor(message: string) {
@@ -40,6 +40,8 @@ export interface Vocab {
   certificate_status: Set<string>;
   final_tax_withheld: Set<string>;
   account: Set<string>;
+  /** Trade receivable and payable accounts (categories with accrual_only). A cash-basis book refuses them. */
+  accrual_only_account: Set<string>;
 }
 
 export interface Field {
@@ -145,7 +147,7 @@ export interface LoadedData {
   dataDir: string;
   measures: { catalog_id: string; version: number; measures: MeasureSpec[] };
   common: { rules: CommonRule[]; rule_set_id: string; version: number };
-  categories: { categories: Array<{ id: string }> };
+  categories: { categories: Array<{ id: string; accrual_only?: boolean }> };
   attributes: any;
   rules: Record<FormCode, RuleSet>;
   crosswalk: Record<FormCode, Crosswalk>;
@@ -156,7 +158,7 @@ function readJson(path: string): any {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
-function vocabFrom(attributes: any, categories: { categories: Array<{ id: string }> }): Vocab {
+function vocabFrom(attributes: any, categories: { categories: Array<{ id: string; accrual_only?: boolean }> }): Vocab {
   const allowed = (name: string): Set<string> => {
     const spec = attributes.line_attributes.find((a: { name: string }) => a.name === name);
     if (!spec) throw new Error(`tax-attributes.v1.json has no attribute ${name}`);
@@ -176,6 +178,7 @@ function vocabFrom(attributes: any, categories: { categories: Array<{ id: string
     certificate_status: allowed("certificate_status"),
     final_tax_withheld: allowed("final_tax_withheld"),
     account: new Set(categories.categories.map((c) => c.id)),
+    accrual_only_account: new Set(categories.categories.filter((c) => c.accrual_only === true).map((c) => c.id)),
   };
 }
 
@@ -351,28 +354,54 @@ function normalizeProfile(raw: any): NormProfile {
       throw new InputError(`profile.${banned}: elections, tax facts and prior filings are Forms' (ADR-0007)`);
     }
   }
+  const basis = raw.accounting_basis ?? DEFAULT_ACCOUNTING_BASIS;
+  if (!ACCOUNTING_BASES.includes(basis)) throw new InputError("accounting_basis must be cash or accrual");
   const periods: Record<string, string> = {};
   for (const [key, status] of Object.entries<string>(raw.periods ?? {})) {
     if (!PERIOD_KEY.test(key)) throw new InputError(`bad period key ${key}`);
     if (status !== "open" && status !== "closed") throw new InputError(`period ${key} must be open or closed`);
     periods[key] = status;
   }
-  return { tax_profile_id: raw.tax_profile_id, periods };
+  return { tax_profile_id: raw.tax_profile_id, accounting_basis: basis, periods };
+}
+
+/**
+ * The cash-basis posting rule (ADR 0008). A cash-basis book posts a sale on the day the money is received and an
+ * expense on the day it is paid, so it has no trade receivable or payable lines. Its sales line carries the invoice it
+ * settles (sale_invoice); a sales line tagged payment_receipt would be dropped by the sales measures, so it is refused
+ * here instead of being lost silently. P1 enforces the same rule at post time.
+ */
+function checkCashBasis(entry: NormEntry, basis: AccountingBasis, vocab: Vocab): void {
+  if (basis !== "cash") return;
+  for (const line of entry.lines) {
+    if (vocab.accrual_only_account.has(line.account)) {
+      throw new InputError(
+        `${line.line_id}: ${line.account} is an accrual account; a cash-basis book posts the sale when the money is received and the expense when it is paid`,
+      );
+    }
+    if (line.income_class === "business_sales" && line.document_kind === "payment_receipt") {
+      throw new InputError(
+        `${line.line_id}: on a cash-basis book the sales line carries the invoice it settles (sale_invoice), not payment_receipt`,
+      );
+    }
+  }
 }
 
 /** Turns a fixture file into the normalized input. Memos and labels are dropped here on purpose. */
 export function normalizeFixture(raw: any, vocab: Vocab): NormInput {
-  if (raw?.fixture_format !== "buwiz-poc-fixture/2") throw new InputError("fixture_format must be buwiz-poc-fixture/2");
+  if (raw?.fixture_format !== "buwiz-poc-fixture/3") throw new InputError("fixture_format must be buwiz-poc-fixture/3");
   if (!isValidDate(raw.as_of)) throw new InputError("as_of must be YYYY-MM-DD");
   const profiles = (raw.profiles as unknown[]).map((p) => normalizeProfile(p));
   const profileIds = new Set(profiles.map((p) => p.tax_profile_id));
   if (profileIds.size !== profiles.length) throw new InputError("duplicate tax_profile_id");
   const entries = (raw.entries as unknown[]).map((e) => normalizeEntry(e, profileIds, vocab));
+  const basisOf = new Map(profiles.map((p) => [p.tax_profile_id, p.accounting_basis]));
+  for (const entry of entries) checkCashBasis(entry, basisOf.get(entry.tax_profile_id)!, vocab);
   const entryIds = new Set(entries.map((e) => e.entry_id));
   if (entryIds.size !== entries.length) throw new InputError("duplicate entry_id");
   const acks: string[] = [...(raw.acknowledged_entry_ids ?? [])].sort();
   for (const id of acks) if (!entryIds.has(id)) throw new InputError(`acknowledged entry ${id} does not exist`);
-  return { input_format: "buwiz-poc-input/2", as_of: raw.as_of, profiles, acknowledged_entry_ids: acks, entries };
+  return { input_format: "buwiz-poc-input/3", as_of: raw.as_of, profiles, acknowledged_entry_ids: acks, entries };
 }
 
 export function loadFixture(name: string, vocab: Vocab, dir: string = SYNTHETIC_DIR): NormInput {

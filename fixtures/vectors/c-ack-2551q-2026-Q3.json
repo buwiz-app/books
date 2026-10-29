@@ -1,6 +1,7 @@
 {
   "description": "Same ledger, return events acknowledged. Net sales 155000.00. Ready.",
   "expected": {
+    "accounting_basis": "cash",
     "as_of": "2026-10-29",
     "blocking": [],
     "excluded_keys": [],
@@ -8,13 +9,13 @@
       "frm2551Qv2018:txt15": "0.00",
       "txtATCAmt1": "155000.00"
     },
-    "fixture_sha256": "0e0f4975f581343667cd6e1ad8de9de36c86d0bd4a65d933f0412b70e2ed7ce0",
+    "fixture_sha256": "27b98bbf7e1791e8b7de786f51418140e54d029d5708dd51b6b222ba3446f492",
     "form_code": "2551Q",
     "form_context": {},
-    "inputs_hash": "1370f95fc4d33755b940a8e151a006b8b72b371f8782552fd103c47a68193c8e",
+    "inputs_hash": "31aa3b5c2196d0d3b110ed1ea6c9c889af7ae0a4c810ffb5896767947331dc3d",
     "lineage": {
       "frm2551Qv2018:txt15": {
-        "fixture_sha256": "0e0f4975f581343667cd6e1ad8de9de36c86d0bd4a65d933f0412b70e2ed7ce0",
+        "fixture_sha256": "27b98bbf7e1791e8b7de786f51418140e54d029d5708dd51b6b222ba3446f492",
         "lines": [],
         "mapping_id": "2551Q.II.15",
         "measures": [
@@ -24,7 +25,7 @@
         "rule_set_version": 2
       },
       "txtATCAmt1": {
-        "fixture_sha256": "0e0f4975f581343667cd6e1ad8de9de36c86d0bd4a65d933f0412b70e2ed7ce0",
+        "fixture_sha256": "27b98bbf7e1791e8b7de786f51418140e54d029d5708dd51b6b222ba3446f492",
         "lines": [
           {
             "amount": "120000.00",
@@ -100,12 +101,12 @@
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "3a130b2679ea26ccc94b30d2e883abe660c71daf61b3e0412f70663828b5c7ea",
+    "output_sha256": "a0dbf4f35b6fdf50d0a68ab7ab78dd509009cbd443b4f1034f2a9782a79d90ec",
     "period_end": "2026-09-30",
     "period_key": "2026-Q3",
     "period_start": "2026-07-01",
     "profile_digest": "93da5c0556c245d3e4b6977075a9e9c0bd04a2db28a0a6fbe78b4f9ac1470ae3",
-    "proposal_format": "buwiz-poc-proposal/2",
+    "proposal_format": "buwiz-poc-proposal/3",
     "reference_values": {},
     "refused_keys": [
       {
@@ -149,7 +150,7 @@
     ]
   },
   "fixture": "c-reversal-credit-note-acknowledged-2026",
-  "fixture_sha256": "0e0f4975f581343667cd6e1ad8de9de36c86d0bd4a65d933f0412b70e2ed7ce0",
+  "fixture_sha256": "27b98bbf7e1791e8b7de786f51418140e54d029d5708dd51b6b222ba3446f492",
   "form": "2551Q",
   "form_context": {},
   "input": {
@@ -164,7 +165,7 @@
         "entry_id": "C-001",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -214,7 +215,7 @@
         "entry_id": "C-002",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -264,7 +265,7 @@
         "entry_id": "C-003",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -314,7 +315,7 @@
         "entry_id": "C-004",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -364,7 +365,7 @@
         "entry_id": "C-005",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -414,7 +415,7 @@
         "entry_id": "C-006",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -485,7 +486,7 @@
             "person_scope": "self"
           },
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -510,9 +511,10 @@
         "tax_profile_id": "3e5f7a9b-2c4d-4e6f-9a8b-7c6d5e4f3a2b"
       }
     ],
-    "input_format": "buwiz-poc-input/2",
+    "input_format": "buwiz-poc-input/3",
     "profiles": [
       {
+        "accounting_basis": "cash",
         "periods": {
           "2026-Q2": "closed",
           "2026-Q3": "closed"
@@ -522,6 +524,6 @@
     ]
   },
   "period": "2026-Q3",
-  "vector_format": "buwiz-poc-vector/2",
+  "vector_format": "buwiz-poc-vector/3",
   "vector_id": "c-ack-2551q-2026-Q3"
 }

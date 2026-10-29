@@ -11,7 +11,7 @@
       "entry_id": "C-001",
       "lines": [
         {
-          "account": "accounts_receivable_gross",
+          "account": "bank_accounts",
           "credit": "0.00",
           "debit": "40000.00",
           "line_id": "C-001.1"
@@ -27,7 +27,7 @@
           "person_scope": "self"
         }
       ],
-      "memo": "MEMO-SYNTH-C-001 synthetic sales invoice",
+      "memo": "MEMO-SYNTH-C-001 synthetic sale, paid",
       "reverses_entry_id": null,
       "tax_profile_id": "3e5f7a9b-2c4d-4e6f-9a8b-7c6d5e4f3a2b"
     },
@@ -36,7 +36,7 @@
       "entry_id": "C-002",
       "lines": [
         {
-          "account": "accounts_receivable_gross",
+          "account": "bank_accounts",
           "credit": "0.00",
           "debit": "120000.00",
           "line_id": "C-002.1"
@@ -52,7 +52,7 @@
           "person_scope": "self"
         }
       ],
-      "memo": "MEMO-SYNTH-C-002 synthetic sales invoice",
+      "memo": "MEMO-SYNTH-C-002 synthetic sale, paid",
       "reverses_entry_id": null,
       "tax_profile_id": "3e5f7a9b-2c4d-4e6f-9a8b-7c6d5e4f3a2b"
     },
@@ -61,7 +61,7 @@
       "entry_id": "C-003",
       "lines": [
         {
-          "account": "accounts_receivable_gross",
+          "account": "bank_accounts",
           "credit": "0.00",
           "debit": "100000.00",
           "line_id": "C-003.1"
@@ -77,7 +77,7 @@
           "person_scope": "self"
         }
       ],
-      "memo": "MEMO-SYNTH-C-003 synthetic sales invoice",
+      "memo": "MEMO-SYNTH-C-003 synthetic sale, paid",
       "reverses_entry_id": null,
       "tax_profile_id": "3e5f7a9b-2c4d-4e6f-9a8b-7c6d5e4f3a2b"
     },
@@ -86,7 +86,7 @@
       "entry_id": "C-004",
       "lines": [
         {
-          "account": "accounts_receivable_gross",
+          "account": "bank_accounts",
           "credit": "100000.00",
           "debit": "0.00",
           "line_id": "C-004.1"
@@ -111,7 +111,7 @@
       "entry_id": "C-005",
       "lines": [
         {
-          "account": "accounts_receivable_gross",
+          "account": "bank_accounts",
           "credit": "0.00",
           "debit": "80000.00",
           "line_id": "C-005.1"
@@ -127,7 +127,7 @@
           "person_scope": "self"
         }
       ],
-      "memo": "MEMO-SYNTH-C-005 synthetic sales invoice",
+      "memo": "MEMO-SYNTH-C-005 synthetic sale, paid",
       "reverses_entry_id": null,
       "tax_profile_id": "3e5f7a9b-2c4d-4e6f-9a8b-7c6d5e4f3a2b"
     },
@@ -136,7 +136,7 @@
       "entry_id": "C-006",
       "lines": [
         {
-          "account": "accounts_receivable_gross",
+          "account": "bank_accounts",
           "credit": "40000.00",
           "debit": "0.00",
           "line_id": "C-006.1"
@@ -171,7 +171,7 @@
           "measure_side": "credit"
         },
         {
-          "account": "accounts_receivable_gross",
+          "account": "bank_accounts",
           "credit": "5000.00",
           "debit": "0.00",
           "line_id": "C-007.2"
@@ -182,10 +182,11 @@
       "tax_profile_id": "3e5f7a9b-2c4d-4e6f-9a8b-7c6d5e4f3a2b"
     }
   ],
-  "fixture_format": "buwiz-poc-fixture/2",
+  "fixture_format": "buwiz-poc-fixture/3",
   "fixture_id": "c-reversal-credit-note-acknowledged-2026",
   "profiles": [
     {
+      "accounting_basis": "cash",
       "display": "***-***-***-00000",
       "label": "C: reversals and a credit note",
       "periods": {

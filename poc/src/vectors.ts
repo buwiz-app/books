@@ -9,7 +9,7 @@ import { buildProposal, onlyProfileId, scopeInput, type Proposal } from "./propo
 import { VECTORS_DIR } from "./paths.ts";
 import type { NormInput } from "./types.ts";
 
-export const VECTOR_FORMAT = "buwiz-poc-vector/2";
+export const VECTOR_FORMAT = "buwiz-poc-vector/3";
 export const MONEY_VECTOR_FILE = "money-and-mapping.json";
 
 /**

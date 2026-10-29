@@ -205,7 +205,7 @@
       "id": "EXC.BANK_DEPOSIT_NOT_SALES",
       "printed_item": "sales base",
       "method": "exclusion",
-      "formula": "Bank deposits and collections are not sales. Use invoices and posted sales lines.",
+      "formula": "Bank deposits and collections are not sales. Use invoices and posted sales lines. On a cash-basis book (the default, ADR 0008) the sale is posted when the money is received, with a sales line that carries the invoice it settles; the loader refuses a sales line tagged payment_receipt there instead of dropping it.",
       "status": "CONFIRMED",
       "books_source": "ledger",
       "citations": [

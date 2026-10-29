@@ -156,14 +156,6 @@
       "citations": ["design (evidence table)"]
     },
     {
-      "name": "period_override",
-      "allowed_values": ["null (use the entry date)", "2026-Q3 (quarter)", "2026-09 (month)", "2026 (year)"],
-      "default": null,
-      "rule": "Explicit override of the recognition period. An accounting policy (D4, kept with Books). The PoC uses the entry date only.",
-      "status": "PROPOSAL",
-      "citations": ["decision D4 (revenue recognition: accounting policy part kept)"]
-    },
-    {
       "name": "final_tax_withheld",
       "allowed_values": ["yes", "no", "unknown"],
       "default": "unknown",
@@ -184,7 +176,7 @@
       { "name": "deductibility", "why": "OSD versus itemized and deductibility are Forms' (read as form_context /taxpayer/deduction)." },
       { "name": "returns_state", "why": "Replaced by an entry-level acknowledgement of return events (GATE.RETURNS_ACK, bookkeeping review)." },
       { "name": "sign_and_rounding", "why": "Rounding of tax amounts is Forms'. Measures are exact centavos and never rounded." },
-      { "name": "tax_period_key", "why": "Renamed period_override; it is an accounting recognition override, not a tax period." }
+      { "name": "tax_period_key", "why": "Renamed period_override, which ADR 0008 then removed: the book's accounting basis (cash by default) decides what an entry date means, so no line needs a recognition override." }
     ]
   },
   "examples": {

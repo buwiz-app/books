@@ -5,9 +5,9 @@ import { LedgerError, postLedger } from "./ledger.ts";
 import type { Crosswalk, Field, LoadedData } from "./load.ts";
 import type { MeasureResult } from "./measures.ts";
 import { formatMoney } from "./money.ts";
-import { FORM_PERIOD_KIND, type FormCode, type FormContext, type NormEntry, type NormInput } from "./types.ts";
+import { FORM_PERIOD_KIND, type AccountingBasis, type FormCode, type FormContext, type NormEntry, type NormInput } from "./types.ts";
 
-export const PROPOSAL_FORMAT = "buwiz-poc-proposal/2";
+export const PROPOSAL_FORMAT = "buwiz-poc-proposal/3";
 
 export class CrosswalkViolation extends Error {
   constructor(message: string) {
@@ -46,6 +46,8 @@ export interface Proposal {
   period_end: string;
   as_of: string;
   profile_digest: string;
+  /** The book's accounting basis (ADR 0008). On a cash-basis book the sales measures are amounts received in the period. */
+  accounting_basis: AccountingBasis;
   status: "ready" | "blocked";
   rule_set: { rule_set_id: string; rule_set_version: number; schema_sha256: string; schema_pin: string };
   measures_catalog: { catalog_id: string; version: number };
@@ -93,7 +95,7 @@ export function onlyProfileId(input: NormInput): string {
 }
 
 /**
- * The period-scoped inputs covered by staleness: the period status, the acknowledgements, the entries that can
+ * The period-scoped inputs covered by staleness: the accounting basis, the period status, the acknowledgements, the entries that can
  * affect this period (dated from 1 January up to the period end, or certificates whose period ends in that range,
  * plus the originals of reversals), the Forms context, the rule set, the measures catalogue and the crosswalk.
  */
@@ -119,6 +121,7 @@ function hashedInputs(data: LoadedData, scope: NormInput, form: FormCode, period
     period_start: period.start,
     period_end: period.end,
     profile_digest: sha256Hex(profile.tax_profile_id),
+    accounting_basis: profile.accounting_basis,
     period_status: profile.periods[period.key] ?? "unset",
     acknowledged_in_scope: scope.acknowledged_entry_ids.filter((id) => scopedIds.has(id)),
     entries,
@@ -285,6 +288,7 @@ function assemble(
     period_end: period.end,
     as_of: scope.as_of,
     profile_digest: sha256Hex(profile.tax_profile_id),
+    accounting_basis: profile.accounting_basis,
     status: blocked ? ("blocked" as const) : ("ready" as const),
     rule_set: {
       rule_set_id: rs.rule_set_id,

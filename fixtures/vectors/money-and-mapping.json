@@ -74,6 +74,6 @@
     "mapping": "data/rules/1601c-v2018.rules.json 1601C.II.17",
     "rule_set_id": "1601C-v2018-r2"
   },
-  "vector_format": "buwiz-poc-vector/2",
+  "vector_format": "buwiz-poc-vector/3",
   "vector_id": "money-and-mapping"
 }

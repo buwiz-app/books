@@ -128,8 +128,9 @@ Every posted line carries these attributes. Values are closed sets. Source: `dat
 | `certificate_status` | received; pending; lost; disputed | pending | CONFIRMED | Only received counts in a certificate measure. |
 | `document_kind` | sale_invoice; payment_receipt; expense_document; adjustment; credit_note; certificate_2307; certificate_2306; certificate_2316; payroll_register; other | other | PROPOSAL | A credit_note is a return event. A 2306 (final withholding) never counts in a 2307 measure. |
 | `evidence_ref` | evidence_id; sha256; document_kind; redaction_state | - | PROPOSAL | The model sees the sha256 and kind only. |
-| `period_override` | null; quarter; month; year key | - | PROPOSAL | Revenue-recognition override. An accounting policy (D4). |
 | `final_tax_withheld` | yes; no; unknown | unknown | UNKNOWN | Evidence fact. Its effect on 1701-MS IV.13/IV.20 is an open mapping question (EXC.FINAL_TAX_INTEREST). |
+
+**Book setting, not a line attribute:** `accounting_basis` on the business profile, `cash` (default) or `accrual` ([ADR 0008](adr/0008-cash-basis-by-default.md)). A cash-basis book posts income when the money is received and expenses when they are paid, and refuses trade receivable and payable accounts (`accrual_only` in the category catalogue). `period_override` is removed: the basis makes it unnecessary.
 
 **Removed by ADR 0007 (Forms-supplied):** `tax_type`, `atc` (as a choice), `treatment`, `regime`, `vat_status`, `returns_state`, `election_event`, `deductibility`, `sign_and_rounding`. Where the bridge needs a taxpayer choice, it reads it from the Forms draft (`form_context`).
 
@@ -139,7 +140,7 @@ Money and dates (PROPOSAL, consistent with books.md s4i):
 - **text:** exactly two decimal places in JSON, for example "200000.00"; more than two decimals is refused
 - **floats:** not allowed in Books money paths
 - **sign:** signed; no clamp to zero
-- **entry_date:** DATE in Asia/Manila (calendar day); the revenue-recognition date by default (D4)
+- **entry_date:** DATE in Asia/Manila (calendar day); the recognition date set by the book's basis: the day money moved on a cash-basis book (default), the invoice or bill date on an accrual book (ADR 0008)
 - **certificate_period:** period_start and period_end as DATE (BK-TS uses text: tax-certificates.ts:53-54)
 
 Forbidden in Books (PROPOSAL):
@@ -157,62 +158,7 @@ Forbidden in Books (PROPOSAL):
 
 ## 4. Mapping rules: category to form field
 
-**Research trail (workbook text), superseded for Books by the r2 mapping rules (ADR 0007).** The workbook's category field rules (52 rows) map a category to a form line. Each row keeps the workbook's method, period, filter and exclusion text, which sometimes describes a compliance choice (8% pathway, itemized method, eligibility). Books does not apply those choices. In r2 a category feeds a **measure**, and a mapping rule maps the measure to an input box; the rule IDs below now resolve to an r2 mapping or a `not_mapped` pointer (owner `forms`, `user`, `profile` or `prior_filing`). In `data/categories.v1.json` this text is kept as `workbook_form_links`.
-
-| Category | Form | Target | Method (workbook) | Period | Filter (workbook) | Rule ID |
-|---|---|---|---|---|---|---|
-| `sales_revenue` | 2551Q | S1.1.base | Aggregate tax-tagged revenue | Quarter | PT010 eligible sales, applicable recognition date | 2551Q.S1.1.base |
-| `sales_revenue` | 1701-MS | IV.5 | Aggregate income-eligible gross sales | Year | Filer, non-final income, exclude VAT | 1701MS.IV.5 |
-| `sales_revenue` | 1701-MS | IV.19 | Aggregate eligible net sales | Year | 8% pathway only; subtract eligible returns | 1701MS.IV.19 |
-| `subscription_revenue` | 2551Q | S1.1.base | Aggregate tax-tagged revenue | Quarter | PT010 eligible sales, applicable recognition date | 2551Q.S1.1.base |
-| `subscription_revenue` | 1701-MS | IV.5 | Aggregate income-eligible gross sales | Year | Filer, non-final income, exclude VAT | 1701MS.IV.5 |
-| `subscription_revenue` | 1701-MS | IV.19 | Aggregate eligible net sales | Year | 8% pathway only; subtract eligible returns | 1701MS.IV.19 |
-| `transaction_revenue` | 2551Q | S1.1.base | Aggregate tax-tagged revenue | Quarter | PT010 eligible sales, applicable recognition date | 2551Q.S1.1.base |
-| `transaction_revenue` | 1701-MS | IV.5 | Aggregate income-eligible gross sales | Year | Filer, non-final income, exclude VAT | 1701MS.IV.5 |
-| `transaction_revenue` | 1701-MS | IV.19 | Aggregate eligible net sales | Year | 8% pathway only; subtract eligible returns | 1701MS.IV.19 |
-| `refunds_and_discounts` | 2551Q | S1.1.base | Subtract eligible sales adjustments | Quarter | PT010 adjustment to covered sale | 2551Q.S1.1.base |
-| `refunds_and_discounts` | 1701-MS | IV.6 | Sum eligible contra sales | Year | Graduated/special pathway | 1701MS.IV.6 |
-| `refunds_and_discounts` | 1701-MS | IV.19 | Subtract eligible contra sales | Year | 8% pathway | 1701MS.IV.19 |
-| `other_non_operating_income` | 1701-MS | IV.13 | Aggregate eligible other income | Year | Graduated / special pathway | 1701MS.IV.13 |
-| `other_non_operating_income` | 1701-MS | IV.20 | Aggregate eligible other income | Year | 8% pathway and eligibility test | 1701MS.IV.20 |
-| `interest_income` | 1701-MS | IV.13 | Aggregate eligible other income | Year | Graduated / special pathway | 1701MS.IV.13 |
-| `interest_income` | 1701-MS | IV.20 | Aggregate eligible other income | Year | 8% pathway and eligibility test | 1701MS.IV.20 |
-| `cost_of_goods_sold` | 1701-MS | IV.8 | Sum allowable cost | Year | Itemized deduction method | 1701MS.IV.8 |
-| `direct_service_cost` | 1701-MS | IV.8 | Sum allowable cost | Year | Itemized deduction method | 1701MS.IV.8 |
-| `salaries` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `salaries` | 1601-C | II.14 | Reconcile to payroll detail | Month | Employee gross compensation | 1601C.II.14 |
-| `employee_benefits` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `employee_benefits` | 1601-C | II.14 | Reconcile to payroll detail | Month | Employee gross compensation | 1601C.II.14 |
-| `retirement_contributions` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `employer_payroll_taxes` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `payroll_processing_fees` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `payment_processing_fees` | 1701-MS | IV.8 | Review classification | Year | Itemized and treated as cost of services | 1701MS.IV.8 |
-| `hosting_fees` | 1701-MS | IV.8 | Review classification | Year | Itemized and treated as cost of services | 1701MS.IV.8 |
-| `consultants_and_contractors` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `legal` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `tax_and_accounting` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `advertising` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `business_applications_and_software` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `rent` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `utilities` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `repairs_and_maintenance` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `office_supplies` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `airfare` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `meals` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `bank_fees` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `interest_expense` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `depreciation_expense` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `ph_cwt_receivable` | 1701-MS | V.3 | Aggregate eligible income-tax credits | Q1–Q3 | 2307 / 1606 income tax | 1701MS.V.3 |
-| `ph_cwt_receivable` | 1701-MS | V.4 | Aggregate eligible income-tax credits | Q4 | 2307 / 1606 income tax | 1701MS.V.4 |
-| `pct_tax_credit_receivable` | 2551Q | II.15 | Aggregate eligible percentage-tax credits | Quarter | 2307 percentage-tax withholding | 2551Q.II.15 |
-| `ph_percentage_tax_payable` | 2551Q | II.14 | Reconcile tax liability | Quarter | Posted percentage-tax assessment | 2551Q.II.14 |
-| `ph_percentage_tax_expense` | 1701-MS | IV.10A | Sum tax-eligible expenses | Year | Itemized method + deductible amount + substantiation | 1701MS.IV.10A |
-| `income_tax_paid` | 1701-MS | V.2 | Aggregate previous quarterly income tax paid | Q1–Q3 | 1701Q payment proof | 1701MS.V.2 |
-| `ph_wtc_payable` | 1601-C | II.25 | Reconcile withholding postings | Month | Posted withholding by payroll event | 1601C.II.25 |
-| `ph_sss_payable` | 1601-C | II.19 | Reconcile to employee-share detail | Month | Payroll employee share only | 1601C.II.19 |
-| `ph_philhealth_payable` | 1601-C | II.19 | Reconcile to employee-share detail | Month | Payroll employee share only | 1601C.II.19 |
-| `ph_pagibig_payable` | 1601-C | II.19 | Reconcile to employee-share detail | Month | Payroll employee share only | 1601C.II.19 |
-| `ph_union_dues_payable` | 1601-C | II.19 | Reconcile to employee-share detail | Month | Payroll employee share only | 1601C.II.19 |
+Books does not map categories to form fields. A category feeds one or more **measures** ([`data/measures.v1.json`](../data/measures.v1.json)), and a versioned mapping rule maps a measure to a Forms input box ([`data/rules/*.rules.json`](../data/rules/), r2; [03 crosswalk](03-crosswalk.md) shows who fills each box). The workbook's 52 category-to-line rows used a different model, and their text names some compliance choices (8% pathway, itemized method, eligibility). They are kept as research evidence in [`research/workbook-form-links.md`](../research/workbook-form-links.md), and as `workbook_form_links` in the category catalogue. Every rule ID they cite resolves to an r2 mapping or a `not_mapped` pointer.
 
 ## 5. Edge cases
 
@@ -228,7 +174,7 @@ Forbidden in Books (PROPOSAL):
 | Spouse | Measured; refused by the bridge in MVP (EXC.SPOUSE_MVP). | PROPOSAL |
 | 13th month and other benefits | Measured gross. The bridge computes the non-taxable part for 1601-C item 17 (annual cap per employee): the one input-level tax rule in the bridge. | Open for the Forms owner (07 DD-29) |
 | Negative amounts | Measures keep their sign. A negative sales measure is not proposed for a box. No clamp. | CONFIRMED (workbook note) |
-| Recognition period | Default: entry date in Asia/Manila. period_override overrides. Certificates use their own period dates. | D4 (accounting policy) |
+| Recognition period | The entry date in Asia/Manila, set by the book's basis: cash (default) posts on the day money moves, accrual at invoice or bill. Certificates use their own period dates. | Decided (ADR 0008) |
 | Interest subject to final tax | Evidence fact final_tax_withheld; mapping to IV.13/IV.20 fails closed until reviewed (EXC.FINAL_TAX_INTEREST). | UNKNOWN (sheets.md s10) |
 | Depreciation | Book depreciation is an operating expense measure. A tax-depreciation schedule (correction 17) is Forms' concern. | Needs review |
 | 8% election, VAT threshold, mixed income, rounding, penalties, overdue, 1701 vs 1701-MS routing | Not Books rules. | Handed to Forms (07 section 2.2; `research/handoff-to-forms/compliance-notes.md`) |
@@ -262,7 +208,6 @@ All amounts are synthetic. They come from the workbook's fictional worked exampl
 
 | ID | Decision | Default in this design | Blocks |
 |---|---|---|---|
-| D4 | Revenue-recognition date (accounting policy) | Entry date, with an override | P2 non-default cases |
 | D20 | Which sales measure feeds 2551Q row 1 (now a mapping question) | net_sales, review open | P2 release (tax review) |
 | DD-29 | 1601-C item 17 cap: Forms or the bridge | The bridge keeps it, labelled | P6 |
 | owner_drawings | Reuse owners_equity 32000 or new key | Pending | Category catalog |

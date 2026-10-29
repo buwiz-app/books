@@ -1,14 +1,14 @@
 {
   "acknowledged_entry_ids": [],
   "as_of": "2026-10-29",
-  "description": "Sales 120000.00 (2026-07-01), 100000.00 (2026-07-15), 80000.00 (2026-08-20), rent 25000.00 (2026-08-05). The 100000.00 sale is voided by a reversal dated 2026-07-15. The unbalanced entry N1 is not in the fixture; the ledger test builds it in memory.",
+  "description": "Cash book (the default basis): each sale is posted the day the money is received. Sales 120000.00 (2026-07-01), 100000.00 (2026-07-15), 80000.00 (2026-08-20), rent 25000.00 paid (2026-08-05). The 100000.00 sale is voided by a reversal dated 2026-07-15. The unbalanced entry N1 is not in the fixture; the ledger test builds it in memory.",
   "entries": [
     {
       "entry_date": "2026-07-01",
       "entry_id": "F-001",
       "lines": [
         {
-          "account": "accounts_receivable_gross",
+          "account": "bank_accounts",
           "credit": "0.00",
           "debit": "120000.00",
           "line_id": "F-001.1"
@@ -24,7 +24,7 @@
           "person_scope": "self"
         }
       ],
-      "memo": "MEMO-SYNTH-F-001 synthetic sales invoice",
+      "memo": "MEMO-SYNTH-F-001 synthetic sale, paid",
       "reverses_entry_id": null,
       "tax_profile_id": "5a7b9c1d-4e6f-4a8b-9c0d-1e2f3a4b5c6d"
     },
@@ -33,7 +33,7 @@
       "entry_id": "F-002",
       "lines": [
         {
-          "account": "accounts_receivable_gross",
+          "account": "bank_accounts",
           "credit": "0.00",
           "debit": "100000.00",
           "line_id": "F-002.1"
@@ -49,7 +49,7 @@
           "person_scope": "self"
         }
       ],
-      "memo": "MEMO-SYNTH-F-002 synthetic sales invoice",
+      "memo": "MEMO-SYNTH-F-002 synthetic sale, paid",
       "reverses_entry_id": null,
       "tax_profile_id": "5a7b9c1d-4e6f-4a8b-9c0d-1e2f3a4b5c6d"
     },
@@ -58,7 +58,7 @@
       "entry_id": "F-003",
       "lines": [
         {
-          "account": "accounts_receivable_gross",
+          "account": "bank_accounts",
           "credit": "0.00",
           "debit": "80000.00",
           "line_id": "F-003.1"
@@ -74,7 +74,7 @@
           "person_scope": "self"
         }
       ],
-      "memo": "MEMO-SYNTH-F-003 synthetic sales invoice",
+      "memo": "MEMO-SYNTH-F-003 synthetic sale, paid",
       "reverses_entry_id": null,
       "tax_profile_id": "5a7b9c1d-4e6f-4a8b-9c0d-1e2f3a4b5c6d"
     },
@@ -107,7 +107,7 @@
       "entry_id": "F-005",
       "lines": [
         {
-          "account": "accounts_receivable_gross",
+          "account": "bank_accounts",
           "credit": "100000.00",
           "debit": "0.00",
           "line_id": "F-005.1"
@@ -128,10 +128,11 @@
       "tax_profile_id": "5a7b9c1d-4e6f-4a8b-9c0d-1e2f3a4b5c6d"
     }
   ],
-  "fixture_format": "buwiz-poc-fixture/2",
+  "fixture_format": "buwiz-poc-fixture/3",
   "fixture_id": "f-slice-a-2026",
   "profiles": [
     {
+      "accounting_basis": "cash",
       "display": "***-***-***-00000",
       "label": "F: Slice A",
       "periods": {

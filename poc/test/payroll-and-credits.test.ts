@@ -149,6 +149,7 @@ describe("percentage-tax and income-tax certificates never cross (EXC.PT_CWT_NOT
 
   test("certificates are windowed by their own period end, not the posting date", () => {
     const input = memoryInput({
+      basis: "accrual",
       entries: [
         saleEntry(PROFILE_A, "S-1", "2026-07-10", "1000.00"),
         certEntry(PROFILE_A, "C-LATE", "2026-10-05", "30.00", { atc: "WB082", creditKind: "pt", status: "received", periodStart: "2026-07-01", periodEnd: "2026-09-30" }),

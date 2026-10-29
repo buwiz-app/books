@@ -1,7 +1,7 @@
 # ADR 0006: Tax meaning lives on journal lines and mapping rules, never on accounts
 
 Status: Proposed. Owner review requested with the category model (see [docs/02](../02-categories-and-attributes.md)).
-**Superseded in part by [ADR 0007](0007-books-supplies-measures-forms-owns-compliance.md) (2026-10-29).** "Never on accounts" stands. Superseded: the tax attributes `treatment`, `atc` and `tax_type` on lines, and "mapping rules produce form fields" for computed fields. Lines now carry accounting and evidence facts; measures select lines; the bridge maps measures to Forms input boxes only. The text below is kept as written.
+**Superseded in part by [ADR 0007](0007-books-supplies-measures-forms-owns-compliance.md) (2026-10-29).** "Never on accounts" stands. Superseded: the tax attributes `treatment`, `atc` and `tax_type` on lines, and "mapping rules produce form fields" for computed fields. Lines now carry accounting and evidence facts; measures select lines; the bridge maps measures to Forms input boxes only. [ADR 0008](0008-cash-basis-by-default.md) removes `tax_period_override` (later `period_override`): the book's accounting basis sets the recognition date. The text below is kept as written.
 Date: 2026-10-29. Writer: W3.
 
 ## Context

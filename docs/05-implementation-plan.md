@@ -68,14 +68,14 @@ Parallel work that is safe now: P0 with the design of P5, and the P2 measures ca
 - **Files (this repo).** `Cargo.toml`; `crates/books-mini-app/src/main.rs`, `jsonrpc.rs`, `reserved.rs`, `jcs.rs`, `manifest.rs`, `apps.rs`; `apps/home.tsx`; `tests/`. `CLAUDE.md` is written by W1.
 - **Files (Rox, release only).** `server/src/v1/trust.json:11-23` gets an `approved_plugins` entry. Packaging copies it at `server/tools/package-server.sh:54` `[V]`. Rox tests that cover trust and install get a `dev.goldcoders.books` case. The file that owns those tests is UNKNOWN; check `server/test/v1-plugins.test.mjs` and `v1-manifest.test.mjs` at release time. In stage A, nothing in Rox changes. The per-run file is set with `ROX_TRUST_FILE` (`server/src/v1/trust.mjs:14` [V]).
 - **Conformance.** `rox-plugin-test` checks P3, P4 and P7 mechanically. It runs the broker's real v1 code in process with a temp trust store and never touches the Keychain or the broker data folder `[rox §9; sdk docs/testing.md]`. Its usage takes `--command`, `--args`, `--sign-with` or `--manifest` with `--key-file`, and `--keygen` `[rox-plugin-test.mjs header]`. Books runs its own tests in Rust.
-- **Depends on.** Rox owner for release only. Publisher key owner (D9: reuse `gc-2026-01`).
+- **Depends on.** Rox owner for release only. Publisher key: decided (O8). The release is signed with `gc-2026-01`; stage A and conformance runs use a throwaway test key under a test key id ([06 section 13](06-testing-plan.md)).
 - **Exit.** A1. Conformance P3, P4 and P7 pass.
 - **Risks.** RK-5 (silent tool-name skip). RK-9 (spawn env is stored). RK-21 (first-party inline cards mount at once). RK-24 (short or command name collision). JCS drift: check the JCS output against Rox's `jcs-vectors.json` (`app/src/mini_v1/jcs-vectors.json`, `server/test/fixtures/jcs-vectors.json` `[rox §4]`).
 
 ### P1 Ledger (M)
 
 - **Goal.** A synthetic book with COA, balanced entries, void and reversal, periods, tickets, idempotency, audit and an encrypted store. Ledger app works.
-- **Deliverables.** COA preset data exported from BK-TS at `1662ca3` (data only, no code import). Entries and the balance check. Void by reversal. Periods with per-period locks. Ticket store. Idempotency table. Audit table. Encrypted store with key file. Ledger app.
+- **Deliverables.** COA preset data exported from BK-TS at `1662ca3` (data only, no code import). The book's accounting basis, cash by default, with the cash-basis posting rule and the basis-change rule ([ADR 0008](adr/0008-cash-basis-by-default.md)). Entries and the balance check. Void by reversal. Periods with per-period locks. Ticket store. Idempotency table. Audit table. Encrypted store with key file. Ledger app.
 - **Files (this repo).** `crates/books-core/src/money.rs`, `periods.rs`, `ledger.rs`; `crates/books-store/src/lib.rs`, `keyfile.rs`, `tickets.rs`, `migrations/0001_init.sql`, `repo/*.rs`; `crates/books-mini-app/src/tools/ledger.rs`, `coa.rs`, `tickets.rs`; `apps/ledger.tsx`; `data/categories.v1.json` (the `data/` tree is owned by W2 in the docs phase; this phase consumes it).
 - **Files (other repos).** None.
 - **Depends on.** Decision Q-1 (void rule, [01 section 7.6](01-architecture.md#76-void-rule-proposal-open-question-q-1)) before exit. D1 (neutral labels) before release. D2 (key custody) before release.
@@ -199,7 +199,7 @@ Two ID families appear in these docs:
 | RK-18 | BK-TS drops employee contributions in 1601-C. | P6 | Books | Golden test fails on BK-TS behaviour. | `[books §1 item 1]`; `[verify §2 item 28]` |
 | RK-19 | BIR may write in the background. The B0 checksum can change with no Books call. | P3 | BIR owner | Compare table-level checksums in the scratch profile, or stop BIR for the live check. | UNKNOWN (background writes not checked) |
 | RK-20 | The running broker may not match the perf-parity source. | Release | Rox owner | Verify the running bundle before release. | `[rox §10]` UNKNOWN |
-| RK-21 | First-party publisher inline cards mount without a click. | P0 | Books, owner (D9) | Counts and status only on inline cards. | `plugins.mjs:737` [V]; `[rox §5 stage 9]` |
+| RK-21 | First-party publisher inline cards mount without a click. | P0 | Books (D9 decided: first-party key) | Counts and status only on inline cards. | `plugins.mjs:737` [V]; `[rox §5 stage 9]` |
 | RK-22 | Legal uncertainty: 8% and 2551Q conflict (D5), 1% extension (D6), RR 8-2018 text not read, Annex C is TY2025 only. | Forms | Forms owner, tax adviser | Handed to Forms (ADR 0007). Books output does not depend on them. | `[verify §2 items 63, 73, 80, 84]` |
 | RK-23 | Books' rule set drifts from the pinned Forms schema. | P3 | Forms owner | Hash check at start-up. Contract tests. | `[verify §2 item 3]` |
 | RK-24 | `books` short name or command name collides with another enabled plugin. | P0 | Books, Rox owner | Check at install. Rename rule per `[bir-shell §6]` (`plugins.mjs:421-429`). | `[rox §7]` |

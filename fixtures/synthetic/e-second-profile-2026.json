@@ -1,14 +1,14 @@
 {
   "acknowledged_entry_ids": [],
   "as_of": "2026-10-29",
-  "description": "Profile B. Its amounts are chosen so that any leak into profile A would be visible.",
+  "description": "Profile B, a cash book. Its amounts are chosen so that any leak into profile A would be visible.",
   "entries": [
     {
       "entry_date": "2026-07-20",
       "entry_id": "E-001",
       "lines": [
         {
-          "account": "accounts_receivable_gross",
+          "account": "bank_accounts",
           "credit": "0.00",
           "debit": "999000.00",
           "line_id": "E-001.1"
@@ -24,7 +24,7 @@
           "person_scope": "self"
         }
       ],
-      "memo": "MEMO-SYNTH-E-001 synthetic sales invoice",
+      "memo": "MEMO-SYNTH-E-001 synthetic sale, paid",
       "reverses_entry_id": null,
       "tax_profile_id": "c0a8e3f1-2b7d-4e9a-9f10-5d6c7b8a9e0f"
     },
@@ -53,10 +53,11 @@
       "tax_profile_id": "c0a8e3f1-2b7d-4e9a-9f10-5d6c7b8a9e0f"
     }
   ],
-  "fixture_format": "buwiz-poc-fixture/2",
+  "fixture_format": "buwiz-poc-fixture/3",
   "fixture_id": "e-second-profile-2026",
   "profiles": [
     {
+      "accounting_basis": "cash",
       "display": "***-***-***-00000",
       "label": "E: second business profile",
       "periods": {

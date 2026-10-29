@@ -43,7 +43,7 @@ Binding owner decision O6 (2026-10-29), recorded in [ADR 0007](adr/0007-books-su
 |---|---|---|---|
 | Transactions, payroll facts, evidence | Records them, encrypted, local-first | Reads measures only | — |
 | Accounting measures (gross sales; returns, allowances, discounts; net sales; cost of sales; other income; expenses by category; gross compensation and components; employee and employer contributions, separate; tax withheld as recorded by payroll; certificates received with status) | Computes them per business profile per period, with lineage ([measures catalogue](../data/measures.v1.json)) | Consumes them | — |
-| Revenue-recognition date | Accounting policy (D4) | — | Tax timing basis, if it differs |
+| Accounting basis (when income and expenses are recognized) | Book setting: cash (default) or accrual ([ADR 0008](adr/0008-cash-basis-by-default.md)); every proposal records it | — | Which basis a return needs (tax timing basis) |
 | Which measure feeds which input box | — | Versioned mapping rules ([data/rules](../data/rules/)); input boxes only | Owns the box definitions (schema pins) |
 | Taxpayer choices that select between boxes (8% or graduated; OSD or itemized) | Never stored | Reads them from the Forms draft (`form_context`); never decides | Owns them (tax profile, yearly election) |
 | Elections, applicability, NIL returns, ATC selection | — | — | Owns |
@@ -338,7 +338,7 @@ The local OS user, plus an optional buwiz cloud account from P5 (D19). There is 
 | `client_request_id` | Caller | `idempotency` table | Tool args | n/a | PROPOSAL (A9; canonical R-18) |
 | Plugin key (ed25519, per install) | Rox at `rox.provision` | Keychain item `dev.goldcoders.rox.plugin-key` | Rox and plugin | Env, argv, repo | CONFIRMED `[rox §5 stage 2]` |
 | Session certificate and Ks (per open, up to 8 h) | Rox and plugin | Memory | Broker | Any store, logs | CONFIRMED `[rox §5 stage 3]` |
-| Publisher key `gc-2026-01` (private) | Owner | Keychain | Signing tool only | Repo, env, logs | CONFIRMED `[rox §5 stage 2]`; reuse proposed (D9) |
+| Publisher key `gc-2026-01` (private) | Owner | Keychain | Signing tool only | Repo, env, logs | CONFIRMED `[rox §5 stage 2]`. Books reuses it at release (owner decision O8, D9). Tests use a throwaway key under a test key id. |
 | `manifest_sha256` | Signing step | Rox install record | Conformance evidence | n/a | CONFIRMED `[rox §5 stage 2]` |
 | Books DB key file | Owner, at setup | File beside the store, mode 0600, outside the repo | Books process, by path | Env values, git, unencrypted backups | PROPOSAL (D2) |
 | Cloud refresh token (rotating) | Cloud device flow | Books process only (0600 file or Keychain) | Cloud token endpoint | Env, argv, logs | PROPOSAL (P5) |
@@ -385,7 +385,7 @@ Basis: D16 and D20, and BIR's `is_app_only` convention `[bir-shell §3]`.
 | A `rox://app` link from outside | Dialog every time | `[bir-shell §6, spec §9.7]` |
 | `rox.pickFile` (evidence, P4) | Native file dialog | `[rox §5 stage 9]` |
 | Pin, typed command | None | `[rox §5 stage 9]` |
-| Inline card mount | None when the publisher is first-party. PROPOSAL: Books uses publisher `dev.goldcoders` (D9), so its inline cards would mount at once. | `plugins.mjs:32, 737` [V]; D9, D22 |
+| Inline card mount | None when the publisher is first-party. Books uses publisher `dev.goldcoders` (decided, O8), so its inline cards mount at once. | `plugins.mjs:32, 737` [V]; D9, D22 |
 
 Because inline cards mount without a click, Books shows only counts and status on inline cards until the owner accepts more (item 22).
 
@@ -431,14 +431,14 @@ Because inline cards mount without a click, Books shows only counts and status o
 | Table | Key columns | Notes |
 |---|---|---|
 | `meta` | key, value | `schema_version`, `cipher_version`, `store_id` |
-| `business` | `business_id` PK, label, country, tax_layer, coa_preset, coa_preset_version, `cloud_tax_profile_id` NULL | No TIN column |
+| `business` | `business_id` PK, label, country, tax_layer, coa_preset, coa_preset_version, `accounting_basis` (`cash` default, or `accrual`), `cloud_tax_profile_id` NULL | No TIN column. The basis changes only from the start of a year with no posted entries (ADR 0008). |
 | `coa_account` | `account_id` PK, business_id, key, number, name, type, subtype, parent_id, active | Unique (business, key) and (business, number). Types per BK-TS `account-constants.ts:9-18` `[books §2]` |
 | `category` | `category_id` PK, business_id, key, label, account_key, default_line_attributes JSON, applies_if JSON | See section 7. `applies_if` may read the linked tax profile's registered-forms list as a hint, never an election. |
 | `return_ack` | entry_id, business_id, acknowledged_at, reason | Bookkeeping review of a return event (`GATE.RETURNS_ACK`). Replaces the `tax_fact` and `election_event` tables, removed by ADR 0007. |
 | `period` | `period_key` PK (for example `2026-Q3`), business_id, kind, start_date, end_date, status, closed_at, snapshot_sha256 | Per tax period (not the org-wide date) |
 | `period_event` | event_id, business_id, period_key, event (`close` or `reopen`), reason, at | Reason text. No memo. |
-| `journal_entry` | `entry_id` PK, business_id, `entry_date` DATE, tax_period_key, status (`draft`, `posted`, `voided`), reverses_entry_id NULL, memo_enc, `client_request_id` UNIQUE, posted_at | Dates are calendar days in Asia/Manila |
-| `journal_line` | `line_id` PK, entry_id, line_no, account_id, debit_centavos INTEGER ≥ 0, credit_centavos INTEGER ≥ 0, measure_side NULL, income_class, contra_kind NULL, person_scope, party_ref NULL (opaque), comp_component NULL, contribution_side, contribution_scheme NULL, credit_kind, certificate_atc NULL (evidence), certificate_status NULL, period_override NULL, revision | A line is debit or credit, not both. Entry must balance at post. Accounting facts only (ADR 0007). |
+| `journal_entry` | `entry_id` PK, business_id, `entry_date` DATE, status (`draft`, `posted`, `voided`), reverses_entry_id NULL, memo_enc, `client_request_id` UNIQUE, posted_at | Dates are calendar days in Asia/Manila. On a cash-basis book the entry date is the day money moved. |
+| `journal_line` | `line_id` PK, entry_id, line_no, account_id, debit_centavos INTEGER ≥ 0, credit_centavos INTEGER ≥ 0, measure_side NULL, income_class, contra_kind NULL, person_scope, party_ref NULL (opaque), comp_component NULL, contribution_side, contribution_scheme NULL, credit_kind, certificate_atc NULL (evidence), certificate_status NULL, revision | A line is debit or credit, not both. Entry must balance at post. Accounting facts only (ADR 0007). A cash-basis book refuses trade receivable and payable accounts (ADR 0008). |
 | `evidence` (P4) | evidence_id, business_id, sha256, mime, bytes, blob_enc, redaction_state, ocr_text_enc NULL | — |
 | `certificate` (P4) | cert_id, business_id, kind (`2307`, `2306`, `2316`), cert_hmac, payor_hmac, payor_masked, certificate_atc (as printed; evidence), `period_start` DATE, `period_end` DATE, income_payment_centavos, tax_withheld_centavos, status (`received`, `pending`, `lost`, `disputed`), evidence_id, posted_entry_id NULL | Only `received` counts in a certificate measure (DD-18) |
 | `rule_set` | `rule_set_id` PK (for example `2551Q-v2018-r2`), form_code, edition, schema_sha256, measures_catalog, status, effective_from, effective_to NULL, citation_ids | Immutable once a proposal references it |
@@ -460,7 +460,7 @@ Migration source of truth: `crates/books-store/migrations/0001_init.sql` (P1).
 - Negative values stay negative. Nothing is clamped to zero. An overpayment is a separate signed line `[sheets §6 item 15]`.
 - Measures are exact sums of centavos. Books applies no rate and rounds nothing (ADR 0007).
 - Books code has no floats (CI check, PROPOSAL). BIR's Forms path is f64 at the input (`crates/bir-core/src/forms/form_2551q.rs:1467` `cents(value: f64) -> i64` [V]). That is Forms' rounding concern (section 2.2 of 07).
-- Dates are DATE values in Asia/Manila. The revenue-recognition date is an accounting policy (D4): the default is the entry date, with an override field. A different tax timing basis is Forms'.
+- Dates are DATE values in Asia/Manila. The book's accounting basis decides what an entry date means ([ADR 0008](adr/0008-cash-basis-by-default.md)): on a cash-basis book (the default) it is the day money was received or paid; on an accrual book it is the invoice or bill date. Measures read the entry date on either basis. Which basis a return needs is Forms'.
 - BK-TS shows the two money styles in use `[books §4i]`. Books uses only centavos.
 
 ### 6.5 Local-first rules (PROPOSAL)
@@ -562,7 +562,7 @@ stateDiagram-v2
 | Taxpayer choices (8%, OSD) | Read from the Forms draft; a missing value blocks | DD-28 |
 | 13th-month non-taxable part | The one input-level tax rule in the bridge (cap per employee per year) | DD-29, open for the Forms owner |
 | Negatives | Measures keep their sign. A negative sales measure is not proposed for a box (`negative_measure`). No clamp. | BK-TS clamps in one sheet `[sheets §6 item 15]`. Books does not. |
-| Recognition period | Default: entry date in Asia/Manila. `period_override` overrides. Certificates use their own period fields. | D4 (accounting policy) |
+| Recognition period | The entry date in Asia/Manila, which the book's basis sets: cash (default) posts on the day money moves, accrual at invoice or bill. Certificates use their own period fields. | Decided: [ADR 0008](adr/0008-cash-basis-by-default.md) (O7) |
 | Rates, rounding, 8% and 2551Q, penalties, overdue | Not in Books | Handed to Forms (07 section 2.2) |
 | Void in an open period | See section 7.6. | Open question Q-1 (07) |
 

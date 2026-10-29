@@ -1,6 +1,7 @@
 {
   "description": "Same ledger under a profile whose Forms tax profile elected 8%. Books output equals fixture a's: whether a 2551Q is required in an 8% year (RMO 23-2018 vs buwiz-oss NIL PT010) is Forms' decision. Ready.",
   "expected": {
+    "accounting_basis": "accrual",
     "as_of": "2026-10-29",
     "blocking": [],
     "excluded_keys": [],
@@ -8,13 +9,13 @@
       "frm2551Qv2018:txt15": "0.00",
       "txtATCAmt1": "290000.00"
     },
-    "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+    "fixture_sha256": "a48e7c8f5b309db9fa76433f066e45df8820692213e25b651c20cda5bbdbecdb",
     "form_code": "2551Q",
     "form_context": {},
-    "inputs_hash": "4b464d980e471a39dfcef8a194c8c0a441fea70fb7064fe2571743f7bff10769",
+    "inputs_hash": "7b89b4c6b63d0103c288b0cb917ca7ce4ea138510289d69221b53b9202722d50",
     "lineage": {
       "frm2551Qv2018:txt15": {
-        "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+        "fixture_sha256": "a48e7c8f5b309db9fa76433f066e45df8820692213e25b651c20cda5bbdbecdb",
         "lines": [],
         "mapping_id": "2551Q.II.15",
         "measures": [
@@ -24,7 +25,7 @@
         "rule_set_version": 2
       },
       "txtATCAmt1": {
-        "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+        "fixture_sha256": "a48e7c8f5b309db9fa76433f066e45df8820692213e25b651c20cda5bbdbecdb",
         "lines": [
           {
             "amount": "120000.00",
@@ -100,12 +101,12 @@
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "0aed74d3ad3bf9c953b6c7fafb6b49fad385a3d1af0aeed1e598bd5f7062df4e",
+    "output_sha256": "6a06ea52465a2b01100fe1ed1eb15eb1bf8dbb9202682f87f37ab1345ad367c3",
     "period_end": "2026-09-30",
     "period_key": "2026-Q3",
     "period_start": "2026-07-01",
     "profile_digest": "bcfa1b24bf610bb7e145f65fe105f9c419a6068e32eb2c26b77a240793b0695b",
-    "proposal_format": "buwiz-poc-proposal/2",
+    "proposal_format": "buwiz-poc-proposal/3",
     "reference_values": {},
     "refused_keys": [
       {
@@ -156,7 +157,7 @@
     ]
   },
   "fixture": "b-eight-percent-2026",
-  "fixture_sha256": "f6138d86da335cde4d6b1eabe3660ef938cfaa49b13200ec26dab994efd6c7ad",
+  "fixture_sha256": "a48e7c8f5b309db9fa76433f066e45df8820692213e25b651c20cda5bbdbecdb",
   "form": "2551Q",
   "form_context": {},
   "input": {
@@ -1221,9 +1222,10 @@
         "tax_profile_id": "2f4e6d8c-1b3a-4c5d-8e7f-0a9b8c7d6e5f"
       }
     ],
-    "input_format": "buwiz-poc-input/2",
+    "input_format": "buwiz-poc-input/3",
     "profiles": [
       {
+        "accounting_basis": "accrual",
         "periods": {
           "2026": "closed",
           "2026-09": "closed",
@@ -1236,6 +1238,6 @@
     ]
   },
   "period": "2026-Q3",
-  "vector_format": "buwiz-poc-vector/2",
+  "vector_format": "buwiz-poc-vector/3",
   "vector_id": "b-2551q-2026-Q3"
 }

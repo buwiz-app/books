@@ -1,6 +1,7 @@
 {
   "description": "Design Slice A numbers (DS-A): sales 120000.00 and 100000.00, the 100000.00 sale voided by a reversal dated 2026-07-15, sale 80000.00. Net sales 200000.00. Ready.",
   "expected": {
+    "accounting_basis": "cash",
     "as_of": "2026-10-29",
     "blocking": [],
     "excluded_keys": [],
@@ -8,13 +9,13 @@
       "frm2551Qv2018:txt15": "0.00",
       "txtATCAmt1": "200000.00"
     },
-    "fixture_sha256": "53bd012164f63f7ffe3f3266bb563a6c27d704d926c3854ddf387c1db4f891d5",
+    "fixture_sha256": "08c6aa26c4ecc000cd6d4c0bbbcd41bc35887a988ba88bd09c0046d121198275",
     "form_code": "2551Q",
     "form_context": {},
-    "inputs_hash": "001d96013cb6f2f7d0f40120acb226813c387fc126ebf06925eabada43051aab",
+    "inputs_hash": "105cec3d8134eb726b70f59534b348906825568e63ed3215d44a6230283acff0",
     "lineage": {
       "frm2551Qv2018:txt15": {
-        "fixture_sha256": "53bd012164f63f7ffe3f3266bb563a6c27d704d926c3854ddf387c1db4f891d5",
+        "fixture_sha256": "08c6aa26c4ecc000cd6d4c0bbbcd41bc35887a988ba88bd09c0046d121198275",
         "lines": [],
         "mapping_id": "2551Q.II.15",
         "measures": [
@@ -24,7 +25,7 @@
         "rule_set_version": 2
       },
       "txtATCAmt1": {
-        "fixture_sha256": "53bd012164f63f7ffe3f3266bb563a6c27d704d926c3854ddf387c1db4f891d5",
+        "fixture_sha256": "08c6aa26c4ecc000cd6d4c0bbbcd41bc35887a988ba88bd09c0046d121198275",
         "lines": [
           {
             "amount": "120000.00",
@@ -80,12 +81,12 @@
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "484899679ce2a41269daceb3f19299b2a23ef7a948b9dc66f1d183865730f32e",
+    "output_sha256": "f6733fa039f77487f2ee79cccd27de45e0f21c0449a3376fcb563a764d3c07f5",
     "period_end": "2026-09-30",
     "period_key": "2026-Q3",
     "period_start": "2026-07-01",
     "profile_digest": "e5d6555d29dbc9237ab7ea1f623e5468537dfa47ba1abd5a7cf3b7b31102ef02",
-    "proposal_format": "buwiz-poc-proposal/2",
+    "proposal_format": "buwiz-poc-proposal/3",
     "reference_values": {},
     "refused_keys": [
       {
@@ -136,7 +137,7 @@
     }
   },
   "fixture": "f-slice-a-2026",
-  "fixture_sha256": "53bd012164f63f7ffe3f3266bb563a6c27d704d926c3854ddf387c1db4f891d5",
+  "fixture_sha256": "08c6aa26c4ecc000cd6d4c0bbbcd41bc35887a988ba88bd09c0046d121198275",
   "form": "2551Q",
   "form_context": {},
   "input": {
@@ -148,7 +149,7 @@
         "entry_id": "F-001",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -198,7 +199,7 @@
         "entry_id": "F-002",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -248,7 +249,7 @@
         "entry_id": "F-003",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -348,7 +349,7 @@
         "entry_id": "F-005",
         "lines": [
           {
-            "account": "accounts_receivable_gross",
+            "account": "bank_accounts",
             "certificate_atc": null,
             "certificate_status": null,
             "comp_component": null,
@@ -394,9 +395,10 @@
         "tax_profile_id": "5a7b9c1d-4e6f-4a8b-9c0d-1e2f3a4b5c6d"
       }
     ],
-    "input_format": "buwiz-poc-input/2",
+    "input_format": "buwiz-poc-input/3",
     "profiles": [
       {
+        "accounting_basis": "cash",
         "periods": {
           "2026-Q3": "closed"
         },
@@ -405,6 +407,6 @@
     ]
   },
   "period": "2026-Q3",
-  "vector_format": "buwiz-poc-vector/2",
+  "vector_format": "buwiz-poc-vector/3",
   "vector_id": "f-2551q-2026-Q3"
 }

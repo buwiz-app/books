@@ -1,6 +1,7 @@
 {
   "description": "Same ledger, Forms context eight_percent: net sales 1190000.00 to IV.19 (/taxpayer/eight_sales); IV.5 and IV.6 are not selected. Ready.",
   "expected": {
+    "accounting_basis": "accrual",
     "as_of": "2026-10-29",
     "blocking": [],
     "excluded_keys": [
@@ -28,15 +29,15 @@
     "fill_args": {
       "frm1701MS:txtSalesRevenuesFeesANo19a": "1190000.00"
     },
-    "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+    "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
     "form_code": "1701MS",
     "form_context": {
       "/taxpayer/tax_option": "eight_percent"
     },
-    "inputs_hash": "ad317ab48e5271ccba365528fc58fd002ec682c00f0a7c77cd24ab29f3cc425f",
+    "inputs_hash": "5aa49513562872f5a4a437d559aff8625e8dbd9ec6624bd1269c177eed17f356",
     "lineage": {
       "frm1701MS:txtCreditableFourthQuarterNo4a": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [
           {
             "amount": "3000.00",
@@ -52,7 +53,7 @@
         "rule_set_version": 2
       },
       "frm1701MS:txtCreditableTaxNo3a": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [
           {
             "amount": "3000.00",
@@ -78,7 +79,7 @@
         "rule_set_version": 2
       },
       "frm1701MS:txtSalesRevenuesFeesANo19a": {
-        "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+        "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
         "lines": [
           {
             "amount": "120000.00",
@@ -284,12 +285,12 @@
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "0e743d9342b11ce9a3a66edc6466f34ba244a4bc08a6f40b59914b65da7cbb2d",
+    "output_sha256": "aece2ce2d780f388aa1ba35b6f642bc0b032d6bfe348ef528c2da949e7ca7562",
     "period_end": "2026-12-31",
     "period_key": "2026",
     "period_start": "2026-01-01",
     "profile_digest": "2636cb8da22859953ea2c8e937ec3b187bf749d2b2d8d52784c47888d431eb74",
-    "proposal_format": "buwiz-poc-proposal/2",
+    "proposal_format": "buwiz-poc-proposal/3",
     "reference_values": {
       "frm1701MS:txtCreditableFourthQuarterNo4a": "3000.00",
       "frm1701MS:txtCreditableTaxNo3a": "8900.00"
@@ -481,7 +482,7 @@
     "values": {}
   },
   "fixture": "a-sole-prop-2026",
-  "fixture_sha256": "399993dd7ce5b60dda4013591949735fbce2df4498ff3957af258d65ac52f295",
+  "fixture_sha256": "7ac5dd6ed7035aa533b1ecb6f782cdec9b74db9ca53311ea822233fb6faf124a",
   "form": "1701MS",
   "form_context": {
     "/taxpayer/tax_option": "eight_percent"
@@ -1548,9 +1549,10 @@
         "tax_profile_id": "6b1d2f3a-4c5e-4f60-8a71-92b3c4d5e6f7"
       }
     ],
-    "input_format": "buwiz-poc-input/2",
+    "input_format": "buwiz-poc-input/3",
     "profiles": [
       {
+        "accounting_basis": "accrual",
         "periods": {
           "2026": "closed",
           "2026-09": "closed",
@@ -1563,6 +1565,6 @@
     ]
   },
   "period": "2026",
-  "vector_format": "buwiz-poc-vector/2",
+  "vector_format": "buwiz-poc-vector/3",
   "vector_id": "a-1701ms-2026-eight"
 }

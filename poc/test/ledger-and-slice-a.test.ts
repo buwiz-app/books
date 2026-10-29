@@ -148,7 +148,7 @@ describe("the input is validated before any proposal (privacy and shape)", () =>
   });
 
   test("a profile carrying elections or tax facts is refused (elections are Forms')", () => {
-    const raw = { fixture_format: "buwiz-poc-fixture/2", as_of: "2026-10-29", profiles: [{ tax_profile_id: PROFILE_A, display: "***-***-***-00000", facts: { "2026": { regime: "eight_percent" } } }], entries: [] };
+    const raw = { fixture_format: "buwiz-poc-fixture/3", as_of: "2026-10-29", profiles: [{ tax_profile_id: PROFILE_A, display: "***-***-***-00000", facts: { "2026": { regime: "eight_percent" } } }], entries: [] };
     expect(() => normalizeFixture(raw, data.vocab)).toThrow(/Forms/);
   });
 

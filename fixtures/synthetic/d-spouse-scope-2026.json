@@ -1,14 +1,14 @@
 {
   "acknowledged_entry_ids": [],
   "as_of": "2026-10-29",
-  "description": "One self-scoped sale and one spouse-scoped sale in Q3. Spouse lines are refused in MVP, so both forms block and produce no values.",
+  "description": "Cash book. One self-scoped sale and one spouse-scoped sale in Q3. Spouse lines are refused in MVP, so both forms block and produce no values.",
   "entries": [
     {
       "entry_date": "2026-07-10",
       "entry_id": "D-001",
       "lines": [
         {
-          "account": "accounts_receivable_gross",
+          "account": "bank_accounts",
           "credit": "0.00",
           "debit": "100000.00",
           "line_id": "D-001.1"
@@ -24,7 +24,7 @@
           "person_scope": "self"
         }
       ],
-      "memo": "MEMO-SYNTH-D-001 synthetic sales invoice",
+      "memo": "MEMO-SYNTH-D-001 synthetic sale, paid",
       "reverses_entry_id": null,
       "tax_profile_id": "4f6a8b0c-3d5e-4f7a-8b9c-0d1e2f3a4b5c"
     },
@@ -33,7 +33,7 @@
       "entry_id": "D-002",
       "lines": [
         {
-          "account": "accounts_receivable_gross",
+          "account": "bank_accounts",
           "credit": "0.00",
           "debit": "50000.00",
           "line_id": "D-002.1"
@@ -49,15 +49,16 @@
           "person_scope": "spouse"
         }
       ],
-      "memo": "MEMO-SYNTH-D-002 synthetic sales invoice",
+      "memo": "MEMO-SYNTH-D-002 synthetic sale, paid",
       "reverses_entry_id": null,
       "tax_profile_id": "4f6a8b0c-3d5e-4f7a-8b9c-0d1e2f3a4b5c"
     }
   ],
-  "fixture_format": "buwiz-poc-fixture/2",
+  "fixture_format": "buwiz-poc-fixture/3",
   "fixture_id": "d-spouse-scope-2026",
   "profiles": [
     {
+      "accounting_basis": "cash",
       "display": "***-***-***-00000",
       "label": "D: spouse-scoped sale",
       "periods": {

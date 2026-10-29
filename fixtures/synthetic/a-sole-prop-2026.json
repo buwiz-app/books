@@ -3,7 +3,7 @@
     "A-013"
   ],
   "as_of": "2026-10-29",
-  "description": "Fictional sole proprietor with sales, a sales return, expenses, income-tax and payroll records and one employee. Q4 invoices are hypothetical, as in the workbook. The year is marked closed so the annual measures run. The credit note A-013 (a return) is acknowledged. Elections are not in the fixture: the cases pass the Forms context (tax option, deduction method).",
+  "description": "Fictional sole proprietor on an accrual book: sales are posted at invoice against accounts receivable, and income-tax 2307s clear that receivable. Sales, a sales return, expenses, income-tax and payroll records and one employee. Q4 invoices are hypothetical, as in the workbook. The year is marked closed so the annual measures run. The credit note A-013 (a return) is acknowledged. Elections are not in the fixture: the cases pass the Forms context (tax option, deduction method).",
   "entries": [
     {
       "entry_date": "2026-01-15",
@@ -554,10 +554,11 @@
       "tax_profile_id": "6b1d2f3a-4c5e-4f60-8a71-92b3c4d5e6f7"
     }
   ],
-  "fixture_format": "buwiz-poc-fixture/2",
+  "fixture_format": "buwiz-poc-fixture/3",
   "fixture_id": "a-sole-prop-2026",
   "profiles": [
     {
+      "accounting_basis": "accrual",
       "display": "***-***-***-00000",
       "label": "A: sole proprietor",
       "periods": {
