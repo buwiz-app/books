@@ -59,13 +59,14 @@ Design decisions (proposed; the full list and open items are in `docs/07-decisio
 | `poc/` | Bun and TypeScript proof of concept: ledger → measures → mapping → fill args with lineage. |
 | `fixtures/` | Synthetic fixtures for the PoC. Never real data. |
 | `tools/` | Helper scripts used in the research. `tools/rox/conformance.sh` runs Rox's conformance tool against the plugin with a throwaway test key. |
-| `Cargo.toml`, `crates/books-mini-app/`, `apps/`, `tests/` | The Rust Rox plugin (P0): stdio MCP server, the protocol v1 reserved tools, the manifest generator and the `home` stub app. |
+| `Cargo.toml`, `crates/books-mini-app/`, `apps/`, `tests/` | The Rust Rox plugin (P0): stdio MCP server, the protocol v1 reserved tools, the manifest generator and the `home` stub app. `tests/host/` is the Node harness for the host test. |
 
 ## Run the plugin checks (P0)
 
 ```sh
 cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
 tools/rox/conformance.sh   # needs the Rox checkout (ROX_DIR) with server/node_modules
+tools/rox/host-test.sh     # installs Books in a throwaway Rox broker (port 8810+, file keystore) and calls it
 ```
 
 ## Run the proof of concept

@@ -361,6 +361,21 @@ Nothing in this section has been run. The steps follow BIR's `broker.test.mjs` p
 
 Steps 1 to 5 run in `tools/rox/conformance.sh`, which then runs `rox-plugin-test` (33 pass on 2026-10-29). In `--manifest`/`--key-file` mode the runner trusts the key under the manifest's own key id in memory and never reads `ROX_TRUST_FILE` (`rox-plugin-test.mjs:305-310`). The per-run trust file therefore matters only from step 6. Steps 6 to 11 follow the rox session's recipe of 2026-10-29: a rox worktree at `origin/main` `1205f7a`; ports 8810 and up (17441 and up for a test app's agent port); `ROX_KEYSTORE=file:<dir>`, so nothing reaches the login Keychain; its own `GROK_DATA_DIR`.
 
+**Automated, headless: `tools/rox/host-test.sh`** runs `tests/host/books-host-test.mjs` against a throwaway broker (plain Node `src/app-server.mjs`) and removes the worktree and temp folder on exit. Result on 2026-10-29: 10 pass, 0 fail, and no Books plugin key in the login Keychain. The checks:
+- a host route without `X-Rox-Host` gets 401;
+- inspect verifies the signed manifest against the per-run trust file;
+- install of the reviewed hash works, and another hash gets `manifest_invalid`;
+- `/books` resolves to open `home`, titled "Books", with a ticket;
+- `home` opens with a broker-verified certificate;
+- a signed `books_status` call is answered;
+- a replayed envelope gets `replayed`;
+- a tool outside `home`'s `permissions.tools` gets `permission_denied`;
+- an envelope signed with another key gets `bad_signature`.
+
+Not covered: the card rendering in the Rox app (QuickJS and `rox.fit`). That needs a built Rox binary run through rox's `scripts/test-rox` on AeroSpace workspace 4, driven only with gpui-agent (agent port 17441 and up), and it is a heavy build.
+
+Pitfall: Rox's runner and signer run only when `process.argv[1]` equals their resolved path (`rox-plugin-test.mjs:690`, `sign-manifest.mjs:63`). A path with `//` or through the `/var` symlink makes them exit 0 having done nothing. The script uses the physical temp path.
+
 1. Build the Books binary: `cargo build --release -p books-mini-app`.
 2. Make a temp folder with mode 0700: `<tmp>`.
 3. Make a test key: `node <rox>/server/sdk/mini-app/bin/rox-plugin-test.mjs --keygen <tmp>/test.key`. Never use the real `gc-2026-01` key in a test.

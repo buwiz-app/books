@@ -59,7 +59,7 @@ Do not edit these. Re-check HEAD and state before you rely on a citation. HEADs 
 
 - Use `bun` for any TypeScript in this repo (`poc/`). Do not use npm, npx or node here.
 - Rox's signing and conformance tools are Node. Run them from the Rox repo. Do not copy them here.
-- Rust (the plugin, `crates/`): `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` must pass clean. `tools/rox/conformance.sh` signs with a throwaway test key (`books-test-01`, never `gc-2026-01`) and runs Rox's `rox-plugin-test`; it needs the Rox checkout (`ROX_DIR`) with its `server/node_modules` present. No floats: the crate denies float lints.
+- Rust (the plugin, `crates/`): `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` must pass clean. `tools/rox/conformance.sh` signs with a throwaway test key (`books-test-01`, never `gc-2026-01`) and runs Rox's `rox-plugin-test`; it needs the Rox checkout (`ROX_DIR`) with its `server/node_modules` present. `tools/rox/host-test.sh` installs Books in a throwaway Rox broker from a Rox worktree. Keep it on port 8810 or above (8787 is the owner's broker, 8797-8803 the rox session's tests), with `ROX_KEYSTORE=file:` and never the login Keychain. Never switch branches in the Rox checkout itself. No floats: the crate denies float lints.
 
 ## Do not
 
