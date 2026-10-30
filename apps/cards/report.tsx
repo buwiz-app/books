@@ -2,7 +2,7 @@
 // template /books-results). Two number columns: this period, and the last one dimmed.
 
 function PlCard() {
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
     () => rox.call("books_report", CP.period ? { kind: "pl", period: CP.period } : { kind: "pl" }),
   );

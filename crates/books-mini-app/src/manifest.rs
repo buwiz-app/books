@@ -20,7 +20,7 @@ use crate::{apps, jcs, tools};
 pub const PROTOCOL: &str = "1.0.0";
 pub const PLUGIN_ID: &str = "dev.goldcoders.books";
 pub const SHORT: &str = "books";
-pub const VERSION: &str = "0.1.0";
+pub const VERSION: &str = "0.1.1";
 pub const PUBLISHER_ID: &str = "dev.goldcoders";
 /// The release key (owner decision D9). Tests sign under a test key id.
 pub const RELEASE_KEY_ID: &str = "gc-2026-01";
@@ -103,7 +103,7 @@ fn app_entry(app: &apps::App) -> Value {
                 "properties": { TICKET_PROP: { "type": "string", "maxLength": 30 } }
             },
             "placement": ["full", "inline"],
-            "inline": { "width": 360, "height": 120, "min_height": 96, "max_height": 240, "resizable": false },
+            "inline": { "width": 360, "height": 120, "min_height": 96, "max_height": 240, "resizable": false, "wait_ready": true },
             "permissions": permissions(app),
         }),
         id => {
@@ -136,7 +136,8 @@ fn app_entry(app: &apps::App) -> Value {
                     }
                 },
                 "placement": ["inline"],
-                "inline": { "width": CARD_WIDTH, "height": height, "min_height": 96, "max_height": max_height, "resizable": false },
+                // Rox holds its placeholder until the card's reads are in (`rox.ready`)
+                "inline": { "width": CARD_WIDTH, "height": height, "min_height": 96, "max_height": max_height, "resizable": false, "wait_ready": true },
                 "permissions": permissions(app),
             })
         }
