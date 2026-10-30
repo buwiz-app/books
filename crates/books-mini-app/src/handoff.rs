@@ -160,9 +160,9 @@ pub fn state(
     };
     let ticket = plumbing::ticket_for(c, "handoff", h.id)?;
     let boxes = serde_json::from_str::<Map<String, Value>>(&h.fill_args).map_or(0, |m| m.len());
+    // the stored instant is UTC; the person reads the day in Manila
     let day = |iso: &str| {
-        books_core::date::Date::parse(iso.get(0..10).unwrap_or(""))
-            .map_or_else(String::new, |d| d.short())
+        books_core::date::Date::manila_from_iso_instant(iso).map_or_else(String::new, |d| d.short())
     };
     let (status, label, detail) = match changed(c, book, &h, now)? {
         Some(why) => ("stale", "Out of date".to_string(), why),

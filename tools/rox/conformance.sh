@@ -9,7 +9,9 @@
 #   4. a per-run trust file mapping a TEST key id to that key, approving
 #      dev.goldcoders.books under it (never gc-2026-01);
 #   5. the manifest generated under the test key id and signed with the test
-#      key file by Rox's sign-manifest.mjs (--key-file, never --keychain);
+#      key file (--key-file, never --keychain) by `rox-broker sign-manifest`
+#      when ROX_BROKER_BIN names a rox-broker build, else by Rox's older
+#      server/src/v1/sign-manifest.mjs (same arguments, byte-identical output);
 #   then rox-plugin-test --manifest <signed> --key-file <test key>, whose
 #   own in-process broker uses a temp trust store of the same shape.
 #
@@ -19,6 +21,8 @@
 #
 # Usage: tools/rox/conformance.sh [extra rox-plugin-test args, e.g. --json]
 # Env:   ROX_DIR (default /Volumes/goldcoders/Projects/rox)
+#        ROX_BROKER_BIN (a rox-broker binary from hexuria/rox main; signs in place
+#          of server/src/v1/sign-manifest.mjs, which Rox's phase 7 removes)
 #        BOOKS_TEST_KEY_ID (default books-test-01)
 #        KEEP_TMP=1 keeps the temp dir (it holds a test key; delete it after)
 set -euo pipefail
@@ -28,14 +32,21 @@ ROX_DIR="${ROX_DIR:-/Volumes/goldcoders/Projects/rox}"
 KEY_ID="${BOOKS_TEST_KEY_ID:-books-test-01}"
 PLUGIN_ID="dev.goldcoders.books"
 RUNNER="$ROX_DIR/server/sdk/mini-app/bin/rox-plugin-test.mjs"
-SIGNER="$ROX_DIR/server/src/v1/sign-manifest.mjs"
+if [ -n "${ROX_BROKER_BIN:-}" ]; then
+  [ -x "$ROX_BROKER_BIN" ] || { echo "conformance: ROX_BROKER_BIN $ROX_BROKER_BIN is not executable" >&2; exit 2; }
+  SIGN=("$ROX_BROKER_BIN" sign-manifest)
+  SIGNER=""
+else
+  SIGNER="$ROX_DIR/server/src/v1/sign-manifest.mjs"
+  SIGN=(node "$SIGNER")
+fi
 
 if [ "$KEY_ID" = "gc-2026-01" ]; then
   echo "conformance: the test key id must not be gc-2026-01" >&2
   exit 2
 fi
-for f in "$RUNNER" "$SIGNER"; do
-  [ -f "$f" ] || { echo "conformance: $f not found (set ROX_DIR)" >&2; exit 2; }
+for f in "$RUNNER" ${SIGNER:+"$SIGNER"}; do
+  [ -f "$f" ] || { echo "conformance: $f not found (set ROX_DIR, or ROX_BROKER_BIN for the signer)" >&2; exit 2; }
 done
 command -v node >/dev/null || { echo "conformance: node is needed to run Rox's tools" >&2; exit 2; }
 [ -d "$ROX_DIR/server/node_modules/@modelcontextprotocol/sdk" ] && [ -d "$ROX_DIR/server/node_modules/esbuild" ] || {
@@ -78,7 +89,7 @@ for id in $(node -e 'for (const a of JSON.parse(require("fs").readFileSync(proce
   "$BIN" app-source "$id" >"$TMP/app-$id.tsx"
   APP_ARGS+=(--app "$id=$TMP/app-$id.tsx")
 done
-node "$SIGNER" "$TMP/manifest.json" --key-file "$TMP/test.key" \
+"${SIGN[@]}" "$TMP/manifest.json" --key-file "$TMP/test.key" \
   "${APP_ARGS[@]}" --out "$TMP/signed.json"
 
 # the runner: spawn the binary the way the broker does, serving the signed

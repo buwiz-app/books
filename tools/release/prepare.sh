@@ -11,6 +11,9 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 OUT="${1:-$REPO/dist/release}"
 ROX="${ROX_DIR:-/Volumes/goldcoders/Projects/rox}"
+# the signer the owner runs: rox-broker (hexuria/rox main) when ROX_BROKER_BIN names
+# one, else Rox's older server/src/v1/sign-manifest.mjs; the same arguments either way
+if [ -n "${ROX_BROKER_BIN:-}" ]; then SIGNER="$ROX_BROKER_BIN sign-manifest"; else SIGNER="node $ROX/server/src/v1/sign-manifest.mjs"; fi
 cd "$REPO"
 cargo build --release -p books-mini-app >/dev/null
 BIN="$REPO/target/release/books-mini-app"
@@ -30,7 +33,7 @@ Prepared dev.goldcoders.books $VERSION in $OUT (publisher.key_id $KEY_ID).
      { "id": "dev.goldcoders.books", "publisher_key_id": "$KEY_ID" }
 
 2. You (M9-05): sign with the Goldcoders key from the login Keychain
-     node $ROX/server/src/v1/sign-manifest.mjs $OUT/manifest.json \\
+     $SIGNER $OUT/manifest.json \\
        --keychain $KEY_ID ${APPS[*]} \\
        --out $OUT/manifest.signed.json
 

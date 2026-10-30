@@ -225,7 +225,13 @@ fn slice_b_q3_2551q_reaches_a_bir_draft_and_a_later_change_marks_it_out_of_date(
         ),
         (Some("confirmed"), Some("In BIR draft"))
     );
-    assert_eq!(view["handoff"]["detail"], "Handed over Oct 29 · 2 boxes");
+    // the hand-off is stamped by the real clock, not the pinned day: its
+    // label is that instant's day in Manila
+    let handed = books_core::date::Date::manila_from_unix_ms(books_store::now_ms()).short();
+    assert_eq!(
+        view["handoff"]["detail"],
+        format!("Handed over {handed} · 2 boxes")
+    );
     let cards = ok(b, app, "books_forms", json!({}));
     assert_eq!(cards["cards"][0]["status_label"], "In BIR draft");
 

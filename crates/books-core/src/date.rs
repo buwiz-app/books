@@ -131,6 +131,18 @@ impl Date {
         Self::from_days((ms.div_euclid(1000) + 8 * 3600).div_euclid(86_400))
     }
 
+    /// The calendar day in Manila at a stored UTC instant
+    /// (`2026-10-29T23:30:00Z`): its first ten characters are the UTC day,
+    /// which is a day early from 16:00 UTC on.
+    pub fn manila_from_iso_instant(iso: &str) -> Option<Self> {
+        let day = Self::parse(iso.get(0..10)?)?;
+        let num = |range: std::ops::Range<usize>| iso.get(range)?.parse::<i64>().ok();
+        let secs = num(11..13)? * 3600 + num(14..16)? * 60 + num(17..19)?;
+        Some(Self::manila_from_unix_ms(
+            (day.to_days() * 86_400 + secs) * 1000,
+        ))
+    }
+
     /// Today in Manila. [`pin_today`] or `BOOKS_TODAY` (a `YYYY-MM-DD`) pins
     /// it for tests and the demo book.
     pub fn today() -> Self {
@@ -263,6 +275,25 @@ impl Period {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_stored_instant_is_read_as_its_manila_day() {
+        // 15:59 UTC is 23:59 in Manila; 16:00 UTC is already the next day there
+        assert_eq!(
+            Date::manila_from_iso_instant("2026-10-29T15:59:59Z"),
+            Date::new(2026, 10, 29)
+        );
+        assert_eq!(
+            Date::manila_from_iso_instant("2026-10-29T16:00:00Z"),
+            Date::new(2026, 10, 30)
+        );
+        assert_eq!(
+            Date::manila_from_iso_instant("2026-12-31T23:30:00Z"),
+            Date::new(2027, 1, 1)
+        );
+        assert!(Date::manila_from_iso_instant("2026-10-29").is_none());
+        assert!(Date::manila_from_iso_instant("").is_none());
+    }
 
     #[test]
     fn dates_parse_only_real_days() {

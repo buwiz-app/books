@@ -19,6 +19,8 @@
 #      ROX_COMMIT (default 1205f7a, the commit the rox session named)
 #      BOOKS_HOST_PORT (default 8810)
 #      BOOKS_TEST_KEY_ID (default books-test-01)
+#      ROX_BROKER_BIN (a rox-broker binary from hexuria/rox main; signs the manifest
+#        in place of server/src/v1/sign-manifest.mjs, which Rox's phase 7 removes)
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -77,7 +79,8 @@ for id in $(node -e 'for (const a of JSON.parse(require("fs").readFileSync(proce
   "$BIN" app-source "$id" >"$TMP/app-$id.tsx"
   APP_ARGS+=(--app "$id=$TMP/app-$id.tsx")
 done
-node "$WT/server/src/v1/sign-manifest.mjs" "$TMP/manifest.json" --key-file "$TMP/test.key" \
+if [ -n "${ROX_BROKER_BIN:-}" ]; then sign=("$ROX_BROKER_BIN" sign-manifest); else sign=(node "$WT/server/src/v1/sign-manifest.mjs"); fi
+"${sign[@]}" "$TMP/manifest.json" --key-file "$TMP/test.key" \
   "${APP_ARGS[@]}" --out "$TMP/signed.json"
 
 # the throwaway broker
