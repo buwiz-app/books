@@ -42,7 +42,7 @@ async function sendFile(file: Any): Promise<string> {
 function importStatement(account: string) {
   if (!rox.pickFile) return toast("Picking files is not available in this Rox.");
   rox
-    .pickFile({ extensions: [".csv"] })
+    .pickFile({ extensions: [".csv", ".xlsx", ".xls"] })
     .then(async (files: Any[]) => {
       if (!files.length) return;
       const upload = await sendFile(files[0]);

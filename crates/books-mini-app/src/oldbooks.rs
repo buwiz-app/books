@@ -128,7 +128,8 @@ pub fn upload_part(uploads: &mut Uploads, args: &Map<String, Value>) -> Answer {
     Ok(json!({ "upload": id, "received": received, "parts": parts }))
 }
 
-/// A text file a request names: inline as `<key>_text`, or staged as `<key>_upload`.
+/// A text file a request names: inline as `<key>_text`, or staged as
+/// `<key>_upload` (a staged `.xlsx` or `.xls` arrives as its CSV).
 pub fn file_text(
     uploads: &mut Uploads,
     args: &Map<String, Value>,
@@ -140,6 +141,10 @@ pub fn file_text(
     match text(args, &format!("{key}_upload")) {
         Some(id) => {
             let bytes = uploads.take(id)?;
+            // a spreadsheet reads as the CSV it would save
+            if let Some(csv) = crate::sheets::as_csv(&bytes, key) {
+                return csv.map(Some);
+            }
             let mut s = String::from_utf8(bytes)
                 .map_err(|_| Refusal::invalid("That file is not UTF-8 text."))?;
             if s.starts_with('\u{feff}') {
