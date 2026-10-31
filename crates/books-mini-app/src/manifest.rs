@@ -173,7 +173,7 @@ fn card_kind(id: &str) -> (&'static str, &'static str, u32, u32) {
         ),
         "pair" => (
             "Books for BIR",
-            "A form's Books totals for the BIR app: a return to confirm, ready, hand to the BIR draft.",
+            "A form's Books totals for eBIRForms: a return to confirm, ready, hand to the BIR draft.",
             280,
             500,
         ),
@@ -196,7 +196,7 @@ pub fn unsigned(key_id: &str) -> Value {
         "short": SHORT,
         "version": VERSION,
         "title": "Buwiz Books",
-        "description": "Bookkeeping on this computer, cash basis by default. Books records what happened; the BIR app computes and files tax.",
+        "description": "Bookkeeping on this computer, cash basis by default. Books records what happened; eBIRForms computes and files tax.",
         "publisher": { "id": PUBLISHER_ID, "key_id": key_id, "name": "Goldcoders" },
         "commands": [
             { "name": "books", "description": "Open your books: a page (ledger, unpaid, reconcile, forms…) or a card (cash, month, unpaid, pl)", "args": "[page or card]", "resolve": tools::RESOLVE },

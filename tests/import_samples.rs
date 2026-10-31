@@ -170,7 +170,7 @@ fn the_web_sample() {
     }
     for s in &plan.skipped {
         if s.what.starts_with("ph") {
-            assert!(s.why.contains("BIR app"));
+            assert!(s.why.contains("eBIRForms"));
         }
     }
     let text = format!("{plan:?}");

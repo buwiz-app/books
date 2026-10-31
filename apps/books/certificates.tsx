@@ -91,7 +91,7 @@ function CertificatesPage(p: { go: (page: string, filter?: string) => void }) {
         </Panel>
         <Panel pad class="flex-row items-center gap-2.5">
           <Pill tone="bir" label="BIR" />
-          <Text class={`flex-1 text-[12.5px] ${C.mute}`}>Only received 2307s count. A 2306 is final tax and never counts. The BIR app builds SAWT and keeps the TINs.</Text>
+          <Text class={`flex-1 text-[12.5px] ${C.mute}`}>Only received 2307s count. A 2306 is final tax and never counts. eBIRForms builds SAWT and keeps the TINs.</Text>
         </Panel>
       </If>
     </View>

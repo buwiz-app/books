@@ -377,7 +377,7 @@ fn handoff_create_schema() -> Value {
 fn cross_checks_schema() -> Value {
     json!({ "type": "object", "properties": {
         "book": { "type": "string" }, "year": { "type": "string" },
-        "filed": { "type": "array", "description": "Values BIR shows as filed, read from the BIR app: [{form, period, key, value}].",
+        "filed": { "type": "array", "description": "Values BIR shows as filed, read from eBIRForms: [{form, period, key, value}].",
             "items": { "type": "object", "properties": { "form": { "type": "string" }, "period": { "type": "string" }, "key": { "type": "string" }, "value": { "type": "string" } } } } } })
 }
 
@@ -548,7 +548,7 @@ pub const TOOLS: &[Tool] = &[
         reach: Reach::Everyone,
         write: false,
         schema: people_schema,
-        description: "People of one kind (banks and cards, vendors, customers, employees, owners, lenders, government) with counts per kind. No TINs: the BIR app keeps them.",
+        description: "People of one kind (banks and cards, vendors, customers, employees, owners, lenders, government) with counts per kind. No TINs: eBIRForms keeps them.",
     },
     Tool {
         name: PERSON_GET,

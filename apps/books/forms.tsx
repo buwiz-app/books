@@ -49,7 +49,7 @@ function FormsPage(p: { go: (page: string, filter?: string) => void }) {
   const o = () => v()?.owners || {};
   return (
     <View class="gap-3.5">
-      <Head title="Forms" sub="Books totals for the BIR app">
+      <Head title="Forms" sub="Books totals for eBIRForms">
         <View class="flex-row gap-2">
           <Btn label="2307s" onPress={() => p.go("certificates")} />
           <Btn label="Payroll" onPress={() => p.go("payroll")} />
@@ -281,7 +281,7 @@ function CrossChecks() {
             </View>
           )}
         </Each>
-        <Text class={`text-[11.5px] px-3.5 py-2 ${C.dim}`}>Filed returns are compared when the assistant reads them from the BIR app.</Text>
+        <Text class={`text-[11.5px] px-3.5 py-2 ${C.dim}`}>Filed returns are compared when the assistant reads them from eBIRForms.</Text>
       </Panel>
     </If>
   );
