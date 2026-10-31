@@ -1,6 +1,9 @@
 //! M9: sign-in to buwiz-cloud and the tax-profile link (docs/01 5.7, P-C4,
-//! P-C8). Optional (D19): Books works offline, and nothing here runs unless
-//! `BOOKS_CLOUD_URL` names the cloud.
+//! P-C8). Optional (D19): Books works offline, and nothing here reaches the
+//! network until the user signs in or lists tax profiles. A release build
+//! signs in to `https://api.buwiz.com`; `BOOKS_CLOUD_URL` names another
+//! cloud, or, set empty, turns the cloud off. A debug build has no cloud
+//! unless `BOOKS_CLOUD_URL` names one.
 //!
 //! - Device sign-in as client `buwiz-books`, scope `books`: `POST
 //!   /oauth/device/code`, then poll `POST /oauth/token`. The device code
@@ -24,6 +27,8 @@ use crate::service::{Answer, Refusal};
 pub const CLIENT_ID: &str = "buwiz-books";
 pub const SCOPE: &str = "books";
 pub const URL_ENV: &str = "BOOKS_CLOUD_URL";
+/// The cloud a release build uses when `BOOKS_CLOUD_URL` is unset.
+pub const RELEASE_URL: &str = "https://api.buwiz.com";
 
 /// How Books reaches the cloud: a form POST and a GET with a bearer token,
 /// each answering a status and a JSON body.
@@ -32,18 +37,27 @@ pub trait Transport {
     fn get(&self, path: &str, bearer: &str) -> Result<(u16, Value), String>;
 }
 
-/// The real transport: HTTPS to `BOOKS_CLOUD_URL`.
+/// The cloud's base URL: `BOOKS_CLOUD_URL` when set, else [`RELEASE_URL`] in
+/// a release build. Only `https://` counts, so an empty value means no cloud.
+pub fn base_url(env: Option<&str>, release: bool) -> Option<String> {
+    let base = match env {
+        Some(url) => url.trim_end_matches('/'),
+        None if release => RELEASE_URL,
+        None => return None,
+    };
+    base.starts_with("https://").then(|| base.to_string())
+}
+
+/// The real transport: HTTPS to [`base_url`].
 pub struct Http {
     base: String,
 }
 
 impl Http {
     pub fn from_env() -> Option<Self> {
-        let base = std::env::var(URL_ENV)
-            .ok()?
-            .trim_end_matches('/')
-            .to_string();
-        base.starts_with("https://").then_some(Self { base })
+        let env = std::env::var(URL_ENV).ok();
+        let base = base_url(env.as_deref(), !cfg!(debug_assertions))?;
+        Some(Self { base })
     }
 }
 

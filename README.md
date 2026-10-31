@@ -89,9 +89,11 @@ The plugin keeps its store in `BOOKS_DATA_DIR` (default `~/Library/Application S
 the key file `BOOKS_DB_KEY_FILE` (default `<dir>/books.key`, mode 0600). Tests and the host test always point both
 at a temp folder.
 
-Buwiz sign-in is optional (Books works offline) and runs only when `BOOKS_CLOUD_URL` names the cloud (`https://…`):
-device sign-in as `buwiz-books`, scope `books`; the rotating refresh token lives in the encrypted store; the book
-links to a tax profile by its id only.
+Buwiz sign-in is optional (Books works offline, and reaches the network only when you sign in or list tax profiles).
+A release build signs in to `https://api.buwiz.com`; `BOOKS_CLOUD_URL` names another cloud (`https://…`), or, set
+empty, turns sign-in off. A debug build has no cloud unless `BOOKS_CLOUD_URL` names one. Device sign-in as
+`buwiz-books`, scope `books`; the rotating refresh token lives in the encrypted store; the book links to a tax
+profile by its id only.
 
 ## Run the proof of concept
 
