@@ -1,8 +1,8 @@
 //! JSON Canonicalization Scheme (RFC 8785) and I-JSON parsing for the
-//! objects protocol v1 signs and hashes: the manifest, session certificates
+//! objects protocol 2.0 signs and hashes: the manifest, session certificates
 //! and permissions.
 //!
-//! The bytes must match Rox's broker (`server/src/v1/jcs.mjs`) exactly, so
+//! The bytes must match the Bot's broker (`server/src/v1/jcs.mjs`) exactly, so
 //! this follows its signing form (`canonicalSigned`): object keys sorted by
 //! UTF-16 code units, strings escaped as `JSON.stringify` escapes them, and
 //! numbers that are safe integers only. A number that is not a safe integer
@@ -12,7 +12,7 @@
 //!
 //! [`parse`] is the I-JSON reader (RFC 7493): duplicate keys, lone
 //! surrogates and malformed text are `NotIJson`, where `serde_json` would
-//! keep the last duplicate. Both behaviours are checked against Rox's
+//! keep the last duplicate. Both behaviours are checked against the Bot's
 //! shared vectors (`tests/jcs_vectors.rs`).
 
 use std::fmt;

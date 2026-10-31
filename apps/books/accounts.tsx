@@ -14,12 +14,12 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
   const group = signal("all");
   const data = resource(
     () => ({ v: ver(), g: group() }),
-    (k: Any) => rox.call("books_accounts_list", { group: k.g }),
+    (k: Any) => buwiz.call("books_accounts_list", { group: k.g }),
   );
   const d = () => data() as Any;
   const imported = resource(
     () => ({ v: ver() }),
-    () => rox.call("books_import_get", {}),
+    () => buwiz.call("books_import_get", {}),
   );
   const waiting = () => {
     const c = (imported() as Any)?.counts;

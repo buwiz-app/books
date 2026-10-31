@@ -7,8 +7,8 @@ const csvChart = signal(null as Any);
 const csvJournal = signal(null as Any);
 
 function pickOne(ext: string, then: (f: Any) => void) {
-  if (!rox.pickFile) return toast("Picking files is not available in this Rox.");
-  rox
+  if (!buwiz.pickFile) return toast("Picking files is not available in this Buwiz Bot.");
+  buwiz
     .pickFile({ extensions: [ext] })
     .then((files: Any[]) => (files.length ? then(files[0]) : null))
     .catch((e: Any) => toast(errText(e)));
@@ -41,7 +41,7 @@ const MATCH_TONE: Record<string, [string, string]> = {
 function ImportPage(p: { go: (page: string, filter?: string) => void }) {
   const data = resource(
     () => ({ v: ver() }),
-    () => rox.call("books_import_get", {}),
+    () => buwiz.call("books_import_get", {}),
   );
   const d = () => data() as Any;
   const measure = signal("gross_sales");

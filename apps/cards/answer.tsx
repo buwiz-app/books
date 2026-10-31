@@ -4,7 +4,7 @@
 function CashCard() {
   const r = read(
     () => ({ v: ver() }),
-    () => rox.call("books_today", {}),
+    () => buwiz.call("books_today", {}),
   );
   const d = () => r() as Any;
   return (
@@ -34,7 +34,7 @@ function CashCard() {
 function MonthCard() {
   const r = read(
     () => ({ v: ver() }),
-    () => rox.call("books_today", {}),
+    () => buwiz.call("books_today", {}),
   );
   const d = () => r() as Any;
   const rows = () => d()?.month.rows || [];
@@ -66,7 +66,7 @@ function MonthCard() {
 function PersonView(p: { person: () => string; back: (() => void) | null }) {
   const r = read(
     () => ({ v: ver(), p: p.person() }),
-    () => rox.call("books_person_get", { person: p.person() }),
+    () => buwiz.call("books_person_get", { person: p.person() }),
   );
   const d = () => r() as Any;
   return (
@@ -109,7 +109,7 @@ function PersonPicker(p: { onPick: (ticket: string) => void }) {
   const kind = signal("");
   const r = read(
     () => ({ v: ver(), k: kind() }),
-    () => rox.call("books_people_list", kind() ? { kind: kind() } : {}),
+    () => buwiz.call("books_people_list", kind() ? { kind: kind() } : {}),
   );
   const d = () => r() as Any;
   return (
@@ -161,7 +161,7 @@ function UnpaidCard() {
   const side = CP.side === "pay" ? "pay" : "collect";
   const r = read(
     () => ({ v: ver() }),
-    () => rox.call("books_owed_list", { side }),
+    () => buwiz.call("books_owed_list", { side }),
   );
   const d = () => r() as Any;
   const n = () => (d()?.rows || []).length;

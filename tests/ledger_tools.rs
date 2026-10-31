@@ -1,4 +1,4 @@
-//! The M1 tools through the server, as Rox calls them: the app makes the
+//! The M1 tools through the server, as the Bot calls them: the app makes the
 //! book, the assistant drafts, only the app posts and voids, a repeat
 //! returns the stored result, every write leaves an audit row, the model
 //! sees totals and tickets but no payee or memo, and the store file holds
@@ -15,7 +15,7 @@ use serde_json::{Value, json};
 const MEMO: &str = "MEMO-SYNTH-office-supplies";
 const PAYEE: &str = "Pixel Print Shop";
 
-struct Rox {
+struct Bot {
     server: Server,
     next: i64,
     open_id: String,
@@ -31,17 +31,17 @@ fn now_ms() -> i64 {
     .unwrap()
 }
 
-impl Rox {
+impl Bot {
     fn new(dir: &TempDir) -> Self {
         let books = Books::new(Paths::in_dir(dir.0.join("store")));
-        let mut rox = Self {
+        let mut bot = Self {
             server: Server::new(Source::default(), books),
             next: 1,
             open_id: b64::encode(&[4u8; 16]),
         };
         let seed = [11u8; 32];
         let public = b64::encode(SigningKey::from_bytes(&seed).verifying_key().as_bytes());
-        let p = rox.raw("rox.provision", json!({ "protocol": "1.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": public }), Value::Null);
+        let p = bot.raw("buwiz.provision", json!({ "protocol": "2.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": public }), Value::Null);
         assert_eq!(p["isError"], false, "{p}");
         let app = manifest::unsigned(manifest::RELEASE_KEY_ID)["apps"]
             .as_array()
@@ -51,10 +51,10 @@ impl Rox {
             .unwrap()
             .clone();
         let perms = manifest::permissions_digest(&app).unwrap();
-        let open = json!({ "app": "books", "open_id": rox.open_id, "ks_pub": b64::encode(&[5u8; 32]), "perms_sha256": perms, "not_after": now_ms() + 3_600_000 });
-        let o = rox.raw("rox.session.open", open, Value::Null);
+        let open = json!({ "app": "books", "open_id": bot.open_id, "ks_pub": b64::encode(&[5u8; 32]), "perms_sha256": perms, "not_after": now_ms() + 3_600_000 });
+        let o = bot.raw("buwiz.session.open", open, Value::Null);
         assert_eq!(o["isError"], false, "{o}");
-        rox
+        bot
     }
 
     fn raw(&mut self, name: &str, args: Value, caller: Value) -> Value {
@@ -62,7 +62,7 @@ impl Rox {
         self.next += 1;
         let mut params = json!({ "name": name, "arguments": args });
         if !caller.is_null() {
-            params["_meta"] = json!({ "rox/caller": caller });
+            params["_meta"] = json!({ "buwiz/caller": caller });
         }
         let reply = self
             .server
@@ -97,33 +97,33 @@ fn code(result: &Value) -> &str {
 #[test]
 fn m1_book_draft_post_void_through_the_server() {
     let dir = TempDir::new("m1");
-    let mut rox = Rox::new(&dir);
+    let mut bot = Bot::new(&dir);
 
     // before a book: status says so and makes no store
     assert_eq!(
-        data(&rox.app("books_status", json!({})))["status"],
+        data(&bot.app("books_status", json!({})))["status"],
         "not_set_up"
     );
     assert!(!dir.0.join("store/books.db").exists());
-    assert_eq!(code(&rox.agent("books_today", json!({}))), "not_set_up");
+    assert_eq!(code(&bot.agent("books_today", json!({}))), "not_set_up");
 
     // the assistant cannot make the book; the app can, on cash basis
     let create = json!({ "client_request_id": "create-book-0001", "label": "Buwiz Trading" });
     assert_eq!(
-        code(&rox.agent("books_app_book_create", create.clone())),
+        code(&bot.agent("books_app_book_create", create.clone())),
         "permission_denied"
     );
-    let made = rox.app("books_app_book_create", create.clone());
+    let made = bot.app("books_app_book_create", create.clone());
     assert_eq!(data(&made)["basis"], "cash");
     let book_ticket = data(&made)["book"].as_str().unwrap().to_string();
     // a repeat returns the stored result and makes no second book
-    assert_eq!(rox.app("books_app_book_create", create.clone()), made);
-    let status = rox.app("books_status", json!({}));
+    assert_eq!(bot.app("books_app_book_create", create.clone()), made);
+    let status = bot.app("books_status", json!({}));
     assert_eq!(data(&status)["books"], 1);
     assert_eq!(data(&status)["status"], "ready");
     // the same id with another request is refused
     assert_eq!(
-        code(&rox.app(
+        code(&bot.app(
             "books_app_book_create",
             json!({ "client_request_id": "create-book-0001", "label": "Other" })
         )),
@@ -131,7 +131,7 @@ fn m1_book_draft_post_void_through_the_server() {
     );
     // a TIN in the label is refused (Q-4 option a)
     assert_eq!(
-        code(&rox.app(
+        code(&bot.app(
             "books_app_book_create",
             json!({ "client_request_id": "create-book-0002", "label": format!("Shop {}-000", ["123", "456", "789"].join("-")) })
         )),
@@ -144,18 +144,18 @@ fn m1_book_draft_post_void_through_the_server() {
         "amount": "1350.00", "account": "11000", "category": "67200", "payee": PAYEE, "memo": MEMO,
         "reference": "Receipt 1018"
     });
-    let d = rox.agent("books_entry_draft", draft.clone());
+    let d = bot.agent("books_entry_draft", draft.clone());
     assert_eq!(data(&d)["status"], "draft");
     let entry = data(&d)["entry"].as_str().unwrap().to_string();
     assert_eq!(
-        rox.agent("books_entry_draft", draft.clone()),
+        bot.agent("books_entry_draft", draft.clone()),
         d,
         "a repeat returns the stored draft"
     );
 
     // the assistant cannot post or void (DD-20); the refusal says why
     let post = json!({ "client_request_id": "post-supplies-01", "entry": entry });
-    let refused = rox.agent("books_app_post_entry", post.clone());
+    let refused = bot.agent("books_app_post_entry", post.clone());
     assert_eq!(code(&refused), "permission_denied");
     assert!(
         refused["content"][0]["text"]
@@ -165,55 +165,55 @@ fn m1_book_draft_post_void_through_the_server() {
     );
     let routine = json!({ "origin": "routine", "plugin": manifest::PLUGIN_ID, "routine": "weekly-tidy-up", "ts": now_ms() });
     assert_eq!(
-        code(&rox.raw("books_entry_draft", draft.clone(), routine)),
+        code(&bot.raw("books_entry_draft", draft.clone(), routine)),
         "permission_denied",
         "an undeclared routine write"
     );
 
     // the model's ledger view: amounts and tickets, no payee or memo (D11)
-    let seen = rox.agent("books_ledger_list", json!({ "month": "2026-10" }));
+    let seen = bot.agent("books_ledger_list", json!({ "month": "2026-10" }));
     let text = seen.to_string();
     assert!(!text.contains(PAYEE) && !text.contains(MEMO), "{text}");
     assert_eq!(data(&seen)["counts"]["draft"], 1);
     assert_eq!(data(&seen)["rows"][0]["amount_shown"], "\u{2212}1,350.00");
     // the app's view has them
-    let app_view = rox.app("books_ledger_list", json!({ "month": "2026-10" }));
+    let app_view = bot.app("books_ledger_list", json!({ "month": "2026-10" }));
     assert_eq!(
         data(&app_view)["rows"][0]["title"],
         format!("{MEMO} · {PAYEE}")
     );
-    let detail = rox.app("books_entry_get", json!({ "entry": entry }));
+    let detail = bot.app("books_entry_get", json!({ "entry": entry }));
     assert_eq!(
         data(&detail)["lines"][0]["account"],
         "67200 Office Supplies"
     );
     assert_eq!(data(&detail)["actions"], json!(["discard", "edit", "post"]));
     assert!(
-        !rox.agent("books_entry_get", json!({ "entry": entry }))
+        !bot.agent("books_entry_get", json!({ "entry": entry }))
             .to_string()
             .contains(MEMO)
     );
 
     // the user posts it in the app
-    let posted = rox.app("books_app_post_entry", post.clone());
+    let posted = bot.app("books_app_post_entry", post.clone());
     assert_eq!(data(&posted)["status"], "posted");
     assert_eq!(
-        rox.app("books_app_post_entry", post.clone()),
+        bot.app("books_app_post_entry", post.clone()),
         posted,
         "a repeated post is the stored result"
     );
-    let today = rox.app("books_today", json!({}));
+    let today = bot.app("books_today", json!({}));
     let cash = &data(&today)["cash"];
     assert_eq!(cash["total"], "-1350.00");
 
     // save and post a sale in one step, then void it: original Voided, reversal posted
-    let sale = rox.app("books_app_post_entry", json!({
+    let sale = bot.app("books_app_post_entry", json!({
         "client_request_id": "post-sale-0142", "form": "money_in", "date": "2026-10-28", "amount": "80000.00",
         "account": "11000", "category": "41000", "payee": "Bayani Foods", "reference": "Invoice 0142",
         "facts": { "document_kind": "sale_invoice" }
     }));
     let sale_entry = data(&sale)["entry"].as_str().unwrap().to_string();
-    let accounts = rox.agent("books_accounts_list", json!({ "group": "Assets" }));
+    let accounts = bot.agent("books_accounts_list", json!({ "group": "Assets" }));
     let bank = data(&accounts)["rows"]
         .as_array()
         .unwrap()
@@ -222,20 +222,20 @@ fn m1_book_draft_post_void_through_the_server() {
         .unwrap()
         .clone();
     assert_eq!(bank["balance"], "78650.00");
-    let voided = rox.app(
+    let voided = bot.app(
         "books_app_void_entry",
         json!({ "client_request_id": "void-sale-0142", "entry": sale_entry }),
     );
     assert_eq!(data(&voided)["status"], "voided");
     let reversal = data(&voided)["reversal"].as_str().unwrap().to_string();
-    let rev = rox.app("books_entry_get", json!({ "entry": reversal }));
+    let rev = bot.app("books_entry_get", json!({ "entry": reversal }));
     assert_eq!(data(&rev)["status_label"], "Reversal");
     assert_eq!(
         data(&rev)["date"],
         "2026-10-28",
         "dated like the original (DD-15)"
     );
-    let after = rox.agent("books_accounts_list", json!({ "group": "Assets" }));
+    let after = bot.agent("books_accounts_list", json!({ "group": "Assets" }));
     let bank = data(&after)["rows"]
         .as_array()
         .unwrap()
@@ -248,7 +248,7 @@ fn m1_book_draft_post_void_through_the_server() {
         "a void and its reversal net to zero"
     );
     assert_eq!(
-        code(&rox.app(
+        code(&bot.app(
             "books_app_void_entry",
             json!({ "client_request_id": "void-sale-0142b", "entry": sale_entry })
         )),
@@ -256,18 +256,18 @@ fn m1_book_draft_post_void_through_the_server() {
     );
 
     // a cash book refuses a receivable line at post
-    let ar = rox.app("books_app_post_entry", json!({
+    let ar = bot.app("books_app_post_entry", json!({
         "client_request_id": "post-ar-000001", "form": "journal", "date": "2026-10-20",
         "lines": [ { "account": "12010", "debit": "100.00" }, { "account": "41000", "credit": "100.00" } ]
     }));
     assert_eq!(code(&ar), "accrual_account");
     // an unbalanced journal is refused and nothing of it stays
-    let unbalanced = rox.app("books_app_post_entry", json!({
+    let unbalanced = bot.app("books_app_post_entry", json!({
         "client_request_id": "post-unbal-0001", "form": "journal", "date": "2026-10-20",
         "lines": [ { "account": "11000", "debit": "100.00" }, { "account": "41000", "credit": "99.99" } ]
     }));
     assert_eq!(code(&unbalanced), "unbalanced");
-    let all = rox.app("books_ledger_list", json!({ "month": "2026-10" }));
+    let all = bot.app("books_ledger_list", json!({ "month": "2026-10" }));
     assert_eq!(
         data(&all)["counts"]["all"],
         3,
@@ -275,20 +275,20 @@ fn m1_book_draft_post_void_through_the_server() {
     );
 
     // the ticket titles are neutral (P3)
-    let t = rox.raw(
-        "rox.ticket.resolve",
+    let t = bot.raw(
+        "buwiz.ticket.resolve",
         json!({ "ticket": entry }),
         Value::Null,
     );
     assert_eq!(t["structuredContent"]["title"], "Entry 0001");
-    let t = rox.raw(
-        "rox.ticket.resolve",
+    let t = bot.raw(
+        "buwiz.ticket.resolve",
         json!({ "ticket": book_ticket }),
         Value::Null,
     );
     assert_eq!(t["structuredContent"]["title"], "Books");
 
-    drop(rox);
+    drop(bot);
     // every write left an audit row; refusals too
     let store = books_store::Store::open(&Paths::in_dir(dir.0.join("store"))).unwrap();
     let c = store.conn();

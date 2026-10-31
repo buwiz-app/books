@@ -1,15 +1,15 @@
-//! JCS against Rox's shared RFC 8785 vectors. The vendored copy
-//! (`tests/fixtures/rox-jcs-vectors.json`) always runs; Rox's two originals
-//! (`app/src/mini_v1/jcs-vectors.json`, `server/test/fixtures/jcs-vectors.json`)
-//! run too when a Rox checkout is present (`ROX_DIR`, default
-//! `/Volumes/goldcoders/Projects/rox`), and must equal the vendored copy.
+//! JCS against the Buwiz Bot's shared RFC 8785 vectors. The vendored copy
+//! (`tests/fixtures/bot-jcs-vectors.json`, from Bot main at protocol 2.0)
+//! always runs; the Bot's two originals (`broker/rox-v1/src/jcs-vectors.json`,
+//! `server/test/fixtures/jcs-vectors.json`) run too when `BUWIZ_BOT_DIR` names
+//! a Bot checkout, and must equal the vendored copy.
 
 use books_mini_app::jcs::{self, JcsError};
 use serde_json::Value;
 
-const VENDORED: &str = include_str!("fixtures/rox-jcs-vectors.json");
-const ROX_FILES: [&str; 2] = [
-    "app/src/mini_v1/jcs-vectors.json",
+const VENDORED: &str = include_str!("fixtures/bot-jcs-vectors.json");
+const BOT_FILES: [&str; 2] = [
+    "broker/rox-v1/src/jcs-vectors.json",
     "server/test/fixtures/jcs-vectors.json",
 ];
 
@@ -44,26 +44,28 @@ fn check(text: &str, label: &str) -> usize {
 }
 
 #[test]
-fn the_vendored_rox_vectors_pass() {
+fn the_vendored_bot_vectors_pass() {
     check(VENDORED, "vendored");
 }
 
 #[test]
-fn both_rox_vector_files_pass_when_rox_is_checked_out() {
-    let root =
-        std::env::var("ROX_DIR").unwrap_or_else(|_| "/Volumes/goldcoders/Projects/rox".into());
-    for file in ROX_FILES {
+fn both_bot_vector_files_pass_when_a_bot_checkout_is_named() {
+    let Ok(root) = std::env::var("BUWIZ_BOT_DIR") else {
+        eprintln!("BUWIZ_BOT_DIR is not set; the Bot's own vector files are not compared");
+        return;
+    };
+    for file in BOT_FILES {
         let path = std::path::Path::new(&root).join(file);
         match std::fs::read_to_string(&path) {
             Ok(text) => {
                 let n = check(&text, file);
                 assert_eq!(
                     text, VENDORED,
-                    "{file} differs from tests/fixtures/rox-jcs-vectors.json"
+                    "{file} differs from tests/fixtures/bot-jcs-vectors.json"
                 );
                 eprintln!("{file}: {n} vectors pass");
             }
-            Err(_) => eprintln!("{file}: no Rox checkout at {root}; skipped"),
+            Err(_) => panic!("{file}: not found in the Bot checkout at {root}"),
         }
     }
 }

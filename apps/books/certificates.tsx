@@ -10,7 +10,7 @@ const CERT_TONE: Record<string, string> = { received: "ok", pending: "draft", lo
 function CertificatesPage(p: { go: (page: string, filter?: string) => void }) {
   const data = resource(
     () => ({ v: ver(), f: certFilter() }),
-    (k: Any) => rox.call("books_certificates_list", { filter: k.f }),
+    (k: Any) => buwiz.call("books_certificates_list", { filter: k.f }),
   );
   const d = () => data() as Any;
   const changing = signal("");

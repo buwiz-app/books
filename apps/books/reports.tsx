@@ -51,7 +51,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
     (k: Any) => {
       const args: Record<string, string> = { kind: k.k, period_kind: k.pk };
       if (k.per) args.period = k.per;
-      return rox.call("books_report", args);
+      return buwiz.call("books_report", args);
     },
   );
   const d = () => data() as Any;
@@ -59,12 +59,12 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
   const exportCsv = () => {
     const args: Record<string, string> = { kind: repKind(), period_kind: repPeriodKind() };
     if (repPeriod()) args.period = repPeriod();
-    rox.call("books_report_csv", args).then(
+    buwiz.call("books_report_csv", args).then(
       (r: Any) => {
-        if (rox.copy) {
-          rox.copy(String(r.csv));
+        if (buwiz.copy) {
+          buwiz.copy(String(r.csv));
           toast(`${String(r.file_name)} copied · ${String(r.rows)} rows`);
-        } else toast("Copying is not available in this Rox.");
+        } else toast("Copying is not available in this Buwiz Bot.");
       },
       (e: Any) => toast(errText(e)),
     );

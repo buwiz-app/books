@@ -6,7 +6,7 @@ const tagKind = signal("department");
 function TagsPage(p: { go: (page: string, filter?: string) => void }) {
   const data = resource(
     () => ({ v: ver(), k: tagKind() }),
-    (k: Any) => rox.call("books_tags_list", { kind: k.k }),
+    (k: Any) => buwiz.call("books_tags_list", { kind: k.k }),
   );
   const d = () => data() as Any;
   const adding = signal(false);

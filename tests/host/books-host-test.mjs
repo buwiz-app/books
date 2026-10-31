@@ -1,7 +1,7 @@
-// Headless second-instance test of the Books plugin against a real Rox v1 broker (docs/06 section 13.2 steps 6-11).
-// Run it through tools/rox/host-test.sh, which starts the throwaway broker. Direct use:
-//   node books-host-test.mjs <rox worktree> <run dir> <books binary> <port>
-// It reuses Rox's own test helpers (openApp, envelope) from the worktree. It prints step results only: no host
+// Headless second-instance test of the Books plugin against a real Buwiz Bot broker (docs/06 section 13.2 steps 6-11).
+// Run it through tools/bot/host-test.sh, which starts the throwaway broker. Direct use:
+//   node books-host-test.mjs <buwiz worktree> <run dir> <books binary> <port>
+// It reuses the Bot's own test helpers (openApp, envelope) from the worktree. It prints step results only: no host
 // token, ticket values, keys or signatures.
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -13,7 +13,7 @@ const token = readFileSync(`${RUN}/data/host-token`, "utf8");
 const signed = JSON.parse(readFileSync(`${RUN}/signed.json`, "utf8"));
 
 async function post(path, body) {
-  const r = await fetch(BASE + path, { method: "POST", headers: { "content-type": "application/json", "x-rox-host": token }, body: JSON.stringify(body) });
+  const r = await fetch(BASE + path, { method: "POST", headers: { "content-type": "application/json", "x-buwiz-host": token }, body: JSON.stringify(body) });
   const text = await r.text();
   let json;
   try { json = JSON.parse(text); } catch { json = { raw: text.slice(0, 200) }; }
@@ -28,7 +28,7 @@ const spec = { command: BIN, args: ["mcp"], env: { BOOKS_V1_MANIFEST: `${RUN}/si
 
 // 0. a request without the host token is refused
 const noAuth = await fetch(`${BASE}/v1/host/plugins/inspect`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(spec) });
-check("host route without X-Rox-Host is 401", noAuth.status === 401, { status: noAuth.status });
+check("host route without X-Buwiz-Host is 401", noAuth.status === 401, { status: noAuth.status });
 
 // 1. inspect: a temporary spawn, verified against the per-run trust file
 const insp = await post("/v1/host/plugins/inspect", spec);
@@ -45,12 +45,12 @@ const wrong = await post("/v1/host/plugins/install", { ...spec, manifest_sha256:
 check("install with a hash other than the reviewed one is refused", wrong.json.ok !== true, refusal(wrong));
 
 // 4. resolve the /books command
-const res = await post("/v1/host/resolve", { plugin: "dev.goldcoders.books", kind: "command", name: "books", value: "" });
+const res = await post("/v1/host/resolve", { plugin: "app.buwiz.books", kind: "command", name: "books", value: "" });
 const r = res.json;
 check("/books resolves to open the Books window with a ticket and a neutral title", r.result === "open" && r.app === "books" && r.title === "Books" && /^tkt_/.test(String(r.ticket ?? r.props?.ticket ?? "")),
   { status: res.status, result: r.result, app: r.app, title: r.title, has_ticket: /^tkt_/.test(String(r.ticket ?? r.props?.ticket ?? "")) });
 
-// 5. open the home app the way Rox does (session key, open_id, permissions digest)
+// 5. open the home app the way the Bot does (session key, open_id, permissions digest)
 const sessions = { open: async (req) => { const o = await post("/v1/host/sessions/open", req); if (o.json.ok === false) throw Object.assign(new Error(o.json.message), { code: o.json.code }); return o.json; } };
 const open = await openApp(sessions, signed, "home");
 check("home session opens with a broker-verified certificate", !!open.res.cert && !!open.res.cert_sig, { permissions: open.res.permissions });

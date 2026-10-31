@@ -49,7 +49,7 @@ function Quick(p: { title: string; sub: string; onPress: () => void }) {
 function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mode: string) => void }) {
   const today = resource(
     () => ({ v: ver() }),
-    () => rox.call("books_today", {}),
+    () => buwiz.call("books_today", {}),
   );
   const t = () => today() as Any;
   return (

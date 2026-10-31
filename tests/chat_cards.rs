@@ -1,4 +1,4 @@
-//! M8 through the server, as Rox calls it: the assistant offers cards and
+//! M8 through the server, as the Bot calls it: the assistant offers cards and
 //! never posts or hands over (M8-07), a routine's turn writes only the
 //! drafts it declares (M8-06), the six scopes and `/books` resolve to
 //! tickets and cards (M8-01, M8-04), the templates open their cards
@@ -18,7 +18,7 @@ const DEMO: &str = concat!(
     "/../../fixtures/demo/buwiz-trading-2026.json"
 );
 
-struct Rox {
+struct Bot {
     server: Server,
     next: i64,
 }
@@ -37,22 +37,22 @@ fn now_ms() -> i64 {
     .unwrap()
 }
 
-impl Rox {
+impl Bot {
     fn new(dir: &TempDir) -> Self {
         books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
         let mut books = Books::new(Paths::in_dir(dir.0.join("store")));
         let demo_book: Value =
             serde_json::from_str(&std::fs::read_to_string(DEMO).unwrap()).unwrap();
         demo::seed(&mut books, &demo_book).unwrap();
-        let mut rox = Self {
+        let mut bot = Self {
             server: Server::new(Source::default(), books),
             next: 1,
         };
         let seed = [11u8; 32];
         let public = b64::encode(SigningKey::from_bytes(&seed).verifying_key().as_bytes());
-        let p = rox.raw("rox.provision", json!({ "protocol": "1.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": public }), Value::Null);
+        let p = bot.raw("buwiz.provision", json!({ "protocol": "2.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": public }), Value::Null);
         assert_eq!(p["isError"], false, "{p}");
-        rox
+        bot
     }
 
     fn open(&mut self, app: &str, open_id: &str) {
@@ -65,7 +65,7 @@ impl Rox {
             .clone();
         let perms = manifest::permissions_digest(&entry).unwrap();
         let open = json!({ "app": app, "open_id": open_id, "ks_pub": b64::encode(&[5u8; 32]), "perms_sha256": perms, "not_after": now_ms() + 3_600_000 });
-        let o = self.raw("rox.session.open", open, Value::Null);
+        let o = self.raw("buwiz.session.open", open, Value::Null);
         assert_eq!(o["isError"], false, "{o}");
     }
 
@@ -74,7 +74,7 @@ impl Rox {
         self.next += 1;
         let mut params = json!({ "name": name, "arguments": args });
         if !caller.is_null() {
-            params["_meta"] = json!({ "rox/caller": caller });
+            params["_meta"] = json!({ "buwiz/caller": caller });
         }
         self.server
             .handle(
@@ -115,10 +115,10 @@ fn refused(r: &Value) -> String {
 fn m8_07_the_assistant_cannot_post_close_or_hand_over() {
     let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
     let dir = TempDir::new("m8-guard");
-    let mut rox = Rox::new(&dir);
+    let mut bot = Bot::new(&dir);
     // every app-only tool, called by the assistant, is refused before it runs
     for t in tools::TOOLS.iter().filter(|t| t.reach == tools::Reach::App) {
-        let text = refused(&rox.agent(t.name, json!({ "client_request_id": "agent-try-0001" })));
+        let text = refused(&bot.agent(t.name, json!({ "client_request_id": "agent-try-0001" })));
         assert!(
             text.contains("needs the user's click"),
             "{}: {text}",
@@ -126,7 +126,7 @@ fn m8_07_the_assistant_cannot_post_close_or_hand_over() {
         );
     }
     // the assistant may draft
-    let d = rox.agent("books_entry_draft", json!({ "client_request_id": "agent-draft-01", "form": "money_out", "date": "2026-10-20", "amount": "150.00", "account": "11010", "category": "68300", "payee": "Bank" }));
+    let d = bot.agent("books_entry_draft", json!({ "client_request_id": "agent-draft-01", "form": "money_out", "date": "2026-10-20", "amount": "150.00", "account": "11010", "category": "68300", "payee": "Bank" }));
     assert_eq!(data(&d)["status"], "draft");
 }
 
@@ -134,9 +134,9 @@ fn m8_07_the_assistant_cannot_post_close_or_hand_over() {
 fn m8_06_routines_draft_only() {
     let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
     let dir = TempDir::new("m8-routine");
-    let mut rox = Rox::new(&dir);
+    let mut bot = Bot::new(&dir);
     // the weekly tidy-up declares books_entry_draft, and may call it
-    let d = rox.routine("weekly-tidy", "books_entry_draft", json!({ "client_request_id": "tidy-draft-0001", "form": "money_out", "date": "2026-10-21", "amount": "150.00", "account": "11010", "category": "68300" }));
+    let d = bot.routine("weekly-tidy", "books_entry_draft", json!({ "client_request_id": "tidy-draft-0001", "form": "money_out", "date": "2026-10-21", "amount": "150.00", "account": "11010", "category": "68300" }));
     assert_eq!(data(&d)["status"], "draft");
     // nothing else, and no other routine writes at all
     for (routine, tool) in [
@@ -146,7 +146,7 @@ fn m8_06_routines_draft_only() {
         ("bir-pair", "books_app_handoff_create"),
         ("bir-pair", "books_entry_draft"),
     ] {
-        let text = refused(&rox.routine(
+        let text = refused(&bot.routine(
             routine,
             tool,
             json!({ "client_request_id": "routine-try-01" }),
@@ -157,7 +157,7 @@ fn m8_06_routines_draft_only() {
         );
     }
     // the query call (origin routine) only reads
-    let q = rox.raw("books_entry_draft", json!({ "client_request_id": "query-try-0001" }), json!({ "origin": "routine", "routine": "weekly-tidy", "plugin": manifest::PLUGIN_ID, "ts": now_ms() }));
+    let q = bot.raw("books_entry_draft", json!({ "client_request_id": "query-try-0001" }), json!({ "origin": "routine", "routine": "weekly-tidy", "plugin": manifest::PLUGIN_ID, "ts": now_ms() }));
     assert!(refused(&q).contains("does not run here"));
     // the manifest says the same: only the tidy-up writes, and only drafts
     let m = manifest::unsigned(manifest::RELEASE_KEY_ID);
@@ -186,12 +186,12 @@ fn m8_06_routines_draft_only() {
 fn m8_nudges_find_work_and_quiet_cards_carry_no_amounts() {
     let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
     let dir = TempDir::new("m8-nudge");
-    let mut rox = Rox::new(&dir);
+    let mut bot = Bot::new(&dir);
     // Thursday Oct 29: the tidy-up finds work on Mondays only; asked, it answers
-    let thursday = data(&rox.routine("weekly-tidy", "books_nudge", json!({ "kind": "tidy" })));
+    let thursday = data(&bot.routine("weekly-tidy", "books_nudge", json!({ "kind": "tidy" })));
     assert_eq!(thursday["text"], "");
     assert_eq!(thursday["counts"]["lines"], 2);
-    let tidy = data(&rox.routine(
+    let tidy = data(&bot.routine(
         "weekly-tidy",
         "books_nudge",
         json!({ "kind": "tidy", "any_day": true }),
@@ -199,13 +199,13 @@ fn m8_nudges_find_work_and_quiet_cards_carry_no_amounts() {
     assert_eq!(tidy["text"], "2 bank lines to categorize", "{tidy}");
     assert_eq!(tidy["items"].as_array().unwrap().len(), 2);
     // Oct 29: September is open but the nudge waits for the first week
-    let month = data(&rox.agent("books_nudge", json!({ "kind": "month_end" })));
+    let month = data(&bot.agent("books_nudge", json!({ "kind": "month_end" })));
     assert_eq!(
         (month["month"].as_str(), month["text"].as_str()),
         (Some("2026-09"), Some(""))
     );
     books_core::date::pin_today(books_core::date::Date::new(2026, 11, 2));
-    let month = data(&rox.agent("books_nudge", json!({ "kind": "month_end" })));
+    let month = data(&bot.agent("books_nudge", json!({ "kind": "month_end" })));
     assert_eq!(month["month"], "2026-10");
     assert!(
         month["text"]
@@ -216,7 +216,7 @@ fn m8_nudges_find_work_and_quiet_cards_carry_no_amounts() {
     );
     assert_eq!(month["items"][0]["id"], "close-2026-10");
     books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
-    let pair = data(&rox.agent("books_nudge", json!({ "kind": "bir_pair" })));
+    let pair = data(&bot.agent("books_nudge", json!({ "kind": "bir_pair" })));
     assert_eq!(
         (pair["text"].as_str(), pair["count"].as_i64()),
         (Some(""), Some(0))
@@ -241,11 +241,11 @@ fn m8_nudges_find_work_and_quiet_cards_carry_no_amounts() {
 fn m8_cards_scopes_books_choices_and_templates() {
     let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
     let dir = TempDir::new("m8-scopes");
-    let mut rox = Rox::new(&dir);
+    let mut bot = Bot::new(&dir);
     // books_show offers a card on the result's _meta, not in its text
-    let shown = rox.agent("books_show", json!({ "card": "cash" }));
+    let shown = bot.agent("books_show", json!({ "card": "cash" }));
     assert_eq!(shown["isError"], false, "{shown}");
-    let open = &shown["_meta"]["rox/open"];
+    let open = &shown["_meta"]["buwiz/open"];
     assert_eq!(
         (
             open["app"].as_str(),
@@ -258,14 +258,14 @@ fn m8_cards_scopes_books_choices_and_templates() {
         !shown["content"][0]["text"]
             .as_str()
             .unwrap()
-            .contains("rox/open")
+            .contains("buwiz/open")
     );
     assert!(
-        refused(&rox.agent("books_show", json!({ "card": "nope" }))).contains("`card` is one of")
+        refused(&bot.agent("books_show", json!({ "card": "nope" }))).contains("`card` is one of")
     );
 
-    let resolve = |rox: &mut Rox, kind: &str, name: &str, value: &str, complete: bool| {
-        data(&rox.raw("books_resolve", json!({ "kind": kind, "name": name, "value": value, "complete": complete, "context": { "attached": [] } }), json!({ "origin": "resolve", "plugin": manifest::PLUGIN_ID, "ts": now_ms() })))
+    let resolve = |bot: &mut Bot, kind: &str, name: &str, value: &str, complete: bool| {
+        data(&bot.raw("books_resolve", json!({ "kind": kind, "name": name, "value": value, "complete": complete, "context": { "attached": [] } }), json!({ "origin": "resolve", "plugin": manifest::PLUGIN_ID, "ts": now_ms() })))
     };
     // six scopes: text gives choices whose values are tickets; a ticket gives its token
     for (name, typed, label) in [
@@ -276,14 +276,14 @@ fn m8_cards_scopes_books_choices_and_templates() {
         ("form", "2551Q", "2551Q Q3 2026"),
         ("tag", "Makati", "Makati office"),
     ] {
-        let c = resolve(&mut rox, "scope", name, typed, true);
+        let c = resolve(&mut bot, "scope", name, typed, true);
         assert_eq!(c["result"], "choices", "{name}: {c}");
         let first = &c["choices"][0];
         if !label.is_empty() {
             assert_eq!(first["label"], label, "{name}: {c}");
         }
         let t = resolve(
-            &mut rox,
+            &mut bot,
             "scope",
             name,
             first["value"].as_str().unwrap(),
@@ -297,21 +297,21 @@ fn m8_cards_scopes_books_choices_and_templates() {
         );
     }
     // a form token works where a form and period go
-    let f = resolve(&mut rox, "scope", "form", "2551Q Q3", true);
+    let f = resolve(&mut bot, "scope", "form", "2551Q Q3", true);
     let ticket = f["choices"][0]["value"].as_str().unwrap().to_string();
-    let p = data(&rox.agent("books_form_proposal", json!({ "form": ticket })));
+    let p = data(&bot.agent("books_form_proposal", json!({ "form": ticket })));
     assert_eq!(
         (p["form"].as_str(), p["period"].as_str()),
         (Some("2551Q"), Some("2026-Q3"))
     );
     // a ticket of another kind is not a token of this scope
     assert_eq!(
-        resolve(&mut rox, "scope", "person", &ticket, false)["result"],
+        resolve(&mut bot, "scope", "person", &ticket, false)["result"],
         "error"
     );
 
     // /books: a page, a card, the choices, and plain /books
-    let ledger = resolve(&mut rox, "command", "books", "ledger", false);
+    let ledger = resolve(&mut bot, "command", "books", "ledger", false);
     assert_eq!(
         (
             ledger["result"].as_str(),
@@ -320,12 +320,12 @@ fn m8_cards_scopes_books_choices_and_templates() {
         ),
         (Some("open"), Some("ledger"), Some("full"))
     );
-    let cash = resolve(&mut rox, "command", "books", "cash", false);
+    let cash = resolve(&mut bot, "command", "books", "cash", false);
     assert_eq!(
         (cash["app"].as_str(), cash["placement"].as_str()),
         (Some("answer"), Some("inline"))
     );
-    let choices = resolve(&mut rox, "command", "books", "", true);
+    let choices = resolve(&mut bot, "command", "books", "", true);
     let labels: Vec<&str> = choices["choices"]
         .as_array()
         .unwrap()
@@ -337,7 +337,7 @@ fn m8_cards_scopes_books_choices_and_templates() {
         ["Today", "Ledger", "Unpaid", "Reconcile", "Reports"]
     );
     let picked = resolve(
-        &mut rox,
+        &mut bot,
         "command",
         "books",
         choices["choices"][1]["value"].as_str().unwrap(),
@@ -345,7 +345,7 @@ fn m8_cards_scopes_books_choices_and_templates() {
     );
     assert_eq!(picked["props"]["page"], "ledger");
     assert_eq!(
-        resolve(&mut rox, "command", "books", "", false)["props"]["page"],
+        resolve(&mut bot, "command", "books", "", false)["props"]["page"],
         "today"
     );
 
@@ -357,7 +357,7 @@ fn m8_cards_scopes_books_choices_and_templates() {
         ("books-quarter", "pair", "form"),
         ("books-results", "report", "pl"),
     ] {
-        let o = resolve(&mut rox, "command", command, "", false);
+        let o = resolve(&mut bot, "command", command, "", false);
         assert_eq!(
             (
                 o["result"].as_str(),
@@ -370,14 +370,14 @@ fn m8_cards_scopes_books_choices_and_templates() {
         );
     }
     assert_eq!(
-        resolve(&mut rox, "command", "books-close", "", false)["props"]["month"],
+        resolve(&mut bot, "command", "books-close", "", false)["props"]["month"],
         "2026-09"
     );
 
     // a card app reaches only its own tools: the answer card cannot post
     let oid = b64::encode(&[7u8; 16]);
-    rox.open("answer", &oid);
-    let text = refused(&rox.app(
+    bot.open("answer", &oid);
+    let text = refused(&bot.app(
         "answer",
         &oid,
         "books_app_post_entry",
@@ -385,7 +385,7 @@ fn m8_cards_scopes_books_choices_and_templates() {
     ));
     assert!(text.contains("not in this app's permissions"), "{text}");
     assert_eq!(
-        data(&rox.app("answer", &oid, "books_today", json!({})))["cash"]["shown"],
+        data(&bot.app("answer", &oid, "books_today", json!({})))["cash"]["shown"],
         "417,350.00"
     );
 }

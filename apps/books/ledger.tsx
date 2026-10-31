@@ -54,7 +54,7 @@ function LedgerPage(p: { go: (page: string, filter?: string) => void; sheet: (mo
       const args: Record<string, string> = { filter: k.f };
       if (k.a) args.account = k.a;
       if (k.m) args.month = k.m;
-      return rox.call("books_ledger_list", args);
+      return buwiz.call("books_ledger_list", args);
     },
   );
   const d = () => data() as Any;
@@ -148,7 +148,7 @@ function LedgerPage(p: { go: (page: string, filter?: string) => void; sheet: (mo
 function EntryDrawer() {
   const data = resource(
     () => ({ v: ver(), e: drawerEntry() }),
-    (k: Any) => (k.e ? rox.call("books_entry_get", { entry: k.e }) : Promise.resolve(null)),
+    (k: Any) => (k.e ? buwiz.call("books_entry_get", { entry: k.e }) : Promise.resolve(null)),
   );
   const e = () => data() as Any;
   const busy = signal(false);
@@ -298,7 +298,7 @@ const MODES: [string, string][] = [
 function EntrySheet(p: { mode: Any; close: () => void; setMode: (m: string) => void }) {
   const opts = resource(
     () => ({ v: ver() }),
-    () => rox.call("books_entry_options", {}),
+    () => buwiz.call("books_entry_options", {}),
   );
   const o = () => opts() as Any;
   const amount = signal("");

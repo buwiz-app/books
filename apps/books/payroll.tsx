@@ -23,7 +23,7 @@ const PAY_FIELDS: [string, string][] = [
 function PayrollPage(p: { go: (page: string, filter?: string) => void }) {
   const data = resource(
     () => ({ v: ver() }),
-    () => rox.call("books_wages_list", {}),
+    () => buwiz.call("books_wages_list", {}),
   );
   const d = () => data() as Any;
   return (

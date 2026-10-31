@@ -1,16 +1,16 @@
-//! The app sources this binary serves as `rox-app://<id>` (spec 6.1). They
+//! The app sources this binary serves as `buwiz-app://<id>` (spec 6.1). They
 //! are compiled in, so the bytes `resources/read` answers are the bytes the
 //! manifest fingerprints (6.2) and nothing on disk can drift from them.
 //!
 //! The Books window (`books`) is one app built from several files: the kit
 //! every page shares, one file per page, and the window that holds them.
-//! An app may import only `nsh`, `nsh/base` and `rox` (6.3), so the files
+//! An app may import only `nsh`, `nsh/base` and `buwiz` (6.3), so the files
 //! are joined here rather than imported.
 
 /// `text/x-nsh-tsx` (spec 5.5).
 pub const MIME: &str = "text/x-nsh-tsx";
-/// Every app's entry is `rox-app://<id>`.
-pub const URI_PREFIX: &str = "rox-app://";
+/// Every app's entry is `buwiz-app://<id>`.
+pub const URI_PREFIX: &str = "buwiz-app://";
 
 /// One app source.
 pub struct App {
@@ -108,7 +108,7 @@ pub fn by_uri(uri: &str) -> Option<&'static App> {
 }
 
 /// The Books tools an app source names: every `"books_…"` string literal.
-/// An app reaches a tool only through `rox.call`, and names it only so, so
+/// An app reaches a tool only through `buwiz.call`, and names it only so, so
 /// this is exactly what its `permissions.tools` must grant (P8).
 pub fn named_tools(source: &str) -> Vec<String> {
     let mut found = Vec::new();

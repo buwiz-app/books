@@ -7,11 +7,11 @@ const owedSheet = signal(false);
 function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
   const data = resource(
     () => ({ v: ver(), s: unpaidSide() }),
-    (k: Any) => rox.call("books_owed_list", { side: k.s }),
+    (k: Any) => buwiz.call("books_owed_list", { side: k.s }),
   );
   const opts = resource(
     () => ({ v: ver() }),
-    () => rox.call("books_owed_options", {}),
+    () => buwiz.call("books_owed_options", {}),
   );
   const d = () => data() as Any;
   /** The document being marked paid, and from which account. */
