@@ -20,8 +20,8 @@ Labels follow [01, How to read this file](01-architecture.md#how-to-read-this-fi
 | BIR mini-app Rust tests | Live BIR `crates/bir-shell/src/mini_app/` (106 `#[test]` attributes by grep) | Yes. Not run. | `[bir-shell §5]` |
 | BIR app static test | Live BIR `crates/bir-shell/v1-tests/apps.test.mjs` | Yes. Its permission test skips unless `BIR_MINI_APP_BIN` is set. Not in CI. | `[bir-shell §5; §8 item 4]` |
 | BIR broker test | Live BIR `crates/bir-shell/v1-tests/broker.test.mjs` | Yes. Not in CI. Uses a per-run key and a scratch DB. | `[bir-shell §5]` |
-| Books (this repo) `poc/` | `/Volumes/goldcoders/buwiz-books/poc/` | Yes. Bun PoC of measures, mapping and fill args (ADR 0007). The run summary is in `poc/README.md`. | `poc/test/*.test.ts` |
-| Books (this repo) `fixtures/` | `/Volumes/goldcoders/buwiz-books/fixtures/` | Yes. Synthetic fixtures and language-neutral vectors written by the PoC tools. | `fixtures/synthetic/`, `fixtures/vectors/` |
+| Books (this repo) `poc/` | `/Volumes/goldcoders/mini-apps/books/poc/` | Yes. Bun PoC of measures, mapping and fill args (ADR 0007). The run summary is in `poc/README.md`. | `poc/test/*.test.ts` |
+| Books (this repo) `fixtures/` | `/Volumes/goldcoders/mini-apps/books/fixtures/` | Yes. Synthetic fixtures and language-neutral vectors written by the PoC tools. | `fixtures/synthetic/`, `fixtures/vectors/` |
 | Every Rust Books test in this document | This repo | PROPOSED. None written. | This file |
 
 Rule. A skipped test in CI is a failure. BIR's permission test is skipped without an env var and no CI workflow runs it `[bir-shell §8 item 4]`. Books must not inherit that.
