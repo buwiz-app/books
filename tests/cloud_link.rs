@@ -264,3 +264,23 @@ fn profile_ids_are_opaque_uuids_and_masked_tins_pass() {
     let list = cloud::read_profiles(&profiles(json!(null))).unwrap();
     assert_eq!(list.len(), 1);
 }
+
+#[test]
+fn a_release_build_signs_in_to_api_buwiz_com_unless_told_otherwise() {
+    assert_eq!(
+        cloud::base_url(None, true).as_deref(),
+        Some(cloud::RELEASE_URL)
+    );
+    assert_eq!(cloud::RELEASE_URL, "https://api.buwiz.com");
+    // tests and debug builds never reach the network on their own
+    assert_eq!(cloud::base_url(None, false), None);
+    // BOOKS_CLOUD_URL wins either way; empty turns the cloud off
+    for release in [true, false] {
+        assert_eq!(
+            cloud::base_url(Some("https://cloud.example/"), release).as_deref(),
+            Some("https://cloud.example")
+        );
+        assert_eq!(cloud::base_url(Some(""), release), None);
+        assert_eq!(cloud::base_url(Some("http://cloud.example"), release), None);
+    }
+}

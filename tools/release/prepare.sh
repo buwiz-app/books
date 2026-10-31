@@ -42,5 +42,6 @@ Prepared dev.goldcoders.books $VERSION in $OUT (publisher.key_id $KEY_ID).
      args     mcp
      env      BOOKS_V1_MANIFEST=$OUT/manifest.signed.json
    Books keeps its store in ~/Library/Application Support/dev.goldcoders.books
-   (BOOKS_DATA_DIR to move it). Optional sign-in: BOOKS_CLOUD_URL=https://…
+   (BOOKS_DATA_DIR to move it). Sign-in goes to https://api.buwiz.com
+   (BOOKS_CLOUD_URL=https://… for another cloud; empty turns it off).
 STEPS
