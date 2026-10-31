@@ -2,7 +2,7 @@
 // because nobody asked yet (owner decision; D22). Every number here comes from books_nudge, which carries none.
 
 function TidyCard() {
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
     () => rox.call("books_nudge", { kind: "tidy", any_day: true }),
   );
@@ -28,7 +28,7 @@ function TidyCard() {
 }
 
 function MonthEndCard() {
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
     () => rox.call("books_nudge", { kind: "month_end" }),
   );
@@ -57,7 +57,7 @@ function MonthEndCard() {
 }
 
 function HandoffCard() {
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
     () => rox.call("books_nudge", { kind: "bir_pair" }),
   );

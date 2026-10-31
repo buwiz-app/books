@@ -8,7 +8,7 @@ function FormCard() {
   const ctx: Record<string, string> = {};
   if (form === "1701MS" && CP.tax_option) ctx["/taxpayer/tax_option"] = String(CP.tax_option);
   if (form === "1701MS" && CP.tax_option === "graduated" && CP.deduction) ctx["/taxpayer/deduction"] = String(CP.deduction);
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
     () => rox.call("books_form_proposal", CP.period ? { form, period: CP.period, form_context: ctx } : { form, form_context: ctx }),
   );

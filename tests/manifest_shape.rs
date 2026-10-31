@@ -40,7 +40,7 @@ fn the_manifest_has_the_books_identity() {
     assert_eq!(m["protocol"], "1.0.0");
     assert_eq!(m["id"], "dev.goldcoders.books");
     assert_eq!(m["short"], "books");
-    assert_eq!(m["version"], "0.1.0");
+    assert_eq!(m["version"], "0.1.1");
     assert_eq!(m["publisher"]["id"], "dev.goldcoders");
     assert_eq!(m["publisher"]["key_id"], "gc-2026-01");
     assert!(m.get("signature").is_none() && m.get("needs").is_none());

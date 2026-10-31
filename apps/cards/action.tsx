@@ -13,7 +13,7 @@ const plain = (amount: Any) => String(amount || "").replace(/^[+−]\s?/, "");
 
 function DraftCard() {
   const done = signal(false);
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
     () => firstEntry("draft").then((t: Any) => (t ? rox.call("books_entry_get", { entry: t }) : { none: true })),
   );
@@ -52,7 +52,7 @@ function DraftCard() {
 
 function BankLinesCard() {
   const pick = signal("");
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
     () =>
       rox.call("books_ledger_list", { filter: "review" }).then(async (l: Any) => {
@@ -105,7 +105,7 @@ function OwedCard() {
   const paid = signal("");
   const into = signal("");
   const pay = CP.side === "pay";
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
     () =>
       Promise.all([rox.call("books_owed_list", { side: pay ? "pay" : "collect" }), rox.call("books_owed_options", {})]).then(([l, o]: Any) => ({
@@ -159,7 +159,7 @@ function OwedCard() {
 }
 
 function ReconcileCard() {
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
     () =>
       rox.call("books_reconcile_grid", {}).then(async (g: Any) => {
@@ -218,7 +218,7 @@ function ReconcileCard() {
 }
 
 function CloseCard() {
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
     () => rox.call("books_nudge", CP.month ? { kind: "month_end", month: CP.month } : { kind: "month_end" }),
   );
@@ -252,7 +252,7 @@ function CloseCard() {
 }
 
 function CertCard() {
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
     () => rox.call("books_certificates_list", { filter: "all" }).then((l: Any) => (l.rows || []).find((x: Any) => (CP.certificate ? x.ticket === CP.certificate : x.status === "pending")) || null),
   );

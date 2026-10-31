@@ -23,15 +23,20 @@ const STATUS_TEXT: Record<string, string> = {
 export default function Home() {
   const line = signal("Checking…");
 
-  rox.call("books_status", {}).then(
-    (r: any) => {
-      const status = STATUS_TEXT[String(r.status)] ?? "Unknown status";
-      const books = String(r.books) === "1" ? "1 book" : `${String(r.books)} books`;
+  rox
+    .call("books_status", {})
+    .then(
+      (r: any) => {
+        const status = STATUS_TEXT[String(r.status)] ?? "Unknown status";
+        const books = String(r.books) === "1" ? "1 book" : `${String(r.books)} books`;
 
-      line.set(`${status} · ${books}`);
-    },
-    (e: any) => line.set(`Status unavailable (${String(e.code)})`),
-  );
+        line.set(`${status} · ${books}`);
+      },
+      (e: any) => line.set(`Status unavailable (${String(e.code)})`),
+    )
+    // read either way: an inline card shows now (inline.wait_ready); a Rox
+    // without rox.ready has none
+    .finally(() => (rox as any).ready?.());
 
   return (
     <View class="p-3 gap-1 bg-white dark:bg-[#161616]" onLayout={fit}>

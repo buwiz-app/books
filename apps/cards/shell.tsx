@@ -30,6 +30,30 @@ const fitCard = (e: Any) => {
   if (Math.abs(h - fitSent) >= 1 && typeof rox.fit === "function") rox.fit((fitSent = h));
 };
 
+/** The card's reads (`read`): Rox hears `rox.ready()` once every read the card started has settled, data or
+ *  error, and the manifest's `inline.wait_ready` holds Rox's placeholder until then. A card that starts none says
+ *  so at once. A Rox without `rox.ready` ignores it. */
+let reading = 0;
+let readStarted = false;
+let readyTold = false;
+function tellReady() {
+  if (readyTold || reading > 0) return;
+  readyTold = true;
+  (rox as Any).ready?.();
+}
+/** nsh's `resource`, counted for `rox.ready`. A read that ends lets the others it set off start first. */
+function read(source: Any, fetcher: Any) {
+  return resource(source, (...a: Any[]) => {
+    reading++;
+    readStarted = true;
+    return new Promise((ok) => ok(fetcher(...a))).finally(() => {
+      reading--;
+      setTimeout(tellReady, 0);
+    });
+  });
+}
+setTimeout(() => readStarted || tellReady(), 0);
+
 /** Open the Books window at a page. */
 function openBooks(page: string) {
   if (rox.open) rox.open({ app: "books", props: { page } }).catch((e: Any) => toast(errText(e)));
