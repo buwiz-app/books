@@ -306,7 +306,7 @@ pub fn person_get(store: &Store, book: Book, args: &Map<String, Value>, origin: 
         "kpi": kpi.iter().map(|(l, v)| json!({ "label": l, "shown": v })).collect::<Vec<_>>(),
         "spark": spark(&points, &month), "spark_tone": if p.kind == "customer" || p.kind == "owner" { "pos" } else { "neg" },
         "recent": recent_rows(store, &list, origin)?,
-        "tin_note": "TIN and registration live in the BIR app. Books links by name only.",
+        "tin_note": "TIN and registration live in eBIRForms. Books links by name only.",
     });
     if origin.is_app() {
         out["name"] = json!(p.name);

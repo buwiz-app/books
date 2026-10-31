@@ -176,7 +176,7 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
               <View class="gap-3">
                 <Panel pad class="gap-3">
                   <Kv k="Tax profile" v={d()?.link.tax_profile} />
-                  <Kv k="BIR app" v={d()?.link.bir} />
+                  <Kv k="eBIRForms" v={d()?.link.bir} />
                   <Kv k="Stored where" v={d()?.link.stored} />
                   <View class="flex-row gap-2 flex-wrap">
                     <Btn label="Import from web Books" onPress={() => p.go("import")} />

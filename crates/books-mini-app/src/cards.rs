@@ -45,7 +45,7 @@ pub const CARDS: [(&str, &str, &str); 15] = [
     ("reconcile", "action", "Books · Match the bank"),
     ("close", "action", "Books · Close the month"),
     ("cert", "action", "Books · 2307 received"),
-    ("form", "pair", "Books · For the BIR app"),
+    ("form", "pair", "Books · For eBIRForms"),
     ("tidy", "quiet", "Books · Weekly tidy-up"),
     ("month_end", "quiet", "Books · Month end"),
     ("handoff", "quiet", "Books · BIR hand-off"),
@@ -275,7 +275,7 @@ pub fn scopes() -> Value {
         scope("account", "account in the Books chart", "an account (books_ledger_list with account)"),
         scope("period", "period: a month, quarter or year", "a period (books_report, books_today)"),
         scope("entry", "entry in the Books ledger", "one entry (books_entry_get)"),
-        scope("form", "form and period Books feeds for the BIR app", "a BIR form and period (books_form_proposal)"),
+        scope("form", "form and period Books feeds for eBIRForms", "a BIR form and period (books_form_proposal)"),
         scope("tag", "tag: a department or location", "a department or location (books_tags_list)"),
         {
             "name": "proposal",
@@ -475,7 +475,7 @@ fn choices(store: &Store, book: &Book, name: &str, typed: &str) -> Result<Vec<Va
                 for p in [p.clone(), p.previous()] {
                     let label = format!("{} {}", code(f), p.label());
                     if matches(&label, typed) {
-                        out.push(json!({ "label": label, "detail": "Books totals for the BIR app", "value": t("form", form_id(f, &p))? }));
+                        out.push(json!({ "label": label, "detail": "Books totals for eBIRForms", "value": t("form", form_id(f, &p))? }));
                     }
                 }
             }
@@ -621,7 +621,7 @@ pub fn page_choices(store: &Store, typed: &str) -> Result<Vec<Value>, Refusal> {
         "ledger" => "transactions by account",
         "unpaid" => "to collect, to pay",
         "reconcile" => "match the bank",
-        "forms" => "totals for the BIR app",
+        "forms" => "totals for eBIRForms",
         "reports" => "P&L, balance sheet, cash flow",
         _ => "",
     };

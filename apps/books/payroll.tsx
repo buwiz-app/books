@@ -39,7 +39,7 @@ function PayrollPage(p: { go: (page: string, filter?: string) => void }) {
             <Text class={`w-[100px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>People</Text>
             <Text class={`w-[110px] text-right text-[10.5px] uppercase tracking-wider ${C.dim}`}>Gross pay</Text>
             <Text class={`w-[90px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Status</Text>
-            <Text class={`w-[170px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>For the BIR app</Text>
+            <Text class={`w-[170px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>For eBIRForms</Text>
           </View>
           <If when={(d()?.runs || []).length === 0}>
             <Text class={`text-[12.5px] px-3 py-4 ${C.dim}`}>No pay runs yet.</Text>
@@ -68,7 +68,7 @@ function PayrollPage(p: { go: (page: string, filter?: string) => void }) {
         </Panel>
         <Panel pad class="flex-row items-center gap-2.5">
           <Pill tone="bir" label="BIR" />
-          <Text class={`flex-1 text-[12.5px] ${C.mute}`}>Books records each line of pay. Employee TINs, 2316s, the tax table and the 1601-C filing are in the BIR app.</Text>
+          <Text class={`flex-1 text-[12.5px] ${C.mute}`}>Books records each line of pay. Employee TINs, 2316s, the tax table and the 1601-C filing are in eBIRForms.</Text>
         </Panel>
         <If when={runSheet()}>
           <PayRunSheet employees={d()?.employees || []} money={d()?.money_accounts || []} close={() => runSheet.set(false)} go={p.go} />

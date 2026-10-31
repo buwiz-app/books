@@ -329,7 +329,7 @@ fn count(value: &Value) -> usize {
 /// Why Books leaves a part of the web export out.
 fn skip_why(key: &str) -> &'static str {
     match key {
-        k if k.starts_with("ph") => "the BIR app keeps tax profiles, TINs and returns",
+        k if k.starts_with("ph") => "eBIRForms keeps tax profiles, TINs and returns",
         "bills" | "invoices" => "open bills and invoices: add them on the Unpaid page",
         "products" => "Books keeps no product list; sales come in through their accounts",
         "numberSequences" => "Books numbers its own entries",
@@ -1301,7 +1301,7 @@ mod tests {
                 "transaction lines without a transaction"
             ]
         );
-        assert!(plan.skipped[1].why.contains("BIR app"));
+        assert!(plan.skipped[1].why.contains("eBIRForms"));
     }
 
     #[test]
