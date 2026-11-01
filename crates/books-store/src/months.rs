@@ -215,7 +215,7 @@ pub fn import(
             |r| Ok((r.get(0)?, r.get(1)?)),
         )
         .optional()?;
-    if let Some((id, status)) = existing {
+    let id = if let Some((id, status)) = existing {
         if status == "finished" {
             return Err(error(
                 "already_finished",
@@ -226,13 +226,19 @@ pub fn import(
             "DELETE FROM statement_line WHERE statement_id = ?1",
             params![id],
         )?;
-        conn.execute("DELETE FROM statement WHERE statement_id = ?1", params![id])?;
-    }
-    conn.execute(
-        "INSERT INTO statement (book_id, account_id, period_key, closing, source_name, imported_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![book.id, account.id, key, closing, source, now_iso()],
-    )?;
-    let id = conn.last_insert_rowid();
+        // the row stays so its finish/reopen history keeps pointing at it
+        conn.execute(
+            "UPDATE statement SET closing = ?2, source_name = ?3, imported_at = ?4 WHERE statement_id = ?1",
+            params![id, closing, source, now_iso()],
+        )?;
+        id
+    } else {
+        conn.execute(
+            "INSERT INTO statement (book_id, account_id, period_key, closing, source_name, imported_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![book.id, account.id, key, closing, source, now_iso()],
+        )?;
+        conn.last_insert_rowid()
+    };
     let mut insert = conn.prepare(
         "INSERT INTO statement_line (statement_id, line_no, line_date, description, amount) VALUES (?1, ?2, ?3, ?4, ?5)",
     )?;
