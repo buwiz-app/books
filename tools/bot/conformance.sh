@@ -6,8 +6,8 @@
 #   1. build the release binary;
 #   2. a fresh 0700 temp dir outside the repo;
 #   3. a throwaway ed25519 test key (buwiz-plugin-test --keygen);
-#   4. a per-run trust file mapping a TEST key id to that key, approving
-#      app.buwiz.books under it (never gc-2026-01);
+#   4. a per-run trust file mapping a TEST key id to that key, marking it
+#      first-party and approving app.buwiz.books under it (never gc-2026-01);
 #   5. the manifest generated under the test key id and signed with the test
 #      key file (--key-file, never --keychain) by `rox-broker sign-manifest`
 #      when BUWIZ_BROKER_BIN names a broker build, else by the Bot's
@@ -28,7 +28,7 @@
 #        KEEP_TMP=1 keeps the temp dir (it holds a test key; delete it after)
 set -euo pipefail
 
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 BOT_DIR="${BUWIZ_BOT_DIR:-/Volumes/goldcoders/Projects/rox}"
 KEY_ID="${BOOKS_TEST_KEY_ID:-books-test-01}"
 PLUGIN_ID="app.buwiz.books"
@@ -55,16 +55,27 @@ command -v node >/dev/null || { echo "conformance: node is needed to run the Bot
   exit 2
 }
 
+# 2. a fresh temp dir outside the repo, removed on exit
+TMP_BASE="${TMPDIR:-/tmp}"
+TMP_BASE="$(cd "$TMP_BASE" && pwd -P)" || { echo "conformance: TMPDIR must name an existing directory" >&2; exit 2; }
+case "$TMP_BASE" in ""|"$REPO"|"$REPO"/*) echo "conformance: TMPDIR is empty or inside the repo" >&2; exit 2 ;; esac
+if ! TMP="$(mktemp -d "${TMP_BASE%/}/books-conformance.XXXXXX")"; then
+  echo "conformance: could not create a temp dir under $TMP_BASE" >&2
+  exit 2
+fi
+TMP="$(cd "$TMP" && pwd -P)" || { echo "conformance: could not resolve the temp dir" >&2; exit 2; }
+case "$TMP" in ""|"$REPO"|"$REPO"/*) echo "conformance: temp dir is empty or inside the repo" >&2; exit 2 ;; esac
+chmod 700 "$TMP"
+cleanup() {
+  case "$TMP" in ""|"$REPO"|"$REPO"/*) echo "conformance: refusing unsafe temp cleanup path" >&2 ;;
+    *) if [ "${KEEP_TMP:-0}" = 1 ]; then echo "kept $TMP (holds a test key)" >&2; else rm -rf "$TMP"; fi ;;
+  esac
+}
+trap cleanup EXIT
+
 # 1. the release binary
 cargo build --release --quiet -p books-mini-app --manifest-path "$REPO/Cargo.toml"
 BIN="$REPO/target/release/books-mini-app"
-
-# 2. a fresh temp dir outside the repo, removed on exit
-TMP="$(mktemp -d "${TMPDIR:-/tmp}/books-conformance.XXXXXX")"
-chmod 700 "$TMP"
-case "$TMP" in "$REPO"/*) echo "conformance: temp dir is inside the repo" >&2; exit 2 ;; esac
-cleanup() { if [ "${KEEP_TMP:-0}" = 1 ]; then echo "kept $TMP (holds a test key)" >&2; else rm -rf "$TMP"; fi; }
-trap cleanup EXIT
 
 # 3. a throwaway test key (0600); the runner prints only its public key
 node "$RUNNER" --keygen "$TMP/test.key" >"$TMP/keygen.txt"
@@ -76,7 +87,7 @@ cat >"$TMP/trust.json" <<JSON
 {
   "v": 1,
   "about": "Per-run trust store for Books conformance (a throwaway test key; never gc-2026-01).",
-  "publishers": { "$KEY_ID": { "publisher": "app.buwiz", "alg": "ed25519", "public_key": "$PUB" } },
+  "publishers": { "$KEY_ID": { "publisher": "app.buwiz", "alg": "ed25519", "public_key": "$PUB", "first_party": true } },
   "approved_plugins": [ { "id": "$PLUGIN_ID", "publisher_key_id": "$KEY_ID" } ]
 }
 JSON
@@ -84,9 +95,9 @@ export BUWIZ_TRUST_FILE="$TMP/trust.json"
 
 # 5. generate under the test key id, sign with the test key file
 "$BIN" manifest --key-id "$KEY_ID" >"$TMP/manifest.json"
-# every app the manifest lists, as the binary serves it
+# every TSX app the manifest lists, as the binary serves it
 APP_ARGS=()
-for id in $(node -e 'for (const a of JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).apps) console.log(a.id)' "$TMP/manifest.json"); do
+for id in $(node -e 'for (const a of JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).apps) if (!a.native) console.log(a.id)' "$TMP/manifest.json"); do
   "$BIN" app-source "$id" >"$TMP/app-$id.tsx"
   APP_ARGS+=(--app "$id=$TMP/app-$id.tsx")
 done

@@ -18,16 +18,16 @@
 #
 # Env: BUWIZ_BOT_DIR (default /Volumes/goldcoders/Projects/rox): a Buwiz Bot
 #        checkout holding BUWIZ_BOT_COMMIT
-#      BUWIZ_BOT_COMMIT (default ca7a1dd1, Bot main at protocol 2.0)
+#      BUWIZ_BOT_COMMIT (default 2f93df804520738d32137668424427de70ee85ee)
 #      BOOKS_HOST_PORT (default 8810)
 #      BOOKS_TEST_KEY_ID (default books-test-01)
 #      BUWIZ_BROKER_BIN (a rox-broker binary from buwiz-bot main; signs the manifest
 #        in place of server/src/v1/sign-manifest.mjs)
 set -euo pipefail
 
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 BOT_DIR="${BUWIZ_BOT_DIR:-/Volumes/goldcoders/Projects/rox}"
-BOT_COMMIT="${BUWIZ_BOT_COMMIT:-ca7a1dd1}"
+BOT_COMMIT="${BUWIZ_BOT_COMMIT:-2f93df804520738d32137668424427de70ee85ee}"
 PORT="${BOOKS_HOST_PORT:-8810}"
 KEY_ID="${BOOKS_TEST_KEY_ID:-books-test-01}"
 PLUGIN_ID="app.buwiz.books"
@@ -39,23 +39,35 @@ die() { echo "host-test: $*" >&2; exit 2; }
 [ -d "$BOT_DIR/server/node_modules/@modelcontextprotocol/sdk" ] || die "$BOT_DIR/server/node_modules is missing; install it in the Bot checkout yourself"
 command -v node >/dev/null || die "node is needed to run the Bot's broker and tools"
 
-# the release binary
-cargo build --release --quiet -p books-mini-app --manifest-path "$REPO/Cargo.toml"
-BIN="$REPO/target/release/books-mini-app"
-
-# The physical path, with no // and no /var -> /private/var symlink: the Bot's
-# scripts run only when their resolved URL equals the path node was given.
-TMP="$(cd "$(mktemp -d "${TMPDIR%/}/books-host.XXXXXX")" && pwd -P)"
+TMP_BASE="${TMPDIR:-/tmp}"
+TMP_BASE="$(cd "$TMP_BASE" && pwd -P)" || die "TMPDIR must name an existing directory"
+case "$TMP_BASE" in ""|"$REPO"|"$REPO"/*) die "TMPDIR is empty or inside the repo" ;; esac
+if ! TMP="$(mktemp -d "${TMP_BASE%/}/books-host.XXXXXX")"; then
+  die "could not create a temp dir under $TMP_BASE"
+fi
+TMP="$(cd "$TMP" && pwd -P)" || die "could not resolve the temp dir"
+case "$TMP" in ""|"$REPO"|"$REPO"/*) die "temp dir is empty or inside the repo" ;; esac
 chmod 700 "$TMP"
-case "$TMP" in "$REPO"/*) die "temp dir is inside the repo" ;; esac
 WT="$TMP/bot"
 SERVER_PID=""
 cleanup() {
   if [ -n "$SERVER_PID" ]; then kill "$SERVER_PID" 2>/dev/null || true; wait "$SERVER_PID" 2>/dev/null || true; fi
-  git -C "$BOT_DIR" worktree remove --force "$WT" >/dev/null 2>&1 || true
-  if [ "${KEEP_TMP:-0}" = 1 ]; then echo "kept $TMP (holds test keys; delete it after)" >&2; else rm -rf "$TMP"; fi
+  if [ -n "$WT" ]; then
+    case "$WT" in ""|"$REPO"|"$REPO"/*) echo "host-test: refusing unsafe worktree cleanup path" >&2 ;;
+      *) git -C "$BOT_DIR" worktree remove --force "$WT" >/dev/null 2>&1 || true ;;
+    esac
+  fi
+  if [ -n "$TMP" ]; then
+    case "$TMP" in ""|"$REPO"|"$REPO"/*) echo "host-test: refusing unsafe temp cleanup path" >&2 ;;
+      *) if [ "${KEEP_TMP:-0}" = 1 ]; then echo "kept $TMP (holds test keys; delete it after)" >&2; else rm -rf "$TMP"; fi ;;
+    esac
+  fi
 }
 trap cleanup EXIT
+
+# the release binary
+cargo build --release --quiet -p books-mini-app --manifest-path "$REPO/Cargo.toml"
+BIN="$REPO/target/release/books-mini-app"
 
 # a Bot worktree at the pinned commit; the Bot checkout's own branch is untouched
 git -C "$BOT_DIR" worktree add --detach --quiet "$WT" "$BOT_COMMIT"
@@ -70,14 +82,14 @@ cat >"$TMP/trust.json" <<JSON
 {
   "v": 1,
   "about": "Per-run trust store for the Books host test (a throwaway test key; never gc-2026-01).",
-  "publishers": { "$KEY_ID": { "publisher": "app.buwiz", "alg": "ed25519", "public_key": "$PUB" } },
+  "publishers": { "$KEY_ID": { "publisher": "app.buwiz", "alg": "ed25519", "public_key": "$PUB", "first_party": true } },
   "approved_plugins": [ { "id": "$PLUGIN_ID", "publisher_key_id": "$KEY_ID" } ]
 }
 JSON
 "$BIN" manifest --key-id "$KEY_ID" >"$TMP/manifest.json"
-# every app the manifest lists, as the binary serves it
+# every TSX app the manifest lists, as the binary serves it
 APP_ARGS=()
-for id in $(node -e 'for (const a of JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).apps) console.log(a.id)' "$TMP/manifest.json"); do
+for id in $(node -e 'for (const a of JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).apps) if (!a.native) console.log(a.id)' "$TMP/manifest.json"); do
   "$BIN" app-source "$id" >"$TMP/app-$id.tsx"
   APP_ARGS+=(--app "$id=$TMP/app-$id.tsx")
 done

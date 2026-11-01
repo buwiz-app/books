@@ -131,6 +131,20 @@ fn initialize_list_provision_open_and_call() {
         source["result"]["contents"][0]["mimeType"],
         "text/x-nsh-tsx"
     );
+    let resources = plugin.request("resources/list", json!({}));
+    assert!(
+        !resources["result"]["resources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|resource| resource["uri"] == "buwiz-app://quiet")
+    );
+    let native = plugin.request("resources/read", json!({ "uri": "buwiz-app://quiet" }));
+    assert_eq!(native["error"]["code"], -32602);
+    assert_eq!(
+        native["error"]["message"],
+        "native app quiet has no TSX source"
+    );
     assert_eq!(
         plugin.request("resources/read", json!({ "uri": "buwiz-app://nope" }))["error"]["code"],
         -32602
