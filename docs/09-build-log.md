@@ -536,3 +536,9 @@ stored result and a second accept is `already_accepted`. Discard changes the pro
 `pending_proposals`, app-only `proposals` summaries and per-row evidence labels. Unpaid shows a review section with
 person, category and date corrections, confidence, source summary, Accept and Discard. `records.rs`/`people.rs` are
 unchanged.
+
+Review round 1: `books_owed_draft` now refuses TIN-shaped text in every kept field value (`reference`, `issued`,
+`due`, `amount`) with `tin_refused` before anything is stored, and accept refuses a TIN-shaped reference (the store
+also refuses it). `pending_proposals` is a separate `COUNT(*)`; only the summaries keep `LIMIT 50`. Tests now assert
+refusal codes, cover two same-book persons sharing a name (no suggestion) and clearing the suggested due date at
+accept. Unpaid sends an empty due to clear it and pluralises the evidence count.

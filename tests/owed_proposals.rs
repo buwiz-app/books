@@ -296,41 +296,49 @@ fn invalid_and_cross_book_drafts_and_decisions_are_refused() {
     let k = book(&mut b, "A", Basis::Cash);
     let other = book(&mut b, "B", Basis::Cash);
     let before = counts(&mut b);
-    let bad: Vec<(&str, Value)> = vec![
-        ("issued", json!("2026-02-30")),
-        ("issued", json!("10/02/2026")),
-        ("due", json!("2026-01-01")),
-        ("amount", json!("0.00")),
-        ("amount", json!("-5.00")),
-        ("amount", json!("12.345")),
-        ("amount", json!(12)),
-        ("confidence", json!(101)),
-        ("confidence", json!(50.5)),
-        ("confidence", json!("50")),
-        ("confidence", json!(-1)),
-        ("side", json!("pay")),
+    const BAD: &str = "invalid_args";
+    const GONE: &str = "not_found";
+    let bad: Vec<(&str, Value, &str)> = vec![
+        ("issued", json!("2026-02-30"), BAD),
+        ("issued", json!("10/02/2026"), BAD),
+        ("due", json!("2026-01-01"), BAD),
+        ("amount", json!("0.00"), BAD),
+        ("amount", json!("-5.00"), BAD),
+        ("amount", json!("12.345"), BAD),
+        ("amount", json!(12), BAD),
+        ("confidence", json!(101), BAD),
+        ("confidence", json!(50.5), BAD),
+        ("confidence", json!("50"), BAD),
+        ("confidence", json!(-1), BAD),
+        ("side", json!("pay"), BAD),
         (
             "fields",
             json!([{"field":"vendor_tin","value":"x","confidence":1}]),
+            BAD,
         ),
         (
             "fields",
             json!([{"field":"amount","value":"1.00","confidence":101}]),
+            BAD,
         ),
-        ("unknown", json!("x")),
-        ("evidence", json!(other.evidence)),
-        ("person_suggestion", json!(other.vendor)),
-        ("person_suggestion", json!(k.customer)),
-        ("category", json!(other.expense)),
+        ("unknown", json!("x"), BAD),
+        ("evidence", json!(other.evidence), GONE),
+        ("person_suggestion", json!(other.vendor), GONE),
+        ("person_suggestion", json!(k.customer), GONE),
+        ("category", json!(other.expense), GONE),
     ];
-    for (n, (key, value)) in bad.into_iter().enumerate() {
+    for (n, (key, value, code)) in bad.into_iter().enumerate() {
         let mut args = draft_args(&k, &format!("bad-{n}"));
-        args[key] = value;
-        refused(&mut b, Origin::Agent, DRAFT, args);
+        args[key] = value.clone();
+        assert_eq!(
+            refused(&mut b, Origin::Agent, DRAFT, args),
+            code,
+            "{key}={value}"
+        );
     }
     let mut missing = draft_args(&k, "missing");
     missing.as_object_mut().unwrap().remove("confidence");
-    refused(&mut b, Origin::Agent, DRAFT, missing);
+    assert_eq!(refused(&mut b, Origin::Agent, DRAFT, missing), BAD);
     let conn = b.store().unwrap().conn();
     let n: i64 = conn
         .query_row("SELECT COUNT(*) FROM owed_proposal", [], |r| r.get(0))
@@ -341,22 +349,126 @@ fn invalid_and_cross_book_drafts_and_decisions_are_refused() {
         .as_str()
         .unwrap()
         .to_string();
-    for (n, (key, value)) in [
-        ("person", json!(other.vendor)),
-        ("person", json!(k.customer)),
-        ("category", json!(other.expense)),
-        ("book", json!(other.ticket)),
-        ("issued", json!("2026-13-01")),
-        ("decision", json!("maybe")),
+    for (n, (key, value, code)) in [
+        ("person", json!(other.vendor), GONE),
+        ("person", json!(k.customer), GONE),
+        ("category", json!(other.expense), GONE),
+        ("book", json!(other.ticket), GONE),
+        ("issued", json!("2026-13-01"), BAD),
+        ("due", json!("31/03/2026"), BAD),
+        ("decision", json!("maybe"), BAD),
     ]
     .into_iter()
     .enumerate()
     {
         let mut args = accept(&k, &format!("acc-{n}"), &proposal);
-        args[key] = value;
-        refused(&mut b, Origin::App, CREATE, args);
+        args[key] = value.clone();
+        assert_eq!(
+            refused(&mut b, Origin::App, CREATE, args),
+            code,
+            "{key}={value}"
+        );
     }
     assert_eq!(counts(&mut b), before);
+}
+
+/// A TIN shape built at run time, so no source file carries one.
+fn synthetic_tin() -> String {
+    let (a, b, c) = ("123", "456", "789");
+    format!("{a}-{b}-{c}")
+}
+
+fn proposal_rows(b: &mut Books) -> i64 {
+    let conn = b.store().unwrap().conn();
+    conn.query_row("SELECT COUNT(*) FROM owed_proposal", [], |r| r.get(0))
+        .unwrap()
+}
+
+#[test]
+fn tin_shaped_text_is_never_stored() {
+    let tmp = TempDir::new("owed-proposals-tin");
+    let mut b = Books::new(Paths::in_dir(tmp.0.join("db")));
+    let k = book(&mut b, "A", Basis::Cash);
+    for (n, field) in ["reference", "issued", "due", "amount"]
+        .into_iter()
+        .enumerate()
+    {
+        let mut args = draft_args(&k, &format!("tin-{n}"));
+        args["fields"] =
+            json!([{"field":field,"value":format!("TIN {}", synthetic_tin()),"confidence":80}]);
+        assert_eq!(
+            refused(&mut b, Origin::Agent, DRAFT, args),
+            "tin_refused",
+            "{field}"
+        );
+    }
+    assert_eq!(proposal_rows(&mut b), 0);
+
+    let proposal = ok(&mut b, Origin::Agent, DRAFT, draft_args(&k, "clean"))["proposal"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let before = counts(&mut b);
+    let mut args = accept(&k, "tin-accept", &proposal);
+    args["reference"] = json!(synthetic_tin());
+    assert_eq!(refused(&mut b, Origin::App, CREATE, args), "tin_refused");
+    assert_eq!(counts(&mut b), before);
+    let app = ok(
+        &mut b,
+        Origin::App,
+        LIST,
+        json!({"book":k.ticket,"side":"pay"}),
+    );
+    assert_eq!(app["pending_proposals"], 1, "the proposal stays a draft");
+}
+
+#[test]
+fn same_name_people_get_no_suggestion_and_due_can_be_cleared() {
+    let tmp = TempDir::new("owed-proposals-twins");
+    let mut b = Books::new(Paths::in_dir(tmp.0.join("db")));
+    let k = book(&mut b, "A", Basis::Cash);
+    let conn = b.store().unwrap().conn();
+    let id = match plumbing::subject(conn, &k.ticket).unwrap() {
+        Some((_, id)) => id,
+        None => unreachable!(),
+    };
+    // the store's name key is case-sensitive; the matcher is not
+    for name in ["Synthetic Twin", "synthetic twin"] {
+        conn.execute(
+            "INSERT INTO person(book_id,kind,name,created_at) VALUES (?1,'vendor',?2,'2026-01-01T00:00:00Z')",
+            books_store::rusqlite::params![id, name],
+        )
+        .unwrap();
+    }
+    let mut args = draft_args(&k, "twins");
+    args["fields"] = json!([{"field":"person","value":"SYNTHETIC TWIN","confidence":90}]);
+    ok(&mut b, Origin::Agent, DRAFT, args);
+    let mut one = draft_args(&k, "single");
+    one["fields"] = json!([{"field":"person","value":" synthetic VENDOR a ","confidence":90}]);
+    ok(&mut b, Origin::Agent, DRAFT, one);
+    let app = ok(
+        &mut b,
+        Origin::App,
+        LIST,
+        json!({"book":k.ticket,"side":"pay"}),
+    );
+    let list = app["proposals"].as_array().unwrap();
+    assert_eq!(list.len(), 2);
+    assert!(
+        list[0]["person_suggestion"].is_null(),
+        "two matches suggest no one"
+    );
+    assert_eq!(list[1]["person_suggestion"]["ticket"], json!(k.vendor));
+
+    let proposal = list[0]["proposal"].as_str().unwrap().to_string();
+    let mut cleared = accept(&k, "cleared", &proposal);
+    cleared["due"] = json!("");
+    ok(&mut b, Origin::App, CREATE, cleared);
+    let conn = b.store().unwrap().conn();
+    let due: Option<String> = conn
+        .query_row("SELECT due FROM unpaid", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(due, None, "the user cleared the suggested due date");
 }
 
 #[test]
@@ -383,11 +495,14 @@ fn a_closed_month_refuses_acceptance() {
         let bk = books::get(conn, id).unwrap().unwrap();
         months::close(conn, &bk, "2026-02", Some("synthetic close")).unwrap();
         let before = counts(&mut b);
-        refused(
-            &mut b,
-            Origin::App,
-            CREATE,
-            accept(&k, &format!("a-{label}"), &proposal),
+        assert_eq!(
+            refused(
+                &mut b,
+                Origin::App,
+                CREATE,
+                accept(&k, &format!("a-{label}"), &proposal),
+            ),
+            "period_closed"
         );
         assert_eq!(counts(&mut b), before);
         let app = ok(

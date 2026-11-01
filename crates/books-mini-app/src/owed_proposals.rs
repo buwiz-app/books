@@ -5,7 +5,7 @@
 //! accrual semantics and period gates.
 
 use books_core::date::Date;
-use books_core::money;
+use books_core::{money, privacy};
 use books_store::books::Book;
 use books_store::evidence::{self, Target};
 use books_store::rusqlite::{Connection, OptionalExtension as _, params};
@@ -143,6 +143,11 @@ fn person_kind(side: &str) -> &'static str {
     }
 }
 
+/// Bills print the vendor's TIN; Books never stores one.
+fn no_tin(field: &str, value: &str) -> Result<(), Refusal> {
+    privacy::refuse_tin(field, value).map_err(|m| Refusal::new("tin_refused", m))
+}
+
 fn same_book_person(conn: &Connection, book: &Book, side: &str, id: i64) -> Result<(), Refusal> {
     people::person(conn, id)?
         .filter(|p| p.book_id == book.id && p.active && p.kind == person_kind(side))
@@ -204,6 +209,7 @@ pub fn draft(conn: &Connection, args: &Map<String, Value>) -> Answer {
             }
             let mut out = json!({"field": field, "confidence": c});
             if KEPT_VALUES.contains(&field) {
+                no_tin(field, value)?;
                 out["value"] = json!(value);
             }
             kept.push(out);
@@ -341,10 +347,17 @@ fn decide(conn: &Connection, args: &Map<String, Value>) -> Answer {
     );
     let issued = date(args, "issued")?.map_or(p.issued.clone(), |d| d.to_string());
     create.insert("issued".into(), json!(issued));
-    if let Some(due) = date(args, "due")?.map(|d| d.to_string()).or(p.due.clone()) {
+    // an empty `due` is the user clearing the suggested due date
+    let due = match text(args, "due") {
+        Some("") => None,
+        Some(_) => date(args, "due")?.map(|d| d.to_string()),
+        None => p.due.clone(),
+    };
+    if let Some(due) = due {
         create.insert("due".into(), json!(due));
     }
     if let Some(r) = reference.filter(|r| !r.trim().is_empty()) {
+        no_tin("reference", &r)?;
         create.insert("reference".into(), json!(r));
     }
     let created = records::owed_create(conn, &create)?;
@@ -443,6 +456,17 @@ fn summary(conn: &Connection, p: &Proposal) -> Result<Value, Refusal> {
 pub fn decorate(store: &Store, book: &Book, origin: Origin, mut list: Value) -> Answer {
     let conn = store.conn();
     let side = list["side"].as_str().unwrap_or("collect").to_string();
+    let count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM owed_proposal WHERE book_id=?1 AND side=?2 AND status='draft'",
+            params![book.id, side],
+            |r| r.get(0),
+        )
+        .map_err(store_err)?;
+    list["pending_proposals"] = json!(count);
+    if !origin.is_app() {
+        return Ok(list);
+    }
     let mut stmt = conn
         .prepare(&format!(
             "SELECT {COLUMNS} FROM owed_proposal WHERE book_id=?1 AND side=?2 AND status='draft' ORDER BY id LIMIT 50"
@@ -453,10 +477,6 @@ pub fn decorate(store: &Store, book: &Book, origin: Origin, mut list: Value) -> 
         .map_err(store_err)?
         .collect::<Result<_, _>>()
         .map_err(store_err)?;
-    list["pending_proposals"] = json!(pending.len());
-    if !origin.is_app() {
-        return Ok(list);
-    }
     list["proposals"] = Value::Array(
         pending
             .iter()

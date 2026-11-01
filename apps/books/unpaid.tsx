@@ -74,7 +74,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
                     {r().who}
                   </Text>
                   <Text class={`w-[150px] text-[12.5px] ${C.ink}`} numberOfLines={1}>
-                    {(r().evidence || []).length > 0 ? `${r().doc || ""} · ${String(r().evidence.length)} file` : r().doc}
+                    {(r().evidence || []).length > 0 ? `${r().doc || ""} · ${String(r().evidence.length)} ${r().evidence.length === 1 ? "file" : "files"}` : r().doc}
                   </Text>
                   <Text class={`w-[64px] text-[12.5px] font-mono ${r().late ? C.red : C.ink}`}>{r().due_short}</Text>
                   <Text class={`w-[110px] text-right text-[12.5px] font-mono ${C.ink}`}>{r().amount_shown}</Text>
@@ -124,7 +124,7 @@ function ProposalRow(p: { p: Any; side: string; opts: Any }) {
       args.person = who();
       args.category = category();
       if (issued()) args.issued = issued();
-      if (due()) args.due = due();
+      args.due = due();
     }
     act("books_app_owed_create", args)
       .then(() => toast(decision === "accept" ? "Accepted" : "Discarded"))
