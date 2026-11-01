@@ -130,7 +130,7 @@ function Setup() {
         <Text class={`text-[18px] font-bold ${C.ink}`}>Make your book</Text>
         <Text class={`text-[13px] ${C.mute}`}>Books keeps it on this Mac, encrypted. It starts with the Philippines small-business chart of accounts.</Text>
         <Field label="Name shown in the Buwiz Bot">
-          <TextBox value={label()} onChange={label.set} placeholder="Buwiz Trading" />
+          <TextBox value={label()} onChange={(v) => label.set(v)} placeholder="Buwiz Trading" />
         </Field>
         <Field label="Accounting basis">
           <View class="flex-row gap-2">

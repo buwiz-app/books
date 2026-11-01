@@ -12,7 +12,8 @@
 #     throwaway test key (never gc-2026-01), and BUWIZ_KEYSTORE=file:<dir>, so no
 #     plugin key reaches the login Keychain.
 # Then tests/host/books-host-test.mjs: inspect, install, resolve /books, open
-# home, a signed books_status call, and the refusals. Everything is removed
+# home, a signed books_status call, the refusals, and the Books window's
+# source run on tests/host/nsh-standin.mjs: type into a TextBox, change a picker. Everything is removed
 # on exit (KEEP_TMP=1 keeps the temp dir; it holds test keys).
 #
 # Env: BUWIZ_BOT_DIR (default /Volumes/goldcoders/Projects/rox): a Buwiz Bot
