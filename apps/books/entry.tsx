@@ -65,6 +65,7 @@ function EntryDrawer() {
                 </If>
               </View>
               <ReviewPanel entry={e()} busy={busy()} open={(t: string) => drawerEntry.set(t)} keepBoth={() => run("books_app_post_entry", { keep_both: true })} />
+              <ExtractionPanel entry={e()} />
               <If when={Boolean(e()?.reviewable)}>
                 <View class="gap-1.5">
                   <Text class={`text-[12px] ${C.dim}`}>Pick a category</Text>
@@ -157,6 +158,58 @@ function Kv(p: { k: string; v: Any }) {
         {String(p.v ?? "—")}
       </Text>
     </View>
+  );
+}
+
+/**
+ * What the assistant read off a document (evidence-2): the suggested value
+ * beside the one the entry carries now, how sure the reading was, and the
+ * evidence it came from. Read-only; `books_entry_get` sends `extraction` and
+ * `evidence` to the app only.
+ */
+function ExtractionPanel(p: { entry: Any }) {
+  const x = () => (p.entry && p.entry.extraction) || null;
+  const fields = () => (x() && x().fields) || [];
+  const docs = () => (p.entry && p.entry.evidence) || [];
+  return (
+    <If when={Boolean(x()) || docs().length > 0}>
+      <View class="gap-1.5">
+        <If when={Boolean(x())}>
+          <View class="flex-row items-center gap-2">
+            <Text class={`flex-1 text-[12px] ${C.dim}`}>{`Read off a document by ${x() ? x().proposed_by : ""}`}</Text>
+            <Pill tone={x() && x().needs_review ? "rev" : "in"} label={(x() && x().confidence_label) || "Unsure"} />
+          </View>
+          <Each of={fields()} key={rowKey}>
+            {(f: Any) => (
+              <View class={`gap-1 rounded-[8px] border px-2.5 py-1.5 ${C.line}`}>
+                <View class="flex-row items-center gap-2">
+                  <Text class={`flex-1 text-[12px] ${C.ink}`}>{FIELD_NAMES[f().field] || f().field}</Text>
+                  <Text class={`text-[11.5px] ${C.dim}`}>{f().confidence_label || "—"}</Text>
+                  <If when={Boolean(f().corrected)}>
+                    <Pill tone="draft" label="You changed it" />
+                  </If>
+                </View>
+                <Kv k="Suggested" v={f().suggested} />
+                <Kv k="Now" v={f().current} />
+              </View>
+            )}
+          </Each>
+        </If>
+        <If when={docs().length > 0}>
+          <Text class={`text-[12px] ${C.dim}`}>Documents</Text>
+          <Each of={docs()} key={rowKey}>
+            {(d: Any) => (
+              <View class="flex-row gap-2">
+                <Text class={`flex-1 text-[12px] ${C.ink}`} numberOfLines={1}>
+                  {d().label}
+                </Text>
+                <Text class={`text-[11.5px] ${C.dim}`}>{d().source === "assistant" ? "Assistant" : "You"}</Text>
+              </View>
+            )}
+          </Each>
+        </If>
+      </View>
+    </If>
   );
 }
 

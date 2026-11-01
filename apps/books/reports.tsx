@@ -230,6 +230,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
         </If>
       </If>
       <Text class={`text-[12px] ${C.dim}`}>Click a line to see its transactions in the Ledger.</Text>
+      <LedgerBulk />
     </View>
   );
 }
