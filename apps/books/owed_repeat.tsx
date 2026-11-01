@@ -8,6 +8,10 @@ function RepeatsDue(p: { rows: Any[] }) {
     act("books_app_owed_repeat", { owed, action: "add" })
       .then(() => toast("This month's copy added"))
       .catch(() => null);
+  const stop = (owed: string) =>
+    act("books_app_owed_repeat", { owed, action: "stop" })
+      .then(() => toast("Stopped repeating"))
+      .catch(() => null);
   return (
     <If when={n() > 0}>
       <Panel>
@@ -26,6 +30,7 @@ function RepeatsDue(p: { rows: Any[] }) {
               <Text class={`w-[90px] text-[12.5px] font-mono ${C.ink}`}>{r().issued}</Text>
               <Text class={`w-[110px] text-right text-[12.5px] font-mono ${C.ink}`}>{r().amount_shown}</Text>
               <Btn label="Add this month's copy" small onPress={() => add(r().owed)} />
+              <Btn label="Stop repeating" small onPress={() => stop(r().owed)} />
             </View>
           )}
         </Each>

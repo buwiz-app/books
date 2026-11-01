@@ -262,6 +262,15 @@ fn a_monthly_bill_offers_this_months_copy_and_the_user_adds_it() {
         ),
         "not_open"
     );
+    assert_eq!(
+        refused(
+            b,
+            "books_app_owed_repeat",
+            json!({ "client_request_id": "rep-add-cancel", "owed": owed, "action": "add" }),
+            Origin::App
+        ),
+        "not_open"
+    );
     pin_today(None);
 }
 

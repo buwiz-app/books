@@ -495,7 +495,3 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox
 owner), PR #16, PR #13 and the two nsh fixes (Rox owner).
-
-## M10 parity
-
-- 2026-11-01, unpaid-3: monthly repeat for owed documents. Schema 0020 adds `unpaid.repeat` ('monthly' or null), `repeat_of` and `repeat_month` (one copy per template per month). `books_store::owed_repeat` (set, due, add), the app-only write `books_app_owed_repeat` (start, stop, add with `month` YYYY-MM, this month by default), and `owed_repeats::decorate`, which gives `books_owed_list` a `repeat` per row and `repeats: {count, due}`. A copy keeps the template's side, person, reference, category and amount, drops the memo, takes the template's day clamped to the month and the same due gap, and goes through `people::create_unpaid` (accrual post, closed-month gate). The user adds each copy on the Unpaid page (`apps/books/owed_repeat.tsx`); no routine or assistant writes one, and cards.rs is unchanged. Tests: `tests/owed_repeat.rs`.
