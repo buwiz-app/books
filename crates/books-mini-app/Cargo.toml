@@ -78,3 +78,7 @@ ureq = { version = "2.12", default-features = false, features = ["tls"] }
 
 [lints]
 workspace = true
+
+[[test]]
+name = "ledger_inbox"
+path = "../../tests/ledger_inbox.rs"

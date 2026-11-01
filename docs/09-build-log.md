@@ -495,3 +495,15 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox
 owner), PR #16, PR #13 and the two nsh fixes (Rox owner).
+
+## M10 parity
+
+- 2026-11-01 ledger-1, needs-review inbox (migration 15, `books-store::review`, `books-mini-app::inbox`,
+  `apps/books/ledger_review.tsx`): `books_entry_draft` takes `extracted: {fields: {<field>: {confidence}}}`
+  (whole percent) and notes per field who set it (`draft_field`); an app save of a field clears its note. Likely
+  duplicates (same book, live, not a reversal or a copy, same debit total, dates at most 3 days apart, same payee or
+  reference; at most 5) show on ledger rows (`proposed_by`, `low_confidence`, `likely_duplicate`), under
+  "Needs review", and in `books_entry_get` `review`; the assistant sees tickets, numbers, dates and statuses only.
+  `books_app_post_entry` refuses a flagged draft with `likely_duplicate` unless `keep_both` (writes
+  `duplicate_ack`). The drawer action "duplicate" is now "copy". No new tool; window permissions stay 57.
+  Native ledger follow-up (W9): place `ReviewBadges`/`ReviewPanel` in the native `books.ledger` row and drawer.

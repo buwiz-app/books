@@ -42,6 +42,7 @@ function TxRow(p: { r: Any }) {
       <View class="w-[96px]">
         <Pill tone={r.pill} label={r.status_label} />
       </View>
+      <ReviewBadges row={r} />
       <Text class={`w-[104px] text-right text-[12.5px] font-mono ${AMT[r.tone] || C.ink}`}>{r.amount_shown}</Text>
     </View>
   );
@@ -152,9 +153,9 @@ function EntryDrawer() {
   );
   const e = () => data() as Any;
   const busy = signal(false);
-  const run = (tool: string) => {
+  const run = (tool: string, extra: Record<string, Any> = {}) => {
     busy.set(true);
-    act(tool, { entry: drawerEntry() })
+    act(tool, { entry: drawerEntry(), ...extra })
       .then((r: Any) => {
         if (tool === "books_entry_draft") toast(`Draft ${r.no} saved`);
         if (tool === "books_app_post_entry") toast(`Entry ${r.no} posted`);
@@ -192,6 +193,7 @@ function EntryDrawer() {
                   <Kv k="Linked" v={e()?.related} />
                 </If>
               </View>
+              <ReviewPanel entry={e()} busy={busy()} open={(t: string) => drawerEntry.set(t)} keepBoth={() => run("books_app_post_entry", { keep_both: true })} />
               <If when={Boolean(e()?.reviewable)}>
                 <View class="gap-1.5">
                   <Text class={`text-[12px] ${C.dim}`}>Pick a category</Text>
@@ -251,9 +253,9 @@ function EntryDrawer() {
         <If when={has("void")}>
           <Btn label="Void (adds a reversal)" disabled={busy()} onPress={() => run("books_app_void_entry")} />
         </If>
-        <If when={has("duplicate")}>
+        <If when={has("copy")}>
           <Btn
-            label="Duplicate"
+            label="Copy"
             disabled={busy()}
             onPress={() =>
               act("books_entry_draft", { copy_of: drawerEntry() })
