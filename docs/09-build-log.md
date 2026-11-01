@@ -491,40 +491,62 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 `tools/check-all.sh`: fmt clean; clippy clean; cargo test 117; PoC 177; conformance 182 pass, 7 skipped (rox
 `9c106cc`); host test 17/17; privacy scan 0 findings.
 
-## M10 parity
-
-- 2026-11-01 reconcile-4, match assist from matched history (no new table, no migration): `books-core::match_assist`
-  (`normalize` description keys, `Hint`, `rank`: runs `statement::match_lines` first, so every line keeps its
-  exact/suggested/missing state; a hint only moves a suggestion to a hinted-payee entry that is free, or swaps with
-  the line holding it when both stay within their windows). `books-store::match_history`
-  derives hints from stored matches (`exact`/`accepted`/`added`, posted entries) and checks a one-line accept.
-  `books_app_statement_accept` with a `line` (a row's integer `no`; any other value, or an `entry` without a
-  `line`, is `invalid_args`) and optional `entry` ticket matches that one line;
-  `books_statement_get` rows gain `no`, `why` (suggested) and `hint` {category, payee (app only)} (missing), the
-  statement gains `hints_used`; an added line takes the hinted category and payee. reconcile.tsx: a Match button per
-  suggested row and "Usually <category>" under a missing row. Tests: `tests/match_assist.rs`.
-
-## M10 parity
-
-- 2026-11-01 reports-2, account activity (web parity: buwiz-books `/accounts/category/:id`). `books_report` gains kind
-  `ac` (no new tool; the window still names 57 tools): one account's posted and voided entries in a period, oldest
-  first, with the change and the running balance in the account's own sense, opening and closing from
-  `books::movements`, a `balanced` check, at most 500 rows (`more`), and no payee, memo or reference in any row.
-  `books_report_csv` kind `ac` writes entry numbers between an Opening and a Closing row. New module
-  `crates/books-mini-app/src/activity.rs`; the Accounts page opens an account drawer (`apps/books/activity.tsx`)
-  instead of jumping to the Ledger. Tests: `tests/account_activity.rs`. The demo's bank posting account is 11010
-  (11000 is its group). Follow-up once the native ledger lands: a running-balance column there too.
-
-## M10 parity
-
-- 2026-11-01 reports-4 (month pack): new app-only tool `books_app_month_pack` (named with the `books_app_` prefix that `tests/manifest_shape.rs` requires of every app-only tool; the task text said `books_month_pack`; `crates/books-mini-app/src/month_pack.rs`, read-only). It reads `books_report` pl/bs/cf/tb for one month and `books_reconcile_grid`, and returns one static HTML document (inline style only; no script, link or URL; store text escaped) as an MCP `text/html` resource `books://print/month-pack-<YYYY-MM>.html`, with `structuredContent` `{title, month, bytes}`. It refuses with invalid_args above 4 MiB. The Reports page shows a Month pack button for month periods, which calls `buwiz.preview`; the manifest gives the window `permissions.preview = {}`. Window tools: 57 to 58 of 64. Tests: `tests/month_pack.rs`.
-
 ## Not yet built
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox
 owner), PR #16, PR #13 and the two nsh fixes (Rox owner).
 
 ## M10 parity
+
+M10 brings Books to feature parity with the web Books (reference only, never imported) in five areas. Each area came
+from an accepted task branch; they were merged in the order below into one branch, and the migrations were renumbered
+to 7..15 in that order.
+
+### What was built
+
+| Area | Tasks | What the user gets |
+|---|---|---|
+| Evidence | evidence-1, 3, 4 | Stored receipts and documents (per-book dedup, links to entries and owed items), the assistant's classification recorded after the user accepts, a document library app with a card, previews. |
+| Reconcile | reconcile-1..4 | Statement lines the assistant read as a reviewable draft, a statement page snapshot and a printable reconciliation, finish/reopen history and flags, match hints from matched history. |
+| Ledger review | ledger-1..3 | Needs-review inbox (field confidence, what changed, likely duplicates with Keep both), checks findings on Today and the ledger, amend by reversal with a reason. |
+| Unpaid | unpaid-1..3 | Partial payments per document, a print page for an owed document, monthly repeats. |
+| Reports | reports-1..4 | Compare to previous period or last year and filter by tag, account activity (kind ac), person statements (kind ps), a month pack print preview. |
+
+### Inventory
+
+- New tools (14): books_app_evidence_attach, books_app_evidence_detach, books_app_evidence_kind,
+  books_app_evidence_preview, books_app_evidence_review, books_app_month_pack, books_app_owed_repeat,
+  books_app_reconcile_document, books_checks, books_evidence_classify, books_evidence_list, books_owed_document,
+  books_owed_draft, books_statement_draft_lines. books_report gains kinds ac and ps and the compare_to and tag
+  arguments; books_app_statement_accept gains draft and one-line accepts; books_app_void_entry gains amend.
+- Assistant-callable writes stay drafts only: books_entry_draft, books_owed_draft, books_evidence_classify,
+  books_statement_draft_lines (tests/manifest_shape.rs allowlist).
+- New app: evidence (apps/evidence.tsx) and its card (apps/cards/evidence.tsx).
+- New Books window files: activity.tsx, ledger_amend.tsx, ledger_findings.tsx, ledger_review.tsx, owed_print.tsx,
+  owed_repeat.tsx, reconcile_flags.tsx, statement_read.tsx, statement_snapshot.tsx.
+- Migrations 0007..0015: evidence, owed_proposals, evidence_classification, statement_drafts, statement_events,
+  draft_review, amendments, owed_payments, owed_repeat.
+
+### Integration decisions (PROPOSAL)
+
+- One preview grant per app: every app whose source calls .preview( gets {max_bytes: document_review::PREVIEW_MAX_BYTES}
+  (8 MiB). Owed print, snapshots and the month pack had each added their own block with a different cap.
+- The posted-entry action stays "copy" (ledger-1 renamed it from "duplicate" so it cannot be confused with a likely
+  duplicate); the native books.ledger screen now reads "copy" too.
+- Since W9 the ledger is the native books.ledger app, so the Books window has no books_ledger_list grant. Pages that
+  used to jump to the Ledger page call openLedger; tests that read the list call it with agent origin.
+- books_report's kind check accepts pl, bs, cf, tb, ag, ac and ps (the compare/tag validation from reports-1 had left
+  ac unreachable after the reports-2 merge).
+
+### Not included
+
+- parity/evidence-2 (draft card that reaches review drafts and hides the payee): rejected in review; stale against W9's
+  AppSource change and failed to compile after a merge with main.
+- parity/ledger-4: rejected in review; it raised the Books window's tool permissions by two instead of one.
+- Native ledger follow-ups (W9 owns books.ledger): review badges and the review panel in ledger rows, a running-balance
+  column, mounting AmendButton and AmendLinks in the native drawer.
+
+### Task notes (as each task recorded them; migration numbers there are the pre-renumbering ones)
 
 ### 2026-11-01 — evidence-1
 
@@ -585,7 +607,16 @@ comes from reconcile-1 (`statement_drafts::extras`: `statement.evidence_id`, lin
 - 2026-11-01 review round 1 (reconcile-2): the snapshot pane's page is one signal owned by MatchView (`snapPage`), set by the page tabs (`onPage`) and by pressing a row, so tabs work after a selection and re-selecting a row returns to its page. The pane always renders its button row (See the page when there is a snapshot ticket, Print reconciliation); only the drawn page needs a line with a page and a box. MatchView shows the pane and the standalone Print on one predicate, `snapShown` (snapshot ticket or a drawable line), so the buttons never vanish. New headless UI check `tests/host/snapshot-pane.mjs` (nsh-standin, stand-in bridge, synthetic lines; `bun tests/host/snapshot-pane.mjs <dir with node_modules/esbuild>`): 11 checks pass, and it fails on the round-1 pane.
 - 2026-11-01 review round 2 (reconcile-2): merged `parity/reconcile-1` and `main`. The page view and the boxes read reconcile-1's `statement_drafts::extras` (thousandths corners; `left=x0/10`, `width=(x1-x0)/10`, integer text such as `"12.3%"`); the guessed `box_*` columns and the column probe are gone, and `statement_view` adds only `statement.snapshot` and row `no` (reconcile-1's `view_extra` writes `page`/`box`). The size check reads `evidence.byte_length` before the bytes (tested with a stored length over the cap and small bytes). Only image/png, image/jpeg and application/pdf are shown (webp is `not_supported`). Zero-amount lines go in a third "No amount" table, shown only when there are any. The agent refusal is also tested through `Server::handle` (`permission_denied`). PROPOSAL (owner/integrator): the tool keeps the name `books_app_reconcile_document` because DD-20 requires the `books_app_` prefix for app-only tools.
 
-## M10 parity
+- 2026-11-01 reconcile-4, match assist from matched history (no new table, no migration): `books-core::match_assist`
+  (`normalize` description keys, `Hint`, `rank`: runs `statement::match_lines` first, so every line keeps its
+  exact/suggested/missing state; a hint only moves a suggestion to a hinted-payee entry that is free, or swaps with
+  the line holding it when both stay within their windows). `books-store::match_history`
+  derives hints from stored matches (`exact`/`accepted`/`added`, posted entries) and checks a one-line accept.
+  `books_app_statement_accept` with a `line` (a row's integer `no`; any other value, or an `entry` without a
+  `line`, is `invalid_args`) and optional `entry` ticket matches that one line;
+  `books_statement_get` rows gain `no`, `why` (suggested) and `hint` {category, payee (app only)} (missing), the
+  statement gains `hints_used`; an added line takes the hinted category and payee. reconcile.tsx: a Match button per
+  suggested row and "Usually <category>" under a missing row. Tests: `tests/match_assist.rs`.
 
 - 2026-11-01 ledger-1, needs-review inbox (migration 15, `books-store::review`, `books-mini-app::inbox`,
   `apps/books/ledger_review.tsx`): `books_entry_draft` takes `extracted: {fields: {<field>: {confidence}}}`
@@ -597,8 +628,6 @@ comes from reconcile-1 (`statement_drafts::extras`: `statement.evidence_id`, lin
   `duplicate_ack`). The drawer action "duplicate" is now "copy". No new tool; window permissions stay 57.
   Native ledger follow-up (W9): place `ReviewBadges`/`ReviewPanel` in the native `books.ledger` row and drawer.
 
-## M10 parity
-
 ### ledger-3: amend by reversal (2026-11-01)
 
 - `books_app_void_entry` (App reach, no new tool name; window tool count unchanged) takes optional `amend`, `reason` (3 to 200 characters, no TIN) and `date` (YYYY-MM-DD, default the entry's date). With `amend: true` the original is voided, its mirrored reversal posts on `date`, and a draft replacement with the same lines, payee, memo, reference and person/tag links is saved on `date`. Result: `{entry, status: "voided", voided, reversal, replacement, replacement_no}` (tickets).
@@ -607,3 +636,14 @@ comes from reconcile-1 (`statement_drafts::extras`: `statement.evidence_id`, lin
 - `books_entry_get` adds `links {amends, amended_by}` (tickets or null), `link_labels`, and "Replaces entry 0042" as `related` on the replacement; a posted entry's actions are `void, amend, duplicate`.
 - `apps/books/ledger_amend.tsx` (before `ledger.tsx` in `apps.rs`): `AmendButton` (Overlay with a reason and an optional date) and `AmendLinks` chips. Not yet mounted in the drawer: `ledger.tsx` is off limits while the native ledger port lands; the drawer (or `entry.tsx`) mounts `<AmendButton>` when `actions` has `amend` and `<AmendLinks>` under the Kv rows.
 - Tests: `tests/ledger_amend.rs` (4), `books-store` amend unit tests (2).
+
+- 2026-11-01 reports-2, account activity (web parity: buwiz-books `/accounts/category/:id`). `books_report` gains kind
+  `ac` (no new tool; the window still names 57 tools): one account's posted and voided entries in a period, oldest
+  first, with the change and the running balance in the account's own sense, opening and closing from
+  `books::movements`, a `balanced` check, at most 500 rows (`more`), and no payee, memo or reference in any row.
+  `books_report_csv` kind `ac` writes entry numbers between an Opening and a Closing row. New module
+  `crates/books-mini-app/src/activity.rs`; the Accounts page opens an account drawer (`apps/books/activity.tsx`)
+  instead of jumping to the Ledger. Tests: `tests/account_activity.rs`. The demo's bank posting account is 11010
+  (11000 is its group). Follow-up once the native ledger lands: a running-balance column there too.
+
+- 2026-11-01 reports-4 (month pack): new app-only tool `books_app_month_pack` (named with the `books_app_` prefix that `tests/manifest_shape.rs` requires of every app-only tool; the task text said `books_month_pack`; `crates/books-mini-app/src/month_pack.rs`, read-only). It reads `books_report` pl/bs/cf/tb for one month and `books_reconcile_grid`, and returns one static HTML document (inline style only; no script, link or URL; store text escaped) as an MCP `text/html` resource `books://print/month-pack-<YYYY-MM>.html`, with `structuredContent` `{title, month, bytes}`. It refuses with invalid_args above 4 MiB. The Reports page shows a Month pack button for month periods, which calls `buwiz.preview`; the manifest gives the window `permissions.preview = {}`. Window tools: 57 to 58 of 64. Tests: `tests/month_pack.rs`.
