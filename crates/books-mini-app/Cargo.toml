@@ -64,6 +64,10 @@ name = "evidence_foundation"
 path = "../../tests/evidence_foundation.rs"
 
 [[test]]
+name = "statement_read"
+path = "../../tests/statement_read.rs"
+
+[[test]]
 name = "reconcile_document"
 path = "../../tests/reconcile_document.rs"
 
