@@ -82,14 +82,14 @@ cat >"$TMP/trust.json" <<JSON
 {
   "v": 1,
   "about": "Per-run trust store for the Books host test (a throwaway test key; never gc-2026-01).",
-  "publishers": { "$KEY_ID": { "publisher": "app.buwiz", "alg": "ed25519", "public_key": "$PUB" } },
+  "publishers": { "$KEY_ID": { "publisher": "app.buwiz", "alg": "ed25519", "public_key": "$PUB", "first_party": true } },
   "approved_plugins": [ { "id": "$PLUGIN_ID", "publisher_key_id": "$KEY_ID" } ]
 }
 JSON
 "$BIN" manifest --key-id "$KEY_ID" >"$TMP/manifest.json"
-# every app the manifest lists, as the binary serves it
+# every TSX app the manifest lists, as the binary serves it
 APP_ARGS=()
-for id in $(node -e 'for (const a of JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).apps) console.log(a.id)' "$TMP/manifest.json"); do
+for id in $(node -e 'for (const a of JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).apps) if (!a.native) console.log(a.id)' "$TMP/manifest.json"); do
   "$BIN" app-source "$id" >"$TMP/app-$id.tsx"
   APP_ARGS+=(--app "$id=$TMP/app-$id.tsx")
 done

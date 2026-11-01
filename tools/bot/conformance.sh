@@ -6,8 +6,8 @@
 #   1. build the release binary;
 #   2. a fresh 0700 temp dir outside the repo;
 #   3. a throwaway ed25519 test key (buwiz-plugin-test --keygen);
-#   4. a per-run trust file mapping a TEST key id to that key, approving
-#      app.buwiz.books under it (never gc-2026-01);
+#   4. a per-run trust file mapping a TEST key id to that key, marking it
+#      first-party and approving app.buwiz.books under it (never gc-2026-01);
 #   5. the manifest generated under the test key id and signed with the test
 #      key file (--key-file, never --keychain) by `rox-broker sign-manifest`
 #      when BUWIZ_BROKER_BIN names a broker build, else by the Bot's
@@ -87,7 +87,7 @@ cat >"$TMP/trust.json" <<JSON
 {
   "v": 1,
   "about": "Per-run trust store for Books conformance (a throwaway test key; never gc-2026-01).",
-  "publishers": { "$KEY_ID": { "publisher": "app.buwiz", "alg": "ed25519", "public_key": "$PUB" } },
+  "publishers": { "$KEY_ID": { "publisher": "app.buwiz", "alg": "ed25519", "public_key": "$PUB", "first_party": true } },
   "approved_plugins": [ { "id": "$PLUGIN_ID", "publisher_key_id": "$KEY_ID" } ]
 }
 JSON
@@ -95,9 +95,9 @@ export BUWIZ_TRUST_FILE="$TMP/trust.json"
 
 # 5. generate under the test key id, sign with the test key file
 "$BIN" manifest --key-id "$KEY_ID" >"$TMP/manifest.json"
-# every app the manifest lists, as the binary serves it
+# every TSX app the manifest lists, as the binary serves it
 APP_ARGS=()
-for id in $(node -e 'for (const a of JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).apps) console.log(a.id)' "$TMP/manifest.json"); do
+for id in $(node -e 'for (const a of JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).apps) if (!a.native) console.log(a.id)' "$TMP/manifest.json"); do
   "$BIN" app-source "$id" >"$TMP/app-$id.tsx"
   APP_ARGS+=(--app "$id=$TMP/app-$id.tsx")
 done

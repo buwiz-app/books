@@ -1,8 +1,9 @@
 //! The 2.0 manifest (spec 5) for `app.buwiz.books`.
 //!
-//! [`unsigned`] builds it from this build's code: every app's fingerprint is
-//! the SHA-256 of the source bytes `resources/read` answers ([`crate::apps`]),
-//! and `permissions.tools` names the tools each app's source calls. The
+//! [`unsigned`] builds it from this build's code: TSX fingerprints are the
+//! SHA-256 of the source bytes `resources/read` answers ([`crate::apps`]),
+//! native entries name their screen and ABI, and `permissions.tools` names
+//! the tools each TSX source calls or native screen declares. The
 //! `manifest` subcommand prints it as JCS text; the owner signs it at release
 //! (`sign-manifest.mjs --keychain gc-2026-01`), and a test run signs it with a
 //! throwaway key under a test key id (`tools/bot/conformance.sh`).
@@ -20,7 +21,7 @@ use crate::{apps, jcs, tools};
 pub const PROTOCOL: &str = "2.0.0";
 pub const PLUGIN_ID: &str = "app.buwiz.books";
 pub const SHORT: &str = "books";
-pub const VERSION: &str = "0.2.0";
+pub const VERSION: &str = "0.3.0";
 pub const PUBLISHER_ID: &str = "app.buwiz";
 /// The release key (owner decision D9). Tests sign under a test key id.
 pub const RELEASE_KEY_ID: &str = "gc-2026-01";
@@ -37,41 +38,72 @@ pub fn fingerprint(source: &str) -> String {
 }
 
 /// What each app may reach (spec 5.6). `tools` is exactly the Books tools
-/// its source names (checked in `tests/manifest_shape.rs`).
+/// its source names or native definition declares (checked in `tests/manifest_shape.rs`).
 fn permissions(app: &apps::App) -> Value {
-    let mut p = json!({ "tools": apps::named_tools(app.source) });
+    let (source, tools, open_apps) = match app.source {
+        apps::AppSource::Tsx(source) => (Some(source), apps::named_tools(source), &[][..]),
+        apps::AppSource::Native {
+            tools, open_apps, ..
+        } => (
+            None,
+            tools.iter().map(|tool| (*tool).to_string()).collect(),
+            open_apps,
+        ),
+    };
+    let mut p = json!({ "tools": tools });
     // the window copies a report's CSV to the clipboard (M3 export)
-    if app.source.contains("buwiz.copy(") {
-        p["copy"] = json!(true);
-    }
-    // Reconcile picks a CSV bank statement (M4); Import picks old books, a
-    // web Books export or CSV files (M5). Sources split `buwiz` and the
-    // method across lines, so the method's own name is the signal.
-    if app.source.contains(".pickFile(") {
-        p["pick_file"] = json!({ "extensions": [".csv", ".json"], "max_bytes": 52_428_800 });
-    }
-    // Forms attaches a hand-off to the chat (M7)
-    if app.source.contains(".attach(") {
-        p["attach"] = json!(["proposal"]);
+    if let Some(source) = source {
+        if source.contains("buwiz.copy(") {
+            p["copy"] = json!(true);
+        }
+        // Reconcile picks a CSV bank statement (M4); Import picks old books, a
+        // web Books export or CSV files (M5). Sources split `buwiz` and the
+        // method across lines, so the method's own name is the signal.
+        if source.contains(".pickFile(") {
+            p["pick_file"] = json!({ "extensions": [".csv", ".json"], "max_bytes": 52_428_800 });
+        }
+        // Forms attaches a hand-off to the chat (M7)
+        if source.contains(".attach(") {
+            p["attach"] = json!(["proposal"]);
+        }
     }
     // a card opens the Books window at a page (M8)
-    if app.id != "books" && app.source.contains(".open({") {
+    if app.id != "books" && source.is_some_and(|source| source.contains(".open({")) {
         p["open"] = json!({ "apps": ["books"] });
+    } else if !open_apps.is_empty() {
+        p["open"] = json!({ "apps": open_apps });
     }
     p
 }
 
+fn add_source_fields(entry: &mut Value, app: &apps::App) {
+    let fields = entry.as_object_mut().expect("app entry is an object");
+    match app.source {
+        apps::AppSource::Tsx(source) => {
+            fields.insert(
+                "entry".to_string(),
+                json!(format!("{}{}", apps::URI_PREFIX, app.id)),
+            );
+            fields.insert("mime".to_string(), json!(apps::MIME));
+            fields.insert("sdk".to_string(), json!("1"));
+            fields.insert("fingerprint".to_string(), json!(fingerprint(source)));
+        }
+        apps::AppSource::Native { screen, abi, .. } => {
+            fields.insert(
+                "native".to_string(),
+                json!({ "screen": screen, "abi": abi }),
+            );
+        }
+    }
+}
+
 fn app_entry(app: &apps::App) -> Value {
-    match app.id {
+    let mut entry = match app.id {
         "books" => json!({
             "id": "books",
             // neutral: no business name, amount or TIN (D1, RK-10)
             "title": "Books",
             "description": "Your books: today, the ledger, unpaid invoices and bills, reports, people, accounts and tags. Only you post, void or close here.",
-            "entry": format!("{}{}", apps::URI_PREFIX, app.id),
-            "mime": apps::MIME,
-            "sdk": "1",
-            "fingerprint": fingerprint(app.source),
             "props": {
                 "type": "object",
                 "properties": {
@@ -94,10 +126,6 @@ fn app_entry(app: &apps::App) -> Value {
             // neutral: no business name, amount or TIN (D1, RK-10)
             "title": "Books",
             "description": "Books home: setup status and counts only.",
-            "entry": format!("{}{}", apps::URI_PREFIX, app.id),
-            "mime": apps::MIME,
-            "sdk": "1",
-            "fingerprint": fingerprint(app.source),
             "props": {
                 "type": "object",
                 "properties": { TICKET_PROP: { "type": "string", "maxLength": 30 } }
@@ -113,10 +141,6 @@ fn app_entry(app: &apps::App) -> Value {
                 // neutral: no business name, amount or TIN (D1, RK-10)
                 "title": title,
                 "description": description,
-                "entry": format!("{}{}", apps::URI_PREFIX, app.id),
-                "mime": apps::MIME,
-                "sdk": "1",
-                "fingerprint": fingerprint(app.source),
                 "props": {
                     "type": "object",
                     "properties": {
@@ -141,7 +165,9 @@ fn app_entry(app: &apps::App) -> Value {
                 "permissions": permissions(app),
             })
         }
-    }
+    };
+    add_source_fields(&mut entry, app);
+    entry
 }
 
 /// Every inline card's width: the Bot's agent column, the width of its own cards
