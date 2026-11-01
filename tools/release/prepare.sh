@@ -3,7 +3,7 @@
 # signature (M9-04, M9-05 are the owners'). It builds the release binary
 # and writes, to dist/release/ (or $1):
 #   manifest.json     unsigned, publisher.key_id gc-2026-01
-#   app-<id>.tsx      each app's source, exactly as the binary serves it
+#   app-<id>.tsx      each TSX app's source, exactly as the binary serves it
 # then prints the three owner steps: the trust entry (Bot owner), the
 # signature with gc-2026-01 from the login Keychain (the owner), and the
 # install in the owner's Buwiz Bot. This script never reads a key or the Keychain.
@@ -20,7 +20,7 @@ BIN="$REPO/target/release/books-mini-app"
 mkdir -p "$OUT"
 "$BIN" manifest >"$OUT/manifest.json"
 APPS=()
-for id in $("$BIN" manifest | python3 -c 'import json,sys; print(" ".join(a["id"] for a in json.load(sys.stdin)["apps"]))'); do
+for id in $("$BIN" manifest | python3 -c 'import json,sys; print(" ".join(a["id"] for a in json.load(sys.stdin)["apps"] if "native" not in a))'); do
   "$BIN" app-source "$id" >"$OUT/app-$id.tsx"
   APPS+=("--app" "$id=$OUT/app-$id.tsx")
 done

@@ -1,5 +1,6 @@
-// The Books window: the rail of twelve pages, the page, the entry drawer
-// and the new-entry sheet. First run makes the book (cash basis unless
+// The Books window: the rail of pages, the page, the entry drawer
+// and the new-entry sheet. The Ledger row opens the ledger's native screen
+// instead of a page here. First run makes the book (cash basis unless
 // the owner picks accrual, ADR 0008).
 
 const PAGES: { id: string; label: string; group?: string; bir?: boolean; hidden?: boolean }[] = [
@@ -20,11 +21,18 @@ const PAGES: { id: string; label: string; group?: string; bir?: boolean; hidden?
 ];
 const BUILT = ["today", "ledger", "unpaid", "reconcile", "reports", "forms", "people", "accounts", "tags", "payroll", "certificates", "settings", "import"];
 
-const page = signal(PAGES.some((x) => x.id === PROPS.page) ? String(PROPS.page) : "today");
+const page = signal(PAGES.some((x) => x.id === PROPS.page) && PROPS.page !== "ledger" ? String(PROPS.page) : "today");
 const sheetMode = signal("");
+// `books page:ledger` opens the ledger's native screen once, then shows Today.
+if (PROPS.page === "ledger") {
+  openLedger({ account: PROPS.account, month: PROPS.month, filter: PROPS.filter });
+}
 
 function go(id: string, filter?: string) {
-  if (filter) ledgerFilter.set(filter);
+  if (id === "ledger") {
+    openLedger({ filter });
+    return;
+  }
   drawerEntry.set("");
   page.set(id);
 }
@@ -187,9 +195,6 @@ export default function Books() {
             <View class="p-4 gap-3.5">
               <If when={page() === "today"}>
                 <TodayPage go={go} sheet={(m: string) => sheetMode.set(m)} />
-              </If>
-              <If when={page() === "ledger"}>
-                <LedgerPage go={go} sheet={(m: string) => sheetMode.set(m)} />
               </If>
               <If when={page() === "unpaid"}>
                 <UnpaidPage go={go} />

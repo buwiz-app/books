@@ -93,7 +93,13 @@ const posted = await call2("books_app_post_entry", { client_request_id: rid(), e
 check("books_app_post_entry posts it", posted.status === "posted", { status: posted.status, code: posted.code });
 const voided = await call2("books_app_void_entry", { client_request_id: rid(), entry: draft.entry });
 check("books_app_void_entry voids it and posts a reversal", voided.status === "voided" && /^tkt_/.test(String(voided.reversal)), { status: voided.status, code: voided.code });
-const list = await call2("books_ledger_list", { month: "2026-10" });
+const led = await openApp(sessions, signed, "ledger");
+check("the ledger app's session opens", !!led.res.cert && !!led.res.cert_sig);
+const call3 = async (tool, args) => {
+  const c = await post("/v1/host/call", envelope(led, tool, args));
+  return c.json.result?.structuredContent ?? c.json;
+};
+const list = await call3("books_ledger_list", { month: "2026-10" });
 check("the Ledger lists the voided entry and its reversal", list.counts?.all === 2 && list.rows?.some((x) => x.status_label === "Voided") && list.rows?.some((x) => x.status_label === "Reversal"), { counts: list.counts });
 const fromHome = await post("/v1/host/call", envelope(open, "books_app_post_entry", { client_request_id: rid(), entry: draft.entry }));
 check("home cannot reach a tool outside its permissions", fromHome.json.ok === false || fromHome.json.result?.isError === true, refusal(fromHome));

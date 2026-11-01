@@ -1,0 +1,55 @@
+{
+  "answers": [
+    {
+      "error": "Synthetic read failure"
+    },
+    {
+      "data": {
+        "counts": {
+          "lines": 0,
+          "drafts": 0,
+          "posted": 4
+        }
+      }
+    }
+  ],
+  "press": [
+    "Try again"
+  ],
+  "transcript": {
+    "text": [
+      "This week",
+      "Mondays",
+      "0 new bank lines · 0 drafted · 4 posted",
+      "The routine drafts only; you post",
+      "Open Ledger"
+    ],
+    "calls": [
+      {
+        "method": "call",
+        "tool": "books_nudge",
+        "args": {
+          "kind": "tidy",
+          "any_day": true
+        }
+      },
+      {
+        "method": "ready"
+      },
+      {
+        "method": "fit"
+      },
+      {
+        "method": "call",
+        "tool": "books_nudge",
+        "args": {
+          "kind": "tidy",
+          "any_day": true
+        }
+      }
+    ]
+  },
+  "props": {
+    "card": "tidy"
+  }
+}

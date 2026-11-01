@@ -1,0 +1,51 @@
+{
+  "answers": [
+    {
+      "data": {
+        "counts": {
+          "lines": 3,
+          "drafts": 2,
+          "posted": 0
+        }
+      }
+    }
+  ],
+  "press": [
+    "Review 3"
+  ],
+  "transcript": {
+    "text": [
+      "This week",
+      "Mondays",
+      "3 new bank lines · 2 drafted · 0 posted",
+      "The routine drafts only; you post",
+      "Review 3"
+    ],
+    "calls": [
+      {
+        "method": "call",
+        "tool": "books_nudge",
+        "args": {
+          "kind": "tidy",
+          "any_day": true
+        }
+      },
+      {
+        "method": "ready"
+      },
+      {
+        "method": "fit"
+      },
+      {
+        "method": "open",
+        "app": "books",
+        "props": {
+          "page": "ledger"
+        }
+      }
+    ]
+  },
+  "props": {
+    "card": "tidy"
+  }
+}

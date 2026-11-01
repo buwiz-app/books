@@ -1,6 +1,6 @@
-//! The app sources this binary serves as `buwiz-app://<id>` (spec 6.1). They
-//! are compiled in, so the bytes `resources/read` answers are the bytes the
-//! manifest fingerprints (6.2) and nothing on disk can drift from them.
+//! The TSX app sources this binary serves as `buwiz-app://<id>` (spec 6.1).
+//! They are compiled in, so the bytes `resources/read` answers are the bytes
+//! the manifest fingerprints (6.2) and nothing on disk can drift from them.
 //!
 //! The Books window (`books`) is one app built from several files: the kit
 //! every page shares, one file per page, and the window that holds them.
@@ -12,10 +12,22 @@ pub const MIME: &str = "text/x-nsh-tsx";
 /// Every app's entry is `buwiz-app://<id>`.
 pub const URI_PREFIX: &str = "buwiz-app://";
 
-/// One app source.
+/// One app's implementation.
+#[derive(Clone, Copy)]
+pub enum AppSource {
+    Tsx(&'static str),
+    Native {
+        screen: &'static str,
+        abi: u32,
+        tools: &'static [&'static str],
+        open_apps: &'static [&'static str],
+    },
+}
+
+/// One app.
 pub struct App {
     pub id: &'static str,
-    pub source: &'static str,
+    pub source: AppSource,
 }
 
 /// The Books window: kit, pages, window, in that order.
@@ -24,7 +36,7 @@ const BOOKS: &str = concat!(
     "\n",
     include_str!("../../../apps/books/today.tsx"),
     "\n",
-    include_str!("../../../apps/books/ledger.tsx"),
+    include_str!("../../../apps/books/entry.tsx"),
     "\n",
     include_str!("../../../apps/books/accounts.tsx"),
     "\n",
@@ -68,45 +80,68 @@ macro_rules! card_app {
 pub const APPS: &[App] = &[
     App {
         id: "books",
-        source: BOOKS,
+        source: AppSource::Tsx(BOOKS),
     },
     App {
         id: "home",
-        source: include_str!("../../../apps/home.tsx"),
+        source: AppSource::Tsx(include_str!("../../../apps/home.tsx")),
     },
     // inline cards in the chat (drawing: Books Inline Cards)
     App {
         id: "answer",
-        source: card_app!("answer.tsx"),
+        source: AppSource::Tsx(card_app!("answer.tsx")),
     },
     App {
         id: "report",
-        source: card_app!("report.tsx"),
+        source: AppSource::Tsx(card_app!("report.tsx")),
     },
     App {
         id: "action",
-        source: card_app!("action.tsx"),
+        source: AppSource::Tsx(card_app!("action.tsx")),
     },
     App {
         id: "pair",
-        source: card_app!("pair.tsx"),
+        source: AppSource::Tsx(card_app!("pair.tsx")),
+    },
+    App {
+        id: "ledger",
+        source: AppSource::Native {
+            screen: "books.ledger",
+            abi: 1,
+            tools: &[
+                crate::tools::LEDGER_LIST,
+                crate::tools::ENTRY_GET,
+                crate::tools::ENTRY_OPTIONS,
+                crate::tools::ENTRY_DRAFT,
+                crate::tools::POST_ENTRY,
+                crate::tools::VOID_ENTRY,
+                crate::tools::DISCARD_ENTRY,
+                crate::tools::RECATEGORIZE,
+            ],
+            open_apps: &[],
+        },
     },
     App {
         id: "quiet",
-        source: card_app!("quiet.tsx"),
+        source: AppSource::Native {
+            screen: "books.quiet",
+            abi: 1,
+            tools: &[crate::tools::NUDGE],
+            open_apps: &["books"],
+        },
     },
     // the document library and its "What is this document?" card (evidence-4)
     App {
         id: "evidence",
-        source: concat!(
+        source: AppSource::Tsx(concat!(
             include_str!("../../../apps/books/kit.tsx"),
             "\n",
             include_str!("../../../apps/evidence.tsx"),
-        ),
+        )),
     },
     App {
         id: "document",
-        source: card_app!("evidence.tsx"),
+        source: AppSource::Tsx(card_app!("evidence.tsx")),
     },
 ];
 
