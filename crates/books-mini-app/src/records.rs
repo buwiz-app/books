@@ -10,6 +10,7 @@ use books_core::money;
 use books_store::Store;
 use books_store::books::{Account, Book};
 use books_store::entries::{self, Filter, Form};
+use books_store::owed_payments;
 use books_store::people::{self, Person};
 use books_store::plumbing;
 use books_store::rusqlite::{Connection, params};
@@ -265,7 +266,7 @@ pub fn person_get(store: &Store, book: Book, args: &Map<String, Value>, origin: 
         Ok(people::open_unpaid(store.conn(), chart.book.id, side)?
             .iter()
             .filter(|u| u.person_id == Some(p.id))
-            .map(|u| u.amount)
+            .map(people::Unpaid::balance)
             .sum())
     };
     let kpi: Vec<(&str, String)> = match p.kind.as_str() {
@@ -372,7 +373,7 @@ pub fn owed_list(store: &Store, book: Book, args: &Map<String, Value>, origin: O
     let collect = people::open_unpaid(store.conn(), book.id, "collect")?;
     let pay = people::open_unpaid(store.conn(), book.id, "pay")?;
     let list = if side == "collect" { &collect } else { &pay };
-    let total: i64 = list.iter().map(|u| u.amount).sum();
+    let total: i64 = list.iter().map(people::Unpaid::balance).sum();
     let mut rows = Vec::new();
     for u in list {
         let who = match u.person_id {
@@ -386,6 +387,11 @@ pub fn owed_list(store: &Store, book: Book, args: &Map<String, Value>, origin: O
             "late": u.due.is_some_and(|d| d < today),
             "amount": money::format(u.amount),
             "amount_shown": money::display(u.amount),
+            "paid": money::format(u.paid),
+            "paid_shown": money::display(u.paid),
+            "balance": money::format(u.balance()),
+            "balance_shown": money::display(u.balance()),
+            "state": owed_state(u),
         });
         if origin.is_app() {
             row["who"] = json!(who.unwrap_or_else(|| "—".into()));
@@ -399,10 +405,15 @@ pub fn owed_list(store: &Store, book: Book, args: &Map<String, Value>, origin: O
         rows.push(row);
     }
     let basis = book.basis;
+    let detail = match text(args, "owed") {
+        Some(t) => crate::owed_detail::detail(store, &book, t, origin)?,
+        None => Value::Null,
+    };
     Ok(json!({
         "side": side,
         "counts": { "collect": collect.len(), "pay": pay.len() },
         "rows": rows,
+        "detail": detail,
         "total_shown": money::display(total),
         "basis": basis.as_str(),
         "note": if basis == books_core::ledger::Basis::Cash {
@@ -411,6 +422,11 @@ pub fn owed_list(store: &Store, book: Book, args: &Map<String, Value>, origin: O
             "On an accrual book each one is already a receivable or payable. Mark paid clears it."
         },
     }))
+}
+
+/// A document's state on the Unpaid page: `open` or `part_paid`.
+pub fn owed_state(u: &people::Unpaid) -> &'static str {
+    if u.paid > 0 { "part_paid" } else { "open" }
 }
 
 /// What the Unpaid sheet offers: people by side and the categories.
@@ -549,21 +565,36 @@ fn owed_in(conn: &Connection, args: &Map<String, Value>) -> Result<i64, Refusal>
     }
 }
 
-/// `books_app_owed_settle`: mark paid; posts the money on that day.
+/// `books_app_owed_settle`: settle all of a document, or `amount` of it;
+/// posts the money on that day.
 pub fn owed_settle(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let book = writes::book_in(conn, args)?;
     let id = owed_in(conn, args)?;
     let money = writes::account_in(conn, &book, service::required(args, "account")?)?;
-    let on = match text(args, "date") {
-        Some(d) => Date::parse(d).ok_or_else(|| Refusal::invalid("`date` is YYYY-MM-DD."))?,
+    let on = match text(args, "on").or_else(|| text(args, "date")) {
+        Some(d) => Date::parse(d).ok_or_else(|| Refusal::invalid("`on` is YYYY-MM-DD."))?,
         None => Date::today(),
     };
+    let amount = text(args, "amount")
+        .filter(|t| !t.trim().is_empty())
+        .map(|t| {
+            money::parse(t)
+                .map_err(|_| Refusal::new("bad_amount", "The amount is two-place decimal text."))
+        })
+        .transpose()?;
     let g = writes::gate(conn, &book);
-    let entry = people::mark_paid(conn, &book, id, money.id, on, &g)?;
-    let e =
-        entries::get(conn, entry)?.ok_or_else(|| Refusal::new("store", "The entry vanished."))?;
+    let done = owed_payments::settle(conn, &book, id, money.id, on, amount, &g)?;
+    let e = entries::get(conn, done.entry_id)?
+        .ok_or_else(|| Refusal::new("store", "The entry vanished."))?;
     Ok(with_subject(
-        json!({ "owed": service_ticket(conn, "owed", id)?, "status": "paid", "entry": service_ticket(conn, "entry", entry)?, "no": format!("{:04}", e.no) }),
+        json!({
+            "owed": service_ticket(conn, "owed", id)?,
+            "status": if done.balance == 0 { "paid" } else { "part_paid" },
+            "entry": service_ticket(conn, "entry", done.entry_id)?,
+            "no": format!("{:04}", e.no),
+            "balance": money::format(done.balance),
+            "balance_shown": money::display(done.balance),
+        }),
         "owed",
         id,
     ))
@@ -590,8 +621,8 @@ fn service_ticket(conn: &Connection, kind: &str, id: i64) -> Result<String, Refu
 pub fn owed_summary(store: &Store, book: &Book) -> Result<Value, Refusal> {
     let collect = people::open_unpaid(store.conn(), book.id, "collect")?;
     let pay = people::open_unpaid(store.conn(), book.id, "pay")?;
-    let tc: i64 = collect.iter().map(|u| u.amount).sum();
-    let tp: i64 = pay.iter().map(|u| u.amount).sum();
+    let tc: i64 = collect.iter().map(people::Unpaid::balance).sum();
+    let tp: i64 = pay.iter().map(people::Unpaid::balance).sum();
     let next = collect.iter().chain(&pay).filter_map(|u| u.due).min();
     let scale = tc.max(tp);
     Ok(json!({

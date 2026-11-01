@@ -222,7 +222,7 @@ fn tags_schema() -> Value {
 }
 
 fn owed_schema() -> Value {
-    json!({ "type": "object", "properties": { "book": { "type": "string" }, "side": { "type": "string", "enum": ["collect", "pay"] } } })
+    json!({ "type": "object", "properties": { "book": { "type": "string" }, "side": { "type": "string", "enum": ["collect", "pay"] }, "owed": { "type": "string", "description": "A document ticket: adds its payment history as detail." } } })
 }
 
 fn report_schema() -> Value {
@@ -276,6 +276,20 @@ fn owed_ref() -> Value {
         "type": "object",
         "required": ["client_request_id", "owed"],
         "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "owed": { "type": "string" }, "account": { "type": "string" }, "date": { "type": "string" } }
+    })
+}
+
+fn owed_settle_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "owed", "account"],
+        "properties": {
+            "client_request_id": { "type": "string" }, "book": { "type": "string" },
+            "owed": { "type": "string" }, "account": { "type": "string" },
+            "amount": { "type": "string", "description": "Two-place decimal text; the whole balance when absent." },
+            "on": { "type": "string", "description": "YYYY-MM-DD; today when absent." },
+            "date": { "type": "string", "description": "Same as on." }
+        }
     })
 }
 
@@ -679,8 +693,8 @@ pub const TOOLS: &[Tool] = &[
         name: OWED_SETTLE,
         reach: Reach::App,
         write: true,
-        schema: owed_ref,
-        description: "Mark an invoice or bill paid after the user's click: posts the money on that day.",
+        schema: owed_settle_schema,
+        description: "Settle an invoice or bill after the user's click, in full or by an amount: posts the money on that day.",
     },
     Tool {
         name: OWED_CANCEL,
@@ -1107,9 +1121,10 @@ pub fn call(
                      SELECT 1 FROM line l JOIN account a ON a.account_id = l.account_id
                      WHERE l.entry_id = e.entry_id AND a.kind = 'unsure')))"
             )?);
-            out["unpaid"] = json!(count(
-                "SELECT count(*) FROM unpaid WHERE book_id = ?1 AND status = 'open'"
-            )?);
+            out["unpaid"] = json!(count(&format!(
+                "SELECT count(*) FROM unpaid WHERE book_id = ?1 AND {}",
+                books_store::people::STILL_OWED_SQL
+            ))?);
             Ok(out)
         }),
         TODAY => read(books, arguments, |store, book, _| {

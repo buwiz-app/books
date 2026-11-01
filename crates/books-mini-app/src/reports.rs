@@ -376,10 +376,10 @@ fn ag(store: &Store, chart: &Chart, period: &Period, args: &Map<String, Value>) 
             _ => 3,
         };
         match by.iter_mut().find(|(n, _)| *n == who) {
-            Some((_, b)) => b[bucket] += u.amount,
+            Some((_, b)) => b[bucket] += u.balance(),
             None => {
                 let mut b = [0i64; 4];
-                b[bucket] = u.amount;
+                b[bucket] = u.balance();
                 by.push((who, b));
             }
         }

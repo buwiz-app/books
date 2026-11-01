@@ -259,9 +259,33 @@ pub struct Unpaid {
     pub accrual_entry_id: Option<i64>,
     pub paid_entry_id: Option<i64>,
     pub paid_on: Option<Date>,
+    /// Paid to date: settlements whose entry is still posted.
+    pub paid: i64,
 }
 
-const UNPAID_COLUMNS: &str = "unpaid_id, book_id, side, person_id, reference, memo, issued, due, amount, category_account_id, status, accrual_entry_id, paid_entry_id, paid_on";
+impl Unpaid {
+    /// What is still owed.
+    pub fn balance(&self) -> i64 {
+        self.amount - self.paid
+    }
+}
+
+/// Paid to date of the `unpaid` row in scope: settlements whose entry is
+/// still posted.
+macro_rules! paid_sql {
+    () => {
+        "(SELECT coalesce(sum(p.amount), 0) FROM owed_payment p JOIN entry e ON e.entry_id = p.entry_id WHERE p.unpaid_id = unpaid.unpaid_id AND e.status = 'posted')"
+    };
+}
+
+const UNPAID_COLUMNS: &str = concat!(
+    "unpaid_id, book_id, side, person_id, reference, memo, issued, due, amount, category_account_id, status, accrual_entry_id, paid_entry_id, paid_on, ",
+    paid_sql!()
+);
+
+/// Condition on an `unpaid` row: money is still owed on it. A paid
+/// document whose payment was voided is owed again.
+pub const STILL_OWED_SQL: &str = concat!("status <> 'cancelled' AND amount > ", paid_sql!());
 
 fn unpaid_row(r: &Row<'_>) -> rusqlite::Result<Unpaid> {
     let date = |s: Option<String>| s.and_then(|s| Date::parse(&s));
@@ -284,6 +308,7 @@ fn unpaid_row(r: &Row<'_>) -> rusqlite::Result<Unpaid> {
         accrual_entry_id: r.get(11)?,
         paid_entry_id: r.get(12)?,
         paid_on: date(r.get(13)?),
+        paid: r.get(14)?,
     })
 }
 
@@ -297,10 +322,11 @@ pub fn unpaid(conn: &Connection, id: i64) -> Result<Option<Unpaid>> {
         .optional()?)
 }
 
-/// Open documents on one side, by due date (no due date last).
+/// Documents on one side with money still owed, by due date (no due date
+/// last). A paid document whose payment was voided is owed again.
 pub fn open_unpaid(conn: &Connection, book_id: i64, side: &str) -> Result<Vec<Unpaid>> {
     let mut stmt = conn.prepare(&format!(
-        "SELECT {UNPAID_COLUMNS} FROM unpaid WHERE book_id = ?1 AND side = ?2 AND status = 'open'
+        "SELECT {UNPAID_COLUMNS} FROM unpaid WHERE book_id = ?1 AND side = ?2 AND {STILL_OWED_SQL}
          ORDER BY due IS NULL, due, unpaid_id"
     ))?;
     let rows = stmt.query_map(params![book_id, side], unpaid_row)?;
@@ -308,7 +334,7 @@ pub fn open_unpaid(conn: &Connection, book_id: i64, side: &str) -> Result<Vec<Un
 }
 
 /// The trade account an accrual book uses for a side.
-fn trade_account(conn: &Connection, book: &Book, side: &str) -> Result<i64> {
+pub(crate) fn trade_account(conn: &Connection, book: &Book, side: &str) -> Result<i64> {
     let kind = if side == "collect" {
         "accounts_receivable_gross"
     } else {
@@ -446,7 +472,7 @@ pub fn create_unpaid(
 
 /// A sales line settles an invoice (`sale_invoice`), so the sales
 /// measures count it and the cash rule accepts it (ADR 0008).
-fn sales_facts(kind: &KindRef, side: &str) -> Facts {
+pub(crate) fn sales_facts(kind: &KindRef, side: &str) -> Facts {
     let sales = matches!(kind, KindRef::Kind(k) if books_core::catalog::Catalog::get()
         .kind(k)
         .is_some_and(|k| k.defaults.income_class.as_deref() == Some("business_sales")));
@@ -465,8 +491,8 @@ fn sales_facts(kind: &KindRef, side: &str) -> Facts {
     }
 }
 
-/// Mark a document paid on `on` from `money_account`: posts the money
-/// entry that day and closes the document. Returns the entry id.
+/// Mark a document paid on \`on\` from \`money_account\`: settles its whole
+/// balance (\`owed_payments::settle\`). Returns the entry id.
 pub fn mark_paid(
     conn: &Connection,
     book: &Book,
@@ -475,107 +501,23 @@ pub fn mark_paid(
     on: Date,
     gate: Gate<'_>,
 ) -> Result<i64> {
-    let u = unpaid(conn, id)?
-        .filter(|u| u.book_id == book.id)
-        .ok_or_else(|| error("not_found", "That document is not in this book."))?;
-    if u.status != "open" {
-        return Err(error("already_paid", "That document is already paid."));
-    }
-    if on < u.issued {
-        return Err(error("invalid_args", "It cannot be paid before its date."));
-    }
-    let money = books::account(conn, money_account)?
-        .filter(|a| a.book_id == book.id && a.active)
-        .ok_or_else(|| error("invalid_args", "That account is not in this book."))?;
-    if !money.is_cash() && money.kind != KindRef::Kind("loan_payable".into()) {
-        return Err(error(
-            "invalid_args",
-            format!("{} is not a bank, cash or card account.", money.name),
-        ));
-    }
-    let category = books::account(conn, u.category_account_id)?
-        .ok_or_else(|| error("store", "The document's category is missing."))?;
-    // cash: the income or expense lands now; accrual: the trade balance clears
-    let other = if book.basis == Basis::Accrual {
-        trade_account(conn, book, &u.side)?
-    } else {
-        category.id
-    };
-    let facts = if other == category.id {
-        sales_facts(&category.kind, &u.side)
-    } else {
-        Facts::default()
-    };
-    let (form, lines) = if u.side == "collect" {
-        (
-            Form::MoneyIn,
-            vec![
-                LineInput {
-                    account_id: money.id,
-                    debit: u.amount,
-                    credit: 0,
-                    facts: Facts::default(),
-                },
-                LineInput {
-                    account_id: other,
-                    debit: 0,
-                    credit: u.amount,
-                    facts,
-                },
-            ],
-        )
-    } else {
-        (
-            Form::MoneyOut,
-            vec![
-                LineInput {
-                    account_id: other,
-                    debit: u.amount,
-                    credit: 0,
-                    facts,
-                },
-                LineInput {
-                    account_id: money.id,
-                    debit: 0,
-                    credit: u.amount,
-                    facts: Facts::default(),
-                },
-            ],
-        )
-    };
-    let payee = match u.person_id {
-        Some(p) => person(conn, p)?.map(|p| p.name),
-        None => None,
-    };
-    let draft = DraftInput {
-        date: on,
-        form,
-        payee,
-        memo: u.memo.clone(),
-        reference: u.reference.clone(),
-        needs_review: false,
-        lines,
-    };
-    let entry = entries::save_draft(conn, book, None, &draft, "app")?;
-    conn.execute(
-        "UPDATE entry SET person_id = ?2 WHERE entry_id = ?1",
-        params![entry, u.person_id],
-    )?;
-    entries::post(conn, book, entry, gate)?;
-    conn.execute(
-        "UPDATE unpaid SET status = 'paid', paid_entry_id = ?2, paid_on = ?3 WHERE unpaid_id = ?1",
-        params![id, entry, on.to_string()],
-    )?;
-    Ok(entry)
+    crate::owed_payments::settle(conn, book, id, money_account, on, None, gate).map(|s| s.entry_id)
 }
 
-/// Cancel an open document. An accrual book voids its receivable entry.
+/// Cancel a document with nothing paid on it. An accrual book voids its
+/// receivable entry.
 pub fn cancel(conn: &Connection, book: &Book, id: i64, gate: Gate<'_>) -> Result<()> {
     let u = unpaid(conn, id)?
         .filter(|u| u.book_id == book.id)
         .ok_or_else(|| error("not_found", "That document is not in this book."))?;
-    if u.status != "open" {
+    if u.status == "cancelled" {
         return Err(error("not_open", "Only an open document can be cancelled."));
+    }
+    if u.paid > 0 {
+        return Err(error(
+            "has_payments",
+            "Void its payments in the Ledger first, or settle the rest.",
+        ));
     }
     if let Some(e) = u.accrual_entry_id {
         let entry = entries::get(conn, e)?
