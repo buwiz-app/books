@@ -9,16 +9,25 @@ function firstEntry(filter: string) {
     : buwiz.call("books_ledger_list", { filter }).then((r: Any) => (r.rows || [])[0]?.ticket || null);
 }
 
+/** The newest draft, the ones waiting for review included (the "draft" filter leaves those out). */
+function firstDraft() {
+  return firstEntry("draft").then((t: Any) =>
+    t || buwiz.call("books_ledger_list", { filter: "review" }).then((r: Any) => (r.rows || []).find((x: Any) => x.status === "draft")?.ticket || null),
+  );
+}
+
 const plain = (amount: Any) => String(amount || "").replace(/^[+−]\s?/, "");
 
 // amounts show only when the user asked for them (the card's `amounts` prop)
 const showAmounts = () => CP.amounts === true || CP.amounts === "true";
+// amounts and the payee's name stay out of card content unless the request asked for amounts (AGENTS.md invariant 13)
+const GATED = ["amount", "person"];
 const FIELD_LABEL: Record<string, string> = { date: "Date", amount: "Amount", category: "Category", person: "Paid to", reference: "Reference" };
 
 /** What the assistant read off the evidence, against the draft as it is now. */
 function Extraction(props: { x: Any }) {
   const x = () => props.x as Any;
-  const shown = (f: Any, v: Any) => (f.field === "amount" && !showAmounts() ? "hidden" : String(v ?? "—"));
+  const shown = (f: Any, v: Any) => (GATED.includes(String(f.field)) && !showAmounts() ? "hidden" : String(v ?? "—"));
   return (
     <View>
       <Row label={`Read by ${String(x()?.proposed_by || "Assistant")}`} text={`${String(x()?.confidence_label || "")}${x()?.needs_review ? " · check before posting" : ""}`} />
@@ -39,7 +48,7 @@ function DraftCard() {
   const done = signal(false);
   const r = read(
     () => ({ v: ver() }),
-    () => firstEntry("draft").then((t: Any) => (t ? buwiz.call("books_entry_get", { entry: t }) : { none: true })),
+    () => firstDraft().then((t: Any) => (t ? buwiz.call("books_entry_get", { entry: t }) : { none: true })),
   );
   const d = () => r() as Any;
   // Books names the preview tool once it declares one; until then the action stays hidden

@@ -147,6 +147,8 @@ pub fn parse(conn: &Connection, book: i64, raw: &Value) -> Result<Extracted, Ref
                 "An extracted value is at most 200 plain characters.",
             ));
         }
+        books_core::privacy::refuse_tin(&format!("extracted {field}"), value)
+            .map_err(|m| Refusal::new("tin_refused", m))?;
         let value = match *field {
             "amount" => {
                 money::display(money::parse(value).ok().filter(|c| *c > 0).ok_or_else(|| {
@@ -278,6 +280,22 @@ pub fn draft(
         .transpose()?;
     let mut plain = args.clone();
     plain.remove("extracted");
+    // an assistant edit must not clear a review flag the entry already had
+    let flagged_before = match plain.get("entry").and_then(Value::as_str) {
+        Some(t) if !origin.is_app() => match plumbing::subject(conn, t)? {
+            Some((k, id)) if k == "entry" => conn
+                .query_row(
+                    "SELECT needs_review FROM entry WHERE entry_id = ?1",
+                    [id],
+                    |r| r.get::<_, bool>(0),
+                )
+                .optional()
+                .map_err(books_store::StoreError::from)?
+                .unwrap_or(false),
+            _ => false,
+        },
+        _ => false,
+    };
     let out = writes::draft(conn, &plain, origin)?;
     let entry = out["_subject"][1]
         .as_i64()
@@ -324,6 +342,20 @@ pub fn draft(
                     )
                     .map_err(books_store::StoreError::from)?;
                 }
+            }
+            // only the user (the app) clears review by editing; posting needs no flag change
+            let unsure = Extracted {
+                evidence: s.evidence,
+                confidence: s.confidence,
+                fields: s.fields.clone(),
+            }
+            .needs_review();
+            if !origin.is_app() && (unsure || flagged_before) {
+                conn.execute(
+                    "UPDATE entry SET needs_review = 1 WHERE entry_id = ?1",
+                    [entry],
+                )
+                .map_err(books_store::StoreError::from)?;
             }
         }
         (None, None) => {}

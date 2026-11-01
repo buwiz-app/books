@@ -36,19 +36,18 @@ fn setup(name: &str) -> (TempDir, Books) {
     (tmp, b)
 }
 fn evidence(b: &mut Books, tag: &str) -> String {
+    evidence_in(b, tag, None)
+}
+fn evidence_in(b: &mut Books, tag: &str, book: Option<&str>) -> String {
     let bytes = format!("%PDF-synthetic-{tag}");
-    ok_as(
-        b,
-        Origin::App,
-        tools::EVIDENCE_ATTACH,
-        json!({"client_request_id":format!("receipt-part-{tag}"),"op":"part","upload":format!("receipt-up-{tag}"),"part":0,"parts":1,"data_base64":b64::encode(bytes.as_bytes())}),
-    );
-    let c = ok_as(
-        b,
-        Origin::App,
-        tools::EVIDENCE_ATTACH,
-        json!({"client_request_id":format!("receipt-commit-{tag}"),"op":"commit","upload":format!("receipt-up-{tag}"),"mime":"application/pdf","kind":"receipt"}),
-    );
+    let mut part = json!({"client_request_id":format!("receipt-part-{tag}"),"op":"part","upload":format!("receipt-up-{tag}"),"part":0,"parts":1,"data_base64":b64::encode(bytes.as_bytes())});
+    let mut commit = json!({"client_request_id":format!("receipt-commit-{tag}"),"op":"commit","upload":format!("receipt-up-{tag}"),"mime":"application/pdf","kind":"receipt"});
+    if let Some(book) = book {
+        part["book"] = json!(book);
+        commit["book"] = json!(book);
+    }
+    ok_as(b, Origin::App, tools::EVIDENCE_ATTACH, part);
+    let c = ok_as(b, Origin::App, tools::EVIDENCE_ATTACH, commit);
     c["evidence"].as_str().unwrap().to_string()
 }
 fn draft(crid: &str, extracted: Value) -> Value {
@@ -200,6 +199,21 @@ fn refusals_write_nothing() {
         );
         assert!(!tin.to_string().contains("synthetic"), "{tin}");
     }
+    // a TIN-shaped value is refused whatever field carries it; built at run time
+    let tin_value = format!("{}-{}-{}-000", "123", "456", "789");
+    for field in ["reference", "person", "category"] {
+        let v = call_as(
+            &mut b,
+            Origin::Agent,
+            tools::ENTRY_DRAFT,
+            draft(
+                &format!("receipt-tinval-{field}"),
+                json!({"evidence":ev,"confidence":95,"fields":[{"field":field,"value":tin_value,"confidence":95}]}),
+            ),
+        );
+        assert_eq!(code(&v), "tin_refused", "{field}: {v}");
+        assert!(!v.to_string().contains(&tin_value), "{v}");
+    }
     assert_eq!(
         count(
             &mut b,
@@ -209,35 +223,57 @@ fn refusals_write_nothing() {
     );
     assert_eq!(count(&mut b, "SELECT count(*) FROM entry_extraction"), 0);
     assert_eq!(count(&mut b, "SELECT count(*) FROM evidence_link"), 0);
+    assert_eq!(
+        count(
+            &mut b,
+            "SELECT count(*) FROM entry_extraction WHERE fields_json LIKE '%456%'"
+        ),
+        0
+    );
 }
 
 #[test]
 fn cross_book_and_closed_month_refused_atomically() {
     let (_tmp, mut b) = setup("receipt-cross");
     let ev = evidence(&mut b, "c");
+    // evidence kept in another book: the draft itself is valid in book one, so
+    // only the evidence's book can refuse it
     let second = books::create(b.store().unwrap().conn(), "Other", Basis::Cash, 1).unwrap();
-    let mut other = draft("cross-1", json!({"evidence":ev,"confidence":90}));
     let t = books_store::plumbing::ticket_for(b.store().unwrap().conn(), "book", second).unwrap();
-    other["book"] = json!(t);
-    let v = call_as(&mut b, Origin::Agent, tools::ENTRY_DRAFT, other);
-    assert_eq!(v["isError"], true, "{v}");
+    let foreign = evidence_in(&mut b, "c2", Some(&t));
+    let v = call_as(
+        &mut b,
+        Origin::Agent,
+        tools::ENTRY_DRAFT,
+        draft("cross-book-1", json!({"evidence":foreign,"confidence":90})),
+    );
+    assert_eq!(code(&v), "not_found", "{v}");
+    // the same draft with book one's evidence goes through
+    ok_as(
+        &mut b,
+        Origin::Agent,
+        tools::ENTRY_DRAFT,
+        draft("cross-book-ok", json!({"evidence":ev,"confidence":90})),
+    );
+    assert_eq!(count(&mut b, "SELECT count(*) FROM evidence_link"), 1);
     {
         let c = b.store().unwrap().conn();
         let book = books::all(c).unwrap().into_iter().next().unwrap();
-        let _ = books_store::months::close(c, &book, "2026-09", None);
+        books_store::months::close(c, &book, "2026-09", None).unwrap();
     }
-    let mut closed = draft("closed-1", json!({"evidence":ev,"confidence":90}));
+    let mut closed = draft("closed-month-1", json!({"evidence":ev,"confidence":90}));
     closed["date"] = json!("2026-09-10");
     let v = call_as(&mut b, Origin::Agent, tools::ENTRY_DRAFT, closed);
-    assert_eq!(v["isError"], true, "{v}");
+    assert_eq!(code(&v), "period_closed", "{v}");
     assert_eq!(
         count(
             &mut b,
             "SELECT count(*) FROM entry WHERE payee = 'Synthetic Shop'"
         ),
-        0
+        1
     );
-    assert_eq!(count(&mut b, "SELECT count(*) FROM evidence_link"), 0);
+    assert_eq!(count(&mut b, "SELECT count(*) FROM evidence_link"), 1);
+    assert_eq!(count(&mut b, "SELECT count(*) FROM entry_extraction"), 1);
     // a draft refused by the ledger after the extraction checked out rolls back too
     let mut unbalanced = draft("rollback-1", json!({"evidence":ev,"confidence":90}));
     unbalanced["category"] = json!("no-such-account");
@@ -245,8 +281,51 @@ fn cross_book_and_closed_month_refused_atomically() {
         call_as(&mut b, Origin::Agent, tools::ENTRY_DRAFT, unbalanced)["isError"],
         true
     );
-    assert_eq!(count(&mut b, "SELECT count(*) FROM entry_extraction"), 0);
-    assert_eq!(count(&mut b, "SELECT count(*) FROM evidence_link"), 0);
+    assert_eq!(count(&mut b, "SELECT count(*) FROM entry_extraction"), 1);
+    assert_eq!(count(&mut b, "SELECT count(*) FROM evidence_link"), 1);
+}
+
+fn in_filter(b: &mut Books, filter: &str, entry: &Value) -> bool {
+    let listed = ok_as(
+        b,
+        Origin::App,
+        "books_ledger_list",
+        json!({"filter":filter}),
+    );
+    listed["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|r| r["ticket"] == *entry)
+}
+
+#[test]
+fn assistant_edit_keeps_low_confidence_review() {
+    let (_tmp, mut b) = setup("receipt-keep-review");
+    let ev = evidence(&mut b, "k");
+    let d = ok_as(
+        &mut b,
+        Origin::Agent,
+        tools::ENTRY_DRAFT,
+        draft(
+            "keep-review-1",
+            json!({"evidence":ev,"confidence":40,"fields":fields(json!(40))}),
+        ),
+    );
+    assert!(in_filter(&mut b, "review", &d["entry"]));
+    // the assistant changes only the memo: the draft still needs review
+    let mut edit = draft("keep-review-2", Value::Null);
+    edit["entry"] = d["entry"].clone();
+    edit["memo"] = json!("synthetic memo");
+    ok_as(&mut b, Origin::Agent, tools::ENTRY_DRAFT, edit);
+    assert!(in_filter(&mut b, "review", &d["entry"]));
+    assert!(!in_filter(&mut b, "draft", &d["entry"]));
+    // the user's own edit in Books is the review
+    let mut user = draft("keep-review-3", Value::Null);
+    user["entry"] = d["entry"].clone();
+    ok_as(&mut b, Origin::App, tools::ENTRY_DRAFT, user);
+    assert!(!in_filter(&mut b, "review", &d["entry"]));
+    assert!(in_filter(&mut b, "draft", &d["entry"]));
 }
 
 #[test]
@@ -367,4 +446,21 @@ fn plain_drafts_are_unchanged() {
         ),
         0
     );
+}
+
+#[test]
+fn draft_card_reaches_review_drafts_and_hides_payee() {
+    let src = books_mini_app::apps::find("action").unwrap().source;
+    // the receipt card falls back to drafts waiting for review
+    assert!(
+        src.contains("filter: \"review\""),
+        "review fallback missing"
+    );
+    assert!(
+        src.contains("x.status === \"draft\""),
+        "fallback must pick a draft"
+    );
+    // amount and payee are gated behind the explicit amounts request
+    assert!(src.contains("const GATED = [\"amount\", \"person\"]"));
+    assert!(!src.contains("import { Image") && !src.contains("<Image"));
 }
