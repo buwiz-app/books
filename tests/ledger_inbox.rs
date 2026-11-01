@@ -409,12 +409,16 @@ fn the_assistant_sees_no_payee_memo_or_amount_of_duplicates() {
 
 #[test]
 fn the_window_places_review_badges_and_panel_without_new_tools() {
-    let source = books_mini_app::apps::find("books").unwrap().source;
+    let books_mini_app::apps::AppSource::Tsx(source) =
+        books_mini_app::apps::find("books").unwrap().source
+    else {
+        panic!("the Books window is TSX");
+    };
     let review = source.find("function ReviewBadges").unwrap();
     let panel = source.find("function ReviewPanel").unwrap();
-    let ledger = source.find("const ledgerAccount").unwrap();
-    assert!(review < ledger && panel < ledger);
-    assert!(source.contains("<ReviewBadges row={r} />"));
+    let drawer = source.find("function EntryDrawer").unwrap();
+    assert!(review < drawer && panel < drawer);
+    // the ledger rows are the native books.ledger screen now; its review badges are a follow-up
     assert!(source.contains("<ReviewPanel entry={e()}"));
     assert!(source.contains("keep_both: true"));
     assert!(source.contains(r#"has("copy")"#) && !source.contains(r#"has("duplicate")"#));
