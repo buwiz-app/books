@@ -340,6 +340,34 @@ fn d_evidence_ticket_is_kept_on_the_statement() {
         get(&mut b, Origin::App)["statement"]["evidence"].is_null(),
         "the replaced statement keeps no snapshot"
     );
+    // a read accepted over it takes its own snapshot, and a read without one keeps none
+    let mut args = draft_args("r1-ev-draft-2", lines());
+    args["evidence"] = evidence.clone();
+    let draft = ok(&mut b, Origin::Agent, tools::STATEMENT_DRAFT_LINES, args)["draft"].clone();
+    ok(
+        &mut b,
+        Origin::App,
+        tools::STATEMENT_ACCEPT,
+        json!({ "client_request_id": "r1-ev-accept-2", "account": BANK, "month": MONTH, "draft": draft }),
+    );
+    assert_eq!(get(&mut b, Origin::App)["statement"]["evidence"], evidence);
+    let draft = ok(
+        &mut b,
+        Origin::Agent,
+        tools::STATEMENT_DRAFT_LINES,
+        draft_args("r1-ev-draft-3", lines()),
+    )["draft"]
+        .clone();
+    ok(
+        &mut b,
+        Origin::App,
+        tools::STATEMENT_ACCEPT,
+        json!({ "client_request_id": "r1-ev-accept-3", "account": BANK, "month": MONTH, "draft": draft }),
+    );
+    assert!(
+        get(&mut b, Origin::App)["statement"]["evidence"].is_null(),
+        "a read without a snapshot keeps none"
+    );
 }
 
 #[test]
