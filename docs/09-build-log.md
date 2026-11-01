@@ -495,3 +495,7 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox
 owner), PR #16, PR #13 and the two nsh fixes (Rox owner).
+
+## M10 parity
+
+- 2026-11-01 reports-1: `books_report` and `books_report_csv` take `compare_to` (previous, last_year, none; previous by default on the P&L, none elsewhere) and `tag` (a department or location ticket, P&L and cash flow only). The balance sheet compares as of the compare period's end; the cash flow compares each row and the net; trial balance and aging refuse a comparison. Results carry `compare: {key,label,mode}` and `tag: {ticket,kind,name}` or null. A tagged cash flow shows only the tagged money in and out with `tag_note`. New `books_store::slices::movements_tagged` (fixed column per `TagColumn`). Reports page: Compare segment and a tag picker; no new window tool (57). Tests: `tests/report_compare.rs`, `slices` unit test.

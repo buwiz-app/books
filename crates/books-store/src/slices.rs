@@ -91,8 +91,18 @@ mod tests {
             reference: None,
             needs_review: false,
             lines: vec![
-                LineInput { account_id: rent, debit: amount, credit: 0, facts: Facts::default() },
-                LineInput { account_id: bank, debit: 0, credit: amount, facts: Facts::default() },
+                LineInput {
+                    account_id: rent,
+                    debit: amount,
+                    credit: 0,
+                    facts: Facts::default(),
+                },
+                LineInput {
+                    account_id: bank,
+                    debit: 0,
+                    credit: amount,
+                    facts: Facts::default(),
+                },
             ],
         };
         let open: entries::Gate<'static> = &|_| Ok(());

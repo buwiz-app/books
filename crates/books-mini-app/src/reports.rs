@@ -18,8 +18,8 @@ use books_store::books::{self, Account, Book};
 use books_store::entries::{self, Filter, Form};
 use books_store::people;
 use books_store::plumbing;
-use books_store::slices::{self, TagColumn};
 use books_store::rusqlite::params;
+use books_store::slices::{self, TagColumn};
 use serde_json::{Map, Value, json};
 
 use crate::service::{Answer, Refusal, text, ticket};
@@ -152,7 +152,11 @@ struct TagFilter {
     ticket: String,
 }
 
-fn tag_arg(store: &Store, chart: &Chart, args: &Map<String, Value>) -> Result<Option<TagFilter>, Refusal> {
+fn tag_arg(
+    store: &Store,
+    chart: &Chart,
+    args: &Map<String, Value>,
+) -> Result<Option<TagFilter>, Refusal> {
     let Some(t) = text(args, "tag").map(str::trim).filter(|t| !t.is_empty()) else {
         return Ok(None);
     };
@@ -263,7 +267,11 @@ fn fiscal_start(book: &Book, d: Date) -> Date {
 
 /// Balances as of `end`, with this fiscal year's net income and the
 /// income of earlier years.
-fn as_of(store: &Store, chart: &Chart, end: Date) -> Result<(HashMap<i64, i64>, i64, i64), Refusal> {
+fn as_of(
+    store: &Store,
+    chart: &Chart,
+    end: Date,
+) -> Result<(HashMap<i64, i64>, i64, i64), Refusal> {
     let all = books::movements(store.conn(), chart.book.id, None, Some(end))?;
     let fy = fiscal_start(&chart.book, end);
     let year = books::movements(store.conn(), chart.book.id, Some(fy), Some(end))?;
@@ -374,7 +382,12 @@ struct Flows {
     moved: i64,
 }
 
-fn flows(store: &Store, chart: &Chart, period: &Period, tag: Option<&TagFilter>) -> Result<Flows, Refusal> {
+fn flows(
+    store: &Store,
+    chart: &Chart,
+    period: &Period,
+    tag: Option<&TagFilter>,
+) -> Result<Flows, Refusal> {
     let before = moves(store, chart, None, Some(period.start.add_days(-1)), None)?;
     let after = moves(store, chart, None, Some(period.end), None)?;
     let cash = |m: &HashMap<i64, i64>| -> i64 {
@@ -614,7 +627,9 @@ pub fn report(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
     }
     let tag = tag_arg(store, &chart, args)?;
     if tag.is_some() && !matches!(kind, "pl" | "cf") {
-        return Err(Refusal::invalid("A tag filters the P&L and cash flow only."));
+        return Err(Refusal::invalid(
+            "A tag filters the P&L and cash flow only.",
+        ));
     }
     let prev = match compare {
         Compare::Previous => Some(period.previous()),
