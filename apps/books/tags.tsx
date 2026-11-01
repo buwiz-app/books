@@ -6,7 +6,7 @@ const tagKind = signal("department");
 function TagsPage(p: { go: (page: string, filter?: string) => void }) {
   const data = resource(
     () => ({ v: ver(), k: tagKind() }),
-    (k: Any) => rox.call("books_tags_list", { kind: k.k }),
+    (k: Any) => buwiz.call("books_tags_list", { kind: k.k }),
   );
   const d = () => data() as Any;
   const adding = signal(false);
@@ -36,7 +36,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
       <If when={adding()}>
         <Panel pad class="flex-row gap-2 items-end">
           <Field label="Name" grow>
-            <TextBox value={name()} onChange={name.set} placeholder={tagKind() === "department" ? "Operations" : "Makati office"} />
+            <TextBox value={name()} onChange={(v) => name.set(v)} placeholder={tagKind() === "department" ? "Operations" : "Makati office"} />
           </Field>
           <Btn label="Add" tone="go" onPress={add} />
         </Panel>

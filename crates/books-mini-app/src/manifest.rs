@@ -1,15 +1,15 @@
-//! The v1 manifest (spec 5) for `dev.goldcoders.books`.
+//! The 2.0 manifest (spec 5) for `app.buwiz.books`.
 //!
 //! [`unsigned`] builds it from this build's code: every app's fingerprint is
 //! the SHA-256 of the source bytes `resources/read` answers ([`crate::apps`]),
 //! and `permissions.tools` names the tools each app's source calls. The
 //! `manifest` subcommand prints it as JCS text; the owner signs it at release
 //! (`sign-manifest.mjs --keychain gc-2026-01`), and a test run signs it with a
-//! throwaway key under a test key id (`tools/rox/conformance.sh`).
+//! throwaway key under a test key id (`tools/bot/conformance.sh`).
 //!
 //! The signed file is what this process serves (`BOOKS_V1_MANIFEST`), byte
 //! for byte, read again on every request. Without it the unsigned manifest
-//! is served, and Rox refuses it: only a signed Books runs in Rox.
+//! is served, and the Bot refuses it: only a signed Books runs in the Bot.
 
 use std::path::{Path, PathBuf};
 
@@ -17,14 +17,14 @@ use serde_json::{Map, Value, json};
 
 use crate::{apps, jcs, tools};
 
-pub const PROTOCOL: &str = "1.0.0";
-pub const PLUGIN_ID: &str = "dev.goldcoders.books";
+pub const PROTOCOL: &str = "2.0.0";
+pub const PLUGIN_ID: &str = "app.buwiz.books";
 pub const SHORT: &str = "books";
-pub const VERSION: &str = "0.1.1";
-pub const PUBLISHER_ID: &str = "dev.goldcoders";
+pub const VERSION: &str = "0.2.0";
+pub const PUBLISHER_ID: &str = "app.buwiz";
 /// The release key (owner decision D9). Tests sign under a test key id.
 pub const RELEASE_KEY_ID: &str = "gc-2026-01";
-pub const MANIFEST_URI: &str = "rox://manifest";
+pub const MANIFEST_URI: &str = "buwiz://manifest";
 pub const MANIFEST_MIME: &str = "application/json";
 /// The signed manifest file this process serves.
 pub const MANIFEST_ENV: &str = "BOOKS_V1_MANIFEST";
@@ -41,11 +41,11 @@ pub fn fingerprint(source: &str) -> String {
 fn permissions(app: &apps::App) -> Value {
     let mut p = json!({ "tools": apps::named_tools(app.source) });
     // the window copies a report's CSV to the clipboard (M3 export)
-    if app.source.contains("rox.copy(") {
+    if app.source.contains("buwiz.copy(") {
         p["copy"] = json!(true);
     }
     // Reconcile picks a CSV bank statement (M4); Import picks old books, a
-    // web Books export or CSV files (M5). Sources split `rox` and the
+    // web Books export or CSV files (M5). Sources split `buwiz` and the
     // method across lines, so the method's own name is the signal.
     if app.source.contains(".pickFile(") {
         p["pick_file"] = json!({ "extensions": [".csv", ".json"], "max_bytes": 52_428_800 });
@@ -136,7 +136,7 @@ fn app_entry(app: &apps::App) -> Value {
                     }
                 },
                 "placement": ["inline"],
-                // Rox holds its placeholder until the card's reads are in (`rox.ready`)
+                // The Bot holds its placeholder until the card's reads are in (`buwiz.ready`)
                 "inline": { "width": CARD_WIDTH, "height": height, "min_height": 96, "max_height": max_height, "resizable": false, "wait_ready": true },
                 "permissions": permissions(app),
             })
@@ -144,13 +144,13 @@ fn app_entry(app: &apps::App) -> Value {
     }
 }
 
-/// Every inline card's width: Rox's agent column, the width of its own cards
-/// (rox app/src/cards/mod.rs `shell`), so the chat's cards line up.
+/// Every inline card's width: the Bot's agent column, the width of its own cards
+/// (buwiz app/src/cards/mod.rs `shell`), so the chat's cards line up.
 const CARD_WIDTH: u32 = 560;
 
 /// A card app's title, description, first height and max height
 /// (docs/design/inline-cards.md). The card reports its natural height with
-/// rox.fit; its parts are bounded (a list scrolls inside 240 points), so the
+/// buwiz.fit; its parts are bounded (a list scrolls inside 240 points), so the
 /// height stays under the max and the footer is never cut off.
 fn card_kind(id: &str) -> (&'static str, &'static str, u32, u32) {
     match id {
@@ -198,7 +198,7 @@ pub fn unsigned(key_id: &str) -> Value {
         "version": VERSION,
         "title": "Buwiz Books",
         "description": "Bookkeeping on this computer, cash basis by default. Books records what happened; eBIRForms computes and files tax.",
-        "publisher": { "id": PUBLISHER_ID, "key_id": key_id, "name": "Goldcoders" },
+        "publisher": { "id": PUBLISHER_ID, "key_id": key_id, "name": "Buwiz" },
         "commands": [
             { "name": "books", "description": "Open your books: a page (ledger, unpaid, reconcile, forms…) or a card (cash, month, unpaid, pl)", "args": "[page or card]", "resolve": tools::RESOLVE },
             // templates (TMP): starter flows, each a command that opens its card (M8)

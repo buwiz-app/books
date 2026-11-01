@@ -1,17 +1,22 @@
 #!/usr/bin/env bash
 # tools/check-all.sh — every gate a commit must pass, in order (docs/06,
 # build plan 5.1): rustfmt, clippy with warnings denied, the Rust tests
-# (with the 17 PoC vectors byte for byte), the PoC's bun tests, Rox
-# conformance, the Rox host test, and the privacy scan.
+# (with the 17 PoC vectors byte for byte), the PoC's bun tests, the Buwiz
+# Bot's conformance runner, the Bot host test (which also types into the
+# Books window and changes its pickers), the privacy scan, and no detached
+# signal setters in apps/ (`onChange={x.set}` loses `this` when kit.tsx calls
+# p.onChange(v): "not a live signal"; write `onChange={(v) => x.set(v)}`).
 #
 # It prints one line per gate and a summary, keeps each gate's output in a
 # temp folder, and exits non-zero when any gate fails.
 #
-# Env: ROX_DIR          a Rox checkout or worktree for the conformance runner
-#                       and the host test (each script's own default otherwise)
+# Env: BUWIZ_BOT_DIR    a Buwiz Bot checkout at protocol 2.0 for the conformance
+#                       runner and the host test (each script's own default
+#                       otherwise); when set, cargo test also compares the Bot's
+#                       own JCS vector files
 #      BOOKS_HOST_PORT  the host test's broker port (8810 or above; 8787 is the
 #                       owner's, 8797-8803 the rox session's)
-#      SKIP_ROX=1       skip the two Rox gates (no Rox checkout at hand); the
+#      SKIP_BOT=1       skip the two Bot gates (no Bot checkout at hand); the
 #                       summary says so, and the run cannot pass
 set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -38,17 +43,24 @@ tests_total() {
   cargo test --quiet 2>&1 | tee "$OUT/cargo-test-full.log" | grep -E '^test result' | awk '{p+=$4; f+=$6} END {printf "test result: %d passed; %d failed\n", p, f; exit (f > 0)}'
 }
 
+no_detached_setters() {
+  # `\w` is a literal backslash and w inside an ERE bracket, so the word class is spelled out
+  if grep -rnE '=\{[A-Za-z_$][A-Za-z0-9_$.]*\.set\}' apps/; then return 1; fi
+  echo "0 findings: no detached setters in apps/"
+}
+
+gate "no detached setters" setters no_detached_setters
 gate "cargo fmt --check" fmt cargo fmt --check
 gate "cargo clippy -D warnings" clippy cargo clippy --all-targets -- -D warnings
 gate "cargo test (vectors 17/17)" cargo-test tests_total
 gate "PoC bun test" poc bash -c 'cd poc && bun test'
-if [ "${SKIP_ROX:-0}" = "1" ]; then
-  printf 'SKIP  %-28s SKIP_ROX=1\n' "Rox conformance"
-  printf 'SKIP  %-28s SKIP_ROX=1\n' "Rox host test"
+if [ "${SKIP_BOT:-0}" = "1" ]; then
+  printf 'SKIP  %-28s SKIP_BOT=1\n' "Bot conformance"
+  printf 'SKIP  %-28s SKIP_BOT=1\n' "Bot host test"
   skipped=2
 else
-  gate "Rox conformance" conformance bash tools/rox/conformance.sh
-  gate "Rox host test" host bash tools/rox/host-test.sh
+  gate "Bot conformance" conformance bash tools/bot/conformance.sh
+  gate "Bot host test" host bash tools/bot/host-test.sh
 fi
 gate "privacy scan" privacy bash tools/privacy-scan.sh
 

@@ -3,7 +3,7 @@
 //! Methods: `initialize`, `ping`, `tools/list`, `tools/call`,
 //! `resources/list`, `resources/templates/list`, `resources/read`.
 //! Notifications get no answer. Resources (the manifest and the app
-//! sources) are readable before `rox.provision`; tools are not (P7).
+//! sources) are readable before `buwiz.provision`; tools are not (P7).
 //!
 //! Nothing is logged: no argument, no subject and never the key (P4).
 
@@ -64,7 +64,9 @@ struct Caller {
 
 impl Caller {
     fn of(params: &Value) -> Self {
-        let caller = params.get("_meta").and_then(|meta| meta.get("rox/caller"));
+        let caller = params
+            .get("_meta")
+            .and_then(|meta| meta.get("buwiz/caller"));
         let text = |key: &str| {
             caller
                 .and_then(|c| c.get(key))
@@ -160,8 +162,8 @@ impl Server {
             Some(Value::Object(arguments)) => arguments,
             Some(_) => return Ok(fail("invalid_args", "arguments must be a JSON object")),
         };
-        // reserved tools first; an unknown rox.* is method-not-found (7.9)
-        if name.starts_with("rox.") {
+        // reserved tools first; an unknown buwiz.* is method-not-found (7.9)
+        if name.starts_with("buwiz.") {
             let now = now_ms();
             return match self
                 .host
@@ -177,7 +179,7 @@ impl Server {
         }
         // P7: nothing before a successful provision
         if !self.host.provisioned() {
-            return Err((INVALID_REQUEST, "rox.provision must come first".into()));
+            return Err((INVALID_REQUEST, "buwiz.provision must come first".into()));
         }
         if tools::find(name).is_none() {
             return Err((INVALID_PARAMS, "no such tool".into()));
@@ -273,7 +275,7 @@ fn initialize(params: &Value) -> Value {
 fn tool_list() -> Value {
     let mut list: Vec<Value> = reserved::RESERVED
         .iter()
-        .map(|name| json!({ "name": name, "description": "Reserved for Rox.", "inputSchema": { "type": "object" } }))
+        .map(|name| json!({ "name": name, "description": "Reserved for the Buwiz Bot.", "inputSchema": { "type": "object" } }))
         .collect();
     list.extend(tools::list());
     json!({ "tools": list })
@@ -283,7 +285,7 @@ fn resource_list() -> Value {
     let mut resources = vec![json!({
         "uri": manifest::MANIFEST_URI,
         "name": "manifest",
-        "description": "The Rox Mini App Protocol v1 manifest.",
+        "description": "The Mini App Protocol 2.0 manifest.",
         "mimeType": manifest::MANIFEST_MIME,
     })];
     for app in apps::APPS {

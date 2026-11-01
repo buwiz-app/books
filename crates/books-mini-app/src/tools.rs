@@ -1,5 +1,5 @@
 //! Books' own tools. Every name starts with `books_` (spec 5.3; RK-5: a
-//! tool that does not is skipped silently by Rox's agent surface).
+//! tool that does not is skipped silently by the Bot's agent surface).
 //!
 //! Who may call what (docs/01 §5.5, DD-20):
 //! - reads: the app and the assistant (the assistant gets totals and
@@ -7,7 +7,7 @@
 //! - `books_entry_draft`: the app and the assistant (D16), and a routine
 //!   that declares it;
 //! - `books_app_*`: the app only, behind a person's click. They carry
-//!   `_meta["rox/audience"] = ["app"]`, so the model never sees them.
+//!   `_meta["buwiz/audience"] = ["app"]`, so the model never sees them.
 
 use serde_json::{Map, Value, json};
 
@@ -421,7 +421,7 @@ fn book_create_schema() -> Value {
         "required": ["client_request_id", "label"],
         "properties": {
             "client_request_id": { "type": "string" },
-            "label": { "type": "string", "description": "The name shown in Rox; never a TIN." },
+            "label": { "type": "string", "description": "The name shown in the Buwiz Bot; never a TIN." },
             "basis": { "type": "string", "enum": ["cash", "accrual"], "description": "Cash unless chosen (ADR 0008)." },
             "fiscal_year_start": { "type": "integer", "minimum": 1, "maximum": 12 }
         }
@@ -457,7 +457,7 @@ pub const TOOLS: &[Tool] = &[
         reach: Reach::Everyone,
         write: false,
         schema: resolve_schema,
-        description: "Resolve the /books command for Rox.",
+        description: "Resolve the /books command for the Buwiz Bot.",
     },
     Tool {
         name: BOOK_GET,
@@ -911,7 +911,7 @@ pub fn list() -> Vec<Value> {
                 },
             });
             if t.reach == Reach::App {
-                entry["_meta"] = json!({ "rox/audience": ["app"] });
+                entry["_meta"] = json!({ "buwiz/audience": ["app"] });
             }
             entry
         })
@@ -1212,7 +1212,7 @@ pub fn call(
             {
                 out["content"] =
                     json!([{ "type": "text", "text": out["structuredContent"].to_string() }]);
-                out["_meta"] = json!({ "rox/open": open });
+                out["_meta"] = json!({ "buwiz/open": open });
             }
             out
         }

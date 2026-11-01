@@ -1,9 +1,9 @@
-//! The reserved tools of protocol v1 (spec 7.8): `rox.provision`,
-//! `rox.session.open`, `rox.session.close`, `rox.ticket.resolve` and
-//! `rox.uninstall`. Any other `rox.*` name is JSON-RPC -32601 (7.9).
+//! The reserved tools of protocol 2.0 (spec 7.8): `buwiz.provision`,
+//! `buwiz.session.open`, `buwiz.session.close`, `buwiz.ticket.resolve` and
+//! `buwiz.uninstall`. Any other `buwiz.*` name is JSON-RPC -32601 (7.9).
 //!
-//! Rox generates one ed25519 key per install and sends its seed in
-//! `rox.provision`, the first call of every spawn. The seed lives in
+//! The Bot generates one ed25519 key per install and sends its seed in
+//! `buwiz.provision`, the first call of every spawn. The seed lives in
 //! [`PluginKey`] and nowhere else: never written, logged, echoed or put in an
 //! error message (P4), and `Debug` is not derived. Every other tool is
 //! refused until a provision succeeds (P7).
@@ -20,11 +20,11 @@ use crate::{b64, jcs};
 
 /// The reserved tools this plugin implements.
 pub const RESERVED: [&str; 5] = [
-    "rox.provision",
-    "rox.session.open",
-    "rox.session.close",
-    "rox.ticket.resolve",
-    "rox.uninstall",
+    "buwiz.provision",
+    "buwiz.session.open",
+    "buwiz.session.close",
+    "buwiz.ticket.resolve",
+    "buwiz.uninstall",
 ];
 
 /// The longest session a certificate may cover: 8 hours.
@@ -36,7 +36,7 @@ pub struct PluginKey {
 }
 
 impl PluginKey {
-    /// `rox.provision`'s `key` and `pub`. The error never quotes either.
+    /// `buwiz.provision`'s `key` and `pub`. The error never quotes either.
     pub fn from_provision(arguments: &Map<String, Value>) -> Result<Self, String> {
         let key = arguments
             .get("key")
@@ -70,7 +70,7 @@ impl PluginKey {
     }
 }
 
-/// `rox.session.open`'s request, checked.
+/// `buwiz.session.open`'s request, checked.
 struct OpenRequest {
     app: String,
     open_id: String,
@@ -118,7 +118,7 @@ impl OpenRequest {
     fn certificate(&self, plugin: &str) -> Value {
         json!({
             "v": 1,
-            "typ": "rox-session",
+            "typ": "buwiz-session",
             "plugin": plugin,
             "app": self.app,
             "open_id": self.open_id,
@@ -138,7 +138,7 @@ pub struct Host {
 }
 
 impl Host {
-    /// Whether `rox.provision` has succeeded (P7).
+    /// Whether `buwiz.provision` has succeeded (P7).
     pub fn provisioned(&self) -> bool {
         self.key.is_some()
     }
@@ -161,19 +161,19 @@ impl Host {
         if !RESERVED.contains(&name) {
             return None;
         }
-        if name != "rox.provision" && !self.provisioned() {
-            return Some(Err("rox.provision must come first".into()));
+        if name != "buwiz.provision" && !self.provisioned() {
+            return Some(Err("buwiz.provision must come first".into()));
         }
         Some(Ok(match name {
-            "rox.provision" => self.provision(source, arguments),
-            "rox.session.open" => self.session_open(source, arguments, now_ms),
-            "rox.session.close" => {
+            "buwiz.provision" => self.provision(source, arguments),
+            "buwiz.session.open" => self.session_open(source, arguments, now_ms),
+            "buwiz.session.close" => {
                 if let Some(open_id) = arguments.get("open_id").and_then(Value::as_str) {
                     self.sessions.remove(open_id);
                 }
                 ok(json!({ "ok": true }))
             }
-            "rox.ticket.resolve" => {
+            "buwiz.ticket.resolve" => {
                 let ticket = arguments
                     .get("ticket")
                     .and_then(Value::as_str)
@@ -193,15 +193,10 @@ impl Host {
 
     fn provision(&mut self, source: &Source, arguments: &Map<String, Value>) -> Value {
         if arguments.get("plugin").and_then(Value::as_str) != Some(manifest::PLUGIN_ID) {
-            return fail("invalid_args", "this is dev.goldcoders.books");
+            return fail("invalid_args", "this is app.buwiz.books");
         }
-        let major = arguments
-            .get("protocol")
-            .and_then(Value::as_str)
-            .and_then(|version| version.split('.').next());
-        if major != Some("1") {
-            return fail("invalid_args", "this plugin implements protocol 1");
-        }
+        // no check of `protocol` here: the Bot decides compatibility from
+        // the manifest's `protocol` (2.0.0)
         let key = match PluginKey::from_provision(arguments) {
             Ok(key) => key,
             Err(message) => return fail("invalid_args", &message),
@@ -226,7 +221,7 @@ impl Host {
         now_ms: i64,
     ) -> Value {
         let Some(key) = &self.key else {
-            return fail("invalid_args", "rox.provision must come first");
+            return fail("invalid_args", "buwiz.provision must come first");
         };
         let request = match OpenRequest::read(arguments, now_ms) {
             Ok(request) => request,
@@ -264,7 +259,7 @@ mod tests {
     fn provision_args(seed: [u8; 32]) -> Map<String, Value> {
         let public = b64::encode(SigningKey::from_bytes(&seed).verifying_key().as_bytes());
         json!({
-            "protocol": "1.0.0",
+            "protocol": "2.0.0",
             "plugin": manifest::PLUGIN_ID,
             "key": {"alg": "ed25519", "seed": b64::encode(&seed)},
             "pub": public,
@@ -277,7 +272,7 @@ mod tests {
     #[test]
     fn a_provisioned_key_signs_what_its_public_key_verifies() {
         let key = PluginKey::from_provision(&provision_args([7; 32])).unwrap();
-        let cert = json!({"v": 1, "typ": "rox-session", "not_after": 5});
+        let cert = json!({"v": 1, "typ": "buwiz-session", "not_after": 5});
         let sig: [u8; 64] = b64::decode_exact(&key.sign(&cert).unwrap(), 64)
             .unwrap()
             .try_into()

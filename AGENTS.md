@@ -4,7 +4,7 @@ Guidance for coding agents in this repo. Before you change a rule, a schema or a
 
 ## What this repo is
 
-Research, design and proof of concept for Buwiz Books, a Rox mini app (`dev.goldcoders.books`). Not production code. Nothing here deploys or files anything. The TypeScript Books repo at `/Volumes/goldcoders/OSS/buwiz-books` is a reference only.
+Buwiz Books, a Buwiz Bot mini app: plugin id `app.buwiz.books`, publisher `app.buwiz` (key `gc-2026-01`), protocol 2.0. The Rust plugin is `crates/`, `apps/` and `tests/`; the research and design it was built from are `docs/`, `research/`, `data/` and `poc/`. Nothing here deploys or files anything. The TypeScript Books repo at `/Volumes/goldcoders/OSS/buwiz-books` is a reference only.
 
 ## Invariants
 
@@ -12,7 +12,7 @@ These cannot be inferred from the file tree.
 
 1. **Books contains no compliance logic** (owner correction 2026-10-29; `docs/adr/0007-books-supplies-measures-forms-owns-compliance.md`). No rates, elections, thresholds (VAT, 8% eligibility, mixed income), applicability or NIL decisions, ATC selection, tax due, OSD or graduated tax, tax rounding, due dates, overdue status or penalties. Those belong to Buwiz Forms / the BIR mini app. Books records transactions, payroll facts and evidence and produces accounting measures with lineage. The bridge maps measures onto Forms **input** boxes only (`fill_class: input` with a fill policy). Where a box depends on a taxpayer choice, the bridge reads the choice from the Forms draft or profile (`form_context`) and never decides, infers or defaults it. The one labelled exception is the 1601-C item 17 non-taxable 13th-month split (`1601C.II.17`, "the one input-level tax rule in the bridge"); do not add another without an owner decision. Compliance reference material lives in `research/handoff-to-forms/`; Books code must not load it.
 2. Money is integer centavos (`i64`; `i128` for intermediates). JSON carries two-decimal text such as `"200000.00"`. No floats: no `f64`, no `parseFloat`, no JS `number` for money. Measures are exact sums and are never rounded.
-3. Never put a raw TIN, a BIR ticket value (`tkt_...`), a key or a memo into a link, log, title, Rox prop, store file, fixture or doc. Use synthetic values only.
+3. Never put a raw TIN, a BIR ticket value (`tkt_...`), a key or a memo into a link, log, title, app prop, store file, fixture or doc. Use synthetic values only.
 4. Books stores no TIN in any phase. The cloud link is the opaque tax-profile `id` only. Never join on a TIN.
 5. Read the cloud tax-profile response as `id`, `tin_masked`, `registered_name` and `permissions`. Ignore other fields, but refuse any response with a `tin` field or other TIN-shaped fields. Never rely on `filing.submit`. Sign in only as the `buwiz-books` client, whose `books` scope gets `profile.view` and no `tin` since buwiz-server PR #4 merged (`docs/07` B1, closed).
 6. Values Books gives to BIR use fill source `document` (label pending owner decision D3). Never `user`, never `from_card`. BIR keeps provenance only for the session.
@@ -32,7 +32,7 @@ These cannot be inferred from the file tree.
 
 - Label facts: CONFIRMED, PARTIAL, MISSING, UNKNOWN or UNCONFIRMED. Mark reasoning INFERENCE and design choices PROPOSAL. Keep them separate.
 - Cite a repo key, path and line, and the HEAD from the table below. Cite a report as `research/traces/<name>.md` with its section.
-- `verify.md` governs conflicts between reports. `decisions.md` binds contracts with the Rox and cloud sessions.
+- `verify.md` governs conflicts between reports. `decisions.md` binds contracts with the Bot and cloud sessions.
 - Plain sentences. Tables for lists of facts.
 
 ## Source repos (read-only from here)
@@ -58,8 +58,8 @@ Do not edit these. Re-check HEAD and state before you rely on a citation. HEADs 
 ## Tooling
 
 - Use `bun` for any TypeScript in this repo (`poc/`). Do not use npm, npx or node here.
-- Rox's signing and conformance tools are Node. Run them from the Rox repo. Do not copy them here.
-- Rust (the plugin, `crates/`): `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` must pass clean. `tools/rox/conformance.sh` signs with a throwaway test key (`books-test-01`, never `gc-2026-01`) and runs Rox's `rox-plugin-test`; it needs the Rox checkout (`ROX_DIR`) with its `server/node_modules` present. `tools/rox/host-test.sh` installs Books in a throwaway Rox broker from a Rox worktree. Keep it on port 8810 or above (8787 is the owner's broker, 8797-8803 the rox session's tests), with `ROX_KEYSTORE=file:` and never the login Keychain. Never switch branches in the Rox checkout itself. No floats: the crate denies float lints.
+- The Bot's signing and conformance tools are Node. Run them from a Bot checkout. Do not copy them here.
+- Rust (the plugin, `crates/`): `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` must pass clean. `tools/bot/conformance.sh` signs with a throwaway test key (`books-test-01`, never `gc-2026-01`) and runs the Bot's `buwiz-plugin-test`; it needs a Bot checkout at protocol 2.0 (`BUWIZ_BOT_DIR`) with its `server/node_modules` present. `tools/bot/host-test.sh` installs Books in a throwaway Bot broker from a worktree of that checkout at `BUWIZ_BOT_COMMIT`. Keep it on port 8810 or above (8787 is the owner's broker, 8797-8803 the rox session's tests), with `BUWIZ_KEYSTORE=file:` and never the login Keychain (without it the 2.0 broker falls back to the Keychain). Never switch branches in the Bot checkout itself. One protocol version: 2.0, with no shims for older names. No floats: the crate denies float lints.
 
 ## Do not
 

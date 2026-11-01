@@ -6,7 +6,7 @@
 function firstEntry(filter: string) {
   return CP.entry
     ? Promise.resolve(CP.entry)
-    : rox.call("books_ledger_list", { filter }).then((r: Any) => (r.rows || [])[0]?.ticket || null);
+    : buwiz.call("books_ledger_list", { filter }).then((r: Any) => (r.rows || [])[0]?.ticket || null);
 }
 
 const plain = (amount: Any) => String(amount || "").replace(/^[+−]\s?/, "");
@@ -15,7 +15,7 @@ function DraftCard() {
   const done = signal(false);
   const r = read(
     () => ({ v: ver() }),
-    () => firstEntry("draft").then((t: Any) => (t ? rox.call("books_entry_get", { entry: t }) : { none: true })),
+    () => firstEntry("draft").then((t: Any) => (t ? buwiz.call("books_entry_get", { entry: t }) : { none: true })),
   );
   const d = () => r() as Any;
   return (
@@ -55,9 +55,9 @@ function BankLinesCard() {
   const r = read(
     () => ({ v: ver() }),
     () =>
-      rox.call("books_ledger_list", { filter: "review" }).then(async (l: Any) => {
+      buwiz.call("books_ledger_list", { filter: "review" }).then(async (l: Any) => {
         const rows = (l.rows || []).filter((x: Any) => x.status === "posted");
-        const first = rows[0] ? await rox.call("books_entry_get", { entry: rows[0].ticket }) : null;
+        const first = rows[0] ? await buwiz.call("books_entry_get", { entry: rows[0].ticket }) : null;
         return { count: rows.length, first };
       }),
   );
@@ -108,7 +108,7 @@ function OwedCard() {
   const r = read(
     () => ({ v: ver() }),
     () =>
-      Promise.all([rox.call("books_owed_list", { side: pay ? "pay" : "collect" }), rox.call("books_owed_options", {})]).then(([l, o]: Any) => ({
+      Promise.all([buwiz.call("books_owed_list", { side: pay ? "pay" : "collect" }), buwiz.call("books_owed_options", {})]).then(([l, o]: Any) => ({
         row: (l.rows || []).find((x: Any) => !CP.owed || x.ticket === CP.owed) || null,
         money: o.money || [],
       })),
@@ -162,13 +162,13 @@ function ReconcileCard() {
   const r = read(
     () => ({ v: ver() }),
     () =>
-      rox.call("books_reconcile_grid", {}).then(async (g: Any) => {
+      buwiz.call("books_reconcile_grid", {}).then(async (g: Any) => {
         const months = g.months || [];
         for (const row of g.rows || [])
           for (let i = (row.cells || []).length - 1; i >= 0; i -= 1) {
             const c = row.cells[i];
             if (c.state === "draft" && (!CP.month || c.month === CP.month)) {
-              const s = await rox.call("books_statement_get", { account: row.ticket, month: c.month });
+              const s = await buwiz.call("books_statement_get", { account: row.ticket, month: c.month });
               return { account: row.ticket, name: row.name, month: c.month, label: (months.find((m: Any) => m.key === c.month) || {}).label, s: s.statement };
             }
           }
@@ -220,7 +220,7 @@ function ReconcileCard() {
 function CloseCard() {
   const r = read(
     () => ({ v: ver() }),
-    () => rox.call("books_nudge", CP.month ? { kind: "month_end", month: CP.month } : { kind: "month_end" }),
+    () => buwiz.call("books_nudge", CP.month ? { kind: "month_end", month: CP.month } : { kind: "month_end" }),
   );
   const d = () => r() as Any;
   const name = () => String(d()?.month_label || "").split(" ")[0];
@@ -254,7 +254,7 @@ function CloseCard() {
 function CertCard() {
   const r = read(
     () => ({ v: ver() }),
-    () => rox.call("books_certificates_list", { filter: "all" }).then((l: Any) => (l.rows || []).find((x: Any) => (CP.certificate ? x.ticket === CP.certificate : x.status === "pending")) || null),
+    () => buwiz.call("books_certificates_list", { filter: "all" }).then((l: Any) => (l.rows || []).find((x: Any) => (CP.certificate ? x.ticket === CP.certificate : x.status === "pending")) || null),
   );
   const d = () => r() as Any;
   return (

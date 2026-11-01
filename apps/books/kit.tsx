@@ -1,14 +1,14 @@
 // Buwiz Books, the window (app `books`). This file is the kit every page
 // shares; the plugin serves kit, pages and window joined into one source
-// (crates/books-mini-app/src/apps.rs). Imports only nsh and rox (spec 6.3);
-// data comes from rox.call alone, and every tool called is in the app's
+// (crates/books-mini-app/src/apps.rs). Imports only nsh and buwiz (spec 6.3);
+// data comes from buwiz.call alone, and every tool called is in the app's
 // permissions.tools. Money arrives as display text from Books: the app
 // never does arithmetic on an amount (invariant 2).
 import { signal, computed, resource, Text, View, Scroll, Input } from "nsh";
-import { rox } from "rox";
+import { buwiz } from "buwiz";
 
 type Any = any;
-const PROPS = (rox.props || {}) as { ticket?: string; page?: string; account?: string; month?: string; filter?: string; form?: string; tax_option?: string; deduction?: string };
+const PROPS = (buwiz.props || {}) as { ticket?: string; page?: string; account?: string; month?: string; filter?: string; form?: string; tax_option?: string; deduction?: string };
 
 /** Colors: the drawing's dark palette, with a light twin for each. */
 const C = {
@@ -76,7 +76,7 @@ function toast(text: string) {
 /** A Books write: a fresh client_request_id, then every page reads again. */
 async function act(tool: string, args: Record<string, Any>): Promise<Any> {
   try {
-    const r = await rox.call(tool, { client_request_id: rid(), ...args });
+    const r = await buwiz.call(tool, { client_request_id: rid(), ...args });
     bump();
     return r;
   } catch (e) {

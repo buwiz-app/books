@@ -11,7 +11,7 @@ use serde_json::{Map, Value, json};
 use crate::jcs;
 use crate::jsonrpc::{fail, ok};
 
-/// Who a `tools/call` comes from (`_meta["rox/caller"]`, spec 8.4).
+/// Who a `tools/call` comes from (`_meta["buwiz/caller"]`, spec 8.4).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Origin {
     App,
@@ -155,7 +155,7 @@ impl Books {
         Ok(t)
     }
 
-    /// `rox.ticket.resolve`: a neutral title, never the subject.
+    /// `buwiz.ticket.resolve`: a neutral title, never the subject.
     pub fn ticket_title(&mut self, ticket: &str) -> Option<String> {
         if self.home_ticket.as_deref() == Some(ticket) {
             return Some(HOME_TITLE.into());
@@ -168,7 +168,7 @@ impl Books {
         title(store, &kind, id)
     }
 
-    /// `rox.uninstall`: forget every ticket; the book stays (D10).
+    /// `buwiz.uninstall`: forget every ticket; the book stays (D10).
     pub fn forget_tickets(&mut self) {
         self.home_ticket = None;
         if self.exists()

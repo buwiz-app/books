@@ -13,7 +13,7 @@ const SET_TABS: [string, string][] = [
 function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
   const data = resource(
     () => ({ v: ver() }),
-    () => rox.call("books_settings_get", {}),
+    () => buwiz.call("books_settings_get", {}),
   );
   const d = () => data() as Any;
   const name = signal("");
@@ -70,10 +70,10 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
             <If when={setTab() === "book"}>
               <Panel pad class="gap-3.5">
                 <View class="flex-row gap-3">
-                  <Field label="Name shown in Rox" grow>
+                  <Field label="Name shown in the Buwiz Bot" grow>
                     <View class="flex-row gap-2">
                       <View class="flex-1">
-                        <TextBox value={name()} onChange={name.set} placeholder={d()?.book.label || ""} />
+                        <TextBox value={name()} onChange={(v) => name.set(v)} placeholder={d()?.book.label || ""} />
                       </View>
                       <Btn label="Rename" disabled={!name().trim()} onPress={() => save({ label: name().trim() })} />
                     </View>
@@ -112,7 +112,7 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
                 <If when={Boolean(reopening())}>
                   <Panel pad class="flex-row gap-2 items-end">
                     <Field label={`Why reopen ${reopening()}?`} grow>
-                      <TextBox value={reason()} onChange={reason.set} placeholder="A late bank fee" />
+                      <TextBox value={reason()} onChange={(v) => reason.set(v)} placeholder="A late bank fee" />
                     </Field>
                     <Btn label="Reopen" tone="go" onPress={() => reopen(reopening())} />
                   </Panel>
@@ -200,12 +200,12 @@ function CloudLink() {
   const note = signal("");
   const list = resource(
     () => ({ v: ver() }),
-    () => rox.call("books_app_tax_list", {}),
+    () => buwiz.call("books_app_tax_list", {}),
   );
   const l = () => list() as Any;
   let tries = 0;
   const poll = () =>
-    rox
+    buwiz
       .call("books_app_signin", { step: "poll" })
       .then((r: Any) => {
         if (r.status === "signed_in") {
@@ -223,7 +223,7 @@ function CloudLink() {
   const start = () => {
     note.set("");
     tries = 0;
-    rox
+    buwiz
       .call("books_app_signin", { step: "start" })
       .then((r: Any) => {
         code.set(r);
@@ -240,7 +240,7 @@ function CloudLink() {
           <Text class={`text-[12px] ${C.mute}`}>{`Open ${String(code()?.verification_uri || "")} and type this code:`}</Text>
           <Text class={`text-[20px] font-mono font-bold ${C.ink}`}>{code()?.user_code || ""}</Text>
           <View class="flex-row gap-2">
-            <Btn label="Copy the code" small onPress={() => (rox.copy ? rox.copy(String(code()?.user_code || "")) : null)} />
+            <Btn label="Copy the code" small onPress={() => (buwiz.copy ? buwiz.copy(String(code()?.user_code || "")) : null)} />
             <Btn label="I approved it" small onPress={poll} />
           </View>
         </View>
@@ -269,7 +269,7 @@ function CloudLink() {
           )}
         </Each>
         <View class="flex-row">
-          <Btn label="Sign out" small onPress={() => rox.call("books_app_signin", { step: "out" }).then(bump).catch(() => null)} />
+          <Btn label="Sign out" small onPress={() => buwiz.call("books_app_signin", { step: "out" }).then(bump).catch(() => null)} />
         </View>
       </If>
       <If when={Boolean(note())}>
