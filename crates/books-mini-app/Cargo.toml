@@ -78,3 +78,7 @@ ureq = { version = "2.12", default-features = false, features = ["tls"] }
 
 [lints]
 workspace = true
+
+[[test]]
+name = "match_assist"
+path = "../../tests/match_assist.rs"
