@@ -59,6 +59,10 @@ path = "../../tests/forms_bridge.rs"
 name = "privacy_outputs"
 path = "../../tests/privacy_outputs.rs"
 
+[[test]]
+name = "person_statement"
+path = "../../tests/person_statement.rs"
+
 [dependencies]
 books-core = { path = "../books-core" }
 books-store = { path = "../books-store" }

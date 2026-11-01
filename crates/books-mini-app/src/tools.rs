@@ -204,10 +204,11 @@ fn report_schema() -> Value {
         "type": "object",
         "properties": {
             "book": { "type": "string" },
-            "kind": { "type": "string", "enum": ["pl", "bs", "cf", "tb", "ag"] },
+            "kind": { "type": "string", "enum": ["pl", "bs", "cf", "tb", "ag", "ps"] },
             "period_kind": { "type": "string", "enum": ["month", "quarter", "year"] },
             "period": { "type": "string", "description": "2026-10, 2026-Q3 or 2026; this period when absent." },
-            "side": { "type": "string", "enum": ["collect", "pay"], "description": "Aging only." }
+            "side": { "type": "string", "enum": ["collect", "pay"], "description": "Aging only." },
+            "person": { "type": "string", "description": "Kind ps only: a person ticket. The period is a year when period_kind is absent." }
         }
     })
 }
@@ -583,7 +584,7 @@ pub const TOOLS: &[Tool] = &[
         reach: Reach::Everyone,
         write: false,
         schema: report_schema,
-        description: "A report on the book's basis: P&L with the previous period, balance sheet, cash flow, trial balance, or aging (accrual books only).",
+        description: "A report on the book's basis: P&L with the previous period, balance sheet, cash flow, trial balance, aging (accrual books only), or a person statement (ps).",
     },
     Tool {
         name: REPORT_CSV,

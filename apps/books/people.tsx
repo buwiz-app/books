@@ -14,6 +14,127 @@ function Avatar(p: { initials: string; color: string; big?: boolean }) {
   );
 }
 
+const stmtKind = signal("year");
+const stmtPeriod = signal("");
+
+// One person's statement (books_report kind ps): open items with days
+// late and the aging strip, then the period's money in and out.
+function Statement(p: { person: string }) {
+  const data = resource(
+    () => ({ v: ver(), t: p.person, pk: stmtKind(), per: stmtPeriod() }),
+    (k: Any) => {
+      const args: Record<string, string> = { kind: "ps", person: k.t, period_kind: k.pk };
+      if (k.per) args.period = k.per;
+      return buwiz.call("books_report", args);
+    },
+  );
+  const s = () => data() as Any;
+  const employee = () => s()?.person?.kind === "employee";
+  const copy = () => {
+    const args: Record<string, string> = { kind: "ps", person: p.person, period_kind: stmtKind() };
+    if (stmtPeriod()) args.period = stmtPeriod();
+    buwiz.call("books_report_csv", args).then(
+      (r: Any) => {
+        if (buwiz.copy) {
+          buwiz.copy(String(r.csv));
+          toast(`${String(r.file_name)} copied`);
+        } else toast("Copying is not available in this Buwiz Bot.");
+      },
+      (e: Any) => toast(errText(e)),
+    );
+  };
+  const items = () => [...(s()?.open?.collect || []), ...(s()?.open?.pay || [])];
+  const strip = () =>
+    (s()?.buckets?.columns || []).map((label: string, i: number) => ({
+      label,
+      collect: `+${String(s()?.buckets?.collect?.[i] ?? "")}`,
+      pay: `−${String(s()?.buckets?.pay?.[i] ?? "")}`,
+    }));
+  return (
+    <View class={`gap-2 pt-2 border-t ${C.line}`}>
+      <View class="flex-row items-center gap-2">
+        <Text class={`flex-1 text-[13px] font-semibold ${C.ink}`}>Statement</Text>
+        <Seg
+          options={[
+            ["year", "Year"],
+            ["quarter", "Quarter"],
+            ["month", "Month"],
+          ]}
+          value={stmtKind()}
+          onPick={(v: string) => {
+            stmtKind.set(v);
+            stmtPeriod.set("");
+          }}
+        />
+        <Btn label="‹" small onPress={() => stmtPeriod.set(s()?.period?.prev || "")} />
+        <Text class={`text-[12.5px] ${C.ink}`}>{s()?.period?.label || ""}</Text>
+        <Btn label="›" small onPress={() => stmtPeriod.set(s()?.period?.next || "")} />
+        <Btn label="Copy statement" small onPress={copy} />
+      </View>
+      <Loading res={data} />
+      <If when={Boolean(s()?.basis_note) && !employee()}>
+        <Text class={`text-[11.5px] ${C.dim}`}>{s()?.basis_note || ""}</Text>
+      </If>
+      <If when={Boolean(s()) && !employee()}>
+        <View class="gap-1">
+          <Text class={`text-[12px] ${C.dim}`}>Open items</Text>
+          <If when={items().length === 0}>
+            <Text class={`text-[12px] ${C.dim}`}>Nothing open.</Text>
+          </If>
+          <Each of={items()} key={rowKey}>
+            {(r: Any) => (
+              <View class={`flex-row gap-3 py-1.5 border-t items-center ${C.line}`}>
+                <View class={`rounded-full px-2 py-0.5 ${r().side === "collect" ? C.greenBg : C.redBg}`}>
+                  <Text class="text-[11px] text-white">{r().side === "collect" ? "To collect" : "To pay"}</Text>
+                </View>
+                <Text class={`flex-1 text-[12.5px] ${C.ink}`}>Due {r().due_shown}</Text>
+                <Text class={`w-[90px] text-[12.5px] ${C.dim}`}>{r().days_late > 0 ? `${String(r().days_late)} days late` : "Current"}</Text>
+                <Text class={`w-[110px] text-right text-[12.5px] font-mono ${C.ink}`}>{r().amount_shown}</Text>
+              </View>
+            )}
+          </Each>
+          <View class="flex-row gap-2 pt-1">
+            <Each of={strip()} key={rowKey}>
+              {(c: Any) => (
+                <View class={`flex-1 rounded-[8px] p-2 ${C.raise}`}>
+                  <Text class={`text-[11px] ${C.dim}`}>{c().label}</Text>
+                  <Text class={`text-[12px] font-mono ${C.green}`}>{c().collect}</Text>
+                  <Text class={`text-[12px] font-mono ${C.ink}`}>{c().pay}</Text>
+                </View>
+              )}
+            </Each>
+          </View>
+        </View>
+      </If>
+      <If when={Boolean(s())}>
+        <View>
+          <Text class={`text-[12px] ${C.dim}`}>Activity</Text>
+          <If when={(s()?.activity?.rows || []).length === 0}>
+            <Text class={`text-[12px] ${C.dim}`}>No entries in this period.</Text>
+          </If>
+          <Each of={s()?.activity?.rows || []} key={rowKey}>
+            {(r: Any) => (
+              <View class={`flex-row gap-3 py-1.5 border-t ${C.line}`} onPress={() => drawerEntry.set(r().entry)}>
+                <Text class={`w-[52px] text-[12.5px] font-mono ${C.ink}`}>{r().date_shown}</Text>
+                <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>
+                  {r().what}
+                </Text>
+                <Text class={`w-[100px] text-right text-[12.5px] font-mono ${C.green}`}>{r().in_shown}</Text>
+                <Text class={`w-[100px] text-right text-[12.5px] font-mono ${C.ink}`}>{r().out_shown}</Text>
+              </View>
+            )}
+          </Each>
+          <View class={`flex-row gap-3 py-1.5 border-t ${C.line}`}>
+            <Text class={`flex-1 text-[12.5px] font-semibold ${C.ink}`}>Total · net {s()?.activity?.net_shown || ""}</Text>
+            <Text class={`w-[100px] text-right text-[12.5px] font-bold font-mono ${C.ink}`}>{s()?.activity?.total_in_shown || ""}</Text>
+            <Text class={`w-[100px] text-right text-[12.5px] font-bold font-mono ${C.ink}`}>{s()?.activity?.total_out_shown || ""}</Text>
+          </View>
+        </View>
+      </If>
+    </View>
+  );
+}
+
 function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
   const list = resource(
     () => ({ v: ver(), k: peopleKind() }),
@@ -145,6 +266,9 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
                   )}
                 </Each>
               </View>
+              <If when={!d()?.bank && Boolean(current()?.ticket)}>
+                <Statement person={current()?.ticket || ""} />
+              </If>
               <If when={!d()?.bank}>
                 <View class={`flex-row gap-2 items-center rounded-lg px-2.5 py-2 ${PILL.bir}`}>
                   <Text class={`text-[12px] ${PILL.bir}`}>{d()?.tin_note || ""}</Text>

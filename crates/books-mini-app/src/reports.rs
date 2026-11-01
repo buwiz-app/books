@@ -406,15 +406,20 @@ fn ag(store: &Store, chart: &Chart, period: &Period, args: &Map<String, Value>) 
 /// `books_report`.
 pub fn report(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
     let chart = Chart::load(store, book)?;
-    let period = period_arg(args)?;
     let kind = text(args, "kind").unwrap_or("pl");
+    let period = if kind == "ps" {
+        crate::person_statement::period(args)?
+    } else {
+        period_arg(args)?
+    };
     let mut out = match kind {
         "pl" => pl(store, &chart, &period)?,
         "bs" => bs(store, &chart, &period)?,
         "cf" => cf(store, &chart, &period)?,
         "tb" => tb(store, &chart, &period)?,
         "ag" => ag(store, &chart, &period, args)?,
-        _ => return Err(Refusal::invalid("`kind` is pl, bs, cf, tb or ag.")),
+        "ps" => crate::person_statement::report(store, &chart, &period, args)?,
+        _ => return Err(Refusal::invalid("`kind` is pl, bs, cf, tb, ag or ps.")),
     };
     let next = Period::of(period.end.add_days(1), period.kind);
     out["kind"] = json!(kind);
@@ -470,6 +475,7 @@ pub fn report_csv(store: &Store, book: Book, args: &Map<String, Value>) -> Answe
                 lines.push(cells.join(","));
             }
         }
+        Some("ps") => lines.extend(crate::person_statement::csv_lines(&r, csv_cell)),
         Some("tb") => {
             lines.push("Number,Account,Debit,Credit".into());
             for row in r["sections"][0]["rows"].as_array().into_iter().flatten() {

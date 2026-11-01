@@ -65,7 +65,11 @@ fn money_side(a: &Account) -> bool {
 }
 
 /// Posted entries of a person, newest first.
-fn person_entries(store: &Store, chart: &Chart, person_id: i64) -> Result<Vec<Summary>, Refusal> {
+pub(crate) fn person_entries(
+    store: &Store,
+    chart: &Chart,
+    person_id: i64,
+) -> Result<Vec<Summary>, Refusal> {
     let ids: Vec<i64> = {
         let mut stmt = store
             .conn()

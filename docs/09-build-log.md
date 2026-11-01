@@ -491,6 +491,23 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 `tools/check-all.sh`: fmt clean; clippy clean; cargo test 117; PoC 177; conformance 182 pass, 7 skipped (rox
 `9c106cc`); host test 17/17; privacy scan 0 findings.
 
+## M10 parity
+
+### 2026-11-01 reports-3: person statement
+
+- `books_report` kind `ps` (new module `crates/books-mini-app/src/person_statement.rs`; no new tool): one person's
+  activity in the period (money in and out by cash lines, oldest first, at most 500 rows with `more`), open invoices
+  and bills with days late at the period end (clamped to today) and the Current / 1-30 / 31-60 / 61+ strip per side.
+  The period is a year unless `period_kind` is given. It carries the person's ticket and kind but no name, payee, memo
+  or unpaid reference, because `books_report` is assistant-callable. On a cash book the open items are reminders
+  (`basis_note`, ADR 0008); kind `ag` stays accrual-only.
+- `books_report_csv` kind `ps`: an activity block (`Date,Entry,What,In,Out`, entry numbers, totals), a blank line, then
+  the open items (`Side,Issued,Due,Days late,Amount`); file name `books-ps-<period>.csv`.
+- People page: a Statement section in the person panel (Year / Quarter / Month with previous and next, open items,
+  the aging strip, activity, Copy statement). Employees see activity only; bank and card accounts get no section.
+  The window still names 57 tools.
+- Tests: `tests/person_statement.rs` (golden book, pinned to 2026-10-29).
+
 ## Not yet built
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox
