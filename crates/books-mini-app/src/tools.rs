@@ -22,7 +22,8 @@ use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
 use crate::{
-    cards, checks, forms, handoff, oldbooks, payroll, reconcile, records, reports, views, writes,
+    cards, checks, forms, handoff, oldbooks, payroll, reconcile, records, reports, statement_read,
+    views, writes,
 };
 
 pub const STATUS: &str = "books_status";
@@ -95,6 +96,7 @@ pub const EVIDENCE_CLASSIFY: &str = "books_evidence_classify";
 pub const EVIDENCE_KIND: &str = "books_app_evidence_kind";
 pub const EVIDENCE_PREVIEW: &str = "books_app_evidence_preview";
 pub const EVIDENCE_REVIEW: &str = "books_app_evidence_review";
+pub const STATEMENT_DRAFT_LINES: &str = "books_statement_draft_lines";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -407,6 +409,23 @@ fn show_schema() -> Value {
         "certificate": { "type": "string" }, "month": { "type": "string" }, "period": { "type": "string" },
         "form": { "type": "string", "enum": ["2551Q", "1601C", "1701MS"] }, "side": { "type": "string", "enum": ["collect", "pay"] },
         "tax_option": { "type": "string", "enum": ["graduated", "eight_percent"] }, "deduction": { "type": "string", "enum": ["osd", "itemized"] } } })
+}
+
+fn statement_draft_schema() -> Value {
+    json!({ "type": "object", "required": ["client_request_id", "account", "month", "lines"], "properties": {
+        "client_request_id": { "type": "string" }, "book": { "type": "string" },
+        "account": { "type": "string", "description": "The bank, cash or card account's ticket." },
+        "month": { "type": "string", "description": "YYYY-MM" },
+        "evidence": { "type": "string", "description": "The attached statement's evidence ticket." },
+        "closing": { "type": "string", "description": "The ending balance, two-place text." },
+        "lines": { "type": "array", "minItems": 1, "maxItems": 2000, "items": { "type": "object", "required": ["date", "amount"], "properties": {
+            "date": { "type": "string", "description": "YYYY-MM-DD" },
+            "description": { "type": "string", "maxLength": 80 },
+            "amount": { "type": "string", "description": "Two-place text; money into the account is positive." },
+            "balance": { "type": "string", "description": "The running balance after the line, two-place text." },
+            "page": { "type": "integer", "minimum": 1, "maximum": 500 },
+            "bbox": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 1000 }, "minItems": 4, "maxItems": 4, "description": "left, top, right, bottom in thousandths of the page." },
+            "confidence": { "type": "integer", "minimum": 0, "maximum": 100 } } } } } })
 }
 
 fn nudge_schema() -> Value {
@@ -952,6 +971,13 @@ pub const TOOLS: &[Tool] = &[
         schema: document_review::review_schema,
         description: "Document-kind proposals: generic kind, confidence and status. App only.",
     },
+    Tool {
+        name: STATEMENT_DRAFT_LINES,
+        reach: Reach::Everyone,
+        write: true,
+        schema: statement_draft_schema,
+        description: "Hand Books the lines you read from a statement the user attached, with page, box and confidence. Saved as a draft the user accepts in the app; it changes no statement.",
+    },
 ];
 
 pub fn find(name: &str) -> Option<&'static Tool> {
@@ -1118,7 +1144,7 @@ pub fn call(
             reconcile::grid(store, book)
         }),
         STATEMENT_GET => read(books, arguments, |store, book, args| {
-            reconcile::statement_view(store, book, args)
+            reconcile::statement_view(store, book, args, origin)
         }),
         SETTINGS_GET => read(books, arguments, |store, book, _| {
             reconcile::settings(store, book)
@@ -1141,6 +1167,9 @@ pub fn call(
             })
         }
         STATEMENT_ACCEPT => write(books, name, origin, arguments, |tx| {
+            if arguments.contains_key("draft") {
+                return statement_read::accept(tx, arguments);
+            }
             reconcile::statement_accept(tx, arguments)
         }),
         STATEMENT_ADD => write(books, name, origin, arguments, |tx| {
@@ -1314,6 +1343,9 @@ pub fn call(
         EVIDENCE_PREVIEW => document_review::preview(books, origin, arguments),
         EVIDENCE_REVIEW => read(books, arguments, |store, _book, args| {
             document_review::review(store.conn(), args)
+        }),
+        STATEMENT_DRAFT_LINES => write(books, name, origin, arguments, |tx| {
+            statement_read::draft_lines(tx, arguments, origin)
         }),
         _ => fail("internal", "Books has no handler for that tool."),
     })

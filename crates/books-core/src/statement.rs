@@ -20,6 +20,8 @@ pub struct Parsed {
     pub lines: Vec<Line>,
     /// The last running balance, when the statement has one.
     pub closing: Option<i64>,
+    /// Each line's running balance, parallel to `lines`.
+    pub balances: Vec<Option<i64>>,
 }
 
 /// One CSV record: commas, double quotes, `""` inside quotes.
@@ -217,6 +219,7 @@ pub fn parse_csv(text: &str) -> Result<Parsed, String> {
         return Err("The statement needs an Amount column, or Debit and Credit columns.".into());
     }
     let mut lines = Vec::new();
+    let mut balances = Vec::new();
     let mut closing = None;
     for (n, row) in rows.enumerate() {
         let cell = |i: usize| row.get(i).map(String::as_str).unwrap_or("");
@@ -235,9 +238,11 @@ pub fn parse_csv(text: &str) -> Result<Parsed, String> {
         if value == 0 {
             continue;
         }
-        if let Some(b) = balance.and_then(|b| parse_amount(cell(b))) {
-            closing = Some(b);
+        let running = balance.and_then(|b| parse_amount(cell(b)));
+        if running.is_some() {
+            closing = running;
         }
+        balances.push(running);
         let description = mask_digit_runs(cell(desc))
             .chars()
             .take(80)
@@ -258,7 +263,11 @@ pub fn parse_csv(text: &str) -> Result<Parsed, String> {
     if lines.is_empty() {
         return Err("The statement has no lines with an amount.".into());
     }
-    Ok(Parsed { lines, closing })
+    Ok(Parsed {
+        lines,
+        closing,
+        balances,
+    })
 }
 
 /// A ledger movement on the account: an entry and its effect (debit minus

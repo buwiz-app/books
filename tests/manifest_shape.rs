@@ -182,12 +182,12 @@ fn every_books_tool_starts_with_books_and_every_named_tool_exists() {
         let app_only = tool["_meta"]["buwiz/audience"] == serde_json::json!(["app"]);
         assert_eq!(name.starts_with("books_app_"), app_only, "{name}");
         if write && !app_only {
-            // evidence-3/evidence-4: owed and classification proposals are drafts too; the app decides
             assert!(
                 [
                     "books_entry_draft",
                     "books_owed_draft",
-                    "books_evidence_classify"
+                    "books_evidence_classify",
+                    "books_statement_draft_lines",
                 ]
                 .contains(&name),
                 "the assistant may only draft: {name}"

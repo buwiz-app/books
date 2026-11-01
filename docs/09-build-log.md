@@ -520,3 +520,19 @@ back, so the same upload can be retried. The list cursor is the last item's evid
 tools refuse unknown arguments, and a link to a discarded draft is refused (`discarded`); voided entries stay valid
 link targets for history. `oldbooks.rs` keeps restart-on-new-count for `books_app_upload_part`; its one change,
 outside this task's file list, stops a retried part counting twice against the 50 MB cap (PROPOSAL: needs owner OK).
+### 2026-11-01 — reconcile-1
+
+CONFIRMED: migration 11 adds `statement.evidence_id`, per-line `balance`, `page`, box (`bx0..by1`, thousandths of the
+page) and `confidence` on `statement_line`, and the `statement_draft` / `statement_draft_line` tables
+(`books-store::statement_drafts`). `statement::Parsed` keeps per-line CSV balances, and a CSV import stores them.
+
+CONFIRMED: `books_statement_draft_lines` (Reach::Everyone, write, not in the window's tools) stores the lines the
+assistant read as a pending draft (ticket kind `sdraft`); a newer read for the same account and month replaces the
+older one. Its result is counts only (`lines`, `low_confidence` < 80, `outside_month`, `balance_breaks`), never a
+description or amount. Lines outside the month are kept and flagged. `books_app_statement_accept` with `draft` (app
+only) accepts it through the existing `months::import` path, leaving out `exclude` lines, or puts it aside with
+`dismiss`. `books_statement_get` adds `draft` (rows for the app only), `statement.evidence` and per-row
+`page`/`box`/`confidence`/`low`. `apps/books/statement_read.tsx` `DraftBanner` shows the read in the month view.
+Tests: `tests/statement_read.rs`.
+
+UNCONFIRMED: pick_file still lists only .csv/.json/.xlsx/.xls, so a PDF or image statement cannot be picked yet (evidence UI task).

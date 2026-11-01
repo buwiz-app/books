@@ -196,10 +196,24 @@ mod tests {
         let paths = Paths::in_dir(tmp.0.join("db"));
         {
             let store = Store::open(&paths).unwrap();
+            store
+                .conn()
+                .execute_batch(
+                    "DROP TABLE statement_draft_line; DROP TABLE statement_draft;
+                     ALTER TABLE statement DROP COLUMN evidence_id;
+                     ALTER TABLE statement_line DROP COLUMN by1; ALTER TABLE statement_line DROP COLUMN bx0;
+                     ALTER TABLE statement_line DROP COLUMN by0; ALTER TABLE statement_line DROP COLUMN bx1;
+                     ALTER TABLE statement_line DROP COLUMN page; ALTER TABLE statement_line DROP COLUMN balance;
+                     ALTER TABLE statement_line DROP COLUMN confidence;",
+                )
+                .unwrap();
             store.conn().execute_batch("DROP TABLE evidence_classification; DROP TABLE owed_proposal; DROP TABLE evidence_link; DROP TABLE evidence; UPDATE meta SET value='6' WHERE key='schema_version';").unwrap();
         }
         let store = Store::open(&paths).unwrap();
-        assert_eq!(store.meta("schema_version").unwrap().as_deref(), Some("10"));
+        assert_eq!(
+            store.meta("schema_version").unwrap().as_deref(),
+            Some(crate::MIGRATIONS.last().unwrap().0.to_string().as_str())
+        );
         assert!(
             list(store.conn(), -1, None, None, 0, 50)
                 .unwrap()
