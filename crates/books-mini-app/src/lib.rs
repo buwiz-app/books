@@ -27,6 +27,7 @@ pub mod jcs;
 pub mod jsonrpc;
 pub mod manifest;
 pub mod match_assist;
+pub mod month_pack;
 pub mod oldbooks;
 pub mod owed_detail;
 pub mod owed_doc;

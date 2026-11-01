@@ -22,8 +22,8 @@ use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
 use crate::{
-    cards, checks, forms, handoff, oldbooks, owed_repeats, payroll, reconcile, reconcile_document,
-    records, reports, statement_read, views, writes,
+    cards, checks, forms, handoff, month_pack, oldbooks, owed_repeats, payroll, reconcile,
+    reconcile_document, records, reports, statement_read, views, writes,
 };
 
 pub const STATUS: &str = "books_status";
@@ -101,6 +101,7 @@ pub const RECONCILE_DOCUMENT: &str = "books_app_reconcile_document";
 pub const CHECKS: &str = "books_checks";
 pub const OWED_DOCUMENT: &str = "books_owed_document";
 pub const OWED_REPEAT: &str = "books_app_owed_repeat";
+pub const MONTH_PACK: &str = "books_app_month_pack";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1061,6 +1062,13 @@ pub const TOOLS: &[Tool] = &[
         schema: owed_repeat_schema,
         description: "Start or stop a monthly repeat on an invoice or bill, or add this month's copy after the user's click.",
     },
+    Tool {
+        name: MONTH_PACK,
+        reach: Reach::App,
+        write: false,
+        schema: month_pack_schema,
+        description: "The month pack: a static print preview of the month's reports and reconcile status.",
+    },
 ];
 
 fn owed_repeat_schema() -> Value {
@@ -1073,6 +1081,16 @@ fn owed_repeat_schema() -> Value {
             "owed": { "type": "string" },
             "action": { "type": "string", "enum": ["start", "stop", "add"] },
             "month": { "type": "string", "description": "YYYY-MM, add only; this month when absent." }
+        }
+    })
+}
+
+fn month_pack_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "book": { "type": "string" },
+            "month": { "type": "string", "description": "YYYY-MM; this month when absent." }
         }
     })
 }
@@ -1473,6 +1491,26 @@ pub fn call(
         OWED_REPEAT => write(books, name, origin, arguments, |tx| {
             owed_repeats::repeat(tx, arguments)
         }),
+        MONTH_PACK => {
+            let mut out = read(books, arguments, |store, book, args| {
+                month_pack::pack(store, book, args)
+            });
+            // buwiz.preview renders an embedded text/html resource; the html is not repeated as text
+            if out["isError"] == false
+                && let Some(html) = out["structuredContent"]
+                    .as_object_mut()
+                    .and_then(|o| o.remove("html"))
+            {
+                let key = out["structuredContent"]["month"]["key"]
+                    .as_str()
+                    .unwrap_or("")
+                    .to_string();
+                out["content"] = json!([{ "type": "resource", "resource": {
+                    "uri": month_pack::uri(&key), "mimeType": "text/html", "text": html
+                } }]);
+            }
+            out
+        }
         _ => fail("internal", "Books has no handler for that tool."),
     })
 }

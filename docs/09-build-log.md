@@ -515,6 +515,10 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
   instead of jumping to the Ledger. Tests: `tests/account_activity.rs`. The demo's bank posting account is 11010
   (11000 is its group). Follow-up once the native ledger lands: a running-balance column there too.
 
+## M10 parity
+
+- 2026-11-01 reports-4 (month pack): new app-only tool `books_app_month_pack` (named with the `books_app_` prefix that `tests/manifest_shape.rs` requires of every app-only tool; the task text said `books_month_pack`; `crates/books-mini-app/src/month_pack.rs`, read-only). It reads `books_report` pl/bs/cf/tb for one month and `books_reconcile_grid`, and returns one static HTML document (inline style only; no script, link or URL; store text escaped) as an MCP `text/html` resource `books://print/month-pack-<YYYY-MM>.html`, with `structuredContent` `{title, month, bytes}`. It refuses with invalid_args above 4 MiB. The Reports page shows a Month pack button for month periods, which calls `buwiz.preview`; the manifest gives the window `permissions.preview = {}`. Window tools: 57 to 58 of 64. Tests: `tests/month_pack.rs`.
+
 ## Not yet built
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox

@@ -86,6 +86,10 @@ fn permissions(app: &apps::App) -> Value {
             p["open"] = json!({ "apps": ["ledger", "evidence"] });
         }
     }
+    // the window shows the month pack as a static print preview
+    if app.source.contains(".preview(") {
+        p["preview"] = json!({});
+    }
     p
 }
 
