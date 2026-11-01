@@ -211,6 +211,15 @@ fn one_line_accept_matches_that_line_only_and_checks_a_picked_entry() {
             "{id}"
         );
     }
+    assert_eq!(
+        refused(
+            b,
+            "books_app_statement_accept",
+            json!({ "client_request_id": "ma-bad-0004", "account": "11010", "month": "2026-12", "entry": taken })
+        ),
+        "invalid_args",
+        "an entry without a line is not accept-all"
+    );
     assert_eq!(kinds(&statement(b, "2026-12")), ["s", "m", "s", "s"]);
 
     let fourth = accept(

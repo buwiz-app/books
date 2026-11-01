@@ -72,10 +72,17 @@ pub fn follows_hint(
     }
 }
 
-/// [`crate::statement::match_lines`] with hints: stored and exact matches, and
-/// which lines get a suggestion, are the same. A suggestion prefers the
-/// candidate whose payee equals the line's hint payee, then the nearest
-/// date, then the original order. Each entry matches one line at most.
+fn within(line: &Line, c: &Candidate) -> bool {
+    c.amount == line.amount && (c.date.to_days() - line.date.to_days()).abs() <= SUGGEST_DAYS
+}
+
+/// [`crate::statement::match_lines`] with hints. Every line keeps the state
+/// match_lines gives it (exact, suggested or missing) and every exact match
+/// stands; a hint only moves a suggestion to an entry with the hint payee,
+/// nearest date first, then the original order. It takes that entry when
+/// it is free (the old one is freed), or swaps with the line that holds it
+/// when that line does not follow its own hint and the swapped entry is
+/// within its window too. Each entry matches one line at most.
 pub fn rank(
     lines: &[Line],
     kept: &[Option<i64>],
@@ -83,48 +90,74 @@ pub fn rank(
     cand_payee: &HashMap<i64, String>,
     hints: &HashMap<String, Hint>,
 ) -> Vec<Match> {
-    let mut used: Vec<bool> = candidates
+    let mut out = crate::statement::match_lines(lines, kept, candidates);
+    if hints.is_empty() {
+        return out;
+    }
+    let pos = |e: i64| candidates.iter().position(|c| c.entry_id == e);
+    // holder[j]: the line suggested candidate j; exact and kept ones are never moved.
+    let mut holder: Vec<Option<usize>> = vec![None; candidates.len()];
+    let mut fixed: Vec<bool> = candidates
         .iter()
         .map(|c| kept.contains(&Some(c.entry_id)))
         .collect();
-    let mut out: Vec<Option<Match>> = kept.iter().map(|k| k.map(Match::Exact)).collect();
-    out.resize(lines.len(), None);
-    for (i, line) in lines.iter().enumerate() {
-        if out[i].is_some() {
-            continue;
-        }
-        if let Some(j) = (0..candidates.len()).find(|&j| {
-            !used[j] && candidates[j].amount == line.amount && candidates[j].date == line.date
-        }) {
-            used[j] = true;
-            out[i] = Some(Match::Exact(candidates[j].entry_id));
-        }
-    }
-    for (i, line) in lines.iter().enumerate() {
-        if out[i].is_some() {
-            continue;
-        }
-        let gap = |j: usize| (candidates[j].date.to_days() - line.date.to_days()).abs();
-        let best = (0..candidates.len())
-            .filter(|&j| !used[j] && candidates[j].amount == line.amount && gap(j) <= SUGGEST_DAYS)
-            .min_by_key(|&j| {
-                (
-                    !follows_hint(line, candidates[j].entry_id, cand_payee, hints),
-                    gap(j),
-                    j,
-                )
-            });
-        out[i] = Some(match best {
-            Some(j) => {
-                used[j] = true;
-                Match::Suggested(candidates[j].entry_id)
+    for (i, m) in out.iter().enumerate() {
+        match *m {
+            Match::Exact(e) => {
+                if let Some(j) = pos(e) {
+                    fixed[j] = true;
+                }
             }
-            None => Match::Missing,
-        });
+            Match::Suggested(e) => {
+                if let Some(j) = pos(e) {
+                    holder[j] = Some(i);
+                }
+            }
+            Match::Missing => {}
+        }
     }
-    out.into_iter()
-        .map(|m| m.unwrap_or(Match::Missing))
-        .collect()
+    for (i, line) in lines.iter().enumerate() {
+        let Match::Suggested(now) = out[i] else {
+            continue;
+        };
+        if follows_hint(line, now, cand_payee, hints) {
+            continue;
+        }
+        let Some(cur) = pos(now) else {
+            continue;
+        };
+        let gap = |j: usize| (candidates[j].date.to_days() - line.date.to_days()).abs();
+        let mut wanted: Vec<usize> = (0..candidates.len())
+            .filter(|&j| {
+                !fixed[j]
+                    && within(line, &candidates[j])
+                    && follows_hint(line, candidates[j].entry_id, cand_payee, hints)
+            })
+            .collect();
+        wanted.sort_by_key(|&j| (gap(j), j));
+        for j in wanted {
+            match holder[j] {
+                None => {
+                    holder[cur] = None;
+                    holder[j] = Some(i);
+                    out[i] = Match::Suggested(candidates[j].entry_id);
+                    break;
+                }
+                Some(k) => {
+                    let other = &lines[k];
+                    let keeps_own = follows_hint(other, candidates[j].entry_id, cand_payee, hints);
+                    if !keeps_own && within(other, &candidates[cur]) {
+                        holder[cur] = Some(k);
+                        holder[j] = Some(i);
+                        out[k] = Match::Suggested(candidates[cur].entry_id);
+                        out[i] = Match::Suggested(candidates[j].entry_id);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    out
 }
 
 #[cfg(test)]
@@ -247,5 +280,150 @@ mod tests {
                 "seed {seed}"
             );
         }
+    }
+
+    fn coffee_hint() -> HashMap<String, Hint> {
+        HashMap::from([(
+            "coffee shop".to_string(),
+            Hint {
+                payee: Some("Coffee shop".into()),
+                category_account_id: None,
+                uses: 1,
+            },
+        )])
+    }
+
+    #[test]
+    fn a_hint_never_takes_another_lines_only_candidate() {
+        let lines = vec![
+            line("2026-03-10", "COFFEE SHOP 1", -10_000),
+            line("2026-03-17", "BAKERY", -10_000),
+        ];
+        let cands = vec![
+            cand(1, "2026-03-07", -10_000),
+            cand(2, "2026-03-14", -10_000),
+        ];
+        let payees = HashMap::from([(1, "Hardware store".into()), (2, "Coffee shop".into())]);
+        let base = statement::match_lines(&lines, &[None, None], &cands);
+        assert_eq!(base, vec![Match::Suggested(1), Match::Suggested(2)]);
+        assert_eq!(
+            rank(&lines, &[None, None], &cands, &payees, &coffee_hint()),
+            base
+        );
+    }
+
+    #[test]
+    fn a_hint_swaps_when_both_lines_stay_in_window() {
+        let lines = vec![
+            line("2026-03-10", "COFFEE SHOP 1", -10_000),
+            line("2026-03-12", "BAKERY", -10_000),
+        ];
+        let cands = vec![
+            cand(1, "2026-03-09", -10_000),
+            cand(2, "2026-03-13", -10_000),
+        ];
+        let payees = HashMap::from([(1, "Hardware store".into()), (2, "Coffee shop".into())]);
+        assert_eq!(
+            statement::match_lines(&lines, &[None, None], &cands),
+            vec![Match::Suggested(1), Match::Suggested(2)]
+        );
+        assert_eq!(
+            rank(&lines, &[None, None], &cands, &payees, &coffee_hint()),
+            vec![Match::Suggested(2), Match::Suggested(1)]
+        );
+    }
+
+    fn state(m: &Match) -> u8 {
+        match m {
+            Match::Exact(_) => 0,
+            Match::Suggested(_) => 1,
+            Match::Missing => 2,
+        }
+    }
+
+    #[test]
+    fn with_hints_rank_keeps_every_lines_state_and_uses_an_entry_once() {
+        let amounts = [-45_000, -12_500, 30_000];
+        let descs = ["COFFEE SHOP 1", "Hardware store 22", "BAKERY", "Fuel 7"];
+        let names = ["Coffee shop", "Hardware store", "Bakery", "Fuel"];
+        let mut moved = 0;
+        for seed in 0..500_u64 {
+            let mut g = Lcg(seed + 7);
+            let pick = |g: &mut Lcg, n: usize| usize::try_from(g.next(n as u64)).unwrap();
+            let day = |g: &mut Lcg| d(&format!("2026-03-{:02}", 1 + g.next(28)));
+            let nl = 1 + g.next(8);
+            let nc = g.next(10);
+            let lines: Vec<Line> = (0..nl)
+                .map(|_| Line {
+                    date: day(&mut g),
+                    description: descs[pick(&mut g, 4)].into(),
+                    amount: amounts[pick(&mut g, 3)],
+                })
+                .collect();
+            let cands: Vec<Candidate> = (0..nc)
+                .map(|k| Candidate {
+                    entry_id: i64::try_from(k).unwrap() + 1,
+                    date: day(&mut g),
+                    amount: amounts[pick(&mut g, 3)],
+                })
+                .collect();
+            // a stored match holds its entry, so kept ids are distinct
+            let mut kept: Vec<Option<i64>> = Vec::new();
+            for _ in 0..nl {
+                let k = (nc > 0 && g.next(6) == 0).then(|| i64::try_from(g.next(nc)).unwrap() + 1);
+                kept.push(k.filter(|e| !kept.contains(&Some(*e))));
+            }
+            let payees: HashMap<i64, String> = cands
+                .iter()
+                .map(|c| (c.entry_id, names[pick(&mut g, 4)].to_string()))
+                .collect();
+            let mut hints: HashMap<String, Hint> = HashMap::new();
+            for desc in descs {
+                if g.next(3) != 0 {
+                    let payee = names[pick(&mut g, 4)].to_string();
+                    hints.insert(
+                        normalize(desc),
+                        Hint {
+                            payee: Some(payee),
+                            category_account_id: None,
+                            uses: 1,
+                        },
+                    );
+                }
+            }
+            let base = statement::match_lines(&lines, &kept, &cands);
+            let got = rank(&lines, &kept, &cands, &payees, &hints);
+            assert_eq!(
+                got.iter().map(state).collect::<Vec<_>>(),
+                base.iter().map(state).collect::<Vec<_>>(),
+                "seed {seed}"
+            );
+            for (b, r) in base.iter().zip(&got) {
+                if let Match::Exact(_) = b {
+                    assert_eq!(b, r, "seed {seed}");
+                }
+            }
+            let mut ids: Vec<i64> = got
+                .iter()
+                .filter_map(|m| match m {
+                    Match::Exact(e) | Match::Suggested(e) => Some(*e),
+                    Match::Missing => None,
+                })
+                .collect();
+            let n = ids.len();
+            ids.sort_unstable();
+            ids.dedup();
+            assert_eq!(ids.len(), n, "seed {seed}");
+            for (l, m) in lines.iter().zip(&got) {
+                if let Match::Suggested(e) = m {
+                    let c = cands.iter().find(|c| c.entry_id == *e).unwrap();
+                    assert!(within(l, c), "seed {seed}");
+                }
+            }
+            if got != base {
+                moved += 1;
+            }
+        }
+        assert!(moved > 0, "the generator never exercised a hint");
     }
 }
