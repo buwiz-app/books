@@ -11,6 +11,9 @@
 
 use serde_json::{Map, Value, json};
 
+#[path = "evidence_tools.rs"]
+pub(crate) mod evidence_tools;
+
 use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
@@ -80,6 +83,9 @@ pub const NUDGE: &str = "books_nudge";
 pub const SIGNIN: &str = "books_app_signin";
 pub const TAX_PROFILES: &str = "books_app_tax_list";
 pub const PROFILE_LINK: &str = "books_app_tax_link";
+pub const EVIDENCE_ATTACH: &str = "books_app_evidence_attach";
+pub const EVIDENCE_DETACH: &str = "books_app_evidence_detach";
+pub const EVIDENCE_LIST: &str = "books_evidence_list";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -879,6 +885,27 @@ pub const TOOLS: &[Tool] = &[
         schema: wage_run_schema,
         description: "Save a pay run as a draft entry; the Ledger posts it.",
     },
+    Tool {
+        name: EVIDENCE_ATTACH,
+        reach: Reach::App,
+        write: true,
+        schema: evidence_tools::attach_schema,
+        description: "Stage, retain or link evidence. App only.",
+    },
+    Tool {
+        name: EVIDENCE_DETACH,
+        reach: Reach::App,
+        write: true,
+        schema: evidence_tools::detach_schema,
+        description: "Detach an evidence link; retain its contents. App only.",
+    },
+    Tool {
+        name: EVIDENCE_LIST,
+        reach: Reach::Everyone,
+        write: false,
+        schema: evidence_tools::list_schema,
+        description: "Read evidence metadata and link counts, never contents.",
+    },
 ];
 
 pub fn find(name: &str) -> Option<&'static Tool> {
@@ -1231,6 +1258,12 @@ pub fn call(
         CROSS_CHECKS => read(books, arguments, |store, book, args| {
             checks::cross_checks(store, book, args)
         }),
+        EVIDENCE_ATTACH => evidence_tools::attach(books, name, origin, arguments),
+        EVIDENCE_DETACH => evidence_tools::detach(books, name, origin, arguments),
+        EVIDENCE_LIST => answer((|| {
+            let store = books.store()?;
+            evidence_tools::list(store.conn(), arguments)
+        })()),
         _ => fail("internal", "Books has no handler for that tool."),
     })
 }
@@ -1363,7 +1396,7 @@ fn resolve(arguments: &Map<String, Value>, books: &mut Books) -> Value {
             }
         }
         ("scope", "proposal") => ok(proposal_scope(arguments, books)),
-        ("scope", "person" | "account" | "period" | "entry" | "form" | "tag") => {
+        ("scope", "person" | "account" | "period" | "entry" | "form" | "tag" | "evidence") => {
             if !books.exists() {
                 return ok(json!({ "result": "error", "message": "There is no book yet." }));
             }

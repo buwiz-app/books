@@ -277,6 +277,7 @@ pub fn scopes() -> Value {
         scope("entry", "entry in the Books ledger", "one entry (books_entry_get)"),
         scope("form", "form and period Books feeds for eBIRForms", "a BIR form and period (books_form_proposal)"),
         scope("tag", "tag: a department or location", "a department or location (books_tags_list)"),
+        scope("evidence", "evidence retained in Books", "evidence metadata (books_evidence_list)"),
         {
             "name": "proposal",
             "description": "proposal of Books totals for a BIR form",
@@ -385,6 +386,14 @@ fn matches(label: &str, typed: &str) -> bool {
 /// gives up to 20 choices whose values are tickets.
 pub fn scope(store: &Store, name: &str, value: &str) -> Value {
     let c = store.conn();
+    if name == "evidence" {
+        return match books::all(c).ok().and_then(|b| b.into_iter().next()) {
+            Some(book) => crate::tools::evidence_tools::scope(store, &book, value).unwrap_or_else(
+                |_| json!({"result":"error","message":"That evidence is not in this book."}),
+            ),
+            None => json!({"result":"error","message":"There is no book yet."}),
+        };
+    }
     if plumbing::is_ticket(value) {
         let kind_ok = match plumbing::subject(c, value).ok().flatten() {
             Some((k, _)) => k == name || (name == "tag" && k == "tag"),

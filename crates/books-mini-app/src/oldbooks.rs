@@ -61,6 +61,13 @@ impl Uploads {
         bytes: Vec<u8>,
     ) -> Result<usize, Refusal> {
         let id = upload_id(id)?;
+        if self
+            .waiting
+            .iter()
+            .any(|(k, p)| k == id && p.len() != parts)
+        {
+            return Err(Refusal::invalid("The upload's part count cannot change."));
+        }
         if parts == 0 || parts > MAX_UPLOAD / 1024 || part >= parts {
             return Err(Refusal::invalid(
                 "`part` counts from 0 and is less than `parts`.",
@@ -82,7 +89,9 @@ impl Uploads {
             }
         };
         let slots = &mut self.waiting[pos].1;
-        let size: usize = slots.iter().flatten().map(Vec::len).sum::<usize>() + bytes.len();
+        let size: usize = slots.iter().flatten().map(Vec::len).sum::<usize>()
+            - slots[part].as_ref().map_or(0, Vec::len)
+            + bytes.len();
         if size > MAX_UPLOAD {
             self.waiting.remove(pos);
             return Err(Refusal::new("too_large", "A file is at most 50 MB."));

@@ -495,3 +495,20 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox
 owner), PR #16, PR #13 and the two nsh fixes (Rox owner).
+
+## M10 parity
+
+### 2026-11-01 — evidence-1
+
+CONFIRMED: migration 7 retains evidence bytes with per-book content deduplication and many-to-many links to
+entries and owed items. `books-store::evidence` provides metadata, keyset lists, link counts, linking and detaching;
+link changes refuse closed target months and cross-book targets. Detaching keeps the blob.
+
+CONFIRMED: app-only evidence attach and detach use the existing idempotent write envelope. Attach reuses the
+shared bounded multipart staging, checks supported MIME signatures and issues the evidence ticket within the
+commit transaction. `books_evidence_list` and the attachable evidence scope read pre-issued tickets only and
+return generic metadata, never contents or hashes. No ledger posting, compliance logic or TSX was added.
+
+PROPOSAL (implementation bounds): page counts are 1 to 100000; metadata lists default to 50 and cap at 200;
+scope suggestions cap at 20. Deduplicated commits retain the first stored metadata. Window permissions stay
+unchanged for the later UI task. `tests/evidence_foundation.rs` and store unit tests cover this foundation.
