@@ -572,6 +572,15 @@ ledger-3 and reports-2 show in the Books window. No new tool; the window tool co
   review-open-duplicate, row-amend (with the short-reason refusal), amend-links, running-balance.
 - Test: `tests/account_activity.rs` `the_ledger_lists_running_balance_matches_account_activity`.
 
+### Owed document: part-paid print (2026-11-01)
+
+Found in the first live check in a running Bot: after a partial payment, the owed document's print page still said
+Status "Open" with only the original amount, so a part-paid statement of account asked for the whole amount again.
+`owed_doc::render` now prints Status "Part paid" and adds "Received to date" (collect) or "Paid to date" (pay) and
+"Balance due" whenever posted payments cover part of the amount. A voided payment is back in the balance (`paid`
+counts posted payments only), so the #13 case (the last payment voided, an earlier one standing) now prints Part paid,
+never Settled. Tests: `tests/owed_document.rs` (part-paid collect page), `tests/owed_partial.rs` (pay side after a void).
+
 ### Not included
 
 - The native books.ledger drawer does not read `extraction` (evidence-2's `ExtractionPanel` shows in the Books
