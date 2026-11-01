@@ -276,11 +276,12 @@ fn only_owed_print_calls_preview_and_it_hides_without_the_method() {
         }
     }
     callers.sort();
-    // reconcile-2 (statement snapshot) and evidence-4 (evidence card) preview too
+    // reconcile-2 (statement snapshot), reports-4 (month pack) and evidence-4 (evidence card) preview too
     assert_eq!(
         callers,
         [
             "books/owed_print.tsx",
+            "books/reports.tsx",
             "books/statement_snapshot.tsx",
             "cards/evidence.tsx"
         ]

@@ -78,17 +78,13 @@ fn permissions(app: &apps::App) -> Value {
         if source.contains("buwiz.attach(\"evidence\"") {
             p["attach"] = json!(["evidence"]);
         }
-        // evidence-4 and Unpaid's owed document print page share one preview cap
+        // evidence-4, reconcile snapshots, Unpaid's owed print page and the month pack share one preview cap
         if source.contains(".preview(") {
             p["preview"] = json!({ "max_bytes": crate::tools::document_review::PREVIEW_MAX_BYTES });
         }
         if app.id == "books" && source.contains("app: \"evidence\"") {
             p["open"] = json!({ "apps": ["ledger", "evidence"] });
         }
-    }
-    // the window shows the month pack as a static print preview
-    if app.source.contains(".preview(") {
-        p["preview"] = json!({});
     }
     p
 }

@@ -139,11 +139,18 @@ fn only_the_window_may_preview_and_the_tool_is_app_only() {
     for app in m["apps"].as_array().unwrap() {
         let p = &app["permissions"];
         if app["id"] == "books" {
-            assert_eq!(p["preview"], json!({}));
+            assert_eq!(
+                p["preview"],
+                json!({ "max_bytes": books_mini_app::tools::document_review::PREVIEW_MAX_BYTES })
+            );
             let names = p["tools"].as_array().unwrap();
             assert!(names.iter().any(|t| t == "books_app_month_pack"));
             assert!(names.len() <= 64, "{} window tools", names.len());
-        } else {
+        } else if !matches!(
+            books_mini_app::apps::find(app["id"].as_str().unwrap()).map(|a| a.source),
+            // evidence-4: the document library and its card preview evidence
+            Some(books_mini_app::apps::AppSource::Tsx(source)) if source.contains(".preview(")
+        ) {
             assert!(p.get("preview").is_none(), "{}", app["id"]);
         }
     }
