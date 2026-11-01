@@ -380,6 +380,7 @@ pub fn void(conn: &Connection, book: &Book, id: i64, date: Date, gate: Gate<'_>)
         ));
     }
     gate(date)?;
+    crate::statement_lock::guard_entry(conn, book.id, id)?;
     let rows = lines(conn, id)?;
     let core = core_lines(conn, &rows)?;
     let mirrored = ledger::mirror(&core);

@@ -714,8 +714,8 @@ pub const TOOLS: &[Tool] = &[
         name: STATEMENT_FINISH,
         reach: Reach::App,
         write: true,
-        schema: statement_write,
-        description: "Finish a month when every line matches and the difference is 0.00.",
+        schema: crate::statement_flags::finish_schema,
+        description: "Finish a month when every line matches and the difference is 0.00, or reopen a finished one (`reopen`) with the user's reason.",
     },
     Tool {
         name: RECATEGORIZE,
@@ -1188,7 +1188,7 @@ pub fn call(
             reconcile::statement_add(tx, arguments)
         }),
         STATEMENT_FINISH => write(books, name, origin, arguments, |tx| {
-            reconcile::statement_finish(tx, arguments)
+            crate::statement_flags::finish_or_reopen(tx, arguments)
         }),
         RECATEGORIZE => write(books, name, origin, arguments, |tx| {
             reconcile::recategorize(tx, arguments)

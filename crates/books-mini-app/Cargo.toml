@@ -99,3 +99,7 @@ workspace = true
 [[test]]
 name = "owed_proposals"
 path = "../../tests/owed_proposals.rs"
+
+[[test]]
+name = "statement_lock_flags"
+path = "../../tests/statement_lock_flags.rs"

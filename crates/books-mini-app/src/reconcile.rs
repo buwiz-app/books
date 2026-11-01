@@ -198,6 +198,7 @@ pub fn statement_view(
         &mut out,
     )?;
     crate::reconcile_document::snapshot_fields(store, &s, &lines, &mut out["statement"])?;
+    crate::statement_flags::extend(store, &book, &s, &lines, origin, &mut out["statement"])?;
     Ok(out)
 }
 

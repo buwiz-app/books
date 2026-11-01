@@ -32,6 +32,7 @@ pub mod months;
 pub mod people;
 pub mod plumbing;
 pub mod statement_drafts;
+pub mod statement_lock;
 
 pub use rusqlite;
 
@@ -50,6 +51,7 @@ const MIGRATIONS: &[(i64, &str)] = &[
         include_str!("../migrations/0010_evidence_classification.sql"),
     ),
     (11, include_str!("../migrations/0011_statement_drafts.sql")),
+    (12, include_str!("../migrations/0012_statement_events.sql")),
 ];
 
 pub const DATA_DIR_ENV: &str = "BOOKS_DATA_DIR";
