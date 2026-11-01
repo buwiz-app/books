@@ -27,8 +27,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
   };
   const open = (a: Any) => {
     if (a.off) return;
-    ledgerAccount.set(a.ticket);
-    p.go("ledger");
+    openLedger({ account: a.ticket });
   };
   return (
     <View class="gap-3.5">

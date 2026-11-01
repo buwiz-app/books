@@ -496,10 +496,14 @@ export function lazyJsx(src) {
  * Compile an app's TSX with the Bot's esbuild and mount its default export.
  * `esbuild` is the module (the Bot worktree's); `bridge` is the `buwiz` object.
  */
-export function mountApp(source, { esbuild, bridge }) {
+export function prepareApp(source, { esbuild }) {
   const stripped = esbuild.transformSync(source, { loader: "tsx", jsx: "preserve", format: "esm", target: "es2022" }).code;
   const lazy = lazyJsx(stripped);
-  const cjs = esbuild.transformSync(lazy, { loader: "js", format: "cjs", target: "es2022" }).code;
+  return esbuild.transformSync(lazy, { loader: "js", format: "cjs", target: "es2022" }).code;
+}
+
+export function mountApp(source, { esbuild, bridge, prepared = false }) {
+  const cjs = prepared ? source : prepareApp(source, { esbuild });
   const nsh = { signal, computed, resource, View, Text, Scroll, Input };
   const modules = { nsh, buwiz: { buwiz: bridge, default: bridge } };
   const require = (id) => {
@@ -549,9 +553,10 @@ class Screen {
   }
 
   /** The innermost pressable node whose whole text is `label`. */
-  pressable(label) {
+  pressable(label, occurrence = "last") {
     const hits = this.nodes().filter((n) => typeof n.props.onPress === "function" && textOf(n).trim() === label);
-    return hits[hits.length - 1] || null;
+    const index = occurrence === "last" ? hits.length - 1 : occurrence;
+    return hits[index] || null;
   }
 
   input(placeholder) {
@@ -562,9 +567,25 @@ class Screen {
     return this.nodes().some((n) => n.host === "Text" && textOf(n).includes(text));
   }
 
-  press(label) {
-    const n = this.pressable(label);
+  layout(height = 120) {
+    for (const n of this.nodes()) {
+      if (typeof n.props.onLayout === "function") n.props.onLayout({ bounds: { size: { height } } });
+    }
+  }
+
+  press(label, occurrence = "last") {
+    const n = this.pressable(label, occurrence);
     if (!n) throw new Error(`nothing pressable reads ${JSON.stringify(label)}`);
+    n.props.onPress();
+  }
+
+  pressContaining(fragment, occurrence = "last") {
+    const hits = this.nodes().filter(
+      (n) => typeof n.props.onPress === "function" && textOf(n).includes(fragment),
+    );
+    const index = occurrence === "last" ? hits.length - 1 : occurrence;
+    const n = hits[index] || null;
+    if (!n) throw new Error(`nothing pressable contains ${JSON.stringify(fragment)}`);
     n.props.onPress();
   }
 

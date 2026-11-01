@@ -85,7 +85,7 @@ const signed = (unsigned, sources, file) => {
   return file;
 };
 const booksUnsigned = JSON.parse(execFileSync(BOOKS_BIN, ["manifest", "--key-id", KEY_ID]).toString());
-const booksSources = Object.fromEntries(booksUnsigned.apps.map((a) => [a.id, execFileSync(BOOKS_BIN, ["app-source", a.id])]));
+const booksSources = Object.fromEntries(booksUnsigned.apps.filter((a) => !a.native).map((a) => [a.id, execFileSync(BOOKS_BIN, ["app-source", a.id])]));
 const booksEnv = { BOOKS_DATA_DIR: join(RUN, "books-data"), BOOKS_TODAY: TODAY };
 const booksSpec = { command: BOOKS_BIN, args: ["mcp"], env: { ...booksEnv, BOOKS_V1_MANIFEST: signed(booksUnsigned, booksSources, join(RUN, "books.json")) } };
 const birUnsigned = JSON.parse(execFileSync(BIR_BIN, ["print-v1-manifest"], { env: { PATH: process.env.PATH, ...birEnv } }).toString());

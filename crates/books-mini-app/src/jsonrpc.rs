@@ -2,7 +2,7 @@
 //!
 //! Methods: `initialize`, `ping`, `tools/list`, `tools/call`,
 //! `resources/list`, `resources/templates/list`, `resources/read`.
-//! Notifications get no answer. Resources (the manifest and the app
+//! Notifications get no answer. Resources (the manifest and TSX app
 //! sources) are readable before `buwiz.provision`; tools are not (P7).
 //!
 //! Nothing is logged: no argument, no subject and never the key (P4).
@@ -31,24 +31,9 @@ cash basis by default. The assistant can read totals and draft entries (books_en
 the user posts, voids or closes, in the Books app. Books never computes tax, never stores a TIN, \
 and never sends, files or pays anything.";
 
-/// A tool result whose `structuredContent` is `structured`.
-pub fn ok(structured: Value) -> Value {
-    json!({
-        "content": [{ "type": "text", "text": structured.to_string() }],
-        "structuredContent": structured,
-        "isError": false,
-    })
-}
-
-/// A refusal with a spec error code (14.1). The message is user-facing and
-/// carries no subject data.
-pub fn fail(code: &str, message: &str) -> Value {
-    json!({
-        "content": [{ "type": "text", "text": message }],
-        "structuredContent": { "code": code, "message": message },
-        "isError": true,
-    })
-}
+// Result shapes are the SDK's: `structuredContent` for `ok`, a
+// `code`/`message` refusal for `fail` (spec 14.1).
+pub use buwiz_plugin::{fail, ok};
 
 fn error_response(id: Value, code: i64, message: &str) -> Value {
     json!({ "jsonrpc": "2.0", "id": id, "error": { "code": code, "message": message } })
@@ -252,7 +237,16 @@ impl Server {
             );
         }
         let app = apps::by_uri(uri).ok_or((INVALID_PARAMS, "no such resource".to_string()))?;
-        Ok(json!({ "contents": [{ "uri": uri, "mimeType": apps::MIME, "text": app.source }] }))
+        let source = match app.source {
+            apps::AppSource::Tsx(source) => source,
+            apps::AppSource::Native { .. } => {
+                return Err((
+                    INVALID_PARAMS,
+                    format!("native app {} has no TSX source", app.id),
+                ));
+            }
+        };
+        Ok(json!({ "contents": [{ "uri": uri, "mimeType": apps::MIME, "text": source }] }))
     }
 }
 
@@ -288,7 +282,10 @@ fn resource_list() -> Value {
         "description": "The Mini App Protocol 2.0 manifest.",
         "mimeType": manifest::MANIFEST_MIME,
     })];
-    for app in apps::APPS {
+    for app in apps::APPS
+        .iter()
+        .filter(|app| matches!(app.source, apps::AppSource::Tsx(_)))
+    {
         resources.push(json!({
             "uri": format!("{}{}", apps::URI_PREFIX, app.id),
             "name": app.id,

@@ -11,6 +11,7 @@ use books_mini_app::{b64, jcs};
 use books_store::{Paths, TempDir};
 use ed25519_dalek::SigningKey;
 use serde_json::{Value, json};
+use std::collections::HashMap;
 
 const MEMO: &str = "MEMO-SYNTH-office-supplies";
 const PAYEE: &str = "Pixel Print Shop";
@@ -18,7 +19,7 @@ const PAYEE: &str = "Pixel Print Shop";
 struct Bot {
     server: Server,
     next: i64,
-    open_id: String,
+    sessions: HashMap<String, String>,
 }
 
 fn now_ms() -> i64 {
@@ -37,24 +38,37 @@ impl Bot {
         let mut bot = Self {
             server: Server::new(Source::default(), books),
             next: 1,
-            open_id: b64::encode(&[4u8; 16]),
+            sessions: HashMap::new(),
         };
         let seed = [11u8; 32];
         let public = b64::encode(SigningKey::from_bytes(&seed).verifying_key().as_bytes());
         let p = bot.raw("buwiz.provision", json!({ "protocol": "2.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": public }), Value::Null);
         assert_eq!(p["isError"], false, "{p}");
+        bot.open_session("books");
+        bot
+    }
+
+    fn open_session(&mut self, app_id: &str) -> &str {
+        if self.sessions.contains_key(app_id) {
+            return &self.sessions[app_id];
+        }
         let app = manifest::unsigned(manifest::RELEASE_KEY_ID)["apps"]
             .as_array()
             .unwrap()
             .iter()
-            .find(|a| a["id"] == "books")
+            .find(|a| a["id"] == app_id)
             .unwrap()
             .clone();
         let perms = manifest::permissions_digest(&app).unwrap();
-        let open = json!({ "app": "books", "open_id": bot.open_id, "ks_pub": b64::encode(&[5u8; 32]), "perms_sha256": perms, "not_after": now_ms() + 3_600_000 });
-        let o = bot.raw("buwiz.session.open", open, Value::Null);
+        let mut open_bytes = [7u8; 16];
+        open_bytes[..app_id.len().min(16)]
+            .copy_from_slice(&app_id.as_bytes()[..app_id.len().min(16)]);
+        let open_id = b64::encode(&open_bytes);
+        let open = json!({ "app": app_id, "open_id": open_id, "ks_pub": b64::encode(&[5u8; 32]), "perms_sha256": perms, "not_after": now_ms() + 3_600_000 });
+        let o = self.raw("buwiz.session.open", open, Value::Null);
         assert_eq!(o["isError"], false, "{o}");
-        bot
+        self.sessions.insert(app_id.to_string(), open_id);
+        &self.sessions[app_id]
     }
 
     fn raw(&mut self, name: &str, args: Value, caller: Value) -> Value {
@@ -74,7 +88,12 @@ impl Bot {
     }
 
     fn app(&mut self, name: &str, args: Value) -> Value {
-        let caller = json!({ "origin": "app", "plugin": manifest::PLUGIN_ID, "app": "books", "open_id": self.open_id, "ts": now_ms() });
+        self.app_on("books", name, args)
+    }
+
+    fn app_on(&mut self, app: &str, name: &str, args: Value) -> Value {
+        let open_id = self.open_session(app).to_string();
+        let caller = json!({ "origin": "app", "plugin": manifest::PLUGIN_ID, "app": app, "open_id": open_id, "ts": now_ms() });
         self.raw(name, args, caller)
     }
 
@@ -177,7 +196,7 @@ fn m1_book_draft_post_void_through_the_server() {
     assert_eq!(data(&seen)["counts"]["draft"], 1);
     assert_eq!(data(&seen)["rows"][0]["amount_shown"], "\u{2212}1,350.00");
     // the app's view has them
-    let app_view = bot.app("books_ledger_list", json!({ "month": "2026-10" }));
+    let app_view = bot.app_on("ledger", "books_ledger_list", json!({ "month": "2026-10" }));
     assert_eq!(
         data(&app_view)["rows"][0]["title"],
         format!("{MEMO} · {PAYEE}")
@@ -267,7 +286,7 @@ fn m1_book_draft_post_void_through_the_server() {
         "lines": [ { "account": "11000", "debit": "100.00" }, { "account": "41000", "credit": "99.99" } ]
     }));
     assert_eq!(code(&unbalanced), "unbalanced");
-    let all = bot.app("books_ledger_list", json!({ "month": "2026-10" }));
+    let all = bot.app_on("ledger", "books_ledger_list", json!({ "month": "2026-10" }));
     assert_eq!(
         data(&all)["counts"]["all"],
         3,
