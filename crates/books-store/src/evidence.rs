@@ -134,14 +134,14 @@ pub fn link(conn: &Connection, book: i64, id: i64, target: Target) -> Result<()>
     Ok(())
 }
 
-pub fn detach(conn: &Connection, book: i64, id: i64, target: Target) -> Result<()> {
+pub fn detach(conn: &Connection, book: i64, id: i64, target: Target) -> Result<bool> {
     validate(conn, book, id, target)?;
     let (entry, owed) = target.ids();
-    conn.execute(
+    let removed = conn.execute(
         "DELETE FROM evidence_link WHERE evidence_id=?1 AND (entry_id=?2 OR owed_id=?3)",
         params![id, entry, owed],
     )?;
-    Ok(())
+    Ok(removed > 0)
 }
 
 pub fn linked_count(conn: &Connection, id: i64) -> Result<i64> {

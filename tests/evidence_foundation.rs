@@ -91,6 +91,10 @@ fn commits_dedup_reads_pagination_and_scope_do_not_write() {
         ok(&mut b, tools::EVIDENCE_LIST, json!({}))["items"],
         json!([])
     );
+    assert_eq!(
+        cards::scope(b.store().unwrap(), "evidence", ""),
+        json!({"result":"error","message":"No evidence in Books matches that."})
+    );
     stage(&mut b, "document-a", b"%PDF-synthetic-a");
     let first = commit(&mut b, "document-a");
     assert_eq!(commit(&mut b, "document-a"), first);
@@ -99,7 +103,11 @@ fn commits_dedup_reads_pagination_and_scope_do_not_write() {
     assert_eq!(duplicate["evidence"], first["evidence"]);
     assert_eq!(duplicate["deduplicated"], true);
     stage(&mut b, "document-c", b"%PDF-synthetic-c");
-    commit(&mut b, "document-c");
+    let single = ok(
+        &mut b,
+        tools::EVIDENCE_ATTACH,
+        json!({"client_request_id":"commit-document-c","op":"commit","upload":"document-c","mime":"application/pdf","kind":"receipt","page_count":1}),
+    );
     let before = b.store().unwrap().conn().total_changes();
     let list = ok(&mut b, tools::EVIDENCE_LIST, json!({"limit":1}));
     assert_eq!(list["items"].as_array().unwrap().len(), 1);
@@ -119,6 +127,18 @@ fn commits_dedup_reads_pagination_and_scope_do_not_write() {
         }
     }
     let store = b.store().unwrap();
+    assert_eq!(
+        cards::scope(store, "evidence", first["evidence"].as_str().unwrap())["title"],
+        "Receipt · PDF · 2 pages"
+    );
+    assert_eq!(
+        cards::scope(store, "evidence", single["evidence"].as_str().unwrap())["title"],
+        "Receipt · PDF · 1 page"
+    );
+    assert_eq!(
+        cards::scope(store, "evidence", "unmatched synthetic query"),
+        json!({"result":"error","message":"No evidence in Books matches that."})
+    );
     assert_eq!(
         cards::scope(store, "evidence", first["evidence"].as_str().unwrap())["result"],
         "token"
@@ -239,6 +259,18 @@ fn links_detach_closed_month_and_cross_book_rollback() {
     let detach =
         json!({"client_request_id":"detach-request","evidence":a["evidence"],"target":target});
     let result = ok(&mut b, tools::EVIDENCE_DETACH, detach.clone());
+    assert_eq!(result, json!({"detached":true}));
+    assert_eq!(ok(&mut b, tools::EVIDENCE_DETACH, detach.clone()), result);
+    let mut missing = detach.clone();
+    missing["client_request_id"] = json!("detach-missing-request");
+    assert_eq!(
+        ok(&mut b, tools::EVIDENCE_DETACH, missing.clone()),
+        json!({"detached":false})
+    );
+    assert_eq!(
+        ok(&mut b, tools::EVIDENCE_DETACH, missing),
+        json!({"detached":false})
+    );
     assert_eq!(ok(&mut b, tools::EVIDENCE_DETACH, detach), result);
     let c = b.store().unwrap().conn();
     entries::discard(c, &book, entry).unwrap();

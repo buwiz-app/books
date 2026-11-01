@@ -30,6 +30,7 @@ pub fn label(e: &Metadata) -> String {
         _ => "WebP",
     };
     match e.page_count {
+        Some(1) => format!("{kind} · {mime} · 1 page"),
         Some(n) => format!("{kind} · {mime} · {n} pages"),
         None => format!("{kind} · {mime}"),
     }
@@ -159,8 +160,8 @@ pub fn detach(books: &mut Books, name: &str, origin: Origin, args: &Map<String, 
     service::write(books, name, origin, args, |tx| {
         let book = writes::book_in(tx, args)?;
         let id = evidence_id(tx, book.id, required(args, "evidence")?)?;
-        evidence::detach(tx, book.id, id, target(tx, args)?)?;
-        Ok(json!({"detached":true}))
+        let detached = evidence::detach(tx, book.id, id, target(tx, args)?)?;
+        Ok(json!({"detached":detached}))
     })
 }
 
@@ -243,6 +244,9 @@ pub fn scope(store: &books_store::Store, book: &books_store::books::Book, value:
         if choices.len() == 20 {
             break;
         }
+    }
+    if choices.is_empty() {
+        return Ok(json!({"result":"error","message":"No evidence in Books matches that."}));
     }
     Ok(json!({"result":"choices","choices":choices}))
 }
