@@ -51,17 +51,17 @@ const MIGRATIONS: &[(i64, &str)] = &[
     (5, include_str!("../migrations/0005_certificates.sql")),
     (6, include_str!("../migrations/0006_handoffs.sql")),
     (7, include_str!("../migrations/0007_evidence.sql")),
-    (9, include_str!("../migrations/0009_owed_proposals.sql")),
+    (8, include_str!("../migrations/0008_owed_proposals.sql")),
     (
-        10,
-        include_str!("../migrations/0010_evidence_classification.sql"),
+        9,
+        include_str!("../migrations/0009_evidence_classification.sql"),
     ),
-    (11, include_str!("../migrations/0011_statement_drafts.sql")),
-    (12, include_str!("../migrations/0012_statement_events.sql")),
-    (15, include_str!("../migrations/0015_draft_review.sql")),
-    (16, include_str!("../migrations/0016_amendments.sql")),
-    (19, include_str!("../migrations/0019_owed_payments.sql")),
-    (20, include_str!("../migrations/0020_owed_repeat.sql")),
+    (10, include_str!("../migrations/0010_statement_drafts.sql")),
+    (11, include_str!("../migrations/0011_statement_events.sql")),
+    (12, include_str!("../migrations/0012_draft_review.sql")),
+    (13, include_str!("../migrations/0013_amendments.sql")),
+    (14, include_str!("../migrations/0014_owed_payments.sql")),
+    (15, include_str!("../migrations/0015_owed_repeat.sql")),
 ];
 
 pub const DATA_DIR_ENV: &str = "BOOKS_DATA_DIR";

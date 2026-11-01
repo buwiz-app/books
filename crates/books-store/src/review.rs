@@ -1,4 +1,4 @@
-//! The review notes on a draft (migration 15): which fields the assistant
+//! The review notes on a draft (migration 12): which fields the assistant
 //! or a routine set, with the confidence the assistant reported, and the
 //! likely duplicates of an entry. Integer rules only, no scores: same book,
 //! a live draft or posted entry that is not a reversal or a copy of the

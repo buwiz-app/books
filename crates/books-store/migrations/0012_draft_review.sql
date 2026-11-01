@@ -1,4 +1,4 @@
--- Migration 15 (M10 parity, ledger-1): what the assistant proposed on a
+-- Migration 12 (M10 parity, ledger-1): what the assistant proposed on a
 -- draft, field by field, and the likely duplicates the user chose to keep.
 -- Confidence is an integer percent the Bot's assistant reports; Books never
 -- computes one.
