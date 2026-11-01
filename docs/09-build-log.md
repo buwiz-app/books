@@ -491,6 +491,19 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 `tools/check-all.sh`: fmt clean; clippy clean; cargo test 117; PoC 177; conformance 182 pass, 7 skipped (rox
 `9c106cc`); host test 17/17; privacy scan 0 findings.
 
+## M10 parity
+
+- 2026-11-01 reconcile-4, match assist from matched history (no new table, no migration): `books-core::match_assist`
+  (`normalize` description keys, `Hint`, `rank`: runs `statement::match_lines` first, so every line keeps its
+  exact/suggested/missing state; a hint only moves a suggestion to a hinted-payee entry that is free, or swaps with
+  the line holding it when both stay within their windows). `books-store::match_history`
+  derives hints from stored matches (`exact`/`accepted`/`added`, posted entries) and checks a one-line accept.
+  `books_app_statement_accept` with a `line` (a row's integer `no`; any other value, or an `entry` without a
+  `line`, is `invalid_args`) and optional `entry` ticket matches that one line;
+  `books_statement_get` rows gain `no`, `why` (suggested) and `hint` {category, payee (app only)} (missing), the
+  statement gains `hints_used`; an added line takes the hinted category and payee. reconcile.tsx: a Match button per
+  suggested row and "Usually <category>" under a missing row. Tests: `tests/match_assist.rs`.
+
 ## Not yet built
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox

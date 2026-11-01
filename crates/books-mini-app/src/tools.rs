@@ -286,10 +286,11 @@ fn statement_write() -> Value {
         "properties": {
             "client_request_id": { "type": "string" }, "book": { "type": "string" },
             "account": { "type": "string" }, "month": { "type": "string" },
-            "line": { "type": "string", "description": "A statement line ticket." },
+            "line": { "type": ["string", "integer"], "description": "A statement line ticket; for accept, a row's `no` to match that one line." },
             "csv_base64": { "type": "string", "description": "The CSV file's bytes, base64url." },
             "csv_text": { "type": "string" }, "closing": { "type": "string", "description": "The ending balance, two-place text." },
-            "file_name": { "type": "string" }
+            "file_name": { "type": "string" },
+            "entry": { "type": "string", "description": "With accept and a row `no`: the entry ticket to match that line to." }
         }
     })
 }
@@ -1181,6 +1182,9 @@ pub fn call(
         STATEMENT_ACCEPT => write(books, name, origin, arguments, |tx| {
             if arguments.contains_key("draft") {
                 return statement_read::accept(tx, arguments);
+            }
+            if crate::match_assist::is_one_line(arguments) {
+                return crate::match_assist::accept_one(tx, arguments);
             }
             reconcile::statement_accept(tx, arguments)
         }),

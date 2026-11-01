@@ -175,6 +175,9 @@ pub fn statement_view(
         }));
     }
     let (ours, diff) = months::difference(store.conn(), &book, &s)?;
+    let hints_used = crate::match_assist::view_extra(
+        store, &book, account.id, &lines, &found, &mut rows, origin,
+    )?;
     let mut out = head;
     out["statement"] = json!({
         "status": s.status,
@@ -187,6 +190,7 @@ pub fn statement_view(
         "missing": missing,
         "can_finish": s.status != "finished" && diff == 0 && suggested == 0 && missing == 0,
         "rows": rows,
+        "hints_used": hints_used,
     });
     crate::statement_read::view_extra(
         store,

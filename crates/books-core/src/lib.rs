@@ -21,6 +21,7 @@ pub mod engine_error;
 pub mod import;
 pub mod input;
 pub mod ledger;
+pub mod match_assist;
 pub mod measures;
 pub mod money;
 pub mod posting;

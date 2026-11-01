@@ -28,6 +28,7 @@ pub mod evidence;
 pub mod handoffs;
 pub mod imports;
 pub mod link;
+pub mod match_history;
 pub mod months;
 pub mod people;
 pub mod plumbing;

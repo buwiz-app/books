@@ -22,6 +22,7 @@ pub mod html;
 pub mod jcs;
 pub mod jsonrpc;
 pub mod manifest;
+pub mod match_assist;
 pub mod oldbooks;
 pub mod payroll;
 pub mod reconcile;

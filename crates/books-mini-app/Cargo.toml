@@ -103,3 +103,7 @@ path = "../../tests/owed_proposals.rs"
 [[test]]
 name = "statement_lock_flags"
 path = "../../tests/statement_lock_flags.rs"
+
+[[test]]
+name = "match_assist"
+path = "../../tests/match_assist.rs"
