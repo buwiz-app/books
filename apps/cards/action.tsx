@@ -16,18 +16,15 @@ function firstDraft() {
   );
 }
 
-const plain = (amount: Any) => String(amount || "").replace(/^[+−]\s?/, "");
-
-// amounts show only when the user asked for them (the card's `amounts` prop)
-const showAmounts = () => CP.amounts === true || CP.amounts === "true";
-// amounts and the payee's name stay out of card content unless the request asked for amounts (AGENTS.md invariant 13)
+// an action card carries no amounts and no payee name (AGENTS.md invariant 13): books_show forwards
+// tickets and keys only, so these stay hidden here and show in Books
 const GATED = ["amount", "person"];
 const FIELD_LABEL: Record<string, string> = { date: "Date", amount: "Amount", category: "Category", person: "Paid to", reference: "Reference" };
 
 /** What the assistant read off the evidence, against the draft as it is now. */
 function Extraction(props: { x: Any }) {
   const x = () => props.x as Any;
-  const shown = (f: Any, v: Any) => (GATED.includes(String(f.field)) && !showAmounts() ? "hidden" : String(v ?? "—"));
+  const shown = (f: Any, v: Any) => (GATED.includes(String(f.field)) ? "hidden" : String(v ?? "—"));
   return (
     <View>
       <Row label={`Read by ${String(x()?.proposed_by || "Assistant")}`} text={`${String(x()?.confidence_label || "")}${x()?.needs_review ? " · check before posting" : ""}`} />
@@ -75,12 +72,9 @@ function DraftCard() {
           }
         >
           <Meta text={`${String(d()?.date_short || "")} · ${String(d()?.title || "Draft")}`} right={<Pill tone={d()?.pill} label={d()?.status_label || ""} />} />
-          <If when={showAmounts()}>
-            <Hero text={`₱ ${plain(d()?.amount_shown)}`} />
-          </If>
           <List>
             <Each of={d()?.lines || []} key={rowKey}>
-              {(l: Any) => <Row label={l().account || ""} value={showAmounts() ? l().debit_shown || l().credit_shown || "" : ""} />}
+              {(l: Any) => <Row label={l().account || ""} value="" />}
             </Each>
           </List>
           <If when={(d()?.evidence || []).length > 0}>
@@ -92,7 +86,7 @@ function DraftCard() {
         </Body>
       </If>
       <If when={done()}>
-        <Settled text={`Posted${showAmounts() ? ` ${plain(d()?.amount_shown)}` : ""} · ${String(d()?.title || "")}`} sub={`${String(d()?.date_short || "")} · in the Ledger and the P&L`} />
+        <Settled text={`Posted · ${String(d()?.title || "")}`} sub={`${String(d()?.date_short || "")} · in the Ledger and the P&L`} />
       </If>
     </View>
   );

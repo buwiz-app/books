@@ -181,7 +181,12 @@ fn refusals_write_nothing() {
             tools::ENTRY_DRAFT,
             draft(&format!("receipt-bad-{n}"), x),
         );
-        assert_eq!(v["isError"], true, "{what}: {v}");
+        let want = if what == "not evidence" {
+            "not_found"
+        } else {
+            "invalid_args"
+        };
+        assert_eq!(code(&v), want, "{what}: {v}");
     }
     for name in ["tin", "payee_tin", "tax_id"] {
         let tin = call_as(
@@ -329,6 +334,52 @@ fn assistant_edit_keeps_low_confidence_review() {
 }
 
 #[test]
+fn sure_extraction_keeps_an_earlier_review_flag() {
+    let (_tmp, mut b) = setup("receipt-keep-flag");
+    let ev = evidence(&mut b, "f");
+    let ev2 = evidence(&mut b, "g");
+    let sure = |e: &str| json!({"evidence":e,"confidence":95,"fields":fields(json!(95))});
+    // a draft flagged for another reason (as a bank import line is): a sure reading keeps the flag
+    let d = ok_as(
+        &mut b,
+        Origin::Agent,
+        tools::ENTRY_DRAFT,
+        draft("keep-flag-1", Value::Null),
+    );
+    b.store()
+        .unwrap()
+        .conn()
+        .execute(
+            "UPDATE entry SET needs_review = 1 WHERE payee = 'Synthetic Shop'",
+            [],
+        )
+        .unwrap();
+    assert!(in_filter(&mut b, "review", &d["entry"]));
+    let mut x = draft("keep-flag-2", sure(&ev));
+    x["entry"] = d["entry"].clone();
+    let out = ok_as(&mut b, Origin::Agent, tools::ENTRY_DRAFT, x);
+    assert_eq!(out["extraction"]["needs_review"], false, "{out}");
+    assert!(in_filter(&mut b, "review", &d["entry"]));
+    assert_eq!(
+        count(
+            &mut b,
+            "SELECT needs_review FROM entry WHERE payee = 'Synthetic Shop'"
+        ),
+        1
+    );
+    // control: an unflagged draft given the same sure reading stays out of review
+    let mut other = draft("keep-flag-3", Value::Null);
+    other["payee"] = json!("Synthetic Store");
+    let o = ok_as(&mut b, Origin::Agent, tools::ENTRY_DRAFT, other);
+    let mut x = draft("keep-flag-4", sure(&ev2));
+    x["entry"] = o["entry"].clone();
+    x["payee"] = json!("Synthetic Store");
+    ok_as(&mut b, Origin::Agent, tools::ENTRY_DRAFT, x);
+    assert!(!in_filter(&mut b, "review", &o["entry"]));
+    assert!(in_filter(&mut b, "draft", &o["entry"]));
+}
+
+#[test]
 fn replay_correction_and_responses() {
     let (_tmp, mut b) = setup("receipt-replay");
     let ev = evidence(&mut b, "p");
@@ -460,7 +511,8 @@ fn draft_card_reaches_review_drafts_and_hides_payee() {
         src.contains("x.status === \"draft\""),
         "fallback must pick a draft"
     );
-    // amount and payee are gated behind the explicit amounts request
+    // amount and payee stay hidden in the card: books_show forwards no amounts prop
     assert!(src.contains("const GATED = [\"amount\", \"person\"]"));
+    assert!(!src.contains("CP.amounts"));
     assert!(!src.contains("import { Image") && !src.contains("<Image"));
 }

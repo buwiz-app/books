@@ -317,8 +317,9 @@ pub fn draft(
             )
             .map_err(books_store::StoreError::from)?;
             let review = x.needs_review();
-            if review {
-                // sets the flag only: other review reasons stay as they were
+            // writes::draft cleared the flag; an unsure reading sets it, and an assistant
+            // edit keeps the review the entry already had (a bank line, say)
+            if review || flagged_before {
                 conn.execute(
                     "UPDATE entry SET needs_review = 1 WHERE entry_id = ?1",
                     [entry],
