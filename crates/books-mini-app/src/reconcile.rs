@@ -116,7 +116,12 @@ fn month_arg(args: &Map<String, Value>) -> Result<Period, Refusal> {
 }
 
 /// One statement beside the ledger: each line, its match, the difference.
-pub fn statement_view(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
+pub fn statement_view(
+    store: &Store,
+    book: Book,
+    args: &Map<String, Value>,
+    origin: service::Origin,
+) -> Answer {
     let account = account_arg(store, &book, args)?;
     let month = month_arg(args)?;
     let head = json!({ "account": { "ticket": ticket(store, "account", account.id)?, "name": account.name }, "month": { "key": month.key, "label": month.label(), "short": month_short(&month) } });
@@ -167,6 +172,9 @@ pub fn statement_view(store: &Store, book: Book, args: &Map<String, Value>) -> A
         }));
     }
     let (ours, diff) = months::difference(store.conn(), &book, &s)?;
+    let hints_used = crate::match_assist::view_extra(
+        store, &book, account.id, &lines, &found, &mut rows, origin,
+    )?;
     let mut out = head;
     out["statement"] = json!({
         "status": s.status,
@@ -179,6 +187,7 @@ pub fn statement_view(store: &Store, book: Book, args: &Map<String, Value>) -> A
         "missing": missing,
         "can_finish": s.status != "finished" && diff == 0 && suggested == 0 && missing == 0,
         "rows": rows,
+        "hints_used": hints_used,
     });
     Ok(out)
 }

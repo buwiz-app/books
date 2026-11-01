@@ -375,7 +375,7 @@ pub fn matches(
     ))
 }
 
-fn set_match(conn: &Connection, line_id: i64, entry_id: i64, kind: &str) -> Result<()> {
+pub(crate) fn set_match(conn: &Connection, line_id: i64, entry_id: i64, kind: &str) -> Result<()> {
     conn.execute(
         "UPDATE statement_line SET matched_entry_id = ?2, match_kind = ?3 WHERE line_id = ?1",
         params![line_id, entry_id, kind],
@@ -383,7 +383,7 @@ fn set_match(conn: &Connection, line_id: i64, entry_id: i64, kind: &str) -> Resu
     Ok(())
 }
 
-fn open_statement(
+pub(crate) fn open_statement(
     conn: &Connection,
     book: &Book,
     account_id: i64,
@@ -436,9 +436,9 @@ pub fn account_for_line(
     let hints = crate::match_history::hints(conn, book.id, money_account_id)?;
     if let Some(id) = books_core::match_assist::hint_for(&hints, &line.description)
         .and_then(|h| h.category_account_id)
-        && let Some(a) = accounts.iter().find(|a| {
-            a.id == id && a.active && !(a.accrual_only() && book.basis == Basis::Cash)
-        })
+        && let Some(a) = accounts
+            .iter()
+            .find(|a| a.id == id && a.active && !(a.accrual_only() && book.basis == Basis::Cash))
     {
         return Ok(a.clone());
     }
