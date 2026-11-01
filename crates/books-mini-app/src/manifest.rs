@@ -85,6 +85,10 @@ fn permissions(app: &apps::App) -> Value {
             p["open"] = json!({ "apps": ["ledger", "evidence"] });
         }
     }
+    // Unpaid shows an owed document's print page (buwiz.preview)
+    if app.source.contains(".preview(") {
+        p["preview"] = json!({ "max_bytes": 1_048_576 });
+    }
     p
 }
 

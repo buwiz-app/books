@@ -180,7 +180,13 @@ fn every_books_tool_starts_with_books_and_every_named_tool_exists() {
         assert_eq!(tool["annotations"]["readOnlyHint"], !write, "{name}");
         // DD-20: every write but the draft is the user's click in the app
         let app_only = tool["_meta"]["buwiz/audience"] == serde_json::json!(["app"]);
-        assert_eq!(name.starts_with("books_app_"), app_only, "{name}");
+        // the one read-only app-only tool: the print page for buwiz.preview
+        let app_read = name == "books_owed_document" && !write;
+        assert_eq!(
+            name.starts_with("books_app_") || app_read,
+            app_only,
+            "{name}"
+        );
         if write && !app_only {
             assert!(
                 [

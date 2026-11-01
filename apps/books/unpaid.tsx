@@ -102,6 +102,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
                   <Text class={`w-[64px] text-[12.5px] font-mono ${r().late ? C.red : C.ink}`}>{r().due_short}</Text>
                   <Text class={`w-[110px] text-right text-[12.5px] font-mono ${C.ink}`}>{r().balance_shown}</Text>
                   <View class="w-[100px] items-end">
+                    <OwedPrintBtn ticket={r().ticket} side={unpaidSide()} />
                     <Btn label="Mark paid" small onPress={() => settling.set(settling() === r().ticket ? "" : r().ticket)} />
                   </View>
                 </View>

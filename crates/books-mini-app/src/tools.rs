@@ -99,6 +99,7 @@ pub const EVIDENCE_REVIEW: &str = "books_app_evidence_review";
 pub const STATEMENT_DRAFT_LINES: &str = "books_statement_draft_lines";
 pub const RECONCILE_DOCUMENT: &str = "books_app_reconcile_document";
 pub const CHECKS: &str = "books_checks";
+pub const OWED_DOCUMENT: &str = "books_owed_document";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -485,6 +486,15 @@ fn void_schema() -> Value {
     s["properties"]["reason"] = json!({ "type": "string", "description": "Why the entry is amended, 3 to 200 characters; needed with amend." });
     s["properties"]["date"] = json!({ "type": "string", "description": "YYYY-MM-DD for the reversal and the replacement (amend only; default the entry's date)." });
     s
+}
+
+fn owed_document_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["owed"],
+        "properties": { "book": { "type": "string" }, "owed": { "type": "string", "description": "An owed document ticket." } },
+        "additionalProperties": false
+    })
 }
 
 fn book_create_schema() -> Value {
@@ -1032,6 +1042,13 @@ pub const TOOLS: &[Tool] = &[
         schema: checks_schema,
         description: "Review findings to look at twice: uncategorized lines, stale drafts, months not matched to a statement, weekend dates, round amounts, money with no person. Counts, entry numbers and months only; never amounts, names or memos.",
     },
+    Tool {
+        name: OWED_DOCUMENT,
+        reach: Reach::App,
+        write: false,
+        schema: owed_document_schema,
+        description: "A print page (Statement of account or Bill record) for one owed document, shown by the Books app's print preview.",
+    },
 ];
 
 pub fn find(name: &str) -> Option<&'static Tool> {
@@ -1425,6 +1442,7 @@ pub fn call(
         CHECKS => read(books, arguments, |store, book, args| {
             crate::findings::checks(store, book, args)
         }),
+        OWED_DOCUMENT => crate::owed_doc::tool(books, arguments, origin),
         _ => fail("internal", "Books has no handler for that tool."),
     })
 }
