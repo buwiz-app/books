@@ -291,6 +291,13 @@ fn an_added_line_takes_the_category_and_payee_history_used() {
         agent["structuredContent"]["statement"]["rows"][0]["hint"]["payee"].is_null(),
         "{agent}"
     );
+    assert!(
+        agent["structuredContent"]["statement"]["rows"][0]
+            .get("description")
+            .is_none(),
+        "{agent}"
+    );
+    assert_eq!(st["rows"][0]["description"], "HARDWARE STORE 9912");
 
     let hw = st["rows"][0]["ticket"].clone();
     let added = ok(

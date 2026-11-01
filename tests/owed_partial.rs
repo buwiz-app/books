@@ -173,6 +173,11 @@ fn a_bill_settles_in_parts_and_keeps_its_payment_history() {
     // the document is paid in its stored status, but the badge counts it again
     assert_eq!(stored(b).0, "paid");
     assert_eq!(badge(b), 1);
+    // and its printout says open again, not settled
+    let doc = raw(b, "books_owed_document", json!({ "owed": owed }));
+    let page = doc["content"][0]["resource"]["text"].as_str().unwrap();
+    assert!(page.contains("<td>Open</td>"), "{page}");
+    assert!(!page.contains("Settled"), "{page}");
     let (code, message) = refused(
         b,
         "books_app_owed_cancel",

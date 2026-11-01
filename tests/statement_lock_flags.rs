@@ -241,6 +241,20 @@ fn a_finished_statement_locks_its_matches_until_reopened_with_a_reason() {
     assert_eq!((events(b, "finish"), events(b, "reopen")), (2, 2));
     let voided = run(b, "books_app_void_entry", void("r3-void-4", &matched));
     assert_eq!(voided["isError"], false, "{voided}");
+    // a reopened statement takes a corrected file and keeps its history
+    ok(
+        b,
+        "books_app_statement_import",
+        with(
+            json!({ "client_request_id": "r3-reimport", "csv_base64": b64::encode(&std::fs::read(STATEMENT).unwrap()), "file_name": "bank-corrected.csv" }),
+        ),
+    );
+    assert_eq!((events(b, "finish"), events(b, "reopen")), (2, 2));
+    let view = ok(b, "books_statement_get", month());
+    assert_eq!(
+        view["statement"]["file_name"], "bank-corrected.csv",
+        "{view}"
+    );
 }
 
 #[test]

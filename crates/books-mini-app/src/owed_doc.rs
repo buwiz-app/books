@@ -67,12 +67,12 @@ pub fn render(conn: &Connection, book: &Book, u: &Unpaid) -> Result<String, Refu
         .map(|a| a.name)
         .unwrap_or_default();
     let status = match u.status.as_str() {
-        "paid" => match u.paid_on {
+        "cancelled" => "Cancelled".to_string(),
+        _ if u.balance() > 0 => "Open".to_string(),
+        _ => match u.paid_on {
             Some(d) => format!("Settled on {d}"),
             None => "Settled".to_string(),
         },
-        "cancelled" => "Cancelled".to_string(),
-        _ => "Open".to_string(),
     };
     let rows: [(&str, String); 7] = [
         (
