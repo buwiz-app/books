@@ -3,7 +3,7 @@
 
 use books_mini_app::{apps, jcs, manifest, reserved, tools};
 
-/// The tool names an app source passes to `rox.call("…")`, read
+/// The tool names an app source passes to `buwiz.call("…")`, read
 /// independently of `apps::named_tools`: every `"books_…"` literal.
 fn called_tools(source: &str) -> Vec<String> {
     let mut found = Vec::new();
@@ -37,11 +37,11 @@ fn neutral(title: &str) {
 #[test]
 fn the_manifest_has_the_books_identity() {
     let m = manifest::unsigned(manifest::RELEASE_KEY_ID);
-    assert_eq!(m["protocol"], "1.0.0");
-    assert_eq!(m["id"], "dev.goldcoders.books");
+    assert_eq!(m["protocol"], "2.0.0");
+    assert_eq!(m["id"], "app.buwiz.books");
     assert_eq!(m["short"], "books");
-    assert_eq!(m["version"], "0.1.0");
-    assert_eq!(m["publisher"]["id"], "dev.goldcoders");
+    assert_eq!(m["version"], "0.2.0");
+    assert_eq!(m["publisher"]["id"], "app.buwiz");
     assert_eq!(m["publisher"]["key_id"], "gc-2026-01");
     assert!(m.get("signature").is_none() && m.get("needs").is_none());
     // M8: three routines, six scopes and the hand-off's, /books and five templates
@@ -75,7 +75,7 @@ fn every_app_called_tool_is_granted_and_nothing_more() {
     assert_eq!(entries.len(), apps::APPS.len());
     for (entry, app) in entries.iter().zip(apps::APPS) {
         assert_eq!(entry["id"], app.id);
-        assert_eq!(entry["entry"], format!("rox-app://{}", app.id));
+        assert_eq!(entry["entry"], format!("buwiz-app://{}", app.id));
         assert_eq!(entry["mime"], "text/x-nsh-tsx");
         assert_eq!(entry["sdk"], "1");
         assert_eq!(entry["fingerprint"], manifest::fingerprint(app.source));
@@ -129,7 +129,7 @@ fn every_books_tool_starts_with_books_and_every_named_tool_exists() {
         let write = !tools::read_only(name);
         assert_eq!(tool["annotations"]["readOnlyHint"], !write, "{name}");
         // DD-20: every write but the draft is the user's click in the app
-        let app_only = tool["_meta"]["rox/audience"] == serde_json::json!(["app"]);
+        let app_only = tool["_meta"]["buwiz/audience"] == serde_json::json!(["app"]);
         assert_eq!(name.starts_with("books_app_"), app_only, "{name}");
         if write && !app_only {
             assert_eq!(name, "books_entry_draft", "the assistant may only draft");
@@ -185,12 +185,12 @@ fn the_apps_import_only_nsh_and_rox_and_cards_call_rox_fit() {
             .collect();
         assert!(
             imports.len() <= 2,
-            "{}: one import each from nsh and rox",
+            "{}: one import each from nsh and buwiz",
             app.id
         );
         for line in imports {
             assert!(
-                line.ends_with("from \"nsh\";") || line.ends_with("from \"rox\";"),
+                line.ends_with("from \"nsh\";") || line.ends_with("from \"buwiz\";"),
                 "{}: {line}",
                 app.id
             );
@@ -209,7 +209,7 @@ fn the_apps_import_only_nsh_and_rox_and_cards_call_rox_fit() {
         }
     }
     let source = apps::find("home").unwrap().source;
-    assert!(source.contains("rox.fit("));
+    assert!(source.contains("buwiz.fit("));
     for word in [
         "fetch",
         "XMLHttpRequest",

@@ -14,7 +14,7 @@ overdue status or penalty. Those are Buwiz Forms'. The one labelled exception is
 ## Run it
 
 ```
-cd /Volumes/goldcoders/buwiz-books/poc
+cd /Volumes/goldcoders/mini-apps/books/poc
 bun test                                   # the suite
 bun run fixtures                           # rewrites fixtures/synthetic/ from tools/gen-fixtures.ts
 bun run vectors                            # rewrites fixtures/vectors/ from the engine (and removes vectors no case writes)

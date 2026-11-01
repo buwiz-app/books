@@ -15,7 +15,7 @@ Source: [decisions.md](../research/traces/decisions.md), "Owner decisions (bindi
 
 | ID | Decision | Effect in these docs |
 |---|---|---|
-| O1 | Books is a separate service in its own repo (`github.com/buwiz-corp/buwiz-books`, local clone `/Volumes/goldcoders/buwiz-books`). It owns business profiles, the ledger, categories, and the Books-to-Forms bridge. buwiz-cloud is used only for sign-in and to confirm which approved tax profiles the user owns. | ADR 0001. [01 section 4.5](01-architecture.md#45-cross-plugin-reach). |
+| O1 | Books is a separate service in its own repo (`github.com/buwiz-app/books`, moved from `buwiz-corp/buwiz-books` on 2026-10-31; local clone `/Volumes/goldcoders/mini-apps/books`). It owns business profiles, the ledger, categories, and the Books-to-Forms bridge. buwiz-cloud is used only for sign-in and to confirm which approved tax profiles the user owns. | ADR 0001. [01 section 4.5](01-architecture.md#45-cross-plugin-reach). |
 | O2 | The ledger is local-first: encrypted local storage inside the Books mini app's own MCP process, the same pattern as BIR's SQLCipher database. Cloud sync is a later, separate step. | ADR 0002. [01 section 6](01-architecture.md#6-data-ownership-and-local-first-store). |
 | O3 | Bookkeeping is universal (business profile). PH tax compliance (tax profile, TIN, COR, BIR forms) is a separate, optional, country-scoped layer that a business profile links to. | [01 section 0](01-architecture.md#0-summary), section 10. |
 | O4 | The new repo holds the research and details needed to build the mini app. The TypeScript Books repo at `/Volumes/goldcoders/OSS/buwiz-books` is a reference for domain logic, not the runtime backend. | ADR 0005. [05 section 1](05-implementation-plan.md#1-principles). |

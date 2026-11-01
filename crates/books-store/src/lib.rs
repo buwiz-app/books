@@ -103,7 +103,7 @@ impl Paths {
         }
     }
 
-    /// `BOOKS_DATA_DIR` (default `~/Library/Application Support/dev.goldcoders.books`)
+    /// `BOOKS_DATA_DIR` (default `~/Library/Application Support/app.buwiz.books`)
     /// and `BOOKS_DB_KEY_FILE` (default `<dir>/books.key`).
     pub fn from_env() -> Self {
         let dir = std::env::var_os(DATA_DIR_ENV)
@@ -113,7 +113,7 @@ impl Paths {
                 let home = std::env::var_os("HOME")
                     .map(PathBuf::from)
                     .unwrap_or_default();
-                home.join("Library/Application Support/dev.goldcoders.books")
+                home.join("Library/Application Support/app.buwiz.books")
             });
         let key_file = std::env::var_os(KEY_FILE_ENV)
             .filter(|k| !k.is_empty())

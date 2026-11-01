@@ -148,7 +148,7 @@ pub fn subject(conn: &Connection, ticket: &str) -> Result<Option<(String, i64)>>
         .optional()?)
 }
 
-/// Revoke every ticket (`rox.uninstall`). The book itself is kept (D10).
+/// Revoke every ticket (`buwiz.uninstall`). The book itself is kept (D10).
 pub fn revoke_all(conn: &Connection) -> Result<()> {
     conn.execute(
         "UPDATE ticket SET revoked_at = ?1 WHERE revoked_at IS NULL",

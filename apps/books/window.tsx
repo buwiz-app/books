@@ -129,8 +129,8 @@ function Setup() {
       <Panel pad class="w-[480px] gap-3.5">
         <Text class={`text-[18px] font-bold ${C.ink}`}>Make your book</Text>
         <Text class={`text-[13px] ${C.mute}`}>Books keeps it on this Mac, encrypted. It starts with the Philippines small-business chart of accounts.</Text>
-        <Field label="Name shown in Rox">
-          <TextBox value={label()} onChange={label.set} placeholder="Buwiz Trading" />
+        <Field label="Name shown in the Buwiz Bot">
+          <TextBox value={label()} onChange={(v) => label.set(v)} placeholder="Buwiz Trading" />
         </Field>
         <Field label="Accounting basis">
           <View class="flex-row gap-2">
@@ -153,11 +153,11 @@ function Setup() {
 export default function Books() {
   const status = resource(
     () => ({ v: ver() }),
-    () => rox.call("books_status", {}),
+    () => buwiz.call("books_status", {}),
   );
   const book = resource(
     () => ({ v: ver(), ready: (status() as Any)?.status === "ready" }),
-    (k: Any) => (k.ready ? rox.call("books_book_get", {}) : Promise.resolve(null)),
+    (k: Any) => (k.ready ? buwiz.call("books_book_get", {}) : Promise.resolve(null)),
   );
   const ready = computed(() => (status() as Any)?.status === "ready");
   const b = () => book() as Any;

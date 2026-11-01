@@ -1,4 +1,4 @@
-//! M8: Books in the Rox chat (drawings: Books Inline Cards, Books Guided
+//! M8: Books in the Bot chat (drawings: Books Inline Cards, Books Guided
 //! Chat). Four kinds of inline card, each its own app with only the tools
 //! it calls:
 //!
@@ -11,8 +11,8 @@
 //! - `quiet` (360): cards a routine leaves; counts and status only.
 //!
 //! The assistant offers a card with `books_show` (its result carries
-//! `_meta["rox/open"]`; Rox shows it on the user's click). `/books <page or
-//! card>` and the five templates (commands, since protocol v1 has no
+//! `_meta["buwiz/open"]`; the Bot shows it on the user's click). `/books <page or
+//! card>` and the five templates (commands, since protocol 2.0 has no
 //! template field) open them too. Six `@books:` scopes point at a person,
 //! account, period, entry, form or tag; three routines draft at most.
 
@@ -45,7 +45,7 @@ pub const CARDS: [(&str, &str, &str); 15] = [
     ("reconcile", "action", "Books · Match the bank"),
     ("close", "action", "Books · Close the month"),
     ("cert", "action", "Books · 2307 received"),
-    ("form", "pair", "Books · For the BIR app"),
+    ("form", "pair", "Books · For eBIRForms"),
     ("tidy", "quiet", "Books · Weekly tidy-up"),
     ("month_end", "quiet", "Books · Month end"),
     ("handoff", "quiet", "Books · BIR hand-off"),
@@ -71,7 +71,7 @@ const CARD_PROPS: [&str; 11] = [
     "deduction",
 ];
 
-/// `_meta["rox/open"]` for a card (spec 9.6): Rox shows it on a click.
+/// `_meta["buwiz/open"]` for a card (spec 9.6): the Bot shows it on a click.
 pub fn open(
     card: &str,
     args: &Map<String, Value>,
@@ -98,7 +98,7 @@ pub fn open(
 }
 
 /// `books_show`: offer a card in the chat. The result says what it shows;
-/// `_open` becomes the result's `_meta["rox/open"]`.
+/// `_open` becomes the result's `_meta["buwiz/open"]`.
 pub fn show(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
     let card = text(args, "card").ok_or_else(|| Refusal::invalid("Name the `card` to show."))?;
     let ticket = crate::service::ticket(store, "book", book.id)?;
@@ -188,7 +188,7 @@ pub fn checklist(
 
 /// `books_nudge`: what a routine looks for, and what its quiet card shows.
 /// `text` is empty when there is nothing to do (no turn runs); each item
-/// has an id Rox remembers, so a routine fires once per thing.
+/// has an id the Bot remembers, so a routine fires once per thing.
 pub fn nudge(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
     let c = store.conn();
     let today = Date::today();
@@ -275,7 +275,7 @@ pub fn scopes() -> Value {
         scope("account", "account in the Books chart", "an account (books_ledger_list with account)"),
         scope("period", "period: a month, quarter or year", "a period (books_report, books_today)"),
         scope("entry", "entry in the Books ledger", "one entry (books_entry_get)"),
-        scope("form", "form and period Books feeds for the BIR app", "a BIR form and period (books_form_proposal)"),
+        scope("form", "form and period Books feeds for eBIRForms", "a BIR form and period (books_form_proposal)"),
         scope("tag", "tag: a department or location", "a department or location (books_tags_list)"),
         {
             "name": "proposal",
@@ -475,7 +475,7 @@ fn choices(store: &Store, book: &Book, name: &str, typed: &str) -> Result<Vec<Va
                 for p in [p.clone(), p.previous()] {
                     let label = format!("{} {}", code(f), p.label());
                     if matches(&label, typed) {
-                        out.push(json!({ "label": label, "detail": "Books totals for the BIR app", "value": t("form", form_id(f, &p))? }));
+                        out.push(json!({ "label": label, "detail": "Books totals for eBIRForms", "value": t("form", form_id(f, &p))? }));
                     }
                 }
             }
@@ -621,7 +621,7 @@ pub fn page_choices(store: &Store, typed: &str) -> Result<Vec<Value>, Refusal> {
         "ledger" => "transactions by account",
         "unpaid" => "to collect, to pay",
         "reconcile" => "match the bank",
-        "forms" => "totals for the BIR app",
+        "forms" => "totals for eBIRForms",
         "reports" => "P&L, balance sheet, cash flow",
         _ => "",
     };

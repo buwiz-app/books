@@ -1,7 +1,7 @@
 [package]
 name = "books-mini-app"
 version = "0.1.0"
-description = "Buwiz Books Rox mini app: the stdio MCP server for plugin dev.goldcoders.books"
+description = "Buwiz Books mini app for the Buwiz Bot: the stdio MCP server for plugin app.buwiz.books"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -62,7 +62,7 @@ path = "../../tests/privacy_outputs.rs"
 [dependencies]
 books-core = { path = "../books-core" }
 books-store = { path = "../books-store" }
-# Session certificates are signed with the ed25519 key Rox provisions (spec 4.4).
+# Session certificates are signed with the ed25519 key the Bot provisions (spec 4.4).
 ed25519-dalek = { version = "2", default-features = false, features = ["zeroize"] }
 # Tickets: 130 bits from the OS CSPRNG (spec 9.5).
 getrandom = "0.3"

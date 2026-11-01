@@ -1,19 +1,19 @@
-// The shell every Books inline card shares (docs/design/inline-cards.md). A card sits inside Rox's card frame,
-// which draws the one header (the title, refresh, maximize); Books draws only the body, in Rox's own card
-// language (rox app/src/cards/mod.rs: 12 padding, 8 gap, 13 text, 12 notes, 28-point pill buttons, primary
+// The shell every Books inline card shares (docs/design/inline-cards.md). A card sits inside the Bot's card frame,
+// which draws the one header (the title, refresh, maximize); Books draws only the body, in the Bot's own card
+// language (the Bot's app/src/cards/mod.rs: 12 padding, 8 gap, 13 text, 12 notes, 28-point pill buttons, primary
 // first and right-aligned):
 //   Meta   one line under the header: when, and a status pill. Never the title again.
 //   body   the class's content. A list scrolls inside its own max height; the card never scrolls.
 //   Foot   the actions, on a hairline. It never scrolls and is never cut off.
 // The four classes: Glance (one figure, a few rows), List (rows that may scroll), Decision (what is decided,
 // then its buttons), Notice (one line, one action). Loading, empty, error and settled stay in the card's one
-// body. The card reports its natural height with rox.fit; each class's parts are bounded, so its height never
+// body. The card reports its natural height with buwiz.fit; each class's parts are bounded, so its height never
 // passes the manifest's max_height. The kit (kit.tsx) comes first in the source.
 
-const CP = (rox.props || {}) as Any;
+const CP = (buwiz.props || {}) as Any;
 const CARD = String(CP.card || "");
 
-/** Rox's card surface, hairline, button well and a skeleton bar, as solid colors (theme CARD, BORDER_S, HOVER). */
+/** The Bot's card surface, hairline, button well and a skeleton bar, as solid colors (theme CARD, BORDER_S, HOVER). */
 const K = {
   surface: "bg-white dark:bg-[#1f1f1f]",
   line: "border-[#e0e0e0] dark:border-[#3a3a3a]",
@@ -27,15 +27,39 @@ const LIST_MAX = "max-h-[240px]";
 let fitSent = 0;
 const fitCard = (e: Any) => {
   const h = Math.ceil(e.bounds.size.height);
-  if (Math.abs(h - fitSent) >= 1 && typeof rox.fit === "function") rox.fit((fitSent = h));
+  if (Math.abs(h - fitSent) >= 1 && typeof buwiz.fit === "function") buwiz.fit((fitSent = h));
 };
+
+/** The card's reads (`read`): the Bot hears `buwiz.ready()` once every read the card started has settled, data or
+ *  error, and the manifest's `inline.wait_ready` holds the Bot's placeholder until then. A card that starts none says
+ *  so at once. A Bot without `buwiz.ready` ignores it. */
+let reading = 0;
+let readStarted = false;
+let readyTold = false;
+function tellReady() {
+  if (readyTold || reading > 0) return;
+  readyTold = true;
+  (buwiz as Any).ready?.();
+}
+/** nsh's `resource`, counted for `buwiz.ready`. A read that ends lets the others it set off start first. */
+function read(source: Any, fetcher: Any) {
+  return resource(source, (...a: Any[]) => {
+    reading++;
+    readStarted = true;
+    return new Promise((ok) => ok(fetcher(...a))).finally(() => {
+      reading--;
+      setTimeout(tellReady, 0);
+    });
+  });
+}
+setTimeout(() => readStarted || tellReady(), 0);
 
 /** Open the Books window at a page. */
 function openBooks(page: string) {
-  if (rox.open) rox.open({ app: "books", props: { page } }).catch((e: Any) => toast(errText(e)));
+  if (buwiz.open) buwiz.open({ app: "books", props: { page } }).catch((e: Any) => toast(errText(e)));
 }
 
-/** The card: its body, then its footer when it has one. The whole is measured for rox.fit. Rox draws no card
+/** The card: its body, then its footer when it has one. The whole is measured for buwiz.fit. The Bot draws no card
  *  shorter than 96 points (mini_v1 HEIGHT), so the body fills that: a footer sits at the bottom, and a body
  *  with no footer (a settled line) is centered rather than leaving a gap under it. */
 function Body(p: { children?: Any; foot?: Any; center?: boolean }) {
@@ -47,7 +71,7 @@ function Body(p: { children?: Any; foot?: Any; center?: boolean }) {
   );
 }
 
-/** The line under Rox's header: when or what, and a status pill on the right. */
+/** The line under the Bot's header: when or what, and a status pill on the right. */
 function Meta(p: { text: string; right?: Any }) {
   return (
     <View class="flex-row items-center gap-2 min-h-[20px]">
@@ -124,7 +148,7 @@ function Foot(p: { status?: string; children?: Any }) {
   );
 }
 
-/** A card button, as Rox draws them: a 28-point pill; the primary is ink on the surface, the rest sit in a well. */
+/** A card button, as the Bot draws them: a 28-point pill; the primary is ink on the surface, the rest sit in a well. */
 function Act(p: { label: string; onPress: () => void; primary?: boolean; disabled?: boolean }) {
   return (
     <View
@@ -151,7 +175,7 @@ function Check(p: { label: string; done: boolean }) {
   );
 }
 
-/** What a Decision card leaves once its action is done: one line, as Rox's answered cards do. */
+/** What a Decision card leaves once its action is done: one line, as the Bot's answered cards do. */
 function Settled(p: { text: string; sub?: string }) {
   return (
     <Body center>

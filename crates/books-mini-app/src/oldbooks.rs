@@ -4,7 +4,7 @@
 //! imported account to a kind (Map 1: suggested, never assumed), enters
 //! opening totals with proof for a mid-year start, and OKs return events.
 //!
-//! Files arrive in parts: Rox caps one call's arguments at 256 KiB, so the
+//! Files arrive in parts: the Bot caps one call's arguments at 256 KiB, so the
 //! app sends a picked file as base64url parts (`books_app_upload_part`) and
 //! the import names the staged upload. Parts live in memory only, and an
 //! import takes them.

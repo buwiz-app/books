@@ -10,7 +10,7 @@ const CERT_TONE: Record<string, string> = { received: "ok", pending: "draft", lo
 function CertificatesPage(p: { go: (page: string, filter?: string) => void }) {
   const data = resource(
     () => ({ v: ver(), f: certFilter() }),
-    (k: Any) => rox.call("books_certificates_list", { filter: k.f }),
+    (k: Any) => buwiz.call("books_certificates_list", { filter: k.f }),
   );
   const d = () => data() as Any;
   const changing = signal("");
@@ -91,7 +91,7 @@ function CertificatesPage(p: { go: (page: string, filter?: string) => void }) {
         </Panel>
         <Panel pad class="flex-row items-center gap-2.5">
           <Pill tone="bir" label="BIR" />
-          <Text class={`flex-1 text-[12.5px] ${C.mute}`}>Only received 2307s count. A 2306 is final tax and never counts. The BIR app builds SAWT and keeps the TINs.</Text>
+          <Text class={`flex-1 text-[12.5px] ${C.mute}`}>Only received 2307s count. A 2306 is final tax and never counts. eBIRForms builds SAWT and keeps the TINs.</Text>
         </Panel>
       </If>
     </View>
@@ -144,7 +144,7 @@ function CertSheet(p: { opts: Any; close: () => void }) {
               ["2306", "2306 (final)"],
             ]}
             value={form()}
-            onPick={form.set}
+            onPick={(v) => form.set(v)}
           />
         </Field>
         <Field label="Kind">
@@ -154,7 +154,7 @@ function CertSheet(p: { opts: Any; close: () => void }) {
               ["it", "Income tax"],
             ]}
             value={kind()}
-            onPick={kind.set}
+            onPick={(v) => kind.set(v)}
           />
         </Field>
       </View>
@@ -166,12 +166,12 @@ function CertSheet(p: { opts: Any; close: () => void }) {
         </View>
         <View class="w-[110px]">
           <Field label="Quarter">
-            <TextBox value={quarter()} onChange={quarter.set} placeholder="2026-Q3" />
+            <TextBox value={quarter()} onChange={(v) => quarter.set(v)} placeholder="2026-Q3" />
           </Field>
         </View>
         <View class="w-[130px]">
           <Field label="Withheld">
-            <TextBox value={amount()} onChange={amount.set} placeholder="0.00" />
+            <TextBox value={amount()} onChange={(v) => amount.set(v)} placeholder="0.00" />
           </Field>
         </View>
         <Field label="Status">
@@ -181,7 +181,7 @@ function CertSheet(p: { opts: Any; close: () => void }) {
               ["pending", "Pending"],
             ]}
             value={status()}
-            onPick={status.set}
+            onPick={(v) => status.set(v)}
           />
         </Field>
         <Field label="The sale was recorded">

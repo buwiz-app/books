@@ -2,7 +2,7 @@
 //!
 //! 1. The owner clicks "Hand to BIR draft": `books_app_handoff_create`
 //!    records the ready proposal's input boxes and the app attaches the
-//!    hand-off to the chat (`rox.attach("proposal", ticket)`).
+//!    hand-off to the chat (`buwiz.attach("proposal", ticket)`).
 //! 2. The assistant reads it with `books_handoff_get` and fills the BIR
 //!    draft once with source `document` (D3), reads it back, validates and
 //!    saves a draft. Books never calls BIR, and nothing is ever sent.

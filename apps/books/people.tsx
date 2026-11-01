@@ -17,7 +17,7 @@ function Avatar(p: { initials: string; color: string; big?: boolean }) {
 function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
   const list = resource(
     () => ({ v: ver(), k: peopleKind() }),
-    (k: Any) => rox.call("books_people_list", { kind: k.k }),
+    (k: Any) => buwiz.call("books_people_list", { kind: k.k }),
   );
   const l = () => list() as Any;
   const current = computed(() => {
@@ -26,7 +26,7 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
   });
   const detail = resource(
     () => ({ v: ver(), t: current()?.ticket || "" }),
-    (k: Any) => (k.t ? rox.call("books_person_get", { person: k.t }) : Promise.resolve(null)),
+    (k: Any) => (k.t ? buwiz.call("books_person_get", { person: k.t }) : Promise.resolve(null)),
   );
   const d = () => detail() as Any;
   const adding = signal(false);
@@ -66,7 +66,7 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
       <If when={adding()}>
         <Panel pad class="flex-row gap-2 items-end">
           <Field label="Name" grow>
-            <TextBox value={name()} onChange={name.set} placeholder="Name, never a TIN" />
+            <TextBox value={name()} onChange={(v) => name.set(v)} placeholder="Name, never a TIN" />
           </Field>
           <Btn label="Add" tone="go" onPress={add} />
         </Panel>

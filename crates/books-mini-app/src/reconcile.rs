@@ -227,7 +227,7 @@ pub fn settings(store: &Store, book: Book) -> Answer {
         "accounts": options["all"],
         "link": {
             "tax_profile": chart.book.cloud_tax_profile_id.as_ref().map_or("Not linked yet", |_| "Linked by ID through Buwiz sign-in"),
-            "bir": "The BIR app reads Books totals; Books reads its tax option from the BIR draft",
+            "bir": "eBIRForms reads Books totals; Books reads its tax option from the BIR draft",
             "stored": "This Mac, encrypted",
         },
     }))
