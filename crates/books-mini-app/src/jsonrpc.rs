@@ -31,24 +31,9 @@ cash basis by default. The assistant can read totals and draft entries (books_en
 the user posts, voids or closes, in the Books app. Books never computes tax, never stores a TIN, \
 and never sends, files or pays anything.";
 
-/// A tool result whose `structuredContent` is `structured`.
-pub fn ok(structured: Value) -> Value {
-    json!({
-        "content": [{ "type": "text", "text": structured.to_string() }],
-        "structuredContent": structured,
-        "isError": false,
-    })
-}
-
-/// A refusal with a spec error code (14.1). The message is user-facing and
-/// carries no subject data.
-pub fn fail(code: &str, message: &str) -> Value {
-    json!({
-        "content": [{ "type": "text", "text": message }],
-        "structuredContent": { "code": code, "message": message },
-        "isError": true,
-    })
-}
+// Result shapes are the SDK's: `structuredContent` for `ok`, a
+// `code`/`message` refusal for `fail` (spec 14.1).
+pub use buwiz_plugin::{fail, ok};
 
 fn error_response(id: Value, code: i64, message: &str) -> Value {
     json!({ "jsonrpc": "2.0", "id": id, "error": { "code": code, "message": message } })
