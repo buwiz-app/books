@@ -15,7 +15,8 @@ use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
 use crate::{
-    cards, checks, forms, handoff, oldbooks, payroll, reconcile, records, reports, views, writes,
+    cards, checks, forms, handoff, oldbooks, owed_repeats, payroll, reconcile, records, reports,
+    views, writes,
 };
 
 pub const STATUS: &str = "books_status";
@@ -80,6 +81,7 @@ pub const NUDGE: &str = "books_nudge";
 pub const SIGNIN: &str = "books_app_signin";
 pub const TAX_PROFILES: &str = "books_app_tax_list";
 pub const PROFILE_LINK: &str = "books_app_tax_link";
+pub const OWED_REPEAT: &str = "books_app_owed_repeat";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -879,7 +881,28 @@ pub const TOOLS: &[Tool] = &[
         schema: wage_run_schema,
         description: "Save a pay run as a draft entry; the Ledger posts it.",
     },
+    Tool {
+        name: OWED_REPEAT,
+        reach: Reach::App,
+        write: true,
+        schema: owed_repeat_schema,
+        description: "Start or stop a monthly repeat on an invoice or bill, or add this month's copy after the user's click.",
+    },
 ];
+
+fn owed_repeat_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "owed", "action"],
+        "properties": {
+            "client_request_id": { "type": "string" },
+            "book": { "type": "string" },
+            "owed": { "type": "string" },
+            "action": { "type": "string", "enum": ["start", "stop", "add"] },
+            "month": { "type": "string", "description": "YYYY-MM, add only; this month when absent." }
+        }
+    })
+}
 
 pub fn find(name: &str) -> Option<&'static Tool> {
     TOOLS.iter().find(|t| t.name == name)
@@ -1016,7 +1039,8 @@ pub fn call(
             records::tags_list(store, book, args)
         }),
         OWED_LIST => read(books, arguments, |store, book, args| {
-            records::owed_list(store, book, args, origin)
+            records::owed_list(store, book.clone(), args, origin)
+                .and_then(|v| owed_repeats::decorate(store, book, origin, v))
         }),
         OWED_OPTIONS => read(books, arguments, |store, book, _| {
             records::owed_options(store, book)
@@ -1230,6 +1254,9 @@ pub fn call(
         }),
         CROSS_CHECKS => read(books, arguments, |store, book, args| {
             checks::cross_checks(store, book, args)
+        }),
+        OWED_REPEAT => write(books, name, origin, arguments, |tx| {
+            owed_repeats::repeat(tx, arguments)
         }),
         _ => fail("internal", "Books has no handler for that tool."),
     })
