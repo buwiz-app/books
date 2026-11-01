@@ -1,11 +1,11 @@
-//! `books-mini-app [mcp]`: serve MCP on stdio (what Rox spawns).
+//! `books-mini-app [mcp]`: serve MCP on stdio (what the Bot spawns).
 //! `books-mini-app manifest [--key-id <id>]`: print the unsigned manifest as
 //! JCS text, under publisher key id `gc-2026-01` unless `--key-id` names a
 //! test key id.
 //! `books-mini-app app-source <id>`: print an app's served source, for the
 //! signing step (`sign-manifest.mjs --app <id>=<file>`).
 //! `books-mini-app seed <demo.json>`: replay a synthetic demo book into the
-//! store `BOOKS_DATA_DIR` names (the test Rox and the golden tests).
+//! store `BOOKS_DATA_DIR` names (the test the Bot and the golden tests).
 
 use std::io::Write;
 use std::process::ExitCode;

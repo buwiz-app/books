@@ -1,5 +1,5 @@
 //! The synthetic demo book (`fixtures/demo/*.json`): a list of Books tool
-//! calls made as the app, replayed into a store. It seeds the test Rox for
+//! calls made as the app, replayed into a store. It seeds the test the Bot for
 //! the screenshots and the golden report test (M3). Synthetic data only.
 
 use serde_json::Value;

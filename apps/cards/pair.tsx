@@ -8,9 +8,9 @@ function FormCard() {
   const ctx: Record<string, string> = {};
   if (form === "1701MS" && CP.tax_option) ctx["/taxpayer/tax_option"] = String(CP.tax_option);
   if (form === "1701MS" && CP.tax_option === "graduated" && CP.deduction) ctx["/taxpayer/deduction"] = String(CP.deduction);
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
-    () => rox.call("books_form_proposal", CP.period ? { form, period: CP.period, form_context: ctx } : { form, form_context: ctx }),
+    () => buwiz.call("books_form_proposal", CP.period ? { form, period: CP.period, form_context: ctx } : { form, form_context: ctx }),
   );
   const d = () => r() as Any;
   const h = () => d()?.handoff;
@@ -27,7 +27,7 @@ function FormCard() {
           : [ready() ? "ok" : returns().length ? "rev" : "draft", d()?.status_label || ""];
   const hand = () =>
     act("books_app_handoff_create", { form, period: d()?.period, form_context: ctx })
-      .then((x: Any) => (rox.attach ? rox.attach("proposal", x.ticket) : null))
+      .then((x: Any) => (buwiz.attach ? buwiz.attach("proposal", x.ticket) : null))
       .catch(() => null);
   const o = () => d()?.owners || {};
   const status = () =>

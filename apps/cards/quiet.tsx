@@ -2,9 +2,9 @@
 // because nobody asked yet (owner decision; D22). Every number here comes from books_nudge, which carries none.
 
 function TidyCard() {
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
-    () => rox.call("books_nudge", { kind: "tidy", any_day: true }),
+    () => buwiz.call("books_nudge", { kind: "tidy", any_day: true }),
   );
   const d = () => r() as Any;
   const n = () => Number(d()?.counts.lines || 0);
@@ -28,9 +28,9 @@ function TidyCard() {
 }
 
 function MonthEndCard() {
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
-    () => rox.call("books_nudge", { kind: "month_end" }),
+    () => buwiz.call("books_nudge", { kind: "month_end" }),
   );
   const d = () => r() as Any;
   const left = () => Number(d()?.left || 0);
@@ -57,9 +57,9 @@ function MonthEndCard() {
 }
 
 function HandoffCard() {
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
-    () => rox.call("books_nudge", { kind: "bir_pair" }),
+    () => buwiz.call("books_nudge", { kind: "bir_pair" }),
   );
   const d = () => r() as Any;
   const form = () => String(d()?.forms?.[0]?.title || "a hand-off").replace("BIR hand-off · ", "");

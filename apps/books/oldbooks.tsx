@@ -7,8 +7,8 @@ const csvChart = signal(null as Any);
 const csvJournal = signal(null as Any);
 
 function pickOne(ext: string, then: (f: Any) => void) {
-  if (!rox.pickFile) return toast("Picking files is not available in this Rox.");
-  rox
+  if (!buwiz.pickFile) return toast("Picking files is not available in this Buwiz Bot.");
+  buwiz
     .pickFile({ extensions: [ext] })
     .then((files: Any[]) => (files.length ? then(files[0]) : null))
     .catch((e: Any) => toast(errText(e)));
@@ -41,7 +41,7 @@ const MATCH_TONE: Record<string, [string, string]> = {
 function ImportPage(p: { go: (page: string, filter?: string) => void }) {
   const data = resource(
     () => ({ v: ver() }),
-    () => rox.call("books_import_get", {}),
+    () => buwiz.call("books_import_get", {}),
   );
   const d = () => data() as Any;
   const measure = signal("gross_sales");
@@ -167,21 +167,21 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
             </View>
             <View class="w-[110px]">
               <Field label="From">
-                <TextBox value={from()} onChange={from.set} placeholder="2026-01-01" />
+                <TextBox value={from()} onChange={(v) => from.set(v)} placeholder="2026-01-01" />
               </Field>
             </View>
             <View class="w-[110px]">
               <Field label="To">
-                <TextBox value={to()} onChange={to.set} placeholder="2026-06-30" />
+                <TextBox value={to()} onChange={(v) => to.set(v)} placeholder="2026-06-30" />
               </Field>
             </View>
             <View class="w-[130px]">
               <Field label="Amount">
-                <TextBox value={amount()} onChange={amount.set} placeholder="0.00" />
+                <TextBox value={amount()} onChange={(v) => amount.set(v)} placeholder="0.00" />
               </Field>
             </View>
             <Field label="Proof" grow>
-              <TextBox value={proof()} onChange={proof.set} placeholder="Filed 2551Q for Q1 and Q2" />
+              <TextBox value={proof()} onChange={(v) => proof.set(v)} placeholder="Filed 2551Q for Q1 and Q2" />
             </Field>
             <Btn label="Save" tone="go" onPress={addOpening} />
           </View>

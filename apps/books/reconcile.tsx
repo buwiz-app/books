@@ -34,14 +34,14 @@ async function sendFile(file: Any): Promise<string> {
   const parts = Math.max(1, Math.ceil(bytes.length / size));
   const upload = `up-${rid().slice(3)}`;
   for (let i = 0; i < parts; i += 1) {
-    await rox.call("books_app_upload_part", { upload, part: i, parts, data_base64: b64url(bytes.slice(i * size, (i + 1) * size)) });
+    await buwiz.call("books_app_upload_part", { upload, part: i, parts, data_base64: b64url(bytes.slice(i * size, (i + 1) * size)) });
   }
   return upload;
 }
 
 function importStatement(account: string) {
-  if (!rox.pickFile) return toast("Picking files is not available in this Rox.");
-  rox
+  if (!buwiz.pickFile) return toast("Picking files is not available in this Buwiz Bot.");
+  buwiz
     .pickFile({ extensions: [".csv"] })
     .then(async (files: Any[]) => {
       if (!files.length) return;
@@ -57,7 +57,7 @@ function importStatement(account: string) {
 function ReconcileGrid() {
   const data = resource(
     () => ({ v: ver() }),
-    () => rox.call("books_reconcile_grid", {}),
+    () => buwiz.call("books_reconcile_grid", {}),
   );
   const d = () => data() as Any;
   return (
@@ -126,7 +126,7 @@ const MARK: Record<string, string> = { m: "=", s: "≈", x: "?" };
 function MatchView() {
   const data = resource(
     () => ({ v: ver(), a: recAccount(), m: recMonth() }),
-    (k: Any) => rox.call("books_statement_get", { account: k.a, month: k.m }),
+    (k: Any) => buwiz.call("books_statement_get", { account: k.a, month: k.m }),
   );
   const d = () => data() as Any;
   const s = () => d()?.statement as Any;

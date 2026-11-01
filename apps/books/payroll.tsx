@@ -23,7 +23,7 @@ const PAY_FIELDS: [string, string][] = [
 function PayrollPage(p: { go: (page: string, filter?: string) => void }) {
   const data = resource(
     () => ({ v: ver() }),
-    () => rox.call("books_wages_list", {}),
+    () => buwiz.call("books_wages_list", {}),
   );
   const d = () => data() as Any;
   return (
@@ -124,12 +124,12 @@ function PayRunSheet(p: { employees: Any[]; money: Any[]; close: () => void; go:
       <View class="flex-row gap-2 items-end">
         <View class="w-[120px]">
           <Field label="Period from">
-            <TextBox value={from()} onChange={from.set} placeholder="2026-09-01" />
+            <TextBox value={from()} onChange={(v) => from.set(v)} placeholder="2026-09-01" />
           </Field>
         </View>
         <View class="w-[120px]">
           <Field label="to">
-            <TextBox value={to()} onChange={to.set} placeholder="2026-09-30" />
+            <TextBox value={to()} onChange={(v) => to.set(v)} placeholder="2026-09-30" />
           </Field>
         </View>
         <Field label="Net pay leaves" grow>

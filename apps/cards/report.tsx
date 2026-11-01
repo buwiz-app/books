@@ -2,9 +2,9 @@
 // template /books-results). Two number columns: this period, and the last one dimmed.
 
 function PlCard() {
-  const r = resource(
+  const r = read(
     () => ({ v: ver() }),
-    () => rox.call("books_report", CP.period ? { kind: "pl", period: CP.period } : { kind: "pl" }),
+    () => buwiz.call("books_report", CP.period ? { kind: "pl", period: CP.period } : { kind: "pl" }),
   );
   const d = () => r() as Any;
   const rows = () => (d()?.sections || []).flatMap((s: Any) => s.rows || []);

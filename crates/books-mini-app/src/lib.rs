@@ -1,11 +1,11 @@
-//! Buwiz Books as a Rox mini app (`dev.goldcoders.books`), protocol v1.
+//! Buwiz Books as a Buwiz Bot mini app (`app.buwiz.books`), protocol 2.0.
 //!
-//! - [`jsonrpc`]: the stdio MCP server Rox spawns;
-//! - [`reserved`]: the reserved `rox.*` tools (provision, session
+//! - [`jsonrpc`]: the stdio MCP server the Bot spawns;
+//! - [`reserved`]: the reserved `buwiz.*` tools (provision, session
 //!   certificates, ticket titles, uninstall);
 //! - [`manifest`]: the manifest generator and the served (signed) manifest;
 //! - [`jcs`]: RFC 8785 canonical JSON and I-JSON parsing, integers only;
-//! - [`apps`]: the app sources served as `rox-app://<id>`;
+//! - [`apps`]: the app sources served as `buwiz-app://<id>`;
 //! - [`tools`]: Books' own `books_*` tools, with [`service`] (the store,
 //!   tickets, idempotent audited writes), [`views`] (page data),
 //!   [`writes`], [`records`] (people, tags, unpaid) and [`reports`].

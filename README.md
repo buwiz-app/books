@@ -2,11 +2,11 @@
 
 **Status: design, a proof of concept, and the mini app being built milestone by milestone (M1 done: an encrypted book, the ledger, Today, Ledger and Accounts). Not deployed. Synthetic data only.**
 
-This repo holds the evidence and the design for Buwiz Books, a bookkeeping mini app for the Rox host (plugin id `dev.goldcoders.books`). It also holds a small proof of concept of the accounting measures and the bridge that maps them onto Forms input boxes. It does not file, send, submit or pay anything, and it contains no tax-compliance logic.
+This repo holds the evidence and the design for Buwiz Books, a bookkeeping mini app for the Buwiz Bot (plugin id `app.buwiz.books`, protocol 2.0). It also holds a small proof of concept of the accounting measures and the bridge that maps them onto Forms input boxes. It does not file, send, submit or pay anything, and it contains no tax-compliance logic.
 
 ## The product in five lines
 
-1. Books is a bookkeeping app that runs inside Rox on the user's Mac. Its ledger is encrypted on disk.
+1. Books is a bookkeeping app that runs inside the Buwiz Bot on the user's Mac. Its ledger is encrypted on disk.
 2. From posted entries, Books computes **accounting measures** (gross sales, returns, net sales, payroll components, certificates received, ...) per business profile per period. Every figure traces back to ledger lines. A thin bridge maps measures onto Buwiz Forms **input** boxes; the first is the 2551Q Schedule 1 row 1 amount.
 3. For hand-off, the user attaches the proposal in chat. The assistant gives the values to the BIR mini app, which fills and saves a draft. Forms owns all compliance: elections, applicability, ATC, rates, tax due, thresholds, rounding, penalties and due dates.
 4. Books never sends, submits, files, queues or pays. The user submits in BIR, outside this design.
@@ -47,7 +47,7 @@ Design decisions (proposed; the full list and open items are in `docs/07-decisio
 | `docs/03-crosswalk.md` | Verified field keys for 2551Q, 1601-C and 1701-MS, with who fills each box (Books measure, Forms, profile, user). |
 | `docs/04-first-slice.md` | Slice A (Books alone, synthetic data: measures and 2551Q input boxes) and Slice B (hand-off to a scratch BIR profile, where Forms computes the tax), with acceptance criteria. |
 | `docs/05-implementation-plan.md` | Phases P0 to P10 and their exit criteria. |
-| `docs/06-testing-plan.md` | Golden, contract, privacy-scanner and Rox conformance tests. |
+| `docs/06-testing-plan.md` | Golden, contract, privacy-scanner and Bot conformance tests. |
 | `docs/07-decisions-and-blockers.md` | Owner decisions, blockers, discrepancies, design corrections, and the items handed to Forms (section 2.2). |
 | `docs/plan/` | The build plan (`build-plan.html`, packed copy and published link inside), the live tracker page (`tracker.html`) and its starting data (`seed/`). Milestones M0 to M9 replace the P0 to P10 phases of `docs/05`. |
 | `docs/08-mini-app-pages-and-feature-log.md` | The 12 mini-app pages, inline cards and guided chat as drawn for review, and the log of web features that do not come along (Rox has them, BIR owns them, later, dropped). Sources of the drawings: `research/drawings/`. |
@@ -60,21 +60,21 @@ Design decisions (proposed; the full list and open items are in `docs/07-decisio
 | `research/corrected/`, `research/spreadsheet-corrections.md` | Corrected workbook figures, labels and formulas. |
 | `poc/` | Bun and TypeScript proof of concept: ledger → measures → mapping → fill args with lineage. |
 | `fixtures/` | Synthetic fixtures for the PoC. Never real data. |
-| `tools/` | Helper scripts used in the research. `tools/rox/conformance.sh` runs Rox's conformance tool against the plugin with a throwaway test key. |
-| `Cargo.toml`, `crates/`, `apps/`, `tests/` | The Rust Rox plugin. `crates/books-core`: domain rules with no I/O (centavos, dates, the kind catalogue and chart preset, the ledger's post rules). `crates/books-store`: the SQLCipher store, its 0600 key file and migrations. `crates/books-mini-app`: the stdio MCP server, the protocol v1 reserved tools, the manifest generator and the `books_*` tools. `apps/books/`: the Books window (one app, a file per page); `apps/home.tsx`: the inline status card. `tests/host/` is the Node harness for the host test. |
+| `tools/` | Helper scripts used in the research. `tools/bot/conformance.sh` runs the Bot's conformance tool against the plugin with a throwaway test key. |
+| `Cargo.toml`, `crates/`, `apps/`, `tests/` | The Rust Buwiz Bot plugin. `crates/books-core`: domain rules with no I/O (centavos, dates, the kind catalogue and chart preset, the ledger's post rules). `crates/books-store`: the SQLCipher store, its 0600 key file and migrations. `crates/books-mini-app`: the stdio MCP server, the protocol 2.0 reserved tools, the manifest generator and the `books_*` tools. `apps/books/`: the Books window (one app, a file per page); `apps/home.tsx`: the inline status card. `tests/host/` is the Node harness for the host test. |
 | `docs/09-build-log.md` | The mini app as built, milestone by milestone: design choices made while building, gate results, what is blocked. |
 
 ## Run the gates
 
-`tools/check-all.sh` runs every gate below in order and prints one line each (`ROX_DIR` names the Rox checkout or
-worktree, `BOOKS_HOST_PORT` the host test's port; it exits non-zero on any failure). One by one:
+`tools/check-all.sh` runs every gate below in order and prints one line each (`BUWIZ_BOT_DIR` names a Buwiz Bot
+checkout at protocol 2.0, `BOOKS_HOST_PORT` the host test's port; it exits non-zero on any failure). One by one:
 
 ```sh
 cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
 (cd poc && bun test)
 tools/privacy-scan.sh      # the scanner's self-test, the repo scan and what the assistant can read
-tools/rox/conformance.sh   # needs a Rox checkout or worktree (ROX_DIR) with server/node_modules
-tools/rox/host-test.sh     # installs Books in a throwaway Rox broker (port 8810+, file keystore) and calls it
+tools/bot/conformance.sh   # needs a Bot checkout at protocol 2.0 (BUWIZ_BOT_DIR) with server/node_modules
+tools/bot/host-test.sh     # installs Books in a throwaway Bot broker (port 8810+, file keystore) and calls it
 ```
 
 Slice B live (not a commit gate: it needs a `bir-mini-app` debug build you make yourself, see the script's header)
@@ -85,7 +85,7 @@ of date:
 BIR_MINI_APP_BIN=<target>/debug/bir-mini-app BIR_DIR=<bir worktree> tools/bir/slice-b-live.sh
 ```
 
-The plugin keeps its store in `BOOKS_DATA_DIR` (default `~/Library/Application Support/dev.goldcoders.books`) with
+The plugin keeps its store in `BOOKS_DATA_DIR` (default `~/Library/Application Support/app.buwiz.books`) with
 the key file `BOOKS_DB_KEY_FILE` (default `<dir>/books.key`, mode 0600). Tests and the host test always point both
 at a temp folder.
 

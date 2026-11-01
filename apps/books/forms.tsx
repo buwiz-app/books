@@ -24,8 +24,8 @@ const STATUS_TONE: Record<string, string> = { ready: "ok", ready_held: "ok", blo
 function handTo(form: string, period: string) {
   act("books_app_handoff_create", { form, period, form_context: formContext(form) })
     .then((r: Any) => {
-      if (!rox.attach) return toast("Saved. This Rox cannot attach it to a chat.");
-      const attached = rox.attach("proposal", r.ticket);
+      if (!buwiz.attach) return toast("Saved. This Buwiz Bot cannot attach it to a chat.");
+      const attached = buwiz.attach("proposal", r.ticket);
       return attached.then(() => toast("Attached to the chat · ask the assistant to fill the BIR draft")).catch((e: Any) => toast(errText(e)));
     })
     .catch(() => null);
@@ -34,15 +34,15 @@ function handTo(form: string, period: string) {
 function FormsPage(p: { go: (page: string, filter?: string) => void }) {
   const cards = resource(
     () => ({ v: ver(), t: taxOption(), d: deduction() }),
-    () => rox.call("books_forms", { form_context: formContext("1701MS") }),
+    () => buwiz.call("books_forms", { form_context: formContext("1701MS") }),
   );
   const view = resource(
     () => ({ v: ver(), f: formNow(), t: taxOption(), d: deduction() }),
-    (k: Any) => rox.call("books_form_proposal", { form: k.f, form_context: formContext(k.f) }),
+    (k: Any) => buwiz.call("books_form_proposal", { form: k.f, form_context: formContext(k.f) }),
   );
   const lineage = resource(
     () => ({ k: lineageKey(), f: formNow(), v: ver() }),
-    (k: Any) => (k.k ? rox.call("books_app_form_lineage", { form: k.f, key: k.k, form_context: formContext(k.f) }) : Promise.resolve(null)),
+    (k: Any) => (k.k ? buwiz.call("books_app_form_lineage", { form: k.f, key: k.k, form_context: formContext(k.f) }) : Promise.resolve(null)),
   );
   const v = () => view() as Any;
   const locked = () => (v()?.blocking || []).some((i: Any) => i.code === "GATE.PERIOD_LOCK");
@@ -258,7 +258,7 @@ function FormsPage(p: { go: (page: string, filter?: string) => void }) {
 function CrossChecks() {
   const data = resource(
     () => ({ v: ver() }),
-    () => rox.call("books_cross_checks", {}),
+    () => buwiz.call("books_cross_checks", {}),
   );
   const d = () => data() as Any;
   return (

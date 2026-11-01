@@ -1,4 +1,4 @@
-//! M8: Books in the Rox chat (drawings: Books Inline Cards, Books Guided
+//! M8: Books in the Bot chat (drawings: Books Inline Cards, Books Guided
 //! Chat). Four kinds of inline card, each its own app with only the tools
 //! it calls:
 //!
@@ -11,8 +11,8 @@
 //! - `quiet` (360): cards a routine leaves; counts and status only.
 //!
 //! The assistant offers a card with `books_show` (its result carries
-//! `_meta["rox/open"]`; Rox shows it on the user's click). `/books <page or
-//! card>` and the five templates (commands, since protocol v1 has no
+//! `_meta["buwiz/open"]`; the Bot shows it on the user's click). `/books <page or
+//! card>` and the five templates (commands, since protocol 2.0 has no
 //! template field) open them too. Six `@books:` scopes point at a person,
 //! account, period, entry, form or tag; three routines draft at most.
 
@@ -71,7 +71,7 @@ const CARD_PROPS: [&str; 11] = [
     "deduction",
 ];
 
-/// `_meta["rox/open"]` for a card (spec 9.6): Rox shows it on a click.
+/// `_meta["buwiz/open"]` for a card (spec 9.6): the Bot shows it on a click.
 pub fn open(
     card: &str,
     args: &Map<String, Value>,
@@ -98,7 +98,7 @@ pub fn open(
 }
 
 /// `books_show`: offer a card in the chat. The result says what it shows;
-/// `_open` becomes the result's `_meta["rox/open"]`.
+/// `_open` becomes the result's `_meta["buwiz/open"]`.
 pub fn show(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
     let card = text(args, "card").ok_or_else(|| Refusal::invalid("Name the `card` to show."))?;
     let ticket = crate::service::ticket(store, "book", book.id)?;
@@ -188,7 +188,7 @@ pub fn checklist(
 
 /// `books_nudge`: what a routine looks for, and what its quiet card shows.
 /// `text` is empty when there is nothing to do (no turn runs); each item
-/// has an id Rox remembers, so a routine fires once per thing.
+/// has an id the Bot remembers, so a routine fires once per thing.
 pub fn nudge(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
     let c = store.conn();
     let today = Date::today();

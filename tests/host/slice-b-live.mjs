@@ -1,9 +1,9 @@
 // M7 Slice B, live (docs/01 9.2, AGENTS.md 15): the demo book's Q3 2551Q goes from Books into a real BIR draft on a
 // scratch BIR profile, and a later Books change marks the hand-off out of date until the owner refreshes it.
 // Run it through tools/bir/slice-b-live.sh. Direct use:
-//   node slice-b-live.mjs <rox worktree> <run dir> <books binary> <bir binary> <bir source tree>
+//   node slice-b-live.mjs <buwiz worktree> <run dir> <books binary> <bir binary> <bir source tree>
 //
-// Both plugins run under Rox's own v1 broker modules in this process (no port), the way BIR's broker harness runs
+// Both plugins run under the Bot's own v1 broker modules in this process (no port), the way BIR's broker harness runs
 // BIR (crates/bir-shell/v1-tests/broker.test.mjs): one throwaway key, books-test-01, signs both manifests and a trust
 // file of this run only trusts it. BIR gets HOME, BIR_DATABASE_PATH and a throwaway BIR_DB_KEY inside the run dir
 // (so it never reaches the owner's database or the Keychain), EBIR_TEST_ENV, the debug build's auth bypass and
@@ -31,8 +31,8 @@ const { signManifest } = await load("sign-manifest.mjs");
 const { loadTrust } = await load("trust.mjs");
 const { v1AgentCall } = await load("agent.mjs");
 
-const BOOKS = "dev.goldcoders.books";
-const BIR = "dev.goldcoders.bir";
+const BOOKS = "app.buwiz.books";
+const BIR = "app.buwiz.ebirforms";
 const KEY_ID = "books-test-01";
 const DEMO = join(import.meta.dirname, "..", "..", "fixtures", "demo", "buwiz-trading-2026.json");
 const TODAY = "2026-10-29";
@@ -75,7 +75,7 @@ const trustFile = join(RUN, "trust.json");
 writeFileSync(trustFile, JSON.stringify({
   v: 1,
   about: "Per-run trust store for Books' live Slice B (a throwaway test key; never gc-2026-01).",
-  publishers: { [KEY_ID]: { publisher: "dev.goldcoders", alg: "ed25519", public_key: publisher.pub } },
+  publishers: { [KEY_ID]: { publisher: "app.buwiz", alg: "ed25519", public_key: publisher.pub } },
   approved_plugins: [{ id: BOOKS, publisher_key_id: KEY_ID }, { id: BIR, publisher_key_id: KEY_ID }],
 }));
 const signed = (unsigned, sources, file) => {
@@ -111,7 +111,7 @@ try {
     check(`${id} installed and running`, installed.ok && plugins.runtime(id).state === "running");
   }
 
-  // a fake Rox: an app's session and its signed calls; the owner works through these
+  // a fake the Bot: an app's session and its signed calls; the owner works through these
   async function open(plugin, app) {
     const manifest = plugins.manifestOf(plugins.rowOf(plugin));
     const ks = generate();
@@ -126,12 +126,12 @@ try {
   const seen = [];
   const keep = (plugin, v) => (seen.push({ plugin, text: typeof v === "string" ? v : JSON.stringify(v) }), v);
   const appCall = async (o, tool, args = {}) => {
-    const env = { v: 1, typ: "rox-call", plugin: o.plugin, app: o.app, open_id: o.open_id, tool, args, ts: Date.now(), nonce: random128() };
+    const env = { v: 1, typ: "buwiz-call", plugin: o.plugin, app: o.app, open_id: o.open_id, tool, args, ts: Date.now(), nonce: random128() };
     // BIR's own apps may see a TIN (the owner typed it); only Books' results and BIR's answers to the assistant are held to none
     return keep(o.plugin === BIR ? "bir-app" : o.plugin, resultData((await sessions.call({ envelope: env, sig: sign(o.ks.seed, signedBytes(env)) })).result));
   };
   const appRefused = (o, tool, args) => appCall(o, tool, args).then(() => false, () => true);
-  // the assistant: Rox's own agent path (origin agent, app-only tools refused)
+  // the assistant: the Bot's own agent path (origin agent, app-only tools refused)
   const agent = async (tool, input) => {
     const r = await v1AgentCall(plugins, null, tool, input);
     keep(tool.startsWith("books_") ? BOOKS : BIR, r.content);
