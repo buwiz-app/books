@@ -132,7 +132,10 @@ fn every_books_tool_starts_with_books_and_every_named_tool_exists() {
         let app_only = tool["_meta"]["buwiz/audience"] == serde_json::json!(["app"]);
         assert_eq!(name.starts_with("books_app_"), app_only, "{name}");
         if write && !app_only {
-            assert_eq!(name, "books_entry_draft", "the assistant may only draft");
+            assert!(
+                ["books_entry_draft", "books_owed_draft"].contains(&name),
+                "the assistant may only draft: {name}"
+            );
         }
         // P7 forbidden verbs (invariant 7)
         for verb in ["submit", "queue", "pay", "paid", "file", "send"] {

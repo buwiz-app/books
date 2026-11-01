@@ -13,6 +13,8 @@ use serde_json::{Map, Value, json};
 
 #[path = "evidence_tools.rs"]
 pub(crate) mod evidence_tools;
+#[path = "owed_proposals.rs"]
+pub(crate) mod owed_proposals;
 
 use crate::jsonrpc::{fail, ok};
 use crate::manifest;
@@ -86,6 +88,7 @@ pub const PROFILE_LINK: &str = "books_app_tax_link";
 pub const EVIDENCE_ATTACH: &str = "books_app_evidence_attach";
 pub const EVIDENCE_DETACH: &str = "books_app_evidence_detach";
 pub const EVIDENCE_LIST: &str = "books_evidence_list";
+pub const OWED_DRAFT: &str = "books_owed_draft";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -237,10 +240,12 @@ fn tag_create_schema() -> Value {
 fn owed_create_schema() -> Value {
     json!({
         "type": "object",
-        "required": ["client_request_id", "side", "amount", "category"],
+        "required": ["client_request_id"],
         "properties": {
             "client_request_id": { "type": "string" }, "book": { "type": "string" },
-            "side": { "type": "string", "enum": ["collect", "pay"] },
+            "side": { "type": "string", "enum": ["collect", "pay"], "description": "Required without a proposal, as are amount and category." },
+            "proposal": { "type": "string", "description": "A proposal ticket from books_owed_list; with decision." },
+            "decision": { "type": "string", "enum": ["accept", "discard"] },
             "person": { "type": "string" }, "person_name": { "type": "string" },
             "amount": { "type": "string" }, "category": { "type": "string" },
             "issued": { "type": "string" }, "due": { "type": "string" },
@@ -906,6 +911,13 @@ pub const TOOLS: &[Tool] = &[
         schema: evidence_tools::list_schema,
         description: "Read evidence metadata and link counts, never contents.",
     },
+    Tool {
+        name: OWED_DRAFT,
+        reach: Reach::Everyone,
+        write: true,
+        schema: owed_proposals::draft_schema,
+        description: "Save the assistant's reviewable bill or invoice proposal from imported evidence. Creates no unpaid item, person or entry; the user accepts it in Unpaid.",
+    },
 ];
 
 pub fn find(name: &str) -> Option<&'static Tool> {
@@ -1043,7 +1055,8 @@ pub fn call(
             records::tags_list(store, book, args)
         }),
         OWED_LIST => read(books, arguments, |store, book, args| {
-            records::owed_list(store, book, args, origin)
+            let list = records::owed_list(store, book.clone(), args, origin)?;
+            owed_proposals::decorate(store, &book, origin, list)
         }),
         OWED_OPTIONS => read(books, arguments, |store, book, _| {
             records::owed_options(store, book)
@@ -1060,9 +1073,7 @@ pub fn call(
         TAG_CREATE => write(books, name, origin, arguments, |tx| {
             records::tag_create(tx, arguments)
         }),
-        OWED_CREATE => write(books, name, origin, arguments, |tx| {
-            records::owed_create(tx, arguments)
-        }),
+        OWED_CREATE => owed_proposals::owed_create(books, name, origin, arguments),
         OWED_SETTLE => write(books, name, origin, arguments, |tx| {
             records::owed_settle(tx, arguments)
         }),
@@ -1263,6 +1274,7 @@ pub fn call(
         EVIDENCE_LIST => read(books, arguments, |store, _book, args| {
             evidence_tools::list(store.conn(), args)
         }),
+        OWED_DRAFT => owed_proposals::draft_tool(books, name, origin, arguments),
         _ => fail("internal", "Books has no handler for that tool."),
     })
 }

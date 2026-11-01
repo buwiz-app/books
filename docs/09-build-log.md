@@ -520,3 +520,19 @@ back, so the same upload can be retried. The list cursor is the last item's evid
 tools refuse unknown arguments, and a link to a discarded draft is refused (`discarded`); voided entries stay valid
 link targets for history. `oldbooks.rs` keeps restart-on-new-count for `books_app_upload_part`; its one change,
 outside this task's file list, stops a retried part counting twice against the 50 MB cap (PROPOSAL: needs owner OK).
+
+### 2026-11-01 — evidence-3
+
+CONFIRMED: migration 9 adds `owed_proposal`, a staging row kept apart from `unpaid` (an open accrual owed item posts
+entries). `books_owed_draft` is the assistant's tool (origin agent only); it checks same-book evidence, category and
+person tickets, maps `owe`/`collect` to the store's `pay`/`collect`, takes integer confidence 0..100 and returns
+`{proposal, status:"draft"}`. A person is suggested only by an existing same-book ticket or one exact name match; no
+person is created and the extracted person text is not stored. A draft changes no unpaid count, entry, line or person.
+
+CONFIRMED: `books_app_owed_create` takes optional `proposal` and `decision` (`accept`|`discard`); non-app origins are
+refused. Accept needs the reviewed person and category, calls the existing `records::owed_create` (cash/accrual and
+closed-month rules unchanged), links the evidence and sets `accepted_owed_id` in one transaction; replay returns the
+stored result and a second accept is `already_accepted`. Discard changes the proposal only. `books_owed_list` adds
+`pending_proposals`, app-only `proposals` summaries and per-row evidence labels. Unpaid shows a review section with
+person, category and date corrections, confidence, source summary, Accept and Discard. `records.rs`/`people.rs` are
+unchanged.

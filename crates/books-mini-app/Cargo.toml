@@ -82,3 +82,7 @@ ureq = { version = "2.12", default-features = false, features = ["tls"] }
 
 [lints]
 workspace = true
+
+[[test]]
+name = "owed_proposals"
+path = "../../tests/owed_proposals.rs"

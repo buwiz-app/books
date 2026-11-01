@@ -45,6 +45,15 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
         onPick={(v: string) => unpaidSide.set(v)}
       />
       <Loading res={data} />
+      <If when={(d()?.proposals || []).length > 0}>
+        <Panel pad class="gap-2">
+          <Text class={`text-[13px] font-bold ${C.ink}`}>{`Suggested by the assistant · ${String((d()?.proposals || []).length)}`}</Text>
+          <Text class={`text-[12px] ${C.dim}`}>Review each one. Nothing is saved until you accept it.</Text>
+          <Each of={d()?.proposals || []} key={(x: Any) => x.proposal}>
+            {(x: Any) => <ProposalRow p={x()} side={unpaidSide()} opts={opts} />}
+          </Each>
+        </Panel>
+      </If>
       <If when={Boolean(d())}>
         <Panel>
           <View class={`flex-row gap-3 px-3 py-2 border-b ${C.line}`}>
@@ -65,7 +74,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
                     {r().who}
                   </Text>
                   <Text class={`w-[150px] text-[12.5px] ${C.ink}`} numberOfLines={1}>
-                    {r().doc}
+                    {(r().evidence || []).length > 0 ? `${r().doc || ""} · ${String(r().evidence.length)} file` : r().doc}
                   </Text>
                   <Text class={`w-[64px] text-[12.5px] font-mono ${r().late ? C.red : C.ink}`}>{r().due_short}</Text>
                   <Text class={`w-[110px] text-right text-[12.5px] font-mono ${C.ink}`}>{r().amount_shown}</Text>
@@ -95,6 +104,61 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
       <If when={owedSheet()}>
         <OwedSheet side={unpaidSide()} opts={opts} close={() => owedSheet.set(false)} />
       </If>
+    </View>
+  );
+}
+
+/** One assistant proposal: the user corrects person, category and dates, then accepts or discards. */
+function ProposalRow(p: { p: Any; side: string; opts: Any }) {
+  const o = () => p.opts() as Any;
+  const who = signal(p.p.person_suggestion?.ticket || "");
+  const category = signal(p.p.category || "");
+  const issued = signal(p.p.issued || "");
+  const due = signal(p.p.due || "");
+  const err = signal("");
+  const decide = (decision: string) => {
+    const args: Record<string, Any> = { proposal: p.p.proposal, decision };
+    if (decision === "accept") {
+      if (!who()) return err.set("Pick who this is with. Books never adds a person from a scan.");
+      if (!category()) return err.set("Pick a category.");
+      args.person = who();
+      args.category = category();
+      if (issued()) args.issued = issued();
+      if (due()) args.due = due();
+    }
+    act("books_app_owed_create", args)
+      .then(() => toast(decision === "accept" ? "Accepted" : "Discarded"))
+      .catch((e: Any) => err.set(errText(e)));
+  };
+  const people = () => (p.side === "collect" ? o()?.customers : o()?.vendors) || [];
+  return (
+    <View class={`gap-2 py-2 border-t ${C.line}`}>
+      <View class="flex-row items-center gap-3">
+        <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>{p.p.source}</Text>
+        <Pill tone={p.p.confidence >= 80 ? "ok" : "draft"} label={`${String(p.p.confidence)}% sure`} />
+        <Text class={`w-[110px] text-right text-[12.5px] font-mono ${C.ink}`}>{p.p.amount_shown}</Text>
+      </View>
+      <View class="flex-row gap-3">
+        <Field label={p.side === "collect" ? "Customer" : "Vendor"} grow>
+          <Pick value={who()} options={people()} onPick={(x: Any) => who.set(x.ticket)} placeholder="Pick an existing person" />
+        </Field>
+        <Field label="Category" grow>
+          <Pick value={category()} options={(p.side === "collect" ? o()?.income : o()?.expense) || []} onPick={(x: Any) => category.set(x.ticket)} placeholder="Pick a category" />
+        </Field>
+        <Field label="Issued">
+          <TextBox value={issued()} onChange={(v) => issued.set(v)} placeholder="YYYY-MM-DD" />
+        </Field>
+        <Field label="Due">
+          <TextBox value={due()} onChange={(v) => due.set(v)} placeholder="YYYY-MM-DD" />
+        </Field>
+      </View>
+      <If when={Boolean(err())}>
+        <Text class={`text-[12.5px] ${C.red}`}>{err()}</Text>
+      </If>
+      <View class="flex-row gap-2 justify-end">
+        <Btn label="Discard" small onPress={() => decide("discard")} />
+        <Btn label="Accept" tone="go" small onPress={() => decide("accept")} />
+      </View>
     </View>
   );
 }
