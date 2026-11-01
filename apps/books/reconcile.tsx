@@ -175,10 +175,16 @@ function MatchView() {
                     <Text class={`w-[52px] text-[12px] font-mono ${C.ink}`}>{r().books?.date_short || "—"}</Text>
                     <View class="flex-1">
                       <Text class={`text-[12.5px] font-semibold ${C.ink}`}>{r().books?.title || ""}</Text>
-                      <Text class={`text-[11px] ${C.dim}`}>{r().books?.sub || ""}</Text>
+                      <Text class={`text-[11px] ${C.dim}`}>{r().why || r().books?.sub || ""}</Text>
+                      <If when={Boolean(r().hint?.category)}>
+                        <Text class={`text-[11px] ${C.dim}`}>{`Usually ${r().hint?.category || ""}`}</Text>
+                      </If>
                     </View>
                     <If when={r().match === "x"}>
                       <Btn label="+ Add" small onPress={() => call("books_app_statement_add_line", { line: r().ticket })} />
+                    </If>
+                    <If when={r().match === "s" && s()?.status !== "finished"}>
+                      <Btn label="Match" small onPress={() => call("books_app_statement_accept", { line: r().no })} />
                     </If>
                     <If when={r().match !== "x"}>
                       <Text class={`text-[12.5px] font-mono ${C.ink}`}>{r().books?.amount_shown || ""}</Text>
