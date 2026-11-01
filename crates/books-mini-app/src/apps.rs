@@ -130,6 +130,19 @@ pub const APPS: &[App] = &[
             open_apps: &["books"],
         },
     },
+    // the document library and its "What is this document?" card (evidence-4)
+    App {
+        id: "evidence",
+        source: AppSource::Tsx(concat!(
+            include_str!("../../../apps/books/kit.tsx"),
+            "\n",
+            include_str!("../../../apps/evidence.tsx"),
+        )),
+    },
+    App {
+        id: "document",
+        source: AppSource::Tsx(card_app!("evidence.tsx")),
+    },
 ];
 
 /// The app with this id.

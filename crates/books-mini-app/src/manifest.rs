@@ -70,6 +70,21 @@ fn permissions(app: &apps::App) -> Value {
     } else if !open_apps.is_empty() {
         p["open"] = json!({ "apps": open_apps });
     }
+    // evidence-4: the document library, its card and the Books window's way in
+    if let Some(source) = source {
+        if app.id == "evidence" {
+            p["pick_file"] = json!({ "extensions": [".pdf", ".png", ".jpg", ".jpeg", ".webp"], "max_bytes": 52_428_800 });
+        }
+        if source.contains("buwiz.attach(\"evidence\"") {
+            p["attach"] = json!(["evidence"]);
+        }
+        if source.contains("buwiz.preview(") {
+            p["preview"] = json!({ "max_bytes": crate::tools::document_review::PREVIEW_MAX_BYTES });
+        }
+        if app.id == "books" && source.contains("app: \"evidence\"") {
+            p["open"] = json!({ "apps": ["ledger", "evidence"] });
+        }
+    }
     p
 }
 
@@ -129,6 +144,34 @@ fn app_entry(app: &apps::App) -> Value {
             },
             "placement": ["full", "inline"],
             "inline": { "width": 360, "height": 120, "min_height": 96, "max_height": 240, "resizable": false, "wait_ready": true },
+            "permissions": permissions(app),
+        }),
+        "evidence" => json!({
+            "id": "evidence",
+            "title": "Books documents",
+            "description": "Your Books documents: add one, preview it, attach it to a chat, decide what it is.",
+            "props": {
+                "type": "object",
+                "properties": { TICKET_PROP: { "type": "string", "maxLength": 30 } }
+            },
+            "placement": ["full"],
+            "permissions": permissions(app),
+        }),
+        "document" => json!({
+            "id": "document",
+            "title": crate::tools::document_review::CARD_TITLE,
+            "description": "The assistant's guess at what a Books document is: accept, discard or preview it.",
+            "props": {
+                "type": "object",
+                "properties": {
+                    TICKET_PROP: { "type": "string", "maxLength": 30 },
+                    "proposal": { "type": "string", "maxLength": 30 },
+                    "evidence": { "type": "string", "maxLength": 30 },
+                    "mode": { "type": "string", "enum": ["review"] }
+                }
+            },
+            "placement": ["inline"],
+            "inline": { "width": CARD_WIDTH, "height": 200, "min_height": 96, "max_height": 360, "resizable": false, "wait_ready": true },
             "permissions": permissions(app),
         }),
         "ledger" => json!({

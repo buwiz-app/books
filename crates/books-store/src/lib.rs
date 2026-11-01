@@ -44,6 +44,10 @@ const MIGRATIONS: &[(i64, &str)] = &[
     (6, include_str!("../migrations/0006_handoffs.sql")),
     (7, include_str!("../migrations/0007_evidence.sql")),
     (9, include_str!("../migrations/0009_owed_proposals.sql")),
+    (
+        10,
+        include_str!("../migrations/0010_evidence_classification.sql"),
+    ),
 ];
 
 pub const DATA_DIR_ENV: &str = "BOOKS_DATA_DIR";
@@ -423,7 +427,7 @@ mod tests {
         assert_eq!(mode, 0o700);
         let store = Store::open(&paths).unwrap();
         assert_eq!(store.meta("canary").unwrap().as_deref(), Some(CANARY));
-        assert_eq!(store.meta("schema_version").unwrap().as_deref(), Some("9"));
+        assert_eq!(store.meta("schema_version").unwrap().as_deref(), Some("10"));
         drop(store);
         let other = Paths {
             dir: paths.dir.clone(),

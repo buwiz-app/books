@@ -36,7 +36,7 @@ pub fn label(e: &Metadata) -> String {
     }
 }
 
-fn subject(conn: &Connection, kind: &str, value: &str) -> Result<i64, Refusal> {
+pub(crate) fn subject(conn: &Connection, kind: &str, value: &str) -> Result<i64, Refusal> {
     match plumbing::subject(conn, value)? {
         Some((k, id)) if k == kind => Ok(id),
         _ => Err(Refusal::new(
@@ -60,7 +60,7 @@ fn target(conn: &Connection, args: &Map<String, Value>) -> Result<Target, Refusa
     }
 }
 
-fn evidence_id(conn: &Connection, book: i64, value: &str) -> Result<i64, Refusal> {
+pub(crate) fn evidence_id(conn: &Connection, book: i64, value: &str) -> Result<i64, Refusal> {
     let id = subject(conn, "evidence", value)?;
     evidence::get(conn, id)?
         .filter(|e| e.book_id == book)
@@ -79,7 +79,7 @@ fn valid_mime(mime: &str, b: &[u8]) -> bool {
 }
 
 const MIMES: [&str; 4] = ["application/pdf", "image/png", "image/jpeg", "image/webp"];
-const KINDS: [&str; 8] = [
+pub(crate) const KINDS: [&str; 8] = [
     "statement",
     "bill",
     "invoice",
@@ -107,7 +107,7 @@ const ATTACH_KEYS: &[&str] = &[
 const DETACH_KEYS: &[&str] = &["client_request_id", "book", "evidence", "target"];
 const LIST_KEYS: &[&str] = &["book", "evidence", "target", "cursor", "limit"];
 
-fn known(args: &Map<String, Value>, keys: &[&str]) -> Result<(), Refusal> {
+pub(crate) fn known(args: &Map<String, Value>, keys: &[&str]) -> Result<(), Refusal> {
     if args.keys().all(|k| keys.contains(&k.as_str())) {
         Ok(())
     } else {
@@ -309,7 +309,7 @@ fn schema() -> Value {
     }})
 }
 
-fn schema_for(keys: &[&str], required: &[&str]) -> Value {
+pub(crate) fn schema_for(keys: &[&str], required: &[&str]) -> Value {
     let mut out = schema();
     out["properties"]
         .as_object_mut()

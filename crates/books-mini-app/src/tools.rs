@@ -11,6 +11,8 @@
 
 use serde_json::{Map, Value, json};
 
+#[path = "document_review.rs"]
+pub mod document_review;
 #[path = "evidence_tools.rs"]
 pub(crate) mod evidence_tools;
 #[path = "owed_proposals.rs"]
@@ -89,6 +91,10 @@ pub const EVIDENCE_ATTACH: &str = "books_app_evidence_attach";
 pub const EVIDENCE_DETACH: &str = "books_app_evidence_detach";
 pub const EVIDENCE_LIST: &str = "books_evidence_list";
 pub const OWED_DRAFT: &str = "books_owed_draft";
+pub const EVIDENCE_CLASSIFY: &str = "books_evidence_classify";
+pub const EVIDENCE_KIND: &str = "books_app_evidence_kind";
+pub const EVIDENCE_PREVIEW: &str = "books_app_evidence_preview";
+pub const EVIDENCE_REVIEW: &str = "books_app_evidence_review";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -918,6 +924,34 @@ pub const TOOLS: &[Tool] = &[
         schema: owed_proposals::draft_schema,
         description: "Save the assistant's reviewable bill or invoice proposal from imported evidence. Creates no unpaid item, person or entry; the user accepts it in Unpaid.",
     },
+    Tool {
+        name: EVIDENCE_CLASSIFY,
+        reach: Reach::Everyone,
+        write: true,
+        schema: document_review::classify_schema,
+        description: "Propose what an evidence document is (statement, bill, invoice, receipt, payslip, contract, tax_form or other) with a whole-number confidence 0..100. A DRAFT proposal: the evidence kind changes only when the user accepts it in the app. Assistant only; takes a client_request_id.",
+    },
+    Tool {
+        name: EVIDENCE_KIND,
+        reach: Reach::App,
+        write: true,
+        schema: document_review::kind_schema,
+        description: "Accept or discard a document-kind proposal. App only.",
+    },
+    Tool {
+        name: EVIDENCE_PREVIEW,
+        reach: Reach::App,
+        write: false,
+        schema: document_review::preview_schema,
+        description: "A static print preview of one evidence document, optionally with its linked entry. App only.",
+    },
+    Tool {
+        name: EVIDENCE_REVIEW,
+        reach: Reach::App,
+        write: false,
+        schema: document_review::review_schema,
+        description: "Document-kind proposals: generic kind, confidence and status. App only.",
+    },
 ];
 
 pub fn find(name: &str) -> Option<&'static Tool> {
@@ -1275,6 +1309,12 @@ pub fn call(
             evidence_tools::list(store.conn(), args)
         }),
         OWED_DRAFT => owed_proposals::draft_tool(books, name, origin, arguments),
+        EVIDENCE_CLASSIFY => document_review::classify(books, name, origin, arguments),
+        EVIDENCE_KIND => document_review::decide(books, name, origin, arguments),
+        EVIDENCE_PREVIEW => document_review::preview(books, origin, arguments),
+        EVIDENCE_REVIEW => read(books, arguments, |store, _book, args| {
+            document_review::review(store.conn(), args)
+        }),
         _ => fail("internal", "Books has no handler for that tool."),
     })
 }

@@ -196,10 +196,10 @@ mod tests {
         let paths = Paths::in_dir(tmp.0.join("db"));
         {
             let store = Store::open(&paths).unwrap();
-            store.conn().execute_batch("DROP TABLE owed_proposal; DROP TABLE evidence_link; DROP TABLE evidence; UPDATE meta SET value='6' WHERE key='schema_version';").unwrap();
+            store.conn().execute_batch("DROP TABLE evidence_classification; DROP TABLE owed_proposal; DROP TABLE evidence_link; DROP TABLE evidence; UPDATE meta SET value='6' WHERE key='schema_version';").unwrap();
         }
         let store = Store::open(&paths).unwrap();
-        assert_eq!(store.meta("schema_version").unwrap().as_deref(), Some("9"));
+        assert_eq!(store.meta("schema_version").unwrap().as_deref(), Some("10"));
         assert!(
             list(store.conn(), -1, None, None, 0, 50)
                 .unwrap()

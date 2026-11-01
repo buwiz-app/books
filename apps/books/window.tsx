@@ -91,6 +91,9 @@ function Rail(p: { book: Any; counts: Any }) {
           </View>
         )}
       </Each>
+      <View class="flex-row items-center gap-2 px-2 py-1.5 rounded-lg" onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)} activeStyle={{ opacity: 0.7 }}>
+        <Text class={`flex-1 text-[13px] ${C.mute}`}>Documents</Text>
+      </View>
     </View>
   );
 }
