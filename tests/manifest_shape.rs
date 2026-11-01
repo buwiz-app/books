@@ -51,8 +51,8 @@ fn the_manifest_has_the_books_identity() {
     assert_eq!(m["publisher"]["id"], "app.buwiz");
     assert_eq!(m["publisher"]["key_id"], "gc-2026-01");
     assert!(m.get("signature").is_none() && m.get("needs").is_none());
-    // Three routines, eight scopes, /books and five templates.
-    assert_eq!(m["routines"].as_array().unwrap().len(), 3);
+    // Four routines (weekly review since M10), eight scopes, /books and five templates.
+    assert_eq!(m["routines"].as_array().unwrap().len(), 4);
     assert_eq!(m["scopes"].as_array().unwrap().len(), 8);
     assert_eq!(m["commands"].as_array().unwrap().len(), 6);
     assert!(

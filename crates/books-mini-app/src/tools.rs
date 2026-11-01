@@ -98,6 +98,7 @@ pub const EVIDENCE_PREVIEW: &str = "books_app_evidence_preview";
 pub const EVIDENCE_REVIEW: &str = "books_app_evidence_review";
 pub const STATEMENT_DRAFT_LINES: &str = "books_statement_draft_lines";
 pub const RECONCILE_DOCUMENT: &str = "books_app_reconcile_document";
+pub const CHECKS: &str = "books_checks";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -144,7 +145,7 @@ fn ledger_schema() -> Value {
             "book": { "type": "string" },
             "month": { "type": "string", "description": "YYYY-MM; this month when absent." },
             "account": { "type": "string", "description": "An account ticket or chart number; every account when absent." },
-            "filter": { "type": "string", "enum": ["all", "review", "draft", "posted"] }
+            "filter": { "type": "string", "enum": ["all", "review", "draft", "posted", "checks"] }
         }
     })
 }
@@ -442,7 +443,7 @@ fn statement_draft_schema() -> Value {
 }
 
 fn nudge_schema() -> Value {
-    json!({ "type": "object", "properties": { "book": { "type": "string" }, "kind": { "type": "string", "enum": ["tidy", "month_end", "bir_pair"] }, "month": { "type": "string" }, "any_day": { "type": "boolean", "description": "Answer on any day, not only on the routine's day." } } })
+    json!({ "type": "object", "properties": { "book": { "type": "string" }, "kind": { "type": "string", "enum": ["tidy", "month_end", "bir_pair", "review"] }, "month": { "type": "string" }, "any_day": { "type": "boolean", "description": "Answer on any day, not only on the routine's day." } } })
 }
 
 fn signin_schema() -> Value {
@@ -490,6 +491,10 @@ fn account_create_schema() -> Value {
             "type": { "type": "string" }
         }
     })
+}
+
+fn checks_schema() -> Value {
+    json!({ "type": "object", "properties": { "book": { "type": "string" }, "check": { "type": "string", "enum": crate::findings::CHECKS } } })
 }
 
 /// Every Books tool, in `tools/list` order.
@@ -998,6 +1003,13 @@ pub const TOOLS: &[Tool] = &[
         schema: reconcile_document_schema,
         description: "A static page for the preview: the reconciliation report or one statement page with its lines boxed. App only.",
     },
+    Tool {
+        name: CHECKS,
+        reach: Reach::Everyone,
+        write: false,
+        schema: checks_schema,
+        description: "Review findings to look at twice: uncategorized lines, stale drafts, months not matched to a statement, weekend dates, round amounts, money with no person. Counts, entry numbers and months only; never amounts, names or memos.",
+    },
 ];
 
 pub fn find(name: &str) -> Option<&'static Tool> {
@@ -1387,6 +1399,9 @@ pub fn call(
             })()
             .unwrap_or_else(Refusal::into_result)
         }
+        CHECKS => read(books, arguments, |store, book, args| {
+            crate::findings::checks(store, book, args)
+        }),
         _ => fail("internal", "Books has no handler for that tool."),
     })
 }

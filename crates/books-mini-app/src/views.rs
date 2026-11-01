@@ -357,6 +357,12 @@ pub fn today(store: &Store, book: Book, origin: Origin) -> Result<Value, Refusal
     if review > 0 {
         needs.push(json!({ "kind": "review", "count": review, "title": "Bank lines to categorize", "detail": "Not sure yet · pick a category for each", "go": "ledger", "filter": "review", "tone": "rev" }));
     }
+    // flagged entries of this month: the ledger the item opens lists them
+    let this_month = Period::of(today, PeriodKind::Month);
+    let checks = crate::findings::flagged(store, chart.book.clone(), today, &this_month)?.len();
+    if checks > 0 {
+        needs.push(json!({ "kind": "checks", "count": checks, "title": "Entries to look at twice", "detail": "Review findings · open the Checks filter", "go": "ledger", "filter": "checks", "tone": "rev" }));
+    }
     if !drafts.is_empty() {
         let detail = if origin.is_app() {
             drafts
@@ -533,7 +539,11 @@ pub fn ledger(
         },
     )?;
     let flagged = crate::inbox::flagged(store.conn(), list.iter().map(|s| &s.entry))?;
+    let found =
+        crate::findings::findings_in(store, chart.book.clone(), Date::today(), Some(&month))?;
+    let marks = crate::findings::by_entry(&found);
     let is = |s: &Summary, f: &str| match f {
+        "checks" => marks.contains_key(&s.entry.id),
         "review" => s.needs_review() || flagged.contains(&s.entry.id),
         "draft" => s.entry.status == Status::Draft && !s.entry.needs_review,
         "posted" => matches!(s.entry.status, Status::Posted | Status::Voided),
@@ -545,13 +555,18 @@ pub fn ledger(
         "review": list.iter().filter(|s| is(s, "review")).count(),
         "draft": list.iter().filter(|s| is(s, "draft")).count(),
         "posted": list.iter().filter(|s| is(s, "posted")).count(),
+        "checks": list.iter().filter(|s| is(s, "checks")).count(),
     });
     let rows = list
         .iter()
         .filter(|s| is(s, filter))
         .take(200)
-        .map(|s| s.row(store, origin))
-        .collect::<Result<Vec<_>, _>>()?;
+        .map(|s| {
+            let mut row = s.row(store, origin)?;
+            row["checks"] = json!(marks.get(&s.entry.id).cloned().unwrap_or_default());
+            Ok(row)
+        })
+        .collect::<Result<Vec<_>, Refusal>>()?;
     let header = match &selected {
         Some(a) => json!({
             "ticket": ticket(store, "account", a.id)?, "number": a.number, "name": a.name,
