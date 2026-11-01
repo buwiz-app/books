@@ -204,10 +204,11 @@ fn report_schema() -> Value {
         "type": "object",
         "properties": {
             "book": { "type": "string" },
-            "kind": { "type": "string", "enum": ["pl", "bs", "cf", "tb", "ag"] },
+            "kind": { "type": "string", "enum": ["pl", "bs", "cf", "tb", "ag", "ac"] },
             "period_kind": { "type": "string", "enum": ["month", "quarter", "year"] },
             "period": { "type": "string", "description": "2026-10, 2026-Q3 or 2026; this period when absent." },
-            "side": { "type": "string", "enum": ["collect", "pay"], "description": "Aging only." }
+            "side": { "type": "string", "enum": ["collect", "pay"], "description": "Aging only." },
+            "account": { "type": "string", "description": "Account activity (ac) only: an account ticket or number." }
         }
     })
 }

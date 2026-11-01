@@ -230,6 +230,9 @@ export default function Books() {
         <If when={Boolean(drawerEntry())}>
           <EntryDrawer />
         </If>
+        <If when={Boolean(accountDrawer()) && page() === "accounts"}>
+          <AccountDrawer ticket={accountDrawer()} onClose={() => accountDrawer.set("")} go={go} />
+        </If>
         <If when={Boolean(sheetMode())}>
           <EntrySheet mode={sheetMode} close={() => sheetMode.set("")} setMode={(m: string) => sheetMode.set(m)} />
         </If>

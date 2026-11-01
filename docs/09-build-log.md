@@ -491,6 +491,17 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 `tools/check-all.sh`: fmt clean; clippy clean; cargo test 117; PoC 177; conformance 182 pass, 7 skipped (rox
 `9c106cc`); host test 17/17; privacy scan 0 findings.
 
+## M10 parity
+
+- 2026-11-01 reports-2, account activity (web parity: buwiz-books `/accounts/category/:id`). `books_report` gains kind
+  `ac` (no new tool; the window still names 57 tools): one account's posted and voided entries in a period, oldest
+  first, with the change and the running balance in the account's own sense, opening and closing from
+  `books::movements`, a `balanced` check, at most 500 rows (`more`), and no payee, memo or reference in any row.
+  `books_report_csv` kind `ac` writes entry numbers between an Opening and a Closing row. New module
+  `crates/books-mini-app/src/activity.rs`; the Accounts page opens an account drawer (`apps/books/activity.tsx`)
+  instead of jumping to the Ledger. Tests: `tests/account_activity.rs`. The demo's bank posting account is 11010
+  (11000 is its group). Follow-up once the native ledger lands: a running-balance column there too.
+
 ## Not yet built
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox
