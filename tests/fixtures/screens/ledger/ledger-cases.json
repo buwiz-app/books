@@ -445,7 +445,7 @@
               "no": "0001",
               "actions": [
                 "void",
-                "duplicate"
+                "copy"
               ],
               "reviewable": false,
               "lines": []
@@ -653,7 +653,7 @@
               "no": "0001",
               "actions": [
                 "void",
-                "duplicate"
+                "copy"
               ],
               "reviewable": false,
               "lines": []
@@ -775,7 +775,7 @@
               "no": "0001",
               "actions": [
                 "void",
-                "duplicate"
+                "copy"
               ],
               "reviewable": true,
               "suggest": [
