@@ -24,7 +24,7 @@ use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
 use crate::{
-    cards, checks, forms, handoff, month_pack, oldbooks, owed_repeats, payroll, reconcile,
+    batch, cards, checks, forms, handoff, month_pack, oldbooks, owed_repeats, payroll, reconcile,
     reconcile_document, records, reports, statement_read, views, writes,
 };
 
@@ -104,6 +104,7 @@ pub const CHECKS: &str = "books_checks";
 pub const OWED_DOCUMENT: &str = "books_owed_document";
 pub const OWED_REPEAT: &str = "books_app_owed_repeat";
 pub const MONTH_PACK: &str = "books_app_month_pack";
+pub const BATCH: &str = "books_app_batch";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -235,14 +236,17 @@ fn report_schema() -> Value {
         "type": "object",
         "properties": {
             "book": { "type": "string" },
-            "kind": { "type": "string", "enum": ["pl", "bs", "cf", "tb", "ag", "ac", "ps"] },
+            "kind": { "type": "string", "enum": ["pl", "bs", "cf", "tb", "ag", "ac", "ps", "ledger"] },
             "period_kind": { "type": "string", "enum": ["month", "quarter", "year"] },
             "period": { "type": "string", "description": "2026-10, 2026-Q3 or 2026; this period when absent." },
             "side": { "type": "string", "enum": ["collect", "pay"], "description": "Aging only." },
                 "compare_to": { "type": "string", "enum": ["previous", "last_year", "none"], "description": "P&L, balance sheet and cash flow: the period shown beside this one. previous by default on the P&L, none otherwise." },
                 "tag": { "type": "string", "description": "P&L and cash flow only: a department or location ticket from books_tags_list." },
-            "account": { "type": "string", "description": "Account activity (ac) only: an account ticket or number." },
-            "person": { "type": "string", "description": "Kind ps only: a person ticket. The period is a year when period_kind is absent." }
+            "account": { "type": "string", "description": "Account activity (ac) and ledger only: an account ticket or number." },
+            "person": { "type": "string", "description": "Kind ps only: a person ticket. The period is a year when period_kind is absent." },
+            "from": { "type": "string", "description": "Ledger only: YYYY-MM-DD." },
+            "to": { "type": "string", "description": "Ledger only: YYYY-MM-DD." },
+            "filter": { "type": "string", "enum": ["all", "review", "draft", "posted"], "description": "Ledger only. Without it: posted and draft entries; `all` adds voided entries, their reversals and discarded drafts." }
         }
     })
 }
@@ -502,6 +506,21 @@ fn owed_document_schema() -> Value {
         "required": ["owed"],
         "properties": { "book": { "type": "string" }, "owed": { "type": "string", "description": "An owed document ticket." } },
         "additionalProperties": false
+    })
+}
+
+fn batch_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "action", "entries"],
+        "properties": {
+            "client_request_id": { "type": "string" },
+            "book": { "type": "string" },
+            "action": { "type": "string", "enum": ["post", "discard", "recategorize"] },
+            "entries": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 50, "uniqueItems": true, "description": "Entry tickets." },
+            "category": { "type": "string", "description": "Recategorize only: the income or expense account." },
+            "keep_both": { "type": "boolean" }
+        }
     })
 }
 
@@ -1071,6 +1090,13 @@ pub const TOOLS: &[Tool] = &[
         schema: month_pack_schema,
         description: "The month pack: a static print preview of the month's reports and reconcile status.",
     },
+    Tool {
+        name: BATCH,
+        reach: Reach::App,
+        write: true,
+        schema: batch_schema,
+        description: "Post or discard drafts, or give posted entries a category, 1 to 50 at once after the user's click. All or nothing: the first refusal names the entry and changes none.",
+    },
 ];
 
 fn owed_repeat_schema() -> Value {
@@ -1247,7 +1273,7 @@ pub fn call(
             reports::report(store, book, args)
         }),
         REPORT_CSV => read(books, arguments, |store, book, args| {
-            reports::report_csv(store, book, args)
+            reports::report_csv(store, book, args, origin)
         }),
         PERSON_CREATE => write(books, name, origin, arguments, |tx| {
             records::person_create(tx, arguments)
@@ -1516,6 +1542,9 @@ pub fn call(
             }
             out
         }
+        BATCH => write(books, name, origin, arguments, |tx| {
+            batch::run(tx, arguments, origin)
+        }),
         _ => fail("internal", "Books has no handler for that tool."),
     })
 }

@@ -151,3 +151,11 @@ path = "../../tests/ledger_findings.rs"
 [[test]]
 name = "owed_repeat"
 path = "../../tests/owed_repeat.rs"
+
+[[test]]
+name = "ledger_batch"
+path = "../../tests/ledger_batch.rs"
+
+[[test]]
+name = "ledger_csv"
+path = "../../tests/ledger_csv.rs"

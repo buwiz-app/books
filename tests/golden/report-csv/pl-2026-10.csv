@@ -1,0 +1,10 @@
+Section,Number,Account,October,September
+Revenue,41000,Sales Revenue,300000.00,0.00
+Revenue,49000,Refunds & Discounts,0.00,-10000.00
+Expenses,61100,Salaries,20000.00,42000.00
+Expenses,61600,Employer Payroll Taxes,0.00,1500.00
+Expenses,65000,Business Applications & Software,1200.00,1200.00
+Expenses,66100,Rent,25000.00,25000.00
+Expenses,66200,Utilities,0.00,2499.00
+Expenses,69999,Uncategorized Expense,2649.00,0.00
+,,Net income,251151.00,-82199.00
