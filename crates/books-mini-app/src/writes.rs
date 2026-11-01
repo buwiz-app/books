@@ -298,14 +298,21 @@ fn entry_result(conn: &Connection, id: i64) -> Result<Value, Refusal> {
 /// posted one (`copy_of`).
 pub fn draft(conn: &Connection, args: &Map<String, Value>, origin: Origin) -> Answer {
     let book = book_in(conn, args)?;
+    let noted = crate::inbox::extracted(args)?;
     let existing = match text(args, "entry") {
         Some(t) => Some(entry_in(conn, &book, t)?.id),
         None => None,
     };
+    let before = existing
+        .map(|i| crate::inbox::snapshot(conn, i))
+        .transpose()?
+        .flatten();
+    let mut copy_source = None;
     let mut copied_links = None;
     let input = match text(args, "copy_of") {
         Some(t) => {
             let source = entry_in(conn, &book, t)?;
+            copy_source = Some(source.id);
             copied_links = Some(people::links(conn, source.id)?);
             if source.form == Form::Reversal {
                 return Err(Refusal::invalid("A reversal cannot be copied."));
@@ -332,11 +339,17 @@ pub fn draft(conn: &Connection, args: &Map<String, Value>, origin: Origin) -> An
         None => draft_input(conn, &book, args)?,
     };
     let id = entries::save_draft(conn, &book, existing, &input, origin.as_str())?;
+    crate::inbox::record_draft(conn, id, before.as_ref(), &input, args, &noted, origin)?;
+    if let Some(source) = copy_source {
+        books_store::review::set_copy(conn, id, source)?;
+    }
     if let Some((p, d, l)) = copied_links {
         people::set_entry_links(conn, &book, id, p, d, l)?;
     }
     apply_links(conn, &book, id, args)?;
-    entry_result(conn, id)
+    let mut result = entry_result(conn, id)?;
+    result["likely_duplicates"] = crate::inbox::duplicate_labels(conn, &book, id)?;
+    Ok(result)
 }
 
 /// `books_app_post_entry`: post a draft (`entry`), or save and post a new
@@ -344,7 +357,12 @@ pub fn draft(conn: &Connection, args: &Map<String, Value>, origin: Origin) -> An
 pub fn post(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let book = book_in(conn, args)?;
     let id = match text(args, "entry") {
-        Some(t) => entry_in(conn, &book, t)?.id,
+        Some(t) => {
+            let id = entry_in(conn, &book, t)?.id;
+            let keep_both = args.get("keep_both").and_then(Value::as_bool) == Some(true);
+            crate::inbox::duplicate_gate(conn, &book, id, keep_both)?;
+            id
+        }
         None => {
             let input = draft_input(conn, &book, args)?;
             let id = entries::save_draft(conn, &book, None, &input, "app")?;

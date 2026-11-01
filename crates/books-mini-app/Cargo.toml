@@ -107,3 +107,7 @@ path = "../../tests/statement_lock_flags.rs"
 [[test]]
 name = "match_assist"
 path = "../../tests/match_assist.rs"
+
+[[test]]
+name = "ledger_inbox"
+path = "../../tests/ledger_inbox.rs"

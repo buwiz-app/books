@@ -32,6 +32,7 @@ pub mod match_history;
 pub mod months;
 pub mod people;
 pub mod plumbing;
+pub mod review;
 pub mod statement_drafts;
 pub mod statement_lock;
 
@@ -53,6 +54,7 @@ const MIGRATIONS: &[(i64, &str)] = &[
     ),
     (11, include_str!("../migrations/0011_statement_drafts.sql")),
     (12, include_str!("../migrations/0012_statement_events.sql")),
+    (15, include_str!("../migrations/0015_draft_review.sql")),
 ];
 
 pub const DATA_DIR_ENV: &str = "BOOKS_DATA_DIR";

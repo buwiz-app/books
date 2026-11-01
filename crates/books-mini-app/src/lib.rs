@@ -19,6 +19,7 @@ pub mod demo;
 pub mod forms;
 pub mod handoff;
 pub mod html;
+pub mod inbox;
 pub mod jcs;
 pub mod jsonrpc;
 pub mod manifest;

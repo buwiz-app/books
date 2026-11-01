@@ -250,6 +250,7 @@ impl Summary {
             );
             row["payee"] = json!(e.payee);
         }
+        crate::inbox::row_keys(store.conn(), e, &mut row)?;
         Ok(row)
     }
 }
@@ -531,8 +532,9 @@ pub fn ledger(
             ..Filter::default()
         },
     )?;
+    let flagged = crate::inbox::flagged(store.conn(), list.iter().map(|s| &s.entry))?;
     let is = |s: &Summary, f: &str| match f {
-        "review" => s.needs_review(),
+        "review" => s.needs_review() || flagged.contains(&s.entry.id),
         "draft" => s.entry.status == Status::Draft && !s.entry.needs_review,
         "posted" => matches!(s.entry.status, Status::Posted | Status::Voided),
         _ => true,
@@ -592,6 +594,7 @@ pub fn entry(
         .ok_or_else(|| Refusal::new("not_found", "That entry is not in this book."))?;
     let s = Summary::of(store, &chart, e)?;
     let mut out = s.row(store, origin)?;
+    out["review"] = crate::inbox::review_json(store.conn(), &s.entry, origin)?;
     let lines: Vec<Value> = s
         .lines
         .iter()
@@ -607,7 +610,7 @@ pub fn entry(
     let e = &s.entry;
     let actions: Vec<&str> = match e.status {
         Status::Draft => vec!["discard", "edit", "post"],
-        Status::Posted if e.form != Form::Reversal => vec!["void", "duplicate"],
+        Status::Posted if e.form != Form::Reversal => vec!["void", "copy"],
         _ => vec![],
     };
     // whether a post would go through, without changing anything

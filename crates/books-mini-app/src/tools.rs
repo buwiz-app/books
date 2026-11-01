@@ -190,9 +190,16 @@ fn draft_schema() -> Value {
             "person": { "type": "string", "description": "A person ticket." },
             "person_kind": { "type": "string", "description": "With payee: the kind of person to link or make (vendors, customers, employees, owners, lenders, government)." },
             "department": { "type": "string" },
-            "location": { "type": "string" }
+            "location": { "type": "string" },
+            "extracted": { "type": "object", "description": "What the assistant read, per field: {\"fields\": {\"category\": {\"confidence\": 55}}}. Fields: date, amount, account, to_account, category, payee, memo, reference, lines; confidence is a whole percent." }
         }
     })
+}
+
+fn post_schema() -> Value {
+    let mut schema = draft_schema();
+    schema["properties"]["keep_both"] = json!({ "type": "boolean", "description": "Post although the draft looks like another entry; records that the user keeps both." });
+    schema
 }
 
 fn people_schema() -> Value {
@@ -554,7 +561,7 @@ pub const TOOLS: &[Tool] = &[
         name: POST_ENTRY,
         reach: Reach::App,
         write: true,
-        schema: draft_schema,
+        schema: post_schema,
         description: "Post a draft (or save and post a new entry) after the user's click. Refuses an unbalanced entry, and receivable or payable lines on a cash book.",
     },
     Tool {

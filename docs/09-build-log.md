@@ -569,3 +569,15 @@ origin-checked by `tools::call`, so the dispatch arm refuses non-app origins (`f
 comes from reconcile-1 (`statement_drafts::extras`: `statement.evidence_id`, line `page` and `bx0..by1` corners).
 - 2026-11-01 review round 1 (reconcile-2): the snapshot pane's page is one signal owned by MatchView (`snapPage`), set by the page tabs (`onPage`) and by pressing a row, so tabs work after a selection and re-selecting a row returns to its page. The pane always renders its button row (See the page when there is a snapshot ticket, Print reconciliation); only the drawn page needs a line with a page and a box. MatchView shows the pane and the standalone Print on one predicate, `snapShown` (snapshot ticket or a drawable line), so the buttons never vanish. New headless UI check `tests/host/snapshot-pane.mjs` (nsh-standin, stand-in bridge, synthetic lines; `bun tests/host/snapshot-pane.mjs <dir with node_modules/esbuild>`): 11 checks pass, and it fails on the round-1 pane.
 - 2026-11-01 review round 2 (reconcile-2): merged `parity/reconcile-1` and `main`. The page view and the boxes read reconcile-1's `statement_drafts::extras` (thousandths corners; `left=x0/10`, `width=(x1-x0)/10`, integer text such as `"12.3%"`); the guessed `box_*` columns and the column probe are gone, and `statement_view` adds only `statement.snapshot` and row `no` (reconcile-1's `view_extra` writes `page`/`box`). The size check reads `evidence.byte_length` before the bytes (tested with a stored length over the cap and small bytes). Only image/png, image/jpeg and application/pdf are shown (webp is `not_supported`). Zero-amount lines go in a third "No amount" table, shown only when there are any. The agent refusal is also tested through `Server::handle` (`permission_denied`). PROPOSAL (owner/integrator): the tool keeps the name `books_app_reconcile_document` because DD-20 requires the `books_app_` prefix for app-only tools.
+
+## M10 parity
+
+- 2026-11-01 ledger-1, needs-review inbox (migration 15, `books-store::review`, `books-mini-app::inbox`,
+  `apps/books/ledger_review.tsx`): `books_entry_draft` takes `extracted: {fields: {<field>: {confidence}}}`
+  (whole percent) and notes per field who set it (`draft_field`); an app save of a field clears its note. Likely
+  duplicates (same book, live, not a reversal or a copy, same debit total, dates at most 3 days apart, same payee or
+  reference; at most 5) show on ledger rows (`proposed_by`, `low_confidence`, `likely_duplicate`), under
+  "Needs review", and in `books_entry_get` `review`; the assistant sees tickets, numbers, dates and statuses only.
+  `books_app_post_entry` refuses a flagged draft with `likely_duplicate` unless `keep_both` (writes
+  `duplicate_ack`). The drawer action "duplicate" is now "copy". No new tool; window permissions stay 57.
+  Native ledger follow-up (W9): place `ReviewBadges`/`ReviewPanel` in the native `books.ledger` row and drawer.
