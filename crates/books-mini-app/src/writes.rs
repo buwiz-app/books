@@ -380,6 +380,9 @@ pub fn post(conn: &Connection, args: &Map<String, Value>) -> Answer {
 pub fn void(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let book = book_in(conn, args)?;
     let e = entry_in(conn, &book, service::required(args, "entry")?)?;
+    if crate::amend::asked(args) {
+        return crate::amend::void(conn, args, &book, &e);
+    }
     let g = gate(conn, &book);
     let reversal = entries::void(conn, &book, e.id, e.date, &g)?;
     let mut out = entry_result(conn, e.id)?;

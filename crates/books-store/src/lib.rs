@@ -21,6 +21,7 @@ use std::path::{Path, PathBuf};
 
 use rusqlite::{Connection, OptionalExtension as _, params};
 
+pub mod amend;
 pub mod books;
 pub mod certificates;
 pub mod entries;
@@ -55,6 +56,7 @@ const MIGRATIONS: &[(i64, &str)] = &[
     (11, include_str!("../migrations/0011_statement_drafts.sql")),
     (12, include_str!("../migrations/0012_statement_events.sql")),
     (15, include_str!("../migrations/0015_draft_review.sql")),
+    (16, include_str!("../migrations/0016_amendments.sql")),
 ];
 
 pub const DATA_DIR_ENV: &str = "BOOKS_DATA_DIR";

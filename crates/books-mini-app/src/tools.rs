@@ -465,6 +465,14 @@ fn write_ref() -> Value {
     })
 }
 
+fn void_schema() -> Value {
+    let mut s = write_ref();
+    s["properties"]["amend"] = json!({ "type": "boolean", "description": "Also save a replacement draft with the same lines, linked to the voided entry." });
+    s["properties"]["reason"] = json!({ "type": "string", "description": "Why the entry is amended, 3 to 200 characters; needed with amend." });
+    s["properties"]["date"] = json!({ "type": "string", "description": "YYYY-MM-DD for the reversal and the replacement (amend only; default the entry's date)." });
+    s
+}
+
 fn book_create_schema() -> Value {
     json!({
         "type": "object",
@@ -573,8 +581,8 @@ pub const TOOLS: &[Tool] = &[
         name: VOID_ENTRY,
         reach: Reach::App,
         write: true,
-        schema: write_ref,
-        description: "Void a posted entry after the user's click: it shows Voided and a reversal is posted on its date.",
+        schema: void_schema,
+        description: "Void a posted entry after the user's click: it shows Voided and a reversal is posted on its date. With amend, a replacement draft with the same lines is saved too.",
     },
     Tool {
         name: DISCARD_ENTRY,
