@@ -17,9 +17,7 @@ function RepRow(p: { r: Any; cols: number; go: (page: string, filter?: string) =
   const r = p.r;
   const open = () => {
     if (!r.ticket) return;
-    ledgerAccount.set(r.ticket);
-    ledgerMonth.set(r.month || "");
-    p.go("ledger");
+    openLedger({ account: r.ticket, month: r.month || "" });
   };
   return (
     <View class={`flex-row items-center gap-3 px-3 py-2 border-b ${C.line}`} onPress={open} activeStyle={{ opacity: r.ticket ? 0.75 : 1 }}>
@@ -174,6 +172,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
         </If>
       </If>
       <Text class={`text-[12px] ${C.dim}`}>Click a line to see its transactions in the Ledger.</Text>
+      <LedgerBulk />
     </View>
   );
 }

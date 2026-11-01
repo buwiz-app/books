@@ -17,6 +17,13 @@ fn called_tools(source: &str) -> Vec<String> {
     found
 }
 
+fn tsx_source(app: &apps::App) -> &'static str {
+    match app.source {
+        apps::AppSource::Tsx(source) => source,
+        apps::AppSource::Native { .. } => panic!("{} is native", app.id),
+    }
+}
+
 /// A neutral title (D1, RK-10, invariant 13): no digits (amounts, TINs),
 /// no currency sign, and short.
 fn neutral(title: &str) {
@@ -40,7 +47,7 @@ fn the_manifest_has_the_books_identity() {
     assert_eq!(m["protocol"], "2.0.0");
     assert_eq!(m["id"], "app.buwiz.books");
     assert_eq!(m["short"], "books");
-    assert_eq!(m["version"], "0.2.0");
+    assert_eq!(m["version"], "0.3.0");
     assert_eq!(m["publisher"]["id"], "app.buwiz");
     assert_eq!(m["publisher"]["key_id"], "gc-2026-01");
     assert!(m.get("signature").is_none() && m.get("needs").is_none());
@@ -69,16 +76,25 @@ fn the_generator_output_is_jcs_canonical() {
 }
 
 #[test]
+fn native_apps_have_no_tsx_source() {
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_books-mini-app"))
+        .args(["app-source", "quiet"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(2));
+    assert!(
+        String::from_utf8_lossy(&output.stderr)
+            .contains("app quiet is native and has no TSX source")
+    );
+}
+
+#[test]
 fn every_app_called_tool_is_granted_and_nothing_more() {
     let m = manifest::unsigned(manifest::RELEASE_KEY_ID);
     let entries = m["apps"].as_array().unwrap();
     assert_eq!(entries.len(), apps::APPS.len());
     for (entry, app) in entries.iter().zip(apps::APPS) {
         assert_eq!(entry["id"], app.id);
-        assert_eq!(entry["entry"], format!("buwiz-app://{}", app.id));
-        assert_eq!(entry["mime"], "text/x-nsh-tsx");
-        assert_eq!(entry["sdk"], "1");
-        assert_eq!(entry["fingerprint"], manifest::fingerprint(app.source));
         let mut granted: Vec<String> = entry["permissions"]["tools"]
             .as_array()
             .unwrap()
@@ -86,21 +102,55 @@ fn every_app_called_tool_is_granted_and_nothing_more() {
             .map(|t| t.as_str().unwrap().to_string())
             .collect();
         granted.sort();
-        assert_eq!(
-            granted,
-            called_tools(app.source),
-            "{}: permissions.tools",
-            app.id
-        );
+        let mut expected = match app.source {
+            apps::AppSource::Tsx(source) => {
+                assert_eq!(entry["entry"], format!("buwiz-app://{}", app.id));
+                assert_eq!(entry["mime"], "text/x-nsh-tsx");
+                assert_eq!(entry["sdk"], "1");
+                assert_eq!(entry["fingerprint"], manifest::fingerprint(source));
+                called_tools(source)
+            }
+            apps::AppSource::Native {
+                screen,
+                abi,
+                tools,
+                open_apps,
+            } => {
+                assert!(entry.get("entry").is_none());
+                assert!(entry.get("mime").is_none());
+                assert!(entry.get("sdk").is_none());
+                assert!(entry.get("fingerprint").is_none());
+                assert_eq!(entry["native"]["screen"], screen);
+                assert_eq!(entry["native"]["abi"], abi);
+                assert_eq!(entry["native"].as_object().unwrap().len(), 2);
+                if open_apps.is_empty() {
+                    assert!(entry["permissions"].get("open").is_none());
+                } else {
+                    let mut granted_open: Vec<&str> = entry["permissions"]["open"]["apps"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|app| app.as_str().unwrap())
+                        .collect();
+                    let mut expected_open = open_apps.to_vec();
+                    granted_open.sort();
+                    expected_open.sort();
+                    assert_eq!(granted_open, expected_open, "{}: permissions.open", app.id);
+                }
+                tools.iter().map(|tool| (*tool).to_string()).collect()
+            }
+        };
+        expected.sort();
+        assert_eq!(granted, expected, "{}: permissions.tools", app.id);
         for tool in &granted {
             assert!(tools::find(tool).is_some(), "{tool} is not a Books tool");
         }
     }
     assert_eq!(
-        called_tools(apps::find("home").unwrap().source),
+        called_tools(tsx_source(apps::find("home").unwrap())),
         ["books_status"]
     );
-    let window = called_tools(apps::find("books").unwrap().source);
+    let window = called_tools(tsx_source(apps::find("books").unwrap()));
     for tool in [
         "books_app_post_entry",
         "books_app_void_entry",
@@ -178,7 +228,9 @@ fn titles_are_neutral() {
 #[test]
 fn the_apps_import_only_nsh_and_rox_and_cards_call_rox_fit() {
     for app in apps::APPS {
-        let source = app.source;
+        let apps::AppSource::Tsx(source) = app.source else {
+            continue;
+        };
         let imports: Vec<&str> = source
             .lines()
             .filter(|l| l.trim_start().starts_with("import "))
@@ -208,7 +260,7 @@ fn the_apps_import_only_nsh_and_rox_and_cards_call_rox_fit() {
             assert!(!source.contains(word), "{}: {word}", app.id);
         }
     }
-    let source = apps::find("home").unwrap().source;
+    let source = tsx_source(apps::find("home").unwrap());
     assert!(source.contains("buwiz.fit("));
     for word in [
         "fetch",

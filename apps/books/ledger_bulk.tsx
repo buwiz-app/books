@@ -1,7 +1,15 @@
-// Ledger multi-select: tick rows, then Post, Discard or give them one
-// category in one click (books_app_batch, all or nothing), and the
-// ledger as CSV (books_report_csv kind "ledger"). Only a click here
-// changes entries (DD-20).
+// Ledger multi-select on the Reports page: tick rows, then Post, Discard
+// or give them one category in one click (books_app_batch, all or
+// nothing), and the ledger as CSV (books_report_csv kind "ledger"). The
+// Ledger itself is a native screen; only a click here changes entries
+// (DD-20).
+
+const BULK_FILTERS = [
+  ["draft", "Drafts"],
+  ["posted", "Posted"],
+  ["review", "Needs review"],
+  ["all", "All"],
+];
 
 /** The ticked entry tickets. */
 const bulkSel = signal(new Set<string>());
@@ -33,11 +41,25 @@ function BulkBox(p: { r: Any }) {
 
 /** A ledger row with its tap target in front. */
 function BulkRow(p: { r: Any }) {
+  const r = p.r;
   return (
     <View class="flex-row">
-      <BulkBox r={p.r} />
-      <View class="flex-1">
-        <TxRow r={p.r} />
+      <BulkBox r={r} />
+      <View class={`flex-1 flex-row items-center gap-3 px-3 py-2.5 border-b ${C.line}`}>
+        <Text class={`w-[52px] text-[12.5px] font-mono ${C.ink}`}>{r.date_short}</Text>
+        <Text class={`flex-1 text-[13px] font-semibold ${C.ink}`} numberOfLines={1}>
+          {r.title}
+        </Text>
+        <View class="w-[150px] flex-row items-center gap-1.5">
+          <Dot color={r.category_color} />
+          <Text class={`text-[12.5px] ${C.ink}`} numberOfLines={1}>
+            {r.category || ""}
+          </Text>
+        </View>
+        <View class="w-[96px]">
+          <Pill tone={r.pill} label={r.status_label} />
+        </View>
+        <Text class={`w-[104px] text-right text-[12.5px] font-mono ${AMT[r.tone] || C.ink}`}>{r.amount_shown}</Text>
       </View>
     </View>
   );
@@ -106,5 +128,46 @@ function BulkBar(p: { rows: Any[]; account: string; month: string; filter: strin
         <Pick value="" options={cats()} placeholder="Pick a category" onPick={(c: Any) => run("recategorize", { category: c.ticket })} />
       </If>
     </View>
+  );
+}
+
+/** A month of ledger entries to tick, with the bulk bar (Reports page). */
+function LedgerBulk() {
+  const filter = signal("draft");
+  const month = signal("");
+  const data = resource(
+    () => ({ v: ver(), f: filter(), m: month() }),
+    (k: Any) => {
+      const args: Record<string, string> = { filter: k.f };
+      if (k.m) args.month = k.m;
+      return buwiz.call("books_ledger_list", args);
+    },
+  );
+  const d = () => data() as Any;
+  return (
+    <Panel class="gap-0">
+      <View class="flex-row items-center gap-2 flex-wrap px-3 py-2.5">
+        <Text class={`text-[13px] font-semibold ${C.ink}`}>Ledger entries</Text>
+        <View class="px-1.5 py-1" onPress={() => month.set(d()?.month.prev || "")}>
+          <Text class={`text-[12px] ${C.ink}`}>‹</Text>
+        </View>
+        <Text class={`text-[12px] ${C.mute}`}>{d()?.month.label || ""}</Text>
+        <View class="px-1.5 py-1" onPress={() => month.set(d()?.month.next || "")}>
+          <Text class={`text-[12px] ${C.ink}`}>›</Text>
+        </View>
+        <View class="flex-1" />
+        <Each of={BULK_FILTERS}>
+          {(f: Any) => <Chip label={f()[1]} count={d()?.counts[f()[0]]} on={filter() === f()[0]} onPress={() => filter.set(f()[0])} />}
+        </Each>
+      </View>
+      <Loading res={data} />
+      <BulkBar rows={d()?.rows || []} account="" month={d()?.month.key || ""} filter={filter()} />
+      <If when={(d()?.rows || []).length === 0}>
+        <Text class={`text-[12.5px] px-3 py-4 ${C.dim}`}>No matching entries this month.</Text>
+      </If>
+      <Each of={d()?.rows || []} key={rowKey}>
+        {(r: Any) => <BulkRow r={r()} />}
+      </Each>
+    </Panel>
   );
 }

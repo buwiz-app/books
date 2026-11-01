@@ -1,149 +1,19 @@
-// Ledger: the account list, a month of entries with filters, the entry
-// drawer (the double entry behind it, Post or Void) and the new-entry
-// sheet (Money in, Money out, Transfer, Journal). The assistant drafts;
-// only a click here posts or voids (DD-20).
+// The entry parts of the Books window: the drawer (the double entry behind
+// an entry, Post or Void) and the new-entry sheet (Money in, Money out,
+// Transfer, Journal). The Ledger itself is a native screen
+// (crates/books-screens); `openLedger` opens it. The assistant drafts; only
+// a click here posts or voids (DD-20).
 
-const FILTERS: [string, string][] = [
-  ["all", "All"],
-  ["review", "Needs review"],
-  ["draft", "Drafts"],
-  ["posted", "Posted"],
-];
-
-const ledgerAccount = signal(PROPS.account || "");
-const ledgerMonth = signal(PROPS.month || "");
-const ledgerFilter = signal(PROPS.filter || "all");
 /** The open entry's ticket, for the drawer. */
 const drawerEntry = signal("");
 
-function TxRow(p: { r: Any }) {
-  const r = p.r;
-  return (
-    <View
-      class={`flex-row items-center gap-3 px-3 py-2.5 border-b ${C.line} ${drawerEntry() === r.ticket ? C.raise : ""}`}
-      onPress={() => drawerEntry.set(r.ticket)}
-      activeStyle={{ opacity: 0.75 }}
-    >
-      <Text class={`w-[52px] text-[12.5px] font-mono ${C.ink}`}>{r.date_short}</Text>
-      <View class="flex-1 gap-0.5">
-        <Text class={`text-[13px] font-semibold ${C.ink}`} numberOfLines={1}>
-          {r.title}
-        </Text>
-        <Text class={`text-[11.5px] ${C.dim}`} numberOfLines={1}>
-          {r.sub || ""}
-        </Text>
-      </View>
-      <View class="w-[170px] flex-row items-center gap-1.5">
-        <Dot color={r.category_color} />
-        <Text class={`text-[12.5px] ${C.ink}`} numberOfLines={1}>
-          {r.category || ""}
-        </Text>
-      </View>
-      <View class="w-[96px]">
-        <Pill tone={r.pill} label={r.status_label} />
-      </View>
-      <Text class={`w-[104px] text-right text-[12.5px] font-mono ${AMT[r.tone] || C.ink}`}>{r.amount_shown}</Text>
-    </View>
-  );
-}
-
-function LedgerPage(p: { go: (page: string, filter?: string) => void; sheet: (mode: string) => void }) {
-  const data = resource(
-    () => ({ v: ver(), a: ledgerAccount(), m: ledgerMonth(), f: ledgerFilter() }),
-    (k: Any) => {
-      const args: Record<string, string> = { filter: k.f };
-      if (k.a) args.account = k.a;
-      if (k.m) args.month = k.m;
-      return buwiz.call("books_ledger_list", args);
-    },
-  );
-  const d = () => data() as Any;
-  return (
-    <View class="gap-3.5">
-      <Head title="Ledger" sub={d() ? d().month.label : ""}>
-        <View class="flex-row gap-2">
-          <Btn label="+ New" tone="go" onPress={() => p.sheet("money_out")} />
-        </View>
-      </Head>
-      <Loading res={data} />
-      <If when={Boolean(d())}>
-        <View class="flex-row gap-3 items-start">
-          <Panel class="w-[196px] p-1.5 gap-px">
-            <View class={`flex-row justify-between px-2 py-1.5 rounded-[7px] ${ledgerAccount() === "" ? C.raise : ""}`} onPress={() => ledgerAccount.set("")}>
-              <Text class={`text-[12.5px] ${ledgerAccount() === "" ? `font-semibold ${C.ink}` : C.mute}`}>All accounts</Text>
-            </View>
-            <Each of={d()?.accounts || []} key={rowKey}>
-              {(g: Any) => (
-                <View class="gap-px">
-                  <Text class={`text-[10.5px] uppercase tracking-wider px-2 pt-2 pb-0.5 ${C.dim}`}>{g().group}</Text>
-                  <Each of={g().rows} key={rowKey}>
-                    {(a: Any) => (
-                      <View
-                        class={`flex-row justify-between gap-1.5 px-2 py-1.5 rounded-[7px] ${ledgerAccount() === a().ticket ? C.raise : ""}`}
-                        onPress={() => ledgerAccount.set(a().ticket)}
-                      >
-                        <Text class={`flex-1 text-[12.5px] ${ledgerAccount() === a().ticket ? `font-semibold ${C.ink}` : C.mute}`} numberOfLines={1}>
-                          {a().name}
-                        </Text>
-                        <Text class={`text-[11px] font-mono ${C.dim}`}>{a().number}</Text>
-                      </View>
-                    )}
-                  </Each>
-                </View>
-              )}
-            </Each>
-          </Panel>
-          <View class="flex-1">
-            <View class="flex-row items-center gap-2.5 flex-wrap rounded-t-xl px-3.5 py-3 bg-[#157a48]">
-              <Text class="text-[15px] font-bold text-white">{d()?.account.name || ""}</Text>
-              <If when={Boolean(d()?.account.number)}>
-                <View class="rounded-[7px] px-2 py-1 bg-white/15">
-                  <Text class="text-[12px] text-white">{d()?.account.number || ""}</Text>
-                </View>
-              </If>
-              <View class="flex-row items-center rounded-[7px] bg-white/15">
-                <View class="px-2 py-1" onPress={() => ledgerMonth.set(d().month.prev)}>
-                  <Text class="text-[12px] text-white">‹</Text>
-                </View>
-                <Text class="text-[12px] text-white py-1">{d()?.month.range || ""}</Text>
-                <View class="px-2 py-1" onPress={() => ledgerMonth.set(d().month.next)}>
-                  <Text class="text-[12px] text-white">›</Text>
-                </View>
-              </View>
-              <View class="flex-1" />
-              <View class="rounded-[7px] px-2 py-1 bg-white/15">
-                <Text class="text-[12px] text-white font-mono">{`${d()?.account.balance_label || "Balance"} ₱ ${d()?.account.balance_shown || ""}`}</Text>
-              </View>
-            </View>
-            <View class={`rounded-b-xl border border-t-0 ${C.panel} ${C.line}`}>
-              <View class="flex-row gap-1.5 flex-wrap px-3 py-2.5">
-                <Each of={FILTERS}>
-                  {(f: Any) => (
-                    <Chip label={f()[1]} count={d()?.counts[f()[0]]} on={ledgerFilter() === f()[0]} onPress={() => ledgerFilter.set(f()[0])} />
-                  )}
-                </Each>
-              </View>
-              <BulkBar rows={d()?.rows || []} account={ledgerAccount()} month={d()?.month.key || ""} filter={ledgerFilter()} />
-              <View class={`flex-row gap-3 px-3 py-2 border-y ${C.line}`}>
-                <Text class="w-[18px]" />
-                <Text class={`w-[52px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Date</Text>
-                <Text class={`flex-1 text-[10.5px] uppercase tracking-wider ${C.dim}`}>What</Text>
-                <Text class={`w-[170px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Category</Text>
-                <Text class={`w-[96px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Status</Text>
-                <Text class={`w-[104px] text-right text-[10.5px] uppercase tracking-wider ${C.dim}`}>Amount</Text>
-              </View>
-              <If when={(d()?.rows || []).length === 0}>
-                <Text class={`text-[12.5px] px-3 py-4 ${C.dim}`}>{`No ${ledgerFilter() === "all" ? "" : "matching "}entries in ${d()?.account.name || ""} this month.`}</Text>
-              </If>
-              <Each of={d()?.rows || []} key={rowKey}>
-                {(r: Any) => <BulkRow r={r()} />}
-              </Each>
-            </View>
-          </View>
-        </View>
-      </If>
-    </View>
-  );
+/** Open the ledger's native screen. Set only the props the caller has. */
+function openLedger(props: { account?: string; month?: string; filter?: string }) {
+  const args: Record<string, Any> = {};
+  if (props.account) args.account = props.account;
+  if (props.month) args.month = props.month;
+  if (props.filter) args.filter = props.filter;
+  buwiz.open({ app: "ledger", props: args }).catch((e: Any) => toast(errText(e)));
 }
 
 /** The entry drawer, over the right side of the window. */
