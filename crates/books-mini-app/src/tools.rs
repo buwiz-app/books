@@ -15,7 +15,8 @@ use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
 use crate::{
-    cards, checks, forms, handoff, oldbooks, payroll, reconcile, records, reports, views, writes,
+    cards, checks, forms, handoff, month_pack, oldbooks, payroll, reconcile, records, reports,
+    views, writes,
 };
 
 pub const STATUS: &str = "books_status";
@@ -80,6 +81,7 @@ pub const NUDGE: &str = "books_nudge";
 pub const SIGNIN: &str = "books_app_signin";
 pub const TAX_PROFILES: &str = "books_app_tax_list";
 pub const PROFILE_LINK: &str = "books_app_tax_link";
+pub const MONTH_PACK: &str = "books_month_pack";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -879,7 +881,24 @@ pub const TOOLS: &[Tool] = &[
         schema: wage_run_schema,
         description: "Save a pay run as a draft entry; the Ledger posts it.",
     },
+    Tool {
+        name: MONTH_PACK,
+        reach: Reach::App,
+        write: false,
+        schema: month_pack_schema,
+        description: "The month pack: a static print preview of the month's reports and reconcile status.",
+    },
 ];
+
+fn month_pack_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "book": { "type": "string" },
+            "month": { "type": "string", "description": "YYYY-MM; this month when absent." }
+        }
+    })
+}
 
 pub fn find(name: &str) -> Option<&'static Tool> {
     TOOLS.iter().find(|t| t.name == name)
@@ -1231,6 +1250,26 @@ pub fn call(
         CROSS_CHECKS => read(books, arguments, |store, book, args| {
             checks::cross_checks(store, book, args)
         }),
+        MONTH_PACK => {
+            let mut out = read(books, arguments, |store, book, args| {
+                month_pack::pack(store, book, args)
+            });
+            // buwiz.preview renders an embedded text/html resource; the html is not repeated as text
+            if out["isError"] == false
+                && let Some(html) = out["structuredContent"]
+                    .as_object_mut()
+                    .and_then(|o| o.remove("html"))
+            {
+                let key = out["structuredContent"]["month"]["key"]
+                    .as_str()
+                    .unwrap_or("")
+                    .to_string();
+                out["content"] = json!([{ "type": "resource", "resource": {
+                    "uri": month_pack::uri(&key), "mimeType": "text/html", "text": html
+                } }]);
+            }
+            out
+        }
         _ => fail("internal", "Books has no handler for that tool."),
     })
 }

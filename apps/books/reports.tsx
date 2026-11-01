@@ -69,6 +69,13 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
       (e: Any) => toast(errText(e)),
     );
   };
+  const monthPack = () => {
+    if (buwiz.preview)
+      buwiz
+        .preview({ tool: "books_month_pack", args: { month: d()?.period.key }, title: "Month pack" })
+        .catch((e: Any) => toast(e.code === "not_supported" ? "Print preview needs Buwiz Bot on a Mac." : errText(e)));
+    else toast("Print preview is not available in this Buwiz Bot.");
+  };
   return (
     <View class="gap-3.5">
       <Head title="Reports" sub={d()?.basis_label || ""}>
@@ -86,6 +93,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
             }}
           />
           <Btn label="Export CSV" onPress={exportCsv} />
+          {repPeriodKind() === "month" ? <Btn label="Month pack" onPress={monthPack} /> : null}
         </View>
       </Head>
       <View class="flex-row items-center gap-2">

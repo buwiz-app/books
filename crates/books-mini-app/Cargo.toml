@@ -32,6 +32,10 @@ name = "ledger_tools"
 path = "../../tests/ledger_tools.rs"
 
 [[test]]
+name = "month_pack"
+path = "../../tests/month_pack.rs"
+
+[[test]]
 name = "golden_reports"
 path = "../../tests/golden_reports.rs"
 

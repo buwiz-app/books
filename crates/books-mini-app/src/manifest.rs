@@ -59,6 +59,10 @@ fn permissions(app: &apps::App) -> Value {
     if app.id != "books" && app.source.contains(".open({") {
         p["open"] = json!({ "apps": ["books"] });
     }
+    // the window shows the month pack as a static print preview
+    if app.source.contains(".preview(") {
+        p["preview"] = json!({});
+    }
     p
 }
 

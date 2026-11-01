@@ -491,6 +491,10 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 `tools/check-all.sh`: fmt clean; clippy clean; cargo test 117; PoC 177; conformance 182 pass, 7 skipped (rox
 `9c106cc`); host test 17/17; privacy scan 0 findings.
 
+## M10 parity
+
+- 2026-11-01 reports-4 (month pack): new app-only tool `books_month_pack` (`crates/books-mini-app/src/month_pack.rs`, read-only). It reads `books_report` pl/bs/cf/tb for one month and `books_reconcile_grid`, and returns one static HTML document (inline style only; no script, link or URL; store text escaped) as an MCP `text/html` resource `books://print/month-pack-<YYYY-MM>.html`, with `structuredContent` `{title, month, bytes}`. It refuses with invalid_args above 4 MiB. The Reports page shows a Month pack button for month periods, which calls `buwiz.preview`; the manifest gives the window `permissions.preview = {}`. Window tools: 57 to 58 of 64. Tests: `tests/month_pack.rs`.
+
 ## Not yet built
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox
