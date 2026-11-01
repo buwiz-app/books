@@ -47,6 +47,23 @@ fn payments(b: &mut Books, owed: &Value) -> Value {
     call(b, "books_owed_list", json!({ "side": "pay", "owed": owed }))["detail"].clone()
 }
 
+/// The Rail badge's Unpaid count.
+fn badge(b: &mut Books) -> Value {
+    call(b, "books_book_get", json!({}))["unpaid"].clone()
+}
+
+/// The book's only document's stored status, and every entry in the store.
+fn stored(b: &mut Books) -> (String, i64) {
+    let conn = b.store().unwrap().conn();
+    let status = conn
+        .query_row("SELECT status FROM unpaid", [], |r| r.get(0))
+        .unwrap();
+    let entries = conn
+        .query_row("SELECT count(*) FROM entry", [], |r| r.get(0))
+        .unwrap();
+    (status, entries)
+}
+
 #[test]
 fn a_bill_settles_in_parts_and_keeps_its_payment_history() {
     let dir = TempDir::new("owed-part");
@@ -58,11 +75,14 @@ fn a_bill_settles_in_parts_and_keeps_its_payment_history() {
         json!({ "client_request_id": "part-owed-0001", "side": "pay", "person_name": "Synthetic Vendor", "amount": "1000.00", "category": "67200", "issued": "2026-09-01", "reference": "Bill SYN-0001" }),
     );
     let owed = bill["owed"].clone();
+    assert_eq!(badge(b), 1);
     let settle = json!({ "client_request_id": "part-settle-01", "owed": owed, "account": "11000", "amount": "400.00", "on": "2026-10-05" });
     let first = call(b, "books_app_owed_settle", settle.clone());
     assert_eq!(first["status"], "part_paid");
     assert_eq!(first["balance"], "600.00");
     assert_eq!(first["balance_shown"], "600.00");
+    assert_eq!(stored(b).0, "open");
+    assert_eq!(badge(b), 1);
 
     let list = pay_rows(b);
     let rows = list["rows"].as_array().unwrap();
@@ -99,12 +119,13 @@ fn a_bill_settles_in_parts_and_keeps_its_payment_history() {
         assert!(!message.chars().any(|c| c.is_ascii_digit()), "{message}");
     }
 
-    // a closed month refuses the settle and writes nothing
+    // a closed month refuses the settle and writes no payment or entry
     call(
         b,
         "books_app_month_close",
         json!({ "client_request_id": "part-close-09", "month": "2026-09" }),
     );
+    let entries_before = stored(b).1;
     let (code, _) = refused(
         b,
         "books_app_owed_settle",
@@ -113,6 +134,7 @@ fn a_bill_settles_in_parts_and_keeps_its_payment_history() {
     assert_eq!(code, "period_closed");
     assert_eq!(payments(b, &owed)["payments"].as_array().unwrap().len(), 1);
     assert_eq!(pay_rows(b)["total_shown"], "600.00");
+    assert_eq!(stored(b).1, entries_before);
 
     // no amount: the rest
     let rest = call(
@@ -123,6 +145,8 @@ fn a_bill_settles_in_parts_and_keeps_its_payment_history() {
     assert_eq!(rest["status"], "paid");
     assert_eq!(rest["balance_shown"], "0.00");
     assert_eq!(pay_rows(b)["rows"].as_array().unwrap().len(), 0);
+    assert_eq!(stored(b).0, "paid");
+    assert_eq!(badge(b), 0);
     let d = payments(b, &owed);
     assert_eq!(d["state"], "paid");
     assert_eq!(d["payments"].as_array().unwrap().len(), 2);
@@ -146,6 +170,9 @@ fn a_bill_settles_in_parts_and_keeps_its_payment_history() {
     assert_eq!(list["rows"][0]["state"], "part_paid");
     assert_eq!(list["total_shown"], "600.00");
     assert_eq!(payments(b, &owed)["payments"][1]["voided"], true);
+    // the document is paid in its stored status, but the badge counts it again
+    assert_eq!(stored(b).0, "paid");
+    assert_eq!(badge(b), 1);
     let (code, message) = refused(
         b,
         "books_app_owed_cancel",
@@ -153,6 +180,22 @@ fn a_bill_settles_in_parts_and_keeps_its_payment_history() {
     );
     assert_eq!(code, "has_payments");
     assert!(!message.chars().any(|c| c.is_ascii_digit()), "{message}");
+
+    // a paid document owed again after a void settles again
+    let again = call(
+        b,
+        "books_app_owed_settle",
+        json!({ "client_request_id": "part-settle-04", "owed": owed, "account": "11000", "on": "2026-10-12" }),
+    );
+    assert_eq!(again["status"], "paid");
+    assert_eq!(again["balance_shown"], "0.00");
+    assert_eq!(pay_rows(b)["rows"].as_array().unwrap().len(), 0);
+    assert_eq!(badge(b), 0);
+    let d = payments(b, &owed);
+    let history = d["payments"].as_array().unwrap();
+    assert_eq!(history.len(), 3);
+    assert_eq!(history.iter().filter(|p| p["voided"] == true).count(), 1);
+    assert_eq!(history[2]["amount_shown"], "600.00");
 
     // the assistant's list carries no tickets for payments
     let args: Map<String, Value> = json!({ "side": "pay", "owed": owed })

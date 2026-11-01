@@ -270,10 +270,22 @@ impl Unpaid {
     }
 }
 
-/// Paid to date of the \`unpaid\` row in scope, for its column list.
-const PAID_SQL: &str = "(SELECT coalesce(sum(p.amount), 0) FROM owed_payment p JOIN entry e ON e.entry_id = p.entry_id WHERE p.unpaid_id = unpaid.unpaid_id AND e.status = 'posted')";
+/// Paid to date of the `unpaid` row in scope: settlements whose entry is
+/// still posted.
+macro_rules! paid_sql {
+    () => {
+        "(SELECT coalesce(sum(p.amount), 0) FROM owed_payment p JOIN entry e ON e.entry_id = p.entry_id WHERE p.unpaid_id = unpaid.unpaid_id AND e.status = 'posted')"
+    };
+}
 
-const UNPAID_COLUMNS: &str = "unpaid_id, book_id, side, person_id, reference, memo, issued, due, amount, category_account_id, status, accrual_entry_id, paid_entry_id, paid_on, (SELECT coalesce(sum(p.amount), 0) FROM owed_payment p JOIN entry e ON e.entry_id = p.entry_id WHERE p.unpaid_id = unpaid.unpaid_id AND e.status = 'posted')";
+const UNPAID_COLUMNS: &str = concat!(
+    "unpaid_id, book_id, side, person_id, reference, memo, issued, due, amount, category_account_id, status, accrual_entry_id, paid_entry_id, paid_on, ",
+    paid_sql!()
+);
+
+/// Condition on an `unpaid` row: money is still owed on it. A paid
+/// document whose payment was voided is owed again.
+pub const STILL_OWED_SQL: &str = concat!("status <> 'cancelled' AND amount > ", paid_sql!());
 
 fn unpaid_row(r: &Row<'_>) -> rusqlite::Result<Unpaid> {
     let date = |s: Option<String>| s.and_then(|s| Date::parse(&s));
@@ -314,7 +326,7 @@ pub fn unpaid(conn: &Connection, id: i64) -> Result<Option<Unpaid>> {
 /// last). A paid document whose payment was voided is owed again.
 pub fn open_unpaid(conn: &Connection, book_id: i64, side: &str) -> Result<Vec<Unpaid>> {
     let mut stmt = conn.prepare(&format!(
-        "SELECT {UNPAID_COLUMNS} FROM unpaid WHERE book_id = ?1 AND side = ?2 AND status <> 'cancelled' AND amount > {PAID_SQL}
+        "SELECT {UNPAID_COLUMNS} FROM unpaid WHERE book_id = ?1 AND side = ?2 AND {STILL_OWED_SQL}
          ORDER BY due IS NULL, due, unpaid_id"
     ))?;
     let rows = stmt.query_map(params![book_id, side], unpaid_row)?;

@@ -982,9 +982,10 @@ pub fn call(
                      SELECT 1 FROM line l JOIN account a ON a.account_id = l.account_id
                      WHERE l.entry_id = e.entry_id AND a.kind = 'unsure')))"
             )?);
-            out["unpaid"] = json!(count(
-                "SELECT count(*) FROM unpaid WHERE book_id = ?1 AND status = 'open'"
-            )?);
+            out["unpaid"] = json!(count(&format!(
+                "SELECT count(*) FROM unpaid WHERE book_id = ?1 AND {}",
+                books_store::people::STILL_OWED_SQL
+            ))?);
             Ok(out)
         }),
         TODAY => read(books, arguments, |store, book, _| {
