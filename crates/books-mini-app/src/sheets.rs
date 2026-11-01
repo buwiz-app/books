@@ -7,10 +7,17 @@
 
 use crate::service::Refusal;
 
+/// What reading a picked workbook may cost, set once for the process:
+/// office_oxide's strict set (a part inflates to at most 64 MiB and 100
+/// times its stored size, a package to 256 MiB, 128 MiB of working memory),
+/// so a small file built to expand into gigabytes is refused, not read.
+static LIMITS: std::sync::Once = std::sync::Once::new();
+
 /// The CSV text of a picked workbook, or `None` when the bytes are not
 /// one. The sheet read is the first whose name holds `key` (`chart`,
 /// `journal`, `csv` for a statement), else the first sheet.
 pub fn as_csv(bytes: &[u8], key: &str) -> Option<Result<String, Refusal>> {
+    LIMITS.call_once(|| office_oxide::limits::Limits::strict().apply());
     let bad = || Refusal::new("bad_file", "That workbook could not be read.");
     if bytes.starts_with(b"PK\x03\x04") {
         let doc = match office_oxide::xlsx::XlsxDocument::from_reader(std::io::Cursor::new(bytes)) {
@@ -114,6 +121,13 @@ mod tests {
         assert!(as_csv(b"Account,Type\n", "chart").is_none());
         let refusal = as_csv(b"PK\x03\x04broken", "chart").unwrap().unwrap_err();
         assert_eq!(refusal.message, "That workbook could not be read.");
+    }
+
+    #[test]
+    fn a_workbook_is_read_under_strict_limits() {
+        use office_oxide::limits::Limits;
+        as_csv(b"PK\x03\x04broken", "chart");
+        assert_eq!(Limits::current(), Limits::strict());
     }
 
     #[test]
