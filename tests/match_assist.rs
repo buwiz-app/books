@@ -164,7 +164,11 @@ fn one_line_accept_matches_that_line_only_and_checks_a_picked_entry() {
     spend(b, "ma-a", "2026-12-12", "450.00", "Coffee shop");
     spend(b, "ma-b", "2026-12-17", "120.00", "Hardware store");
     let other = spend(b, "ma-c", "2026-12-20", "75.00", "Hardware store");
-    let voided = spend(b, "ma-d", "2026-12-21", "75.00", "Hardware store");
+    // Same amount as line 1 and inside its window: only the guarded
+    // property (voided, too far from the month, matched elsewhere) differs.
+    let voided = spend(b, "ma-d", "2026-12-13", "450.00", "Hardware store");
+    let far = spend(b, "ma-e", "2026-11-20", "450.00", "Hardware store");
+    let taken = spend(b, "ma-f", "2026-12-27", "450.00", "Hardware store");
     ok(
         b,
         "books_app_void_entry",
@@ -173,13 +177,13 @@ fn one_line_accept_matches_that_line_only_and_checks_a_picked_entry() {
     import(
         b,
         "ma-one-import",
-        "2026-12-10,COFFEE SHOP 00456,450.00,,\n2026-12-15,HARDWARE STORE 7781,120.00,,\n2026-12-22,BAKERY 5521,75.00,,\n",
+        "2026-12-10,COFFEE SHOP 00456,450.00,,\n2026-12-15,HARDWARE STORE 7781,120.00,,\n2026-12-22,BAKERY 5521,75.00,,\n2026-12-28,HARDWARE STORE 7790,450.00,,\n",
     );
-    assert_eq!(kinds(&statement(b, "2026-12")), ["s", "s", "s"]);
+    assert_eq!(kinds(&statement(b, "2026-12")), ["s", "s", "s", "s"]);
 
     let first = accept(b, "ma-one-0001", "2026-12", json!({ "line": 2 }));
     assert_eq!(first["structuredContent"]["accepted"], 1, "{first}");
-    assert_eq!(kinds(&statement(b, "2026-12")), ["s", "m", "s"]);
+    assert_eq!(kinds(&statement(b, "2026-12")), ["s", "m", "s", "s"]);
     assert_eq!(
         accept(b, "ma-one-0001", "2026-12", json!({ "line": 2 })),
         first
@@ -192,21 +196,39 @@ fn one_line_accept_matches_that_line_only_and_checks_a_picked_entry() {
         ),
         "already_matched"
     );
+    for (id, line) in [
+        ("ma-bad-0001", json!("1")),
+        ("ma-bad-0002", serde_json::from_str::<Value>("1.0").unwrap()),
+        ("ma-bad-0003", Value::Null),
+    ] {
+        assert_eq!(
+            refused(
+                b,
+                "books_app_statement_accept",
+                json!({ "client_request_id": id, "account": "11010", "month": "2026-12", "line": line })
+            ),
+            "invalid_args",
+            "{id}"
+        );
+    }
+    assert_eq!(kinds(&statement(b, "2026-12")), ["s", "m", "s", "s"]);
 
-    // a picked entry: wrong amount, voided, or already matched elsewhere
-    let pick = |id: &str, entry: &str| json!({ "client_request_id": id, "account": "11010", "month": "2026-12", "line": 1, "entry": entry });
-    let line2 = ok(
+    let fourth = accept(
         b,
-        "books_statement_get",
-        json!({ "account": "11010", "month": "2026-12" }),
-    )["statement"]["rows"][1]["books"]["ticket"]
-        .as_str()
-        .unwrap()
-        .to_string();
+        "ma-one-0004",
+        "2026-12",
+        json!({ "line": 4, "entry": taken }),
+    );
+    assert_eq!(fourth["structuredContent"]["accepted"], 1, "{fourth}");
+    assert_eq!(kinds(&statement(b, "2026-12")), ["s", "m", "s", "m"]);
+
+    // a picked entry: wrong amount, voided, too far, or matched elsewhere
+    let pick = |id: &str, entry: &str| json!({ "client_request_id": id, "account": "11010", "month": "2026-12", "line": 1, "entry": entry });
     for (id, entry) in [
         ("ma-pick-01", other.as_str()),
         ("ma-pick-02", voided.as_str()),
-        ("ma-pick-03", line2.as_str()),
+        ("ma-pick-03", far.as_str()),
+        ("ma-pick-04", taken.as_str()),
     ] {
         assert_eq!(
             refused(b, "books_app_statement_accept", pick(id, entry)),
@@ -214,9 +236,7 @@ fn one_line_accept_matches_that_line_only_and_checks_a_picked_entry() {
             "{id}"
         );
     }
-    assert_eq!(kinds(&statement(b, "2026-12")), ["s", "m", "s"]);
-
-    assert_eq!(kinds(&statement(b, "2026-12")), ["s", "m", "s"]);
+    assert_eq!(kinds(&statement(b, "2026-12")), ["s", "m", "s", "m"]);
 }
 
 fn other_accounts(b: &mut Books, entry: &Value) -> Vec<String> {
@@ -278,7 +298,9 @@ fn an_added_line_takes_the_category_and_payee_history_used() {
         "books_app_statement_add_line",
         json!({ "client_request_id": "ma-add-0002", "account": "11010", "month": "2026-12", "line": bakery }),
     );
-    assert_ne!(other_accounts(b, &plain["entry"]), ["68300"]);
+    // no history: suggest_kind names nothing for a bakery, so the book's
+    // "not sure yet" money-out default (69999) is used.
+    assert_eq!(other_accounts(b, &plain["entry"]), ["69999"]);
     assert!(payee_of(b, &plain["entry"]).is_null());
 }
 

@@ -429,13 +429,11 @@ pub fn accept_suggestions(
 pub fn account_for_line(
     conn: &Connection,
     book: &Book,
-    money_account_id: i64,
+    hint: Option<&books_core::match_assist::Hint>,
     line: &statement::Line,
 ) -> Result<Account> {
     let accounts = books::accounts(conn, book.id)?;
-    let hints = crate::match_history::hints(conn, book.id, money_account_id)?;
-    if let Some(id) = books_core::match_assist::hint_for(&hints, &line.description)
-        .and_then(|h| h.category_account_id)
+    if let Some(id) = hint.and_then(|h| h.category_account_id)
         && let Some(a) = accounts
             .iter()
             .find(|a| a.id == id && a.active && !(a.accrual_only() && book.basis == Basis::Cash))
@@ -475,12 +473,10 @@ pub fn add_line(
     if line.matched_entry_id.is_some() {
         return Err(error("already_matched", "That line is already in Books."));
     }
-    let category = account_for_line(conn, book, account_id, &line.line)?;
-    let hinted_payee = books_core::match_assist::hint_for(
-        &crate::match_history::hints(conn, book.id, account_id)?,
-        &line.line.description,
-    )
-    .and_then(|h| h.payee.clone());
+    let hints = crate::match_history::hints(conn, book.id, account_id)?;
+    let hint = books_core::match_assist::hint_for(&hints, &line.line.description);
+    let category = account_for_line(conn, book, hint, &line.line)?;
+    let hinted_payee = hint.and_then(|h| h.payee.clone());
     let c = line.line.amount.abs();
     let (form, lines_in) = if line.line.amount > 0 {
         (

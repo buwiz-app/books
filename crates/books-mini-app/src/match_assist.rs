@@ -108,7 +108,8 @@ pub fn accept_one(conn: &Connection, args: &Map<String, Value>) -> Answer {
     ))
 }
 
-/// Whether `books_app_statement_accept` arguments ask for one line.
+/// Whether `books_app_statement_accept` arguments ask for one line. Any
+/// `line` routes here, so a non-integer one is refused, never accept-all.
 pub fn is_one_line(args: &Map<String, Value>) -> bool {
-    args.get("line").is_some_and(Value::is_i64)
+    args.contains_key("line")
 }
