@@ -291,7 +291,7 @@ pub fn data_base64(bytes: &[u8]) -> String {
             c => c,
         })
         .collect();
-    while out.len() % 4 != 0 {
+    while !out.len().is_multiple_of(4) {
         out.push('=');
     }
     out
