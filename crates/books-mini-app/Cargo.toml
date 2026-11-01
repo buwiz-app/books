@@ -59,6 +59,10 @@ path = "../../tests/forms_bridge.rs"
 name = "privacy_outputs"
 path = "../../tests/privacy_outputs.rs"
 
+[[test]]
+name = "evidence_foundation"
+path = "../../tests/evidence_foundation.rs"
+
 [dependencies]
 buwiz-plugin = { git = "https://github.com/buwiz-app/buwiz-sdk", rev = "2120c725112e2072b22f6630079fc938b6c9b1e9" }
 books-core = { path = "../books-core" }

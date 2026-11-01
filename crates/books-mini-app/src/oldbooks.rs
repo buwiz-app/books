@@ -82,7 +82,9 @@ impl Uploads {
             }
         };
         let slots = &mut self.waiting[pos].1;
-        let size: usize = slots.iter().flatten().map(Vec::len).sum::<usize>() + bytes.len();
+        let size: usize = slots.iter().flatten().map(Vec::len).sum::<usize>()
+            - slots[part].as_ref().map_or(0, Vec::len)
+            + bytes.len();
         if size > MAX_UPLOAD {
             self.waiting.remove(pos);
             return Err(Refusal::new("too_large", "A file is at most 50 MB."));

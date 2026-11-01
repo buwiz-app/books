@@ -228,6 +228,9 @@ fn title(store: &Store, kind: &str, id: i64) -> Option<String> {
         }),
         "sline" => Some("Statement line".into()),
         "cert" => Some("Certificate".into()),
+        "evidence" => books_store::evidence::get(c, id)
+            .ok()?
+            .map(|e| crate::tools::evidence_tools::label(&e)),
         "period" | "form" => crate::cards::title(kind, id),
         "page" => crate::cards::page_of(id)
             .map(|p| format!("Books · {}{}", p[..1].to_uppercase(), &p[1..])),
