@@ -13,7 +13,9 @@ use books_core::ledger::Status;
 use books_core::money;
 use books_store::Store;
 use books_store::books::{self, Account};
-use books_store::entries::{self, Filter, Form};
+use std::collections::HashMap;
+
+use books_store::entries::{self, Entry, Filter, Form, LineRow};
 use serde_json::{Map, Value, json};
 
 use crate::service::{self, Answer, Refusal, ticket};
@@ -43,11 +45,25 @@ fn blank_or(c: i64) -> String {
     }
 }
 
-/// The activity of `account` over `period`.
-pub fn activity(store: &Store, chart: &Chart, account: &Account, period: &Period) -> Answer {
-    if chart.hidden(account) {
-        return Err(Refusal::invalid("That account is for accrual books only."));
-    }
+/// One posted or voided entry's movement on the walked account.
+struct Step {
+    entry: Entry,
+    lines: Vec<LineRow>,
+    debit: i64,
+    credit: i64,
+    change: i64,
+    balance: i64,
+}
+
+/// The account's opening and closing balances over `period`, and its
+/// posted and voided entries oldest first (ties by entry number), each
+/// with its change and the balance after it, in the account's own sense.
+fn walk(
+    store: &Store,
+    chart: &Chart,
+    account: &Account,
+    period: &Period,
+) -> Result<(i64, i64, Vec<Step>), Refusal> {
     let before = books::movements(
         store.conn(),
         chart.book.id,
@@ -71,9 +87,9 @@ pub fn activity(store: &Store, chart: &Chart, account: &Account, period: &Period
     // newest first from the store: oldest first here, ties by entry number
     list.reverse();
     let mut balance = opening;
-    let mut rows = Vec::new();
-    for e in &list {
-        let lines = entries::lines(store.conn(), e.id)?;
+    let mut steps = Vec::with_capacity(list.len());
+    for entry in list {
+        let lines = entries::lines(store.conn(), entry.id)?;
         let (mut debit, mut credit) = (0i64, 0i64);
         for l in lines.iter().filter(|l| l.account_id == account.id) {
             debit += l.debit;
@@ -81,9 +97,49 @@ pub fn activity(store: &Store, chart: &Chart, account: &Account, period: &Period
         }
         let change = account.natural(debit - credit);
         balance += change;
-        if rows.len() == MAX_ROWS {
-            continue;
-        }
+        steps.push(Step {
+            entry,
+            lines,
+            debit,
+            credit,
+            change,
+            balance,
+        });
+    }
+    Ok((opening, closing, steps))
+}
+
+/// The balance of `account` after each of its posted and voided entries in
+/// `period`, by entry id: the ledger's running-balance column. Drafts and
+/// discarded entries have none. Same walk as [`activity`].
+pub fn balances_after(
+    store: &Store,
+    chart: &Chart,
+    account: &Account,
+    period: &Period,
+) -> Result<HashMap<i64, i64>, Refusal> {
+    let (_, _, steps) = walk(store, chart, account, period)?;
+    Ok(steps.into_iter().map(|s| (s.entry.id, s.balance)).collect())
+}
+
+/// The activity of `account` over `period`.
+pub fn activity(store: &Store, chart: &Chart, account: &Account, period: &Period) -> Answer {
+    if chart.hidden(account) {
+        return Err(Refusal::invalid("That account is for accrual books only."));
+    }
+    let (opening, closing, steps) = walk(store, chart, account, period)?;
+    let count = steps.len();
+    let last = steps.last().map_or(opening, |s| s.balance);
+    let mut rows = Vec::new();
+    for Step {
+        entry: e,
+        lines,
+        debit,
+        credit,
+        change,
+        balance,
+    } in steps.into_iter().take(MAX_ROWS)
+    {
         let other = lines
             .iter()
             .filter(|l| l.account_id != account.id)
@@ -110,7 +166,7 @@ pub fn activity(store: &Store, chart: &Chart, account: &Account, period: &Period
             "balance_shown": money::display(balance),
         }));
     }
-    let balanced = balance == closing;
+    let balanced = last == closing;
     debug_assert!(balanced, "opening plus changes must equal closing");
     Ok(json!({
         "account": {
@@ -123,8 +179,8 @@ pub fn activity(store: &Store, chart: &Chart, account: &Account, period: &Period
         "opening": amount(opening),
         "closing": amount(closing),
         "rows": rows,
-        "count": list.len(),
-        "more": list.len() > MAX_ROWS,
+        "count": count,
+        "more": count > MAX_ROWS,
         "balanced": balanced,
     }))
 }

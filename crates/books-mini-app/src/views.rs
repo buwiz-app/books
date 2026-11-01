@@ -549,6 +549,14 @@ pub fn ledger(
         "posted" => matches!(s.entry.status, Status::Posted | Status::Voided),
         _ => true,
     };
+    // one account picked: the balance after each posted or voided entry,
+    // the same walk as account activity (drafts carry none)
+    let running = match &selected {
+        Some(a) if !chart.hidden(a) => {
+            Some(crate::activity::balances_after(store, &chart, a, &month)?)
+        }
+        _ => None,
+    };
     let filter = service::text(args, "filter").unwrap_or("all");
     let counts = json!({
         "all": list.len(),
@@ -564,6 +572,9 @@ pub fn ledger(
         .map(|s| {
             let mut row = s.row(store, origin)?;
             row["checks"] = json!(marks.get(&s.entry.id).cloned().unwrap_or_default());
+            if let Some(running) = &running {
+                row["balance_shown"] = json!(running.get(&s.entry.id).map(|b| money::display(*b)));
+            }
             Ok(row)
         })
         .collect::<Result<Vec<_>, Refusal>>()?;
@@ -591,6 +602,7 @@ pub fn ledger(
         "account": header,
         "filter": filter,
         "counts": counts,
+        "running_balance": running.is_some(),
         "rows": rows,
     }))
 }
