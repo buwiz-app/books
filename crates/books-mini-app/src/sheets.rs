@@ -11,11 +11,11 @@ use crate::service::Refusal;
 /// one. The sheet read is the first whose name holds `key` (`chart`,
 /// `journal`, `csv` for a statement), else the first sheet.
 pub fn as_csv(bytes: &[u8], key: &str) -> Option<Result<String, Refusal>> {
-    let bad = |e: String| Refusal::new("bad_file", format!("That workbook could not be read: {e}"));
+    let bad = || Refusal::new("bad_file", "That workbook could not be read.");
     if bytes.starts_with(b"PK\x03\x04") {
         let doc = match office_oxide::xlsx::XlsxDocument::from_reader(std::io::Cursor::new(bytes)) {
             Ok(d) => d,
-            Err(e) => return Some(Err(bad(e.to_string()))),
+            Err(_) => return Some(Err(bad())),
         };
         let names: Vec<&str> = doc.worksheets.iter().map(|w| w.name.as_str()).collect();
         let at = pick(&names, key);
@@ -27,7 +27,7 @@ pub fn as_csv(bytes: &[u8], key: &str) -> Option<Result<String, Refusal>> {
     if bytes.starts_with(&[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]) {
         let doc = match office_oxide::xls::XlsDocument::from_reader(std::io::Cursor::new(bytes)) {
             Ok(d) => d,
-            Err(e) => return Some(Err(bad(e.to_string()))),
+            Err(_) => return Some(Err(bad())),
         };
         let names: Vec<&str> = doc.sheets.iter().map(|s| s.name.as_str()).collect();
         let Some(sheet) = doc.sheets.get(pick(&names, key)) else {
@@ -112,7 +112,8 @@ mod tests {
     #[test]
     fn text_is_not_a_workbook() {
         assert!(as_csv(b"Account,Type\n", "chart").is_none());
-        assert!(matches!(as_csv(b"PK\x03\x04broken", "chart"), Some(Err(_))));
+        let refusal = as_csv(b"PK\x03\x04broken", "chart").unwrap().unwrap_err();
+        assert_eq!(refusal.message, "That workbook could not be read.");
     }
 
     #[test]
