@@ -8,7 +8,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
-buwiz-app = { git = "https://github.com/buwiz-app/buwiz-sdk", rev = "7a9f4038ea6ca0b1e320b1548bba3d2f2fbf26bf" }
+buwiz-app = { git = "https://github.com/buwiz-app/buwiz-sdk", rev = "fff55d395d1c5c524833ec1073c43d34ac542070" }
 nsh-core = { git = "https://github.com/hexuria/nsh", rev = "f1461478d3768fb5da872cb697f0b0a48564ee91" }
 serde_json = "1"
 

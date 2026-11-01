@@ -108,7 +108,7 @@ name = "receipt_evidence"
 path = "../../tests/receipt_evidence.rs"
 
 [dependencies]
-buwiz-plugin = { git = "https://github.com/buwiz-app/buwiz-sdk", rev = "7a9f4038ea6ca0b1e320b1548bba3d2f2fbf26bf" }
+buwiz-plugin = { git = "https://github.com/buwiz-app/buwiz-sdk", rev = "fff55d395d1c5c524833ec1073c43d34ac542070" }
 books-core = { path = "../books-core" }
 books-store = { path = "../books-store" }
 # Session certificates are signed with the ed25519 key the Bot provisions (spec 4.4).
