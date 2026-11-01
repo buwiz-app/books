@@ -9,8 +9,8 @@ use std::{
 
 use buwiz_app::Bridge;
 use nsh_core::element::{
-    Element, Interactive, Owner, ParentElement, Root, Scrollable, Styled, dynamic, input, scroll,
-    set_timeout, signal, text, view,
+    Element, Interactive, Owner, ParentElement, Root, Styled, dynamic, input, scroll, set_timeout,
+    signal, text, view,
 };
 use serde_json::{Value, json};
 
@@ -188,6 +188,7 @@ pub fn build(bridge: Bridge) -> Root {
         let toast = signal(String::new());
         let toast_epoch = signal(0_u64);
         let version = signal(0_u64);
+        let drawer_busy = signal(false);
         let ids = RequestIds::new();
 
         load_list(
@@ -216,13 +217,12 @@ pub fn build(bridge: Bridge) -> Root {
                 toast,
                 toast_epoch,
                 version,
+                drawer_busy,
                 ids.clone(),
             )
         });
 
-        scroll()
-            .scrollable(false)
-            .bounces(false)
+        view()
             .app_class(Some(format!("flex-1 {}", kit::K_SURFACE).into()))
             .child(content)
     })
@@ -319,34 +319,32 @@ fn render(
     toast: nsh_core::element::Signal<String>,
     toast_epoch: nsh_core::element::Signal<u64>,
     version: nsh_core::element::Signal<u64>,
+    busy: nsh_core::element::Signal<bool>,
     ids: RequestIds,
 ) -> nsh_core::element::View {
     let data = match list.get() {
         ReadState::Data(data) => Some(data),
         ReadState::Loading | ReadState::Error(_) => None,
     };
-    let mut page = view()
-        .app_class(Some(
-            "flex-1 gap-3.5 p-4 bg-[#f6f6f4] dark:bg-[#151515]".into(),
-        ))
-        .child(head(
-            "Ledger",
-            data.as_ref()
-                .map(|value| text_value(value.pointer("/month/label"), "").to_owned())
-                .unwrap_or_default(),
-            button("+ New", "go", {
-                let bridge = bridge.clone();
-                move || {
-                    fields.reset();
-                    sheet_mode.set("money_out".into());
-                    load_options(screen_owner, bridge.clone(), options);
-                }
-            }),
-        ));
+    let mut page = view().app_class(Some("flex-1 bg-[#f6f6f4] dark:bg-[#151515]".into()));
+    let mut body = view().app_class(Some("gap-3.5 p-4".into())).child(head(
+        "Ledger",
+        data.as_ref()
+            .map(|value| text_value(value.pointer("/month/label"), "").to_owned())
+            .unwrap_or_default(),
+        button("+ New", "go", {
+            let bridge = bridge.clone();
+            move || {
+                fields.reset();
+                sheet_mode.set("money_out".into());
+                load_options(screen_owner, bridge.clone(), options);
+            }
+        }),
+    ));
 
     match list.get() {
         ReadState::Loading => {
-            page = page.child(
+            body = body.child(
                 text("Loading…").app_class(Some(format!("text-[13px] {}", kit::C_DIM).into())),
             );
         }
@@ -356,7 +354,7 @@ fn render(
             let retry_account = account.get();
             let retry_month = month.get();
             let retry_filter = filter.get();
-            page = page.child(
+            body = body.child(
                 view()
                     .app_class(Some("gap-2".into()))
                     .child(
@@ -375,7 +373,7 @@ fn render(
             );
         }
         ReadState::Data(data) => {
-            page = page.child(ledger_body(
+            body = body.child(ledger_body(
                 screen_owner,
                 bridge.clone(),
                 list,
@@ -388,6 +386,7 @@ fn render(
             ));
         }
     }
+    page = page.child(scroll().app_class(Some("flex-1".into())).child(body));
 
     if !drawer_entry.get().is_empty() {
         page = page.child(drawer(
@@ -402,6 +401,7 @@ fn render(
             toast,
             toast_epoch,
             version,
+            busy,
             ids.clone(),
         ));
     }
@@ -828,6 +828,7 @@ fn drawer(
     toast: nsh_core::element::Signal<String>,
     toast_epoch: nsh_core::element::Signal<u64>,
     version: nsh_core::element::Signal<u64>,
+    busy: nsh_core::element::Signal<bool>,
     ids: RequestIds,
 ) -> nsh_core::element::View {
     let data = match entry.get() {
@@ -932,6 +933,7 @@ fn drawer(
                     toast,
                     toast_epoch,
                     version,
+                    busy,
                     WriteAction::Void,
                 )
             }
@@ -964,6 +966,7 @@ fn drawer(
                     toast,
                     toast_epoch,
                     version,
+                    busy,
                     WriteAction::Duplicate,
                 )
             }
@@ -996,6 +999,7 @@ fn drawer(
                     toast,
                     toast_epoch,
                     version,
+                    busy,
                     WriteAction::Discard,
                 )
             }
@@ -1032,6 +1036,7 @@ fn drawer(
                         toast,
                         toast_epoch,
                         version,
+                        busy,
                         WriteAction::Post,
                     );
                 }
@@ -1288,8 +1293,13 @@ fn write_and_refresh(
     toast: nsh_core::element::Signal<String>,
     toast_epoch: nsh_core::element::Signal<u64>,
     version: nsh_core::element::Signal<u64>,
+    busy: nsh_core::element::Signal<bool>,
     action: WriteAction,
 ) {
+    if busy.get() {
+        return;
+    }
+    busy.set(true);
     args["client_request_id"] = json!(ids.next());
     let call_bridge = bridge.clone();
     spawn_task(screen_owner, call_bridge.clone(), async move {
@@ -1339,8 +1349,12 @@ fn write_and_refresh(
                     drawer_entry.set(ticket.clone());
                     load_entry(screen_owner, bridge, entry, ticket);
                 }
+                busy.set(false);
             }
-            Err(error) => show_toast(error.message, toast, toast_epoch),
+            Err(error) => {
+                busy.set(false);
+                show_toast(error.message, toast, toast_epoch);
+            }
         }
     });
 }
@@ -1752,6 +1766,9 @@ fn save_sheet(
     ids: RequestIds,
     post: bool,
 ) {
+    if fields.busy.get() {
+        return;
+    }
     let Some(args) = sheet_args(mode.get().as_str(), fields) else {
         return;
     };
