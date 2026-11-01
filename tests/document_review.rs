@@ -400,3 +400,19 @@ fn preview_escapes_and_enforces_the_post_encoding_limit() {
         .unwrap();
     assert_eq!(n as usize, big.len());
 }
+
+#[test]
+fn preview_on_a_fresh_install_refuses_without_creating_the_store() {
+    let tmp = TempDir::new("document-review-fresh");
+    let paths = Paths::in_dir(tmp.0.join("db"));
+    let db = paths.db();
+    let mut b = Books::new(paths);
+    let v = call(
+        &mut b,
+        tools::EVIDENCE_PREVIEW,
+        json!({"evidence":"tkt_000000000000000000000000"}),
+    );
+    assert_eq!(v["isError"], true, "{v}");
+    assert_eq!(v["structuredContent"]["code"], "not_set_up", "{v}");
+    assert!(!db.exists(), "a read must not create the encrypted store");
+}

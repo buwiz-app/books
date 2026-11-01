@@ -520,20 +520,3 @@ back, so the same upload can be retried. The list cursor is the last item's evid
 tools refuse unknown arguments, and a link to a discarded draft is refused (`discarded`); voided entries stay valid
 link targets for history. `oldbooks.rs` keeps restart-on-new-count for `books_app_upload_part`; its one change,
 outside this task's file list, stops a retried part counting twice against the 50 MB cap (PROPOSAL: needs owner OK).
-
-### 2026-11-01 — evidence-4
-
-Document library, assistant classification review and a static snapshot preview, in a new module
-`crates/books-mini-app/src/document_review.rs` and migration 10 (`evidence_classification`). Four tools:
-`books_evidence_classify` (assistant only; `{client_request_id,evidence,kind,confidence:0..100 integer}` ->
-`{proposal,status:"draft"}` and an inline-card offer) records a proposal and never changes `evidence.kind`;
-`books_app_evidence_kind` (`{client_request_id,proposal,decision:"accept"|"discard",kind?}`) is the user's decision,
-refuses when a linked target sits in a closed month, keeps the proposal row (previous and accepted kind) and returns a
-navigation `route` only; `books_app_evidence_review` lists generic proposal rows; `books_app_evidence_preview`
-(`{evidence,entry?}`) returns an MCP embedded `text/html` resource: an image through a `data:` URI or a PDF through a
-`data:` object with a stated fallback, plus the linked entry's double entry when asked. The 8 MiB limit counts the
-encoded page; larger documents get a generic `too_large` refusal and stay stored. The tools live in two new apps,
-`evidence` (full library: `apps/evidence.tsx`) and `document` (inline "What is this document?" card:
-`apps/cards/evidence.tsx`), not in Books' 57-tool list; Books gains one Documents rail action (`buwiz.open`) and the
-`open: evidence` grant. Routing (receipt/invoice -> Ledger, bill -> Unpaid, statement -> Reconcile, tax_form ->
-Certificates) opens a page and records nothing. UNCONFIRMED: PDF `<object>` display in the host preview was not observed.

@@ -349,6 +349,14 @@ pub fn preview(books: &mut Books, origin: Origin, args: &Map<String, Value>) -> 
     if !origin.is_app() {
         return Refusal::new("forbidden", "Only the app may preview evidence.").into_result();
     }
+    // a read: never open (and so create) the store on a fresh install
+    if !books.exists() {
+        return Refusal::new(
+            "not_set_up",
+            "There is no book yet. Open Books to make one.",
+        )
+        .into_result();
+    }
     let page = (|| {
         known(args, PREVIEW_KEYS)?;
         let store = books.store()?;
