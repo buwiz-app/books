@@ -232,12 +232,13 @@ fn report_schema() -> Value {
         "type": "object",
         "properties": {
             "book": { "type": "string" },
-            "kind": { "type": "string", "enum": ["pl", "bs", "cf", "tb", "ag"] },
+            "kind": { "type": "string", "enum": ["pl", "bs", "cf", "tb", "ag", "ac"] },
             "period_kind": { "type": "string", "enum": ["month", "quarter", "year"] },
             "period": { "type": "string", "description": "2026-10, 2026-Q3 or 2026; this period when absent." },
             "side": { "type": "string", "enum": ["collect", "pay"], "description": "Aging only." },
                 "compare_to": { "type": "string", "enum": ["previous", "last_year", "none"], "description": "P&L, balance sheet and cash flow: the period shown beside this one. previous by default on the P&L, none otherwise." },
-                "tag": { "type": "string", "description": "P&L and cash flow only: a department or location ticket from books_tags_list." }
+                "tag": { "type": "string", "description": "P&L and cash flow only: a department or location ticket from books_tags_list." },
+            "account": { "type": "string", "description": "Account activity (ac) only: an account ticket or number." }
         }
     })
 }

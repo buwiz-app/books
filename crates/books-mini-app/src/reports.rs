@@ -642,7 +642,8 @@ pub fn report(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
         "cf" => cf(store, &chart, &period, prev.as_ref(), tag.as_ref())?,
         "tb" => tb(store, &chart, &period)?,
         "ag" => ag(store, &chart, &period, args)?,
-        _ => return Err(Refusal::invalid("`kind` is pl, bs, cf, tb or ag.")),
+        "ac" => crate::activity::report(store, &chart, &period, args)?,
+        _ => return Err(Refusal::invalid("`kind` is pl, bs, cf, tb, ag or ac.")),
     };
     out["compare"] = match &prev {
         Some(p) => json!({ "key": p.key, "label": p.label(), "mode": compare.as_str() }),
@@ -693,6 +694,7 @@ pub fn report_csv(store: &Store, book: Book, args: &Map<String, Value>) -> Answe
         })
         .unwrap_or_default();
     match r["kind"].as_str() {
+        Some("ac") => return Ok(crate::activity::csv(&r)),
         Some("ag") => {
             lines.push(
                 cols.iter()
