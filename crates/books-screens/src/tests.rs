@@ -427,6 +427,20 @@ fn quiet_fixtures_match_native_transcripts() {
 }
 
 #[test]
+#[ignore = "native release timing"]
+fn native_quiet_timing_50() {
+    for name in fixture_names() {
+        let fixture: Value =
+            serde_json::from_slice(&fs::read(fixture_dir().join(&name)).unwrap()).unwrap();
+        let mut values = (0..50).map(|_| drive_fixture(&fixture)).collect::<Vec<_>>();
+        values.sort_by(f64::total_cmp);
+        let median = values[24];
+        let p95 = values[47];
+        println!("TIMING native quiet {name}: median {median:.2} ms, p95 {p95:.2} ms (50 runs)");
+    }
+}
+
+#[test]
 #[ignore = "W9 quiet screen timing sample"]
 fn quiet_timing_samples() {
     let expected_names = fixture_names();

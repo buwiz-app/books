@@ -1,0 +1,1650 @@
+{
+  "defaults": {
+    "props": {
+      "page": "ledger"
+    },
+    "timing_text": "Example seller",
+    "answers": {
+      "books_status": [
+        {
+          "data": {
+            "status": "ready"
+          }
+        }
+      ],
+      "books_book_get": [
+        {
+          "data": {
+            "label": "Sample Books",
+            "basis_label": "Cash basis",
+            "year": 2026
+          }
+        }
+      ],
+      "books_ledger_list": [
+        {
+          "data": {
+            "book": {
+              "basis_label": "Cash basis",
+              "year": 2026
+            },
+            "month": {
+              "key": "2026-04",
+              "label": "April 2026",
+              "range": "Apr 1 – Apr 30",
+              "prev": "2026-03",
+              "next": "2026-05"
+            },
+            "accounts": [
+              {
+                "group": "Assets",
+                "rows": [
+                  {
+                    "ticket": "account-cash",
+                    "number": "1000",
+                    "name": "Cash"
+                  }
+                ]
+              }
+            ],
+            "account": {
+              "ticket": null,
+              "number": "",
+              "name": "All accounts",
+              "balance_shown": "2,500.00",
+              "balance_label": "Cash"
+            },
+            "filter": "all",
+            "counts": {
+              "all": 1,
+              "review": 0,
+              "draft": 1,
+              "posted": 0
+            },
+            "rows": [
+              {
+                "ticket": "entry-001",
+                "no": "0001",
+                "date_short": "Apr 2",
+                "title": "Example seller",
+                "sub": "Office supplies",
+                "category": "Office supplies",
+                "category_color": "#e89b6c",
+                "amount_shown": "−250.00",
+                "tone": "neg",
+                "status": "draft",
+                "pill": "draft",
+                "status_label": "Draft"
+              }
+            ]
+          }
+        }
+      ],
+      "books_entry_get": [
+        {
+          "data": {
+            "ticket": "entry-001",
+            "title": "Example seller",
+            "status_label": "Draft",
+            "pill": "draft",
+            "big": "−250.00",
+            "date_label": "Apr 2, 2026",
+            "who_label": "To",
+            "payee": "Example seller",
+            "category": "Office supplies",
+            "reference": "",
+            "no": "0001",
+            "actions": [
+              "discard",
+              "edit",
+              "post"
+            ],
+            "post_blocker": null,
+            "related": null,
+            "suggest": [],
+            "reviewable": false,
+            "lines": [
+              {
+                "account": "1000 Cash",
+                "debit_shown": "",
+                "credit_shown": "250.00"
+              },
+              {
+                "account": "6000 Office supplies",
+                "debit_shown": "250.00",
+                "credit_shown": ""
+              }
+            ]
+          }
+        }
+      ],
+      "books_entry_options": [
+        {
+          "data": {
+            "book": {
+              "basis_label": "Cash basis"
+            },
+            "today": "2026-04-15",
+            "money": [
+              {
+                "ticket": "account-cash",
+                "number": "1000",
+                "name": "Cash",
+                "label": "1000 Cash"
+              }
+            ],
+            "income": [
+              {
+                "ticket": "category-sales",
+                "number": "4000",
+                "name": "Sales",
+                "label": "4000 Sales"
+              }
+            ],
+            "expense": [
+              {
+                "ticket": "category-office",
+                "number": "6000",
+                "name": "Office supplies",
+                "label": "6000 Office supplies"
+              }
+            ],
+            "all": [
+              {
+                "ticket": "account-cash",
+                "number": "1000",
+                "name": "Cash",
+                "label": "1000 Cash"
+              },
+              {
+                "ticket": "category-office",
+                "number": "6000",
+                "name": "Office supplies",
+                "label": "6000 Office supplies"
+              }
+            ]
+          }
+        }
+      ],
+      "books_app_post_entry": [
+        {
+          "data": {
+            "no": "0001"
+          }
+        }
+      ],
+      "books_app_void_entry": [
+        {
+          "data": {
+            "no": "0002"
+          }
+        }
+      ],
+      "books_app_discard_entry": [
+        {
+          "data": {
+            "no": "0001"
+          }
+        }
+      ],
+      "books_entry_draft": [
+        {
+          "data": {
+            "no": "0002",
+            "entry": "entry-002"
+          }
+        }
+      ],
+      "books_app_recategorize": [
+        {
+          "data": {}
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "name": "default-list",
+      "steps": [],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "Loading…",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "Cash ₱ 2,500.00",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Office supplies",
+          "Draft",
+          "−250.00"
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "list-controls",
+      "steps": [
+        {
+          "contains": "Needs review"
+        },
+        {
+          "contains": "Cash"
+        },
+        {
+          "press": "‹"
+        },
+        {
+          "press": "›"
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "Loading…",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "Cash ₱ 2,500.00",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Office supplies",
+          "Draft",
+          "−250.00"
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "review"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "review",
+              "account": "account-cash"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "review",
+              "account": "account-cash",
+              "month": "2026-03"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "review",
+              "account": "account-cash",
+              "month": "2026-05"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "row-post",
+      "steps": [
+        {
+          "contains": "Example seller"
+        },
+        {
+          "press": "Post"
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "Loading…",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "Cash ₱ 2,500.00",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Office supplies",
+          "Draft",
+          "−250.00",
+          "Entry",
+          "✕",
+          "Apr 2, 2026",
+          "To",
+          "Reference",
+          "—",
+          "Behind the scenes",
+          "Account",
+          "Debit",
+          "Credit",
+          "1000 Cash",
+          "250.00",
+          "6000 Office supplies",
+          "Discard",
+          "Post",
+          "Entry 0001 posted"
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_app_post_entry",
+            "args": {
+              "client_request_id": "bk-<open>-1",
+              "entry": "entry-001"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "row-void",
+      "answers": {
+        "books_entry_get": [
+          {
+            "data": {
+              "ticket": "entry-001",
+              "title": "Example seller",
+              "status_label": "Posted",
+              "pill": "ok",
+              "big": "−250.00",
+              "date_label": "Apr 2, 2026",
+              "who_label": "To",
+              "payee": "Example seller",
+              "category": "Office supplies",
+              "no": "0001",
+              "actions": [
+                "void",
+                "duplicate"
+              ],
+              "reviewable": false,
+              "lines": []
+            }
+          }
+        ]
+      },
+      "steps": [
+        {
+          "contains": "Example seller"
+        },
+        {
+          "press": "Void (adds a reversal)"
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "Loading…",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "Cash ₱ 2,500.00",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Office supplies",
+          "Draft",
+          "−250.00",
+          "Entry",
+          "✕",
+          "Apr 2, 2026",
+          "To",
+          "Reference",
+          "—",
+          "Behind the scenes",
+          "Account",
+          "Debit",
+          "Credit",
+          "Void (adds a reversal)",
+          "Duplicate",
+          "Entry 0002 voided; a reversal is posted"
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_app_void_entry",
+            "args": {
+              "client_request_id": "bk-<open>-1",
+              "entry": "entry-001"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "row-discard",
+      "steps": [
+        {
+          "contains": "Example seller"
+        },
+        {
+          "press": "Discard"
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "Loading…",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "Cash ₱ 2,500.00",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Office supplies",
+          "Draft",
+          "−250.00",
+          "Entry",
+          "✕",
+          "Apr 2, 2026",
+          "To",
+          "Reference",
+          "—",
+          "Behind the scenes",
+          "Account",
+          "Debit",
+          "Credit",
+          "1000 Cash",
+          "250.00",
+          "6000 Office supplies",
+          "Discard",
+          "Post"
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_app_discard_entry",
+            "args": {
+              "client_request_id": "bk-<open>-1",
+              "entry": "entry-001"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "row-duplicate",
+      "answers": {
+        "books_entry_get": [
+          {
+            "data": {
+              "ticket": "entry-001",
+              "title": "Example seller",
+              "status_label": "Posted",
+              "pill": "ok",
+              "big": "−250.00",
+              "date_label": "Apr 2, 2026",
+              "who_label": "To",
+              "payee": "Example seller",
+              "category": "Office supplies",
+              "no": "0001",
+              "actions": [
+                "void",
+                "duplicate"
+              ],
+              "reviewable": false,
+              "lines": []
+            }
+          }
+        ]
+      },
+      "steps": [
+        {
+          "contains": "Example seller"
+        },
+        {
+          "press": "Duplicate"
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "Loading…",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "Cash ₱ 2,500.00",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Office supplies",
+          "Draft",
+          "−250.00",
+          "Entry",
+          "✕",
+          "Apr 2, 2026",
+          "To",
+          "Reference",
+          "—",
+          "Behind the scenes",
+          "Account",
+          "Debit",
+          "Credit",
+          "Void (adds a reversal)",
+          "Duplicate",
+          "Draft 0002 saved"
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_draft",
+            "args": {
+              "client_request_id": "bk-<open>-1",
+              "copy_of": "entry-001"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-002"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "row-recategorize",
+      "answers": {
+        "books_entry_get": [
+          {
+            "data": {
+              "ticket": "entry-001",
+              "title": "Example seller",
+              "status_label": "Needs review",
+              "pill": "rev",
+              "big": "−250.00",
+              "date_label": "Apr 2, 2026",
+              "who_label": "To",
+              "payee": "Example seller",
+              "category": "Uncategorized",
+              "no": "0001",
+              "actions": [
+                "void",
+                "duplicate"
+              ],
+              "reviewable": true,
+              "suggest": [
+                {
+                  "ticket": "category-office",
+                  "name": "Office supplies",
+                  "best": true
+                }
+              ],
+              "lines": []
+            }
+          }
+        ]
+      },
+      "steps": [
+        {
+          "contains": "Example seller"
+        },
+        {
+          "press": "Office supplies · likely"
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "Loading…",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "Cash ₱ 2,500.00",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Office supplies",
+          "Draft",
+          "−250.00",
+          "Entry",
+          "✕",
+          "Apr 2, 2026",
+          "To",
+          "Uncategorized",
+          "Reference",
+          "—",
+          "Pick a category",
+          "Office supplies · likely",
+          "Behind the scenes",
+          "Account",
+          "Debit",
+          "Credit",
+          "Void (adds a reversal)",
+          "Duplicate",
+          "Now Office supplies"
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_app_recategorize",
+            "args": {
+              "client_request_id": "bk-<open>-1",
+              "entry": "entry-001",
+              "category": "category-office"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "new-no-amount",
+      "steps": [
+        {
+          "press": "+ New"
+        },
+        {
+          "press": "Save draft",
+          "expect": "Type an amount, like 1,350.00."
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "Loading…",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "Cash ₱ 2,500.00",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Office supplies",
+          "Draft",
+          "−250.00",
+          "New entry",
+          "Money in",
+          "Money out",
+          "Transfer",
+          "Journal",
+          "✕",
+          "Paid from",
+          "Bank, cash or card",
+          "⌄",
+          "To",
+          "Pick a category",
+          "What it was for",
+          "Reference",
+          "Behind the scenes",
+          "Dr the category 0.00 · Cr the bank 0.00",
+          "Cash basis · counts on its date",
+          "Cancel",
+          "Save draft",
+          "Save & post",
+          "Type an amount, like 1,350.00."
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_options",
+            "args": {}
+          }
+        ]
+      }
+    },
+    {
+      "name": "new-no-account",
+      "steps": [
+        {
+          "press": "+ New"
+        },
+        {
+          "type": "₱ 0.00",
+          "value": "350.00"
+        },
+        {
+          "press": "Save draft",
+          "expect": "Pick the bank, cash or card account."
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "Loading…",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "Cash ₱ 2,500.00",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Office supplies",
+          "Draft",
+          "−250.00",
+          "New entry",
+          "Money in",
+          "Money out",
+          "Transfer",
+          "Journal",
+          "✕",
+          "Paid from",
+          "Bank, cash or card",
+          "⌄",
+          "To",
+          "Pick a category",
+          "What it was for",
+          "Reference",
+          "Behind the scenes",
+          "Dr the category 0.00 · Cr the bank 0.00",
+          "Cash basis · counts on its date",
+          "Cancel",
+          "Save draft",
+          "Save & post",
+          "Dr the category 350.00 · Cr the bank 350.00",
+          "Pick the bank, cash or card account."
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_options",
+            "args": {}
+          }
+        ]
+      }
+    },
+    {
+      "name": "new-no-category",
+      "steps": [
+        {
+          "press": "+ New"
+        },
+        {
+          "type": "₱ 0.00",
+          "value": "350.00"
+        },
+        {
+          "press": "Bank, cash or card⌄"
+        },
+        {
+          "press": "1000 Cash"
+        },
+        {
+          "press": "Save draft",
+          "expect": "Pick a category."
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "Loading…",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "Cash ₱ 2,500.00",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Office supplies",
+          "Draft",
+          "−250.00",
+          "New entry",
+          "Money in",
+          "Money out",
+          "Transfer",
+          "Journal",
+          "✕",
+          "Paid from",
+          "Bank, cash or card",
+          "⌄",
+          "To",
+          "Pick a category",
+          "What it was for",
+          "Reference",
+          "Behind the scenes",
+          "Dr the category 0.00 · Cr the bank 0.00",
+          "Cash basis · counts on its date",
+          "Cancel",
+          "Save draft",
+          "Save & post",
+          "Dr the category 350.00 · Cr the bank 350.00",
+          "1000 Cash",
+          "Dr the category 350.00 · Cr 1000 Cash 350.00",
+          "Pick a category."
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_options",
+            "args": {}
+          }
+        ]
+      }
+    },
+    {
+      "name": "new-save-draft",
+      "answers": {
+        "books_entry_draft": [
+          {
+            "data": {
+              "no": "0002",
+              "entry": "entry-002"
+            }
+          }
+        ]
+      },
+      "steps": [
+        {
+          "press": "+ New"
+        },
+        {
+          "type": "₱ 0.00",
+          "value": "350.00"
+        },
+        {
+          "press": "Bank, cash or card⌄"
+        },
+        {
+          "press": "1000 Cash"
+        },
+        {
+          "press": "Pick a category⌄"
+        },
+        {
+          "press": "6000 Office supplies"
+        },
+        {
+          "press": "Save draft"
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "Loading…",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "Cash ₱ 2,500.00",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Office supplies",
+          "Draft",
+          "−250.00",
+          "New entry",
+          "Money in",
+          "Money out",
+          "Transfer",
+          "Journal",
+          "✕",
+          "Paid from",
+          "Bank, cash or card",
+          "⌄",
+          "To",
+          "Pick a category",
+          "What it was for",
+          "Reference",
+          "Behind the scenes",
+          "Dr the category 0.00 · Cr the bank 0.00",
+          "Cash basis · counts on its date",
+          "Cancel",
+          "Save draft",
+          "Save & post",
+          "Dr the category 350.00 · Cr the bank 350.00",
+          "1000 Cash",
+          "Dr the category 350.00 · Cr 1000 Cash 350.00",
+          "6000 Office supplies",
+          "Dr 6000 Office supplies 350.00 · Cr 1000 Cash 350.00",
+          "Draft 0002 saved"
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_options",
+            "args": {}
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_draft",
+            "args": {
+              "client_request_id": "bk-<open>-1",
+              "form": "money_out",
+              "amount": "350.00",
+              "account": "account-cash",
+              "category": "category-office"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_options",
+            "args": {}
+          }
+        ]
+      }
+    },
+    {
+      "name": "new-save-post",
+      "steps": [
+        {
+          "press": "+ New"
+        },
+        {
+          "type": "₱ 0.00",
+          "value": "350.00"
+        },
+        {
+          "press": "Bank, cash or card⌄"
+        },
+        {
+          "press": "1000 Cash"
+        },
+        {
+          "press": "Pick a category⌄"
+        },
+        {
+          "press": "6000 Office supplies"
+        },
+        {
+          "press": "Save & post"
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "Loading…",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "Cash ₱ 2,500.00",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Office supplies",
+          "Draft",
+          "−250.00",
+          "New entry",
+          "Money in",
+          "Money out",
+          "Transfer",
+          "Journal",
+          "✕",
+          "Paid from",
+          "Bank, cash or card",
+          "⌄",
+          "To",
+          "Pick a category",
+          "What it was for",
+          "Reference",
+          "Behind the scenes",
+          "Dr the category 0.00 · Cr the bank 0.00",
+          "Cash basis · counts on its date",
+          "Cancel",
+          "Save draft",
+          "Save & post",
+          "Dr the category 350.00 · Cr the bank 350.00",
+          "1000 Cash",
+          "Dr the category 350.00 · Cr 1000 Cash 350.00",
+          "6000 Office supplies",
+          "Dr 6000 Office supplies 350.00 · Cr 1000 Cash 350.00",
+          "Entry 0001 posted"
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_options",
+            "args": {}
+          },
+          {
+            "method": "call",
+            "tool": "books_app_post_entry",
+            "args": {
+              "client_request_id": "bk-<open>-1",
+              "form": "money_out",
+              "amount": "350.00",
+              "account": "account-cash",
+              "category": "category-office"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_options",
+            "args": {}
+          }
+        ]
+      }
+    },
+    {
+      "name": "transfer-validation",
+      "steps": [
+        {
+          "press": "+ New"
+        },
+        {
+          "press": "Transfer"
+        },
+        {
+          "press": "Save draft",
+          "expect": "Type an amount, like 1,350.00."
+        },
+        {
+          "type": "₱ 0.00",
+          "value": "100.00"
+        },
+        {
+          "press": "Save draft",
+          "expect": "Pick where the money leaves."
+        },
+        {
+          "press": "Bank, cash or card⌄",
+          "occurrence": 0
+        },
+        {
+          "press": "1000 Cash"
+        },
+        {
+          "press": "Save draft",
+          "expect": "Pick where the money goes."
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "Loading…",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "Cash ₱ 2,500.00",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Office supplies",
+          "Draft",
+          "−250.00",
+          "New entry",
+          "Money in",
+          "Money out",
+          "Transfer",
+          "Journal",
+          "✕",
+          "Paid from",
+          "Bank, cash or card",
+          "⌄",
+          "To",
+          "Pick a category",
+          "What it was for",
+          "Reference",
+          "Behind the scenes",
+          "Dr the category 0.00 · Cr the bank 0.00",
+          "Cash basis · counts on its date",
+          "Cancel",
+          "Save draft",
+          "Save & post",
+          "From",
+          "Dr the other account 0.00 · Cr the bank 0.00",
+          "Not income, not an expense. Reports leave it out of the P&L.",
+          "Type an amount, like 1,350.00.",
+          "Dr the other account 100.00 · Cr the bank 100.00",
+          "Pick where the money leaves.",
+          "1000 Cash",
+          "Dr the other account 100.00 · Cr 1000 Cash 100.00",
+          "Pick where the money goes."
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_options",
+            "args": {}
+          }
+        ]
+      }
+    },
+    {
+      "name": "journal-validation",
+      "steps": [
+        {
+          "press": "+ New"
+        },
+        {
+          "press": "Journal"
+        },
+        {
+          "press": "Save draft",
+          "expect": "A journal needs at least two lines with an account."
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "Loading…",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "Cash ₱ 2,500.00",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Office supplies",
+          "Draft",
+          "−250.00",
+          "New entry",
+          "Money in",
+          "Money out",
+          "Transfer",
+          "Journal",
+          "✕",
+          "Paid from",
+          "Bank, cash or card",
+          "⌄",
+          "To",
+          "Pick a category",
+          "What it was for",
+          "Reference",
+          "Behind the scenes",
+          "Dr the category 0.00 · Cr the bank 0.00",
+          "Cash basis · counts on its date",
+          "Cancel",
+          "Save draft",
+          "Save & post",
+          "For accountants: any balanced set of lines.",
+          "Account",
+          "+ Line",
+          "A journal needs at least two lines with an account."
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_options",
+            "args": {}
+          }
+        ]
+      }
+    },
+    {
+      "name": "list-retry",
+      "timing_text": "No entries in All accounts this month.",
+      "answers": {
+        "books_ledger_list": [
+          {
+            "error": "Synthetic ledger read failed"
+          },
+          {
+            "data": {
+              "book": {
+                "basis_label": "Cash basis",
+                "year": 2026
+              },
+              "month": {
+                "key": "2026-04",
+                "label": "April 2026",
+                "range": "Apr 1 – Apr 30",
+                "prev": "2026-03",
+                "next": "2026-05"
+              },
+              "accounts": [],
+              "account": {
+                "ticket": null,
+                "number": "",
+                "name": "All accounts",
+                "balance_shown": "2,500.00",
+                "balance_label": "Cash"
+              },
+              "filter": "all",
+              "counts": {
+                "all": 0,
+                "review": 0,
+                "draft": 0,
+                "posted": 0
+              },
+              "rows": []
+            }
+          }
+        ]
+      },
+      "steps": [
+        {
+          "press": "Try again"
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "Loading…",
+          "Synthetic ledger read failed",
+          "Try again",
+          "April 2026",
+          "All accounts",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "Cash ₱ 2,500.00",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "No entries in All accounts this month."
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
