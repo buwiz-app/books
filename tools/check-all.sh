@@ -2,7 +2,10 @@
 # tools/check-all.sh — every gate a commit must pass, in order (docs/06,
 # build plan 5.1): rustfmt, clippy with warnings denied, the Rust tests
 # (with the 17 PoC vectors byte for byte), the PoC's bun tests, the Buwiz
-# Bot's conformance runner, the Bot host test, and the privacy scan.
+# Bot's conformance runner, the Bot host test (which also types into the
+# Books window and changes its pickers), the privacy scan, and no detached
+# signal setters in apps/ (`onChange={x.set}` loses `this` when kit.tsx calls
+# p.onChange(v): "not a live signal"; write `onChange={(v) => x.set(v)}`).
 #
 # It prints one line per gate and a summary, keeps each gate's output in a
 # temp folder, and exits non-zero when any gate fails.
@@ -40,6 +43,13 @@ tests_total() {
   cargo test --quiet 2>&1 | tee "$OUT/cargo-test-full.log" | grep -E '^test result' | awk '{p+=$4; f+=$6} END {printf "test result: %d passed; %d failed\n", p, f; exit (f > 0)}'
 }
 
+no_detached_setters() {
+  # `\w` is a literal backslash and w inside an ERE bracket, so the word class is spelled out
+  if grep -rnE '=\{[A-Za-z_$][A-Za-z0-9_$.]*\.set\}' apps/; then return 1; fi
+  echo "0 findings: no detached setters in apps/"
+}
+
+gate "no detached setters" setters no_detached_setters
 gate "cargo fmt --check" fmt cargo fmt --check
 gate "cargo clippy -D warnings" clippy cargo clippy --all-targets -- -D warnings
 gate "cargo test (vectors 17/17)" cargo-test tests_total

@@ -130,23 +130,23 @@ function OwedSheet(p: { side: string; opts: Any; close: () => void }) {
       <Text class={`text-[14px] font-bold ${C.ink}`}>{p.side === "collect" ? "New invoice to collect" : "New bill to pay"}</Text>
       <View class="flex-row gap-3">
         <Field label="Amount" grow>
-          <TextBox value={amount()} onChange={amount.set} placeholder="₱ 0.00" />
+          <TextBox value={amount()} onChange={(v) => amount.set(v)} placeholder="₱ 0.00" />
         </Field>
         <Field label="Due" grow>
-          <TextBox value={due()} onChange={due.set} placeholder="YYYY-MM-DD" />
+          <TextBox value={due()} onChange={(v) => due.set(v)} placeholder="YYYY-MM-DD" />
         </Field>
       </View>
       <View class="flex-row gap-3">
         <Field label={p.side === "collect" ? "Customer" : "Vendor"} grow>
           <Pick value={who()} options={people()} onPick={(x: Any) => who.set(x.ticket)} placeholder="Pick, or type a new name below" />
-          <TextBox value={whoName()} onChange={whoName.set} placeholder="New name" />
+          <TextBox value={whoName()} onChange={(v) => whoName.set(v)} placeholder="New name" />
         </Field>
         <Field label="Category" grow>
           <Pick value={category()} options={(p.side === "collect" ? o()?.income : o()?.expense) || []} onPick={(x: Any) => category.set(x.ticket)} placeholder="Pick a category" />
         </Field>
       </View>
       <Field label="Document">
-        <TextBox value={reference()} onChange={reference.set} placeholder={p.side === "collect" ? "Invoice 0143" : "Bill PP-0381"} />
+        <TextBox value={reference()} onChange={(v) => reference.set(v)} placeholder={p.side === "collect" ? "Invoice 0143" : "Bill PP-0381"} />
       </Field>
       <If when={Boolean(err())}>
         <Text class={`text-[12.5px] ${C.red}`}>{err()}</Text>

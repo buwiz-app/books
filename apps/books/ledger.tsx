@@ -409,11 +409,11 @@ function EntrySheet(p: { mode: Any; close: () => void; setMode: (m: string) => v
             <If when={mode() !== "journal"}>
               <View class="gap-3">
                 <Field label="Amount">
-                  <TextBox value={amount()} onChange={amount.set} placeholder="₱ 0.00" big />
+                  <TextBox value={amount()} onChange={(v) => amount.set(v)} placeholder="₱ 0.00" big />
                 </Field>
                 <View class="flex-row gap-3">
                   <Field label="Date" grow>
-                    <TextBox value={date()} onChange={date.set} placeholder={o()?.today || "YYYY-MM-DD"} />
+                    <TextBox value={date()} onChange={(v) => date.set(v)} placeholder={o()?.today || "YYYY-MM-DD"} />
                   </Field>
                   <Field label={mode() === "money_in" ? "Into" : mode() === "transfer" ? "From" : "Paid from"} grow>
                     <Pick value={money()} options={o()?.money || []} onPick={(a: Any) => money.set(a.ticket)} placeholder="Bank, cash or card" />
@@ -427,7 +427,7 @@ function EntrySheet(p: { mode: Any; close: () => void; setMode: (m: string) => v
                 <If when={mode() !== "transfer"}>
                   <View class="flex-row gap-3">
                     <Field label={mode() === "money_in" ? "From" : "To"} grow>
-                      <TextBox value={payee()} onChange={payee.set} placeholder={mode() === "money_in" ? "Customer" : "Vendor"} />
+                      <TextBox value={payee()} onChange={(v) => payee.set(v)} placeholder={mode() === "money_in" ? "Customer" : "Vendor"} />
                     </Field>
                     <Field label="Category" grow>
                       <Pick
@@ -441,10 +441,10 @@ function EntrySheet(p: { mode: Any; close: () => void; setMode: (m: string) => v
                 </If>
                 <View class="flex-row gap-3">
                   <Field label="What it was for" grow>
-                    <TextBox value={memo()} onChange={memo.set} placeholder="Office supplies" />
+                    <TextBox value={memo()} onChange={(v) => memo.set(v)} placeholder="Office supplies" />
                   </Field>
                   <Field label="Reference" grow>
-                    <TextBox value={reference()} onChange={reference.set} placeholder="Invoice 0143" />
+                    <TextBox value={reference()} onChange={(v) => reference.set(v)} placeholder="Invoice 0143" />
                   </Field>
                 </View>
                 <View class={`rounded-[10px] border border-dashed p-2.5 gap-1.5 ${C.line}`}>
@@ -476,7 +476,7 @@ function EntrySheet(p: { mode: Any; close: () => void; setMode: (m: string) => v
                 </Each>
                 <Btn label="+ Line" small onPress={() => jl.set([...jl(), { account: "", debit: "", credit: "" }])} />
                 <Field label="What it was for">
-                  <TextBox value={memo()} onChange={memo.set} placeholder="Prepaid software" />
+                  <TextBox value={memo()} onChange={(v) => memo.set(v)} placeholder="Prepaid software" />
                 </Field>
               </View>
             </If>

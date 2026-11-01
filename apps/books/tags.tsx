@@ -36,7 +36,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
       <If when={adding()}>
         <Panel pad class="flex-row gap-2 items-end">
           <Field label="Name" grow>
-            <TextBox value={name()} onChange={name.set} placeholder={tagKind() === "department" ? "Operations" : "Makati office"} />
+            <TextBox value={name()} onChange={(v) => name.set(v)} placeholder={tagKind() === "department" ? "Operations" : "Makati office"} />
           </Field>
           <Btn label="Add" tone="go" onPress={add} />
         </Panel>

@@ -1,8 +1,9 @@
 // Headless second-instance test of the Books plugin against a real Buwiz Bot broker (docs/06 section 13.2 steps 6-11).
 // Run it through tools/bot/host-test.sh, which starts the throwaway broker. Direct use:
 //   node books-host-test.mjs <buwiz worktree> <run dir> <books binary> <port>
-// It reuses the Bot's own test helpers (openApp, envelope) from the worktree. It prints step results only: no host
-// token, ticket values, keys or signatures.
+// It reuses the Bot's own test helpers (openApp, envelope) from the worktree. Step 11 runs the Books window's served
+// source on nsh-standin.mjs, types into a TextBox and changes pickers, with buwiz.call answered by this broker. It
+// prints step results only: no host token, ticket values, keys or signatures.
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
@@ -96,6 +97,68 @@ const list = await call2("books_ledger_list", { month: "2026-10" });
 check("the Ledger lists the voided entry and its reversal", list.counts?.all === 2 && list.rows?.some((x) => x.status_label === "Voided") && list.rows?.some((x) => x.status_label === "Reversal"), { counts: list.counts });
 const fromHome = await post("/v1/host/call", envelope(open, "books_app_post_entry", { client_request_id: rid(), entry: draft.entry }));
 check("home cannot reach a tool outside its permissions", fromHome.json.ok === false || fromHome.json.result?.isError === true, refusal(fromHome));
+
+// 11. the Books window's controls, driven through the broker as a user would: the app source the broker serves runs on
+// the nsh stand-in (signals' set needs its signal as `this`, as in nsh-js), and its buwiz.call goes to this broker
+const { createRequire } = await import("node:module");
+const esbuild = createRequire(`${WT}/server/package.json`)("esbuild");
+const { mountApp } = await import(pathToFileURL(`${import.meta.dirname}/nsh-standin.mjs`).href);
+const ui = await openApp(sessions, signed, "books");
+const bridge = {
+  props: {},
+  call: async (tool, args = {}) => {
+    const c = await post("/v1/host/call", envelope(ui, tool, args));
+    if (c.json.ok === false) throw Object.assign(new Error(c.json.message || c.json.code), { code: c.json.code });
+    const res = c.json.result;
+    if (res?.isError) throw Object.assign(new Error(res.content?.[0]?.text || "tool_error"), { code: "tool_error" });
+    return res?.structuredContent ?? (res?.content || []).map((x) => x.text).join("\n");
+  },
+};
+const src = await post("/v1/host/apps/source", { plugin: "app.buwiz.books", app: "books" });
+check("the broker serves the Books window's source", src.json.ok === true && typeof src.json.source === "string", { status: src.status, code: src.json.code });
+const step = async (name, body) => {
+  try {
+    const detail = await body();
+    check(name, true, detail);
+  } catch (e) {
+    check(name, false, { error: `${e?.name || "Error"}: ${e?.message || e}` });
+  }
+};
+let screen = null;
+await step("the Books window mounts and shows its rail", async () => {
+  screen = mountApp(src.json.source, { esbuild, bridge });
+  await screen.until(() => screen.pressable("People"), "the rail's People row");
+});
+const NAME_BOX = "Name, never a TIN";
+const TYPED = "Synthetic Vendor W4";
+await step("typing into a TextBox (People › + New › Name) keeps the text, and Add saves it", async () => {
+  screen.press("People");
+  await screen.until(() => screen.pressable("+ New"), "People's + New");
+  screen.press("+ New");
+  await screen.until(() => screen.input(NAME_BOX), "the Name box");
+  screen.type(NAME_BOX, TYPED);
+  const shown = screen.input(NAME_BOX)?.props.value;
+  if (shown !== TYPED) throw new Error(`the Name box shows ${JSON.stringify(shown)} after typing`);
+  screen.press("Add");
+  await screen.until(() => screen.hasText(TYPED), "the new person in the list");
+  return { typed: true, saved: true };
+});
+const RAISED = "bg-[#f0f0ee]";
+const chosen = (label) => String(screen.pressable(label)?.props.class || "").includes(RAISED);
+await step("changing a picker (Certificates › + Add a 2307 › Form, Kind, Status) moves the choice", async () => {
+  screen.press("Certificates");
+  await screen.until(() => screen.pressable("+ Add a 2307"), "Certificates' + Add a 2307");
+  screen.press("+ Add a 2307");
+  await screen.until(() => screen.pressable("2306 (final)"), "the Form picker");
+  const picks = [["2306 (final)", "2307"], ["Income tax", "Percentage tax"], ["Pending", "Received"]];
+  for (const [to, from] of picks) {
+    if (!chosen(from) || chosen(to)) throw new Error(`${from} is not the starting choice`);
+    screen.press(to);
+    if (!chosen(to) || chosen(from)) throw new Error(`pressing ${to} left ${from} chosen`);
+  }
+  return { picked: picks.map(([to]) => to) };
+});
+screen?.unmount();
 
 const failed = results.filter((x) => !x.ok).length;
 console.log(`\n${results.length - failed} pass, ${failed} fail`);

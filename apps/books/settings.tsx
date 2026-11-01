@@ -73,7 +73,7 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
                   <Field label="Name shown in the Buwiz Bot" grow>
                     <View class="flex-row gap-2">
                       <View class="flex-1">
-                        <TextBox value={name()} onChange={name.set} placeholder={d()?.book.label || ""} />
+                        <TextBox value={name()} onChange={(v) => name.set(v)} placeholder={d()?.book.label || ""} />
                       </View>
                       <Btn label="Rename" disabled={!name().trim()} onPress={() => save({ label: name().trim() })} />
                     </View>
@@ -112,7 +112,7 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
                 <If when={Boolean(reopening())}>
                   <Panel pad class="flex-row gap-2 items-end">
                     <Field label={`Why reopen ${reopening()}?`} grow>
-                      <TextBox value={reason()} onChange={reason.set} placeholder="A late bank fee" />
+                      <TextBox value={reason()} onChange={(v) => reason.set(v)} placeholder="A late bank fee" />
                     </Field>
                     <Btn label="Reopen" tone="go" onPress={() => reopen(reopening())} />
                   </Panel>
