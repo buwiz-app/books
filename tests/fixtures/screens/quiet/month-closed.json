@@ -1,5 +1,4 @@
 {
-  "card": "month_end",
   "answers": [
     {
       "data": {
@@ -26,9 +25,11 @@
         "method": "ready"
       },
       {
-        "method": "fit",
-        "height": 120
+        "method": "fit"
       }
     ]
+  },
+  "props": {
+    "card": "month_end"
   }
 }

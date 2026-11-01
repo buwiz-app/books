@@ -1,26 +1,29 @@
 {
-  "card": "tidy",
+  "props": {
+    "card": "tidy"
+  },
   "answers": [
     {
       "data": {
         "counts": {
-          "lines": 3,
-          "drafts": 2,
-          "posted": 0
+          "lines": 0,
+          "drafts": 0,
+          "posted": 4
         }
       }
     }
   ],
   "press": [
-    "Review 3"
+    "Open Ledger"
   ],
+  "open_error": "Synthetic open failure",
   "transcript": {
     "text": [
       "This week",
       "Mondays",
-      "3 new bank lines · 2 drafted · 0 posted",
-      "The routine drafts only; you post",
-      "Review 3"
+      "0 new bank lines · 0 drafted · 4 posted",
+      "Synthetic open failure",
+      "Open Ledger"
     ],
     "calls": [
       {
@@ -35,16 +38,13 @@
         "method": "ready"
       },
       {
-        "method": "fit",
-        "height": 120
+        "method": "fit"
       },
       {
         "method": "open",
-        "app": {
-          "app": "books",
-          "props": {
-            "page": "ledger"
-          }
+        "app": "books",
+        "props": {
+          "page": "ledger"
         }
       }
     ]

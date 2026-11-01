@@ -28,7 +28,7 @@
 #        KEEP_TMP=1 keeps the temp dir (it holds a test key; delete it after)
 set -euo pipefail
 
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 BOT_DIR="${BUWIZ_BOT_DIR:-/Volumes/goldcoders/Projects/rox}"
 KEY_ID="${BOOKS_TEST_KEY_ID:-books-test-01}"
 PLUGIN_ID="app.buwiz.books"
@@ -55,16 +55,27 @@ command -v node >/dev/null || { echo "conformance: node is needed to run the Bot
   exit 2
 }
 
+# 2. a fresh temp dir outside the repo, removed on exit
+TMP_BASE="${TMPDIR:-/tmp}"
+TMP_BASE="$(cd "$TMP_BASE" && pwd -P)" || { echo "conformance: TMPDIR must name an existing directory" >&2; exit 2; }
+case "$TMP_BASE" in ""|"$REPO"|"$REPO"/*) echo "conformance: TMPDIR is empty or inside the repo" >&2; exit 2 ;; esac
+if ! TMP="$(mktemp -d "${TMP_BASE%/}/books-conformance.XXXXXX")"; then
+  echo "conformance: could not create a temp dir under $TMP_BASE" >&2
+  exit 2
+fi
+TMP="$(cd "$TMP" && pwd -P)" || { echo "conformance: could not resolve the temp dir" >&2; exit 2; }
+case "$TMP" in ""|"$REPO"|"$REPO"/*) echo "conformance: temp dir is empty or inside the repo" >&2; exit 2 ;; esac
+chmod 700 "$TMP"
+cleanup() {
+  case "$TMP" in ""|"$REPO"|"$REPO"/*) echo "conformance: refusing unsafe temp cleanup path" >&2 ;;
+    *) if [ "${KEEP_TMP:-0}" = 1 ]; then echo "kept $TMP (holds a test key)" >&2; else rm -rf "$TMP"; fi ;;
+  esac
+}
+trap cleanup EXIT
+
 # 1. the release binary
 cargo build --release --quiet -p books-mini-app --manifest-path "$REPO/Cargo.toml"
 BIN="$REPO/target/release/books-mini-app"
-
-# 2. a fresh temp dir outside the repo, removed on exit
-TMP="$(mktemp -d "${TMPDIR:-/tmp}/books-conformance.XXXXXX")"
-chmod 700 "$TMP"
-case "$TMP" in "$REPO"/*) echo "conformance: temp dir is inside the repo" >&2; exit 2 ;; esac
-cleanup() { if [ "${KEEP_TMP:-0}" = 1 ]; then echo "kept $TMP (holds a test key)" >&2; else rm -rf "$TMP"; fi; }
-trap cleanup EXIT
 
 # 3. a throwaway test key (0600); the runner prints only its public key
 node "$RUNNER" --keygen "$TMP/test.key" >"$TMP/keygen.txt"

@@ -1,5 +1,4 @@
 {
-  "card": "month_end",
   "answers": [
     {
       "data": {
@@ -31,18 +30,18 @@
         "method": "ready"
       },
       {
-        "method": "fit",
-        "height": 120
+        "method": "fit"
       },
       {
         "method": "open",
-        "app": {
-          "app": "books",
-          "props": {
-            "page": "settings"
-          }
+        "app": "books",
+        "props": {
+          "page": "settings"
         }
       }
     ]
+  },
+  "props": {
+    "card": "month_end"
   }
 }

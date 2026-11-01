@@ -8,7 +8,7 @@ use std::{
 
 use buwiz_app::Bridge;
 use nsh_core::element::{
-    Element, ParentElement, Root, Scrollable, dynamic, scroll, set_timeout, signal, view,
+    Element, Owner, ParentElement, Root, Scrollable, dynamic, scroll, set_timeout, signal, view,
 };
 use serde_json::{Value, json};
 
@@ -23,6 +23,7 @@ enum ReadState {
 
 pub fn build(bridge: Bridge) -> Root {
     buwiz_app::root(bridge, |b| {
+        let screen_owner = Owner::current();
         let props = b.props();
         let card = props
             .get("card")
@@ -60,12 +61,14 @@ pub fn build(bridge: Bridge) -> Root {
                     let args = args_for(&card);
                     let retry = move || {
                         retry_state.set(ReadState::Loading);
-                        read(
-                            retry_bridge.clone(),
-                            retry_state,
-                            args.clone(),
-                            retry_ready.clone(),
-                        );
+                        screen_owner.run(|| {
+                            read(
+                                retry_bridge.clone(),
+                                retry_state,
+                                args.clone(),
+                                retry_ready.clone(),
+                            )
+                        });
                     };
                     kit::wait(Some(message), Some(retry), render_bridge.clone(), fit_sent)
                 }

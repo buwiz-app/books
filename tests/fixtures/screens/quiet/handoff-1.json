@@ -1,5 +1,4 @@
 {
-  "card": "handoff",
   "answers": [
     {
       "data": {
@@ -35,18 +34,18 @@
         "method": "ready"
       },
       {
-        "method": "fit",
-        "height": 120
+        "method": "fit"
       },
       {
         "method": "open",
-        "app": {
-          "app": "books",
-          "props": {
-            "page": "forms"
-          }
+        "app": "books",
+        "props": {
+          "page": "forms"
         }
       }
     ]
+  },
+  "props": {
+    "card": "handoff"
   }
 }
