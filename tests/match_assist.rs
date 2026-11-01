@@ -317,5 +317,8 @@ fn the_assistant_cannot_match_one_line() {
         .unwrap();
     let result = &reply["result"];
     assert_eq!(result["isError"], true, "{reply}");
-    assert_eq!(result["structuredContent"]["code"], "permission_denied", "{reply}");
+    assert_eq!(
+        result["structuredContent"]["code"], "permission_denied",
+        "{reply}"
+    );
 }
