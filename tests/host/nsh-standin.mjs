@@ -562,6 +562,12 @@ class Screen {
     return this.nodes().some((n) => n.host === "Text" && textOf(n).includes(text));
   }
 
+  layout(height = 120) {
+    for (const n of this.nodes()) {
+      if (typeof n.props.onLayout === "function") n.props.onLayout({ bounds: { size: { height } } });
+    }
+  }
+
   press(label) {
     const n = this.pressable(label);
     if (!n) throw new Error(`nothing pressable reads ${JSON.stringify(label)}`);

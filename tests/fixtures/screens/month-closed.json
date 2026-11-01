@@ -1,0 +1,34 @@
+{
+  "card": "month_end",
+  "answers": [
+    {
+      "data": {
+        "month_label": "April",
+        "closed": true
+      }
+    }
+  ],
+  "press": [],
+  "transcript": {
+    "text": [
+      "✓",
+      "April is closed"
+    ],
+    "calls": [
+      {
+        "method": "call",
+        "tool": "books_nudge",
+        "args": {
+          "kind": "month_end"
+        }
+      },
+      {
+        "method": "ready"
+      },
+      {
+        "method": "fit",
+        "height": 120
+      }
+    ]
+  }
+}

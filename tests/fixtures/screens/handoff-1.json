@@ -1,0 +1,52 @@
+{
+  "card": "handoff",
+  "answers": [
+    {
+      "data": {
+        "count": 1,
+        "forms": [
+          {
+            "title": "BIR hand-off · Synthetic Form",
+            "why": "A line changed"
+          }
+        ]
+      }
+    }
+  ],
+  "press": [
+    "Refresh for BIR"
+  ],
+  "transcript": {
+    "text": [
+      "Synthetic Form",
+      "Out of date",
+      "A line changed after it was handed to BIR. 1 form to refresh.",
+      "Refresh for BIR"
+    ],
+    "calls": [
+      {
+        "method": "call",
+        "tool": "books_nudge",
+        "args": {
+          "kind": "bir_pair"
+        }
+      },
+      {
+        "method": "ready"
+      },
+      {
+        "method": "fit",
+        "height": 120
+      },
+      {
+        "method": "open",
+        "app": {
+          "app": "books",
+          "props": {
+            "page": "forms"
+          }
+        }
+      }
+    ]
+  }
+}

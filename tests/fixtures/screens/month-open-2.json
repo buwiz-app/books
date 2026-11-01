@@ -1,0 +1,48 @@
+{
+  "card": "month_end",
+  "answers": [
+    {
+      "data": {
+        "month_label": "April",
+        "closed": false,
+        "left": 2
+      }
+    }
+  ],
+  "press": [
+    "Start closing"
+  ],
+  "transcript": {
+    "text": [
+      "April",
+      "Open",
+      "April is still open: 2 steps left before you can close it.",
+      "Start closing"
+    ],
+    "calls": [
+      {
+        "method": "call",
+        "tool": "books_nudge",
+        "args": {
+          "kind": "month_end"
+        }
+      },
+      {
+        "method": "ready"
+      },
+      {
+        "method": "fit",
+        "height": 120
+      },
+      {
+        "method": "open",
+        "app": {
+          "app": "books",
+          "props": {
+            "page": "settings"
+          }
+        }
+      }
+    ]
+  }
+}

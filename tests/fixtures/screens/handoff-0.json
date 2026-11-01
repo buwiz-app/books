@@ -1,0 +1,34 @@
+{
+  "card": "handoff",
+  "answers": [
+    {
+      "data": {
+        "count": 0,
+        "forms": []
+      }
+    }
+  ],
+  "press": [],
+  "transcript": {
+    "text": [
+      "✓",
+      "Every hand-off still matches the books"
+    ],
+    "calls": [
+      {
+        "method": "call",
+        "tool": "books_nudge",
+        "args": {
+          "kind": "bir_pair"
+        }
+      },
+      {
+        "method": "ready"
+      },
+      {
+        "method": "fit",
+        "height": 120
+      }
+    ]
+  }
+}

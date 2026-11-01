@@ -1,0 +1,32 @@
+{
+  "card": "tidy",
+  "answers": [
+    {
+      "error": "Synthetic read failure"
+    }
+  ],
+  "press": [],
+  "transcript": {
+    "text": [
+      "Synthetic read failure",
+      "Try again"
+    ],
+    "calls": [
+      {
+        "method": "call",
+        "tool": "books_nudge",
+        "args": {
+          "kind": "tidy",
+          "any_day": true
+        }
+      },
+      {
+        "method": "ready"
+      },
+      {
+        "method": "fit",
+        "height": 120
+      }
+    ]
+  }
+}

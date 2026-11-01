@@ -4,6 +4,8 @@
 
 This repo holds the evidence and the design for Buwiz Books, a bookkeeping mini app for the Buwiz Bot (plugin id `app.buwiz.books`, protocol 2.0). It also holds a small proof of concept of the accounting measures and the bridge that maps them onto Forms input boxes. It does not file, send, submit or pay anything, and it contains no tax-compliance logic.
 
+The inline quiet card is registered in `crates/books-screens` as a native screen. Synthetic TSX transcript fixtures and native tests keep both render paths comparable.
+
 ## The product in five lines
 
 1. Books is a bookkeeping app that runs inside the Buwiz Bot on the user's Mac. Its ledger is encrypted on disk.

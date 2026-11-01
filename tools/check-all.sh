@@ -3,7 +3,7 @@
 # build plan 5.1): rustfmt, clippy with warnings denied, the Rust tests
 # (with the 17 PoC vectors byte for byte), the PoC's bun tests, the Buwiz
 # Bot's conformance runner, the Bot host test (which also types into the
-# Books window and changes its pickers), the privacy scan, and no detached
+# Books window and changes its pickers), native screen parity, the privacy scan, and no detached
 # signal setters in apps/ (`onChange={x.set}` loses `this` when kit.tsx calls
 # p.onChange(v): "not a live signal"; write `onChange={(v) => x.set(v)}`).
 #
@@ -16,7 +16,7 @@
 #                       own JCS vector files
 #      BOOKS_HOST_PORT  the host test's broker port (8810 or above; 8787 is the
 #                       owner's, 8797-8803 the rox session's)
-#      SKIP_BOT=1       skip the two Bot gates (no Bot checkout at hand); the
+#      SKIP_BOT=1       skip the Bot and native screen gates (no Bot checkout at hand); the
 #                       summary says so, and the run cannot pass
 set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -57,10 +57,12 @@ gate "PoC bun test" poc bash -c 'cd poc && bun test'
 if [ "${SKIP_BOT:-0}" = "1" ]; then
   printf 'SKIP  %-28s SKIP_BOT=1\n' "Bot conformance"
   printf 'SKIP  %-28s SKIP_BOT=1\n' "Bot host test"
-  skipped=2
+  printf 'SKIP  %-28s SKIP_BOT=1\n' "native screen parity"
+  skipped=3
 else
   gate "Bot conformance" conformance bash tools/bot/conformance.sh
   gate "Bot host test" host bash tools/bot/host-test.sh
+  gate "native screen parity" screens-parity bash tools/bot/screens-parity.sh
 fi
 gate "privacy scan" privacy bash tools/privacy-scan.sh
 

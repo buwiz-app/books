@@ -1,0 +1,52 @@
+{
+  "card": "tidy",
+  "answers": [
+    {
+      "data": {
+        "counts": {
+          "lines": 1,
+          "drafts": 1,
+          "posted": 2
+        }
+      }
+    }
+  ],
+  "press": [
+    "Review 1"
+  ],
+  "transcript": {
+    "text": [
+      "This week",
+      "Mondays",
+      "1 new bank line · 1 drafted · 2 posted",
+      "The routine drafts only; you post",
+      "Review 1"
+    ],
+    "calls": [
+      {
+        "method": "call",
+        "tool": "books_nudge",
+        "args": {
+          "kind": "tidy",
+          "any_day": true
+        }
+      },
+      {
+        "method": "ready"
+      },
+      {
+        "method": "fit",
+        "height": 120
+      },
+      {
+        "method": "open",
+        "app": {
+          "app": "books",
+          "props": {
+            "page": "ledger"
+          }
+        }
+      }
+    ]
+  }
+}

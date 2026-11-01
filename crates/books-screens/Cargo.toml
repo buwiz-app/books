@@ -1,0 +1,20 @@
+[package]
+name = "books-screens"
+version = "0.2.0"
+description = "Native Buwiz Books screens"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+buwiz-app = { git = "https://github.com/buwiz-app/buwiz-sdk", rev = "2120c725112e2072b22f6630079fc938b6c9b1e9" }
+nsh-core = { git = "https://github.com/hexuria/nsh", rev = "f1461478d3768fb5da872cb697f0b0a48564ee91" }
+serde_json = "1"
+
+[dev-dependencies]
+books-mini-app = { path = "../books-mini-app" }
+nsh-engine = { git = "https://github.com/hexuria/nsh", rev = "f1461478d3768fb5da872cb697f0b0a48564ee91" }
+
+[lints.rust]
+unsafe_code = "forbid"
