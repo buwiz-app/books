@@ -80,6 +80,7 @@ pub const NUDGE: &str = "books_nudge";
 pub const SIGNIN: &str = "books_app_signin";
 pub const TAX_PROFILES: &str = "books_app_tax_list";
 pub const PROFILE_LINK: &str = "books_app_tax_link";
+pub const CHECKS: &str = "books_checks";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -126,7 +127,7 @@ fn ledger_schema() -> Value {
             "book": { "type": "string" },
             "month": { "type": "string", "description": "YYYY-MM; this month when absent." },
             "account": { "type": "string", "description": "An account ticket or chart number; every account when absent." },
-            "filter": { "type": "string", "enum": ["all", "review", "draft", "posted"] }
+            "filter": { "type": "string", "enum": ["all", "review", "draft", "posted", "checks"] }
         }
     })
 }
@@ -393,7 +394,7 @@ fn show_schema() -> Value {
 }
 
 fn nudge_schema() -> Value {
-    json!({ "type": "object", "properties": { "book": { "type": "string" }, "kind": { "type": "string", "enum": ["tidy", "month_end", "bir_pair"] }, "month": { "type": "string" }, "any_day": { "type": "boolean", "description": "Answer on any day, not only on the routine's day." } } })
+    json!({ "type": "object", "properties": { "book": { "type": "string" }, "kind": { "type": "string", "enum": ["tidy", "month_end", "bir_pair", "review"] }, "month": { "type": "string" }, "any_day": { "type": "boolean", "description": "Answer on any day, not only on the routine's day." } } })
 }
 
 fn signin_schema() -> Value {
@@ -441,6 +442,10 @@ fn account_create_schema() -> Value {
             "type": { "type": "string" }
         }
     })
+}
+
+fn checks_schema() -> Value {
+    json!({ "type": "object", "properties": { "book": { "type": "string" }, "check": { "type": "string", "enum": crate::findings::CHECKS } } })
 }
 
 /// Every Books tool, in `tools/list` order.
@@ -879,6 +884,13 @@ pub const TOOLS: &[Tool] = &[
         schema: wage_run_schema,
         description: "Save a pay run as a draft entry; the Ledger posts it.",
     },
+    Tool {
+        name: CHECKS,
+        reach: Reach::Everyone,
+        write: false,
+        schema: checks_schema,
+        description: "Review findings to look at twice: uncategorized lines, stale drafts, months not matched to a statement, weekend dates, round amounts, money with no person. Counts, entry numbers and months only; never amounts, names or memos.",
+    },
 ];
 
 pub fn find(name: &str) -> Option<&'static Tool> {
@@ -1230,6 +1242,9 @@ pub fn call(
         }),
         CROSS_CHECKS => read(books, arguments, |store, book, args| {
             checks::cross_checks(store, book, args)
+        }),
+        CHECKS => read(books, arguments, |store, book, args| {
+            crate::findings::checks(store, book, args)
         }),
         _ => fail("internal", "Books has no handler for that tool."),
     })

@@ -177,7 +177,8 @@ fn m8_06_routines_draft_only() {
         [
             ("weekly-tidy".into(), json!(["books_entry_draft"])),
             ("month-end".into(), json!([])),
-            ("bir-pair".into(), json!([]))
+            ("bir-pair".into(), json!([])),
+            ("review".into(), json!([]))
         ]
     );
 }

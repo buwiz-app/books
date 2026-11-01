@@ -491,6 +491,26 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 `tools/check-all.sh`: fmt clean; clippy clean; cargo test 117; PoC 177; conformance 182 pass, 7 skipped (rox
 `9c106cc`); host test 17/17; privacy scan 0 findings.
 
+## M10 parity
+
+### 2026-11-01 ledger-2: review findings (books_checks), review routine, Checks filter
+
+- New module crates/books-mini-app/src/findings.rs (not checks.rs, the BIR cross-check): computed, never stored,
+  migration 0. Six check ids in this order: uncategorized, stale_draft (draft created more than 30 days ago),
+  unmatched_month (past month with posted cash/bank lines and no finished statement), weekend_date, round_amount
+  (money in/out a multiple of 1,000.00 and at least 10,000.00, integer modulus), missing_person (skipped when the book
+  has no people). No rates, thresholds of tax law or AI.
+- Tool books_checks (Reach::Everyone, read-only, last in TOOLS): {counts:{<check>:n}, total, truncated,
+  findings:[{check, entry:"entry 0042"|null, month:"2026-09"|null}]}, capped at 200. No amounts, payees or memos.
+  Not granted to the window (slot budget); the window sees findings through books_today (needs item kind "checks")
+  and books_ledger_list (filter "checks", counts.checks, rows[].checks ids).
+- Routine review (4 of 8), every_s 86400 (host maximum; speaks on Mondays like weekly-tidy), declares no writes.
+  books_nudge kind "review" and quiet card id "review" (counts per check, open ledger filter checks).
+- apps/books/ledger_findings.tsx: check-id words and a Checks chip label for the ledger and drawer.
+- Follow-up (native, W9): the Checks chip on books.ledger and the quiet Review card render in books-screens, since
+  ledger.tsx and quiet.tsx are deleted there.
+- Tests: tests/ledger_findings.rs.
+
 ## Not yet built
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox

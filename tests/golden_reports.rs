@@ -171,7 +171,7 @@ fn m1_m2_today_people_and_mark_paid_on_the_golden_book() {
         .iter()
         .map(|n| n["kind"].as_str().unwrap())
         .collect();
-    assert_eq!(kinds, ["review", "draft"]);
+    assert_eq!(kinds, ["review", "checks", "draft"]);
     assert_eq!(today["needs"][0]["count"], 2);
 
     let ledger = call(

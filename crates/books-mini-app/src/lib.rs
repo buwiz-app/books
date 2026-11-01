@@ -16,6 +16,7 @@ pub mod cards;
 pub mod checks;
 pub mod cloud;
 pub mod demo;
+pub mod findings;
 pub mod forms;
 pub mod handoff;
 pub mod jcs;

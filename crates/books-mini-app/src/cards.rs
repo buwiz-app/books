@@ -33,7 +33,7 @@ use crate::forms;
 use crate::service::{Answer, Refusal, text};
 
 /// `(card, app, title)`. Titles are neutral: no name, amount or TIN (D1).
-pub const CARDS: [(&str, &str, &str); 15] = [
+pub const CARDS: [(&str, &str, &str); 16] = [
     ("cash", "answer", "Books · Cash now"),
     ("month", "answer", "Books · This month"),
     ("person", "answer", "Books · A person"),
@@ -49,6 +49,7 @@ pub const CARDS: [(&str, &str, &str); 15] = [
     ("tidy", "quiet", "Books · Weekly tidy-up"),
     ("month_end", "quiet", "Books · Month end"),
     ("handoff", "quiet", "Books · BIR hand-off"),
+    ("review", "quiet", "Books · Review"),
 ];
 
 /// The cards an app draws (its props enum).
@@ -256,7 +257,23 @@ pub fn nudge(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
                 "count": n,
             }))
         }
-        _ => Err(Refusal::invalid("`kind` is tidy, month_end or bir_pair.")),
+        "review" => {
+            // the routine runs daily and speaks on Mondays; a card asks any day
+            let due = today.weekday() == 0 || args.get("any_day") == Some(&Value::Bool(true));
+            let all = crate::findings::findings(store, book, today)?;
+            let n = all.len();
+            Ok(json!({
+                "kind": "review",
+                "text": if n == 0 || !due { String::new() } else { format!("{n} Books finding{} to look at", if n == 1 { "" } else { "s" }) },
+                "items": if due && n > 0 { vec![json!({ "id": format!("review-{today}-{n}") })] } else { Vec::new() },
+                "counts": crate::findings::counts(&all),
+                "count": n,
+                "open": { "page": "ledger", "filter": "checks" },
+            }))
+        }
+        _ => Err(Refusal::invalid(
+            "`kind` is tidy, month_end, bir_pair or review.",
+        )),
     }
 }
 
@@ -496,7 +513,7 @@ fn choices(store: &Store, book: &Book, name: &str, typed: &str) -> Result<Vec<Va
 
 // --- routines ----------------------------------------------------------------
 
-/// The three routines (docs/08 §3). Only the weekly tidy-up writes, and only
+/// The four routines (docs/08 §3; review is M10 parity). Only the weekly tidy-up writes, and only
 /// drafts.
 pub fn routines() -> Value {
     json!([
@@ -525,6 +542,15 @@ pub fn routines() -> Value {
             "every_s": 86_400,
             "query": { "tool": crate::tools::NUDGE, "field": "text", "args": { "kind": "bir_pair" } },
             "prompt": "A Books hand-off to the BIR draft is out of date. Show the quiet card with books_show {\"card\": \"handoff\"}. Do not fill the BIR draft from it; the owner refreshes it on the Forms page. Say counts only, never amounts."
+        },
+        {
+            "id": "review",
+            "name": "Books review",
+            "description": "Looks over the ledger for findings to check twice (stale drafts, unmatched months, weekend dates, round amounts) and leaves a quiet card. Changes nothing.",
+            // every_s is at most a day: it runs daily and speaks on Mondays
+            "every_s": 86_400,
+            "query": { "tool": crate::tools::NUDGE, "field": "text", "args": { "kind": "review" } },
+            "prompt": "Books has review findings. Call books_checks and summarise the counts per check only. Show the quiet card with books_show {\"card\": \"review\"}. Change nothing: the owner fixes entries in Books. Say counts only, never amounts, names or memos."
         }
     ])
 }
