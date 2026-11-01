@@ -139,7 +139,9 @@ function MatchView() {
           <If when={Boolean(s())}>
             <Btn label={`Accept ${String(s()?.suggested || 0)} suggestion${s()?.suggested === 1 ? "" : "s"}`} disabled={!s()?.suggested} onPress={() => call("books_app_statement_accept")} />
           </If>
-          <Btn label="Import statement" onPress={() => importStatement(recAccount())} />
+          <If when={s()?.status !== "finished"}>
+            <Btn label="Import statement" onPress={() => importStatement(recAccount())} />
+          </If>
         </View>
       </Head>
       <Loading res={data} />
