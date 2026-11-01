@@ -276,7 +276,7 @@ fn preview_is_a_static_text_html_resource() {
         uri.starts_with("books-preview://evidence/") && !uri.contains(&ev) && !uri.contains("tkt_")
     );
     let html = res["resource"]["text"].as_str().unwrap();
-    let data = format!("data:image/png;base64,{}", b64::encode(PNG));
+    let data = format!("data:image/png;base64,{}", dr::data_base64(PNG));
     assert!(html.contains(&format!("<img src=\"{data}\"")));
     let lower = html.to_lowercase();
     for bad in [
@@ -340,19 +340,21 @@ fn preview_is_a_static_text_html_resource() {
         json!({"book":fb,"evidence":ev}),
     );
     assert_eq!(v["structuredContent"]["code"], "not_found");
-    // no ordinary response carries the bytes
-    let encoded = b64::encode(PNG);
-    for (tool, args) in [
-        (tools::EVIDENCE_LIST, json!({})),
-        (tools::EVIDENCE_REVIEW, json!({})),
-    ] {
-        assert!(
-            !call(&mut b, tool, args).to_string().contains(&encoded),
-            "{tool}"
-        );
-    }
+    // no ordinary response carries the bytes, in either base64 alphabet
     let p = propose(&mut b, "classify-c1", &ev, "receipt", json!(5));
-    assert!(!p.to_string().contains(&encoded));
+    let listed = [
+        call(&mut b, tools::EVIDENCE_LIST, json!({})).to_string(),
+        call(&mut b, tools::EVIDENCE_REVIEW, json!({})).to_string(),
+        p.to_string(),
+    ];
+    for encoded in [
+        b64::encode(PNG),
+        dr::data_base64(PNG).trim_end_matches('=').to_string(),
+    ] {
+        for out in &listed {
+            assert!(!out.contains(&encoded), "{out}");
+        }
+    }
 }
 
 #[test]
@@ -367,6 +369,10 @@ fn preview_escapes_and_enforces_the_post_encoding_limit() {
     assert!(html.contains("&lt;1&gt; A&amp;B &quot;q&quot; &#39;x&#39; &lt;script&gt;"));
     assert!(!html.contains("<script"));
     assert!(html.contains("123.45"));
+    // data URIs take standard padded base64, never base64url
+    assert_eq!(dr::data_base64(b"\xfb\xef\xff\x00"), "++//AA==");
+    let html_bytes = dr::render("image/png", b"\xfb\xef\xff\x00", None, usize::MAX).unwrap();
+    assert!(html_bytes.contains("data:image/png;base64,++//AA==\""));
     // the limit counts the encoded page: exactly at it passes, one byte under refuses
     let exact = html.len();
     assert!(dr::render("image/png", PNG, Some(&rows), exact).is_ok());

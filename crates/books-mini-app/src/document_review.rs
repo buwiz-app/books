@@ -280,13 +280,30 @@ const STYLE: &str = "body{font:13px -apple-system,Helvetica,sans-serif;margin:24
 
 /// The static page: no script, no remote URL, only `data:` content. Refuses
 /// past `limit` bytes measured after base64 and HTML encoding.
+/// Standard padded base64 (RFC 4648 §4), the alphabet a `data:` URI needs:
+/// a browser drops an image written in the crate's unpadded base64url.
+pub fn data_base64(bytes: &[u8]) -> String {
+    let mut out: String = crate::b64::encode(bytes)
+        .chars()
+        .map(|c| match c {
+            '-' => '+',
+            '_' => '/',
+            c => c,
+        })
+        .collect();
+    while out.len() % 4 != 0 {
+        out.push('=');
+    }
+    out
+}
+
 pub fn render(
     mime: &str,
     bytes: &[u8],
     table: Option<&[TableRow]>,
     limit: usize,
 ) -> Result<String, Refusal> {
-    let data = format!("data:{};base64,{}", escape(mime), crate::b64::encode(bytes));
+    let data = format!("data:{};base64,{}", escape(mime), data_base64(bytes));
     let mut html = format!(
         "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>{STYLE}</style></head><body><h1>Evidence</h1>"
     );
