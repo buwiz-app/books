@@ -354,12 +354,19 @@ fn the_window_grants_preview_and_the_document_tool_within_the_budget() {
         .iter()
         .find(|a| a["id"] == "books")
         .unwrap();
-    assert_eq!(window["permissions"]["preview"], json!({}));
+    assert_eq!(
+        window["permissions"]["preview"]["max_bytes"],
+        json!(books_mini_app::tools::document_review::PREVIEW_MAX_BYTES)
+    );
     let granted = window["permissions"]["tools"].as_array().unwrap();
     assert!(granted.iter().any(|t| t == "books_app_reconcile_document"));
     assert!(granted.len() <= 64, "{} window tools", granted.len());
     assert_eq!(
-        apps::named_tools(apps::find("books").unwrap().source).len(),
+        apps::named_tools(match apps::find("books").unwrap().source {
+            apps::AppSource::Tsx(source) => source,
+            apps::AppSource::Native { .. } => panic!("the Books window is TSX"),
+        })
+        .len(),
         granted.len()
     );
     for app in m["apps"]
