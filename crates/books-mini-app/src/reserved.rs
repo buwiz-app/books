@@ -10,65 +10,18 @@
 
 use std::collections::HashMap;
 
-use ed25519_dalek::{Signer as _, SigningKey};
 use serde_json::{Map, Value, json};
 
 use crate::jsonrpc::{fail, ok};
 use crate::manifest::{self, Source};
+use buwiz_plugin::{CERT_MAX_MS, key::PluginKey};
+
+use crate::b64;
 use crate::service::Books;
-use crate::{b64, jcs};
+pub use buwiz_plugin::RESERVED;
 
-/// The reserved tools this plugin implements.
-pub const RESERVED: [&str; 5] = [
-    "buwiz.provision",
-    "buwiz.session.open",
-    "buwiz.session.close",
-    "buwiz.ticket.resolve",
-    "buwiz.uninstall",
-];
-
-/// The longest session a certificate may cover: 8 hours.
-pub const CERT_MAX_MS: i64 = 8 * 3600 * 1000;
-
-/// The provisioned plugin key.
-pub struct PluginKey {
-    signing: SigningKey,
-}
-
-impl PluginKey {
-    /// `buwiz.provision`'s `key` and `pub`. The error never quotes either.
-    pub fn from_provision(arguments: &Map<String, Value>) -> Result<Self, String> {
-        let key = arguments
-            .get("key")
-            .and_then(Value::as_object)
-            .ok_or("`key` must be {alg, seed}")?;
-        if key.get("alg").and_then(Value::as_str) != Some("ed25519") {
-            return Err("`key.alg` must be ed25519".into());
-        }
-        let seed: [u8; 32] = key
-            .get("seed")
-            .and_then(Value::as_str)
-            .and_then(|seed| b64::decode_exact(seed, 32))
-            .and_then(|bytes| bytes.try_into().ok())
-            .ok_or("`key.seed` must be 32 bytes of base64url")?;
-        let signing = SigningKey::from_bytes(&seed);
-        let public = b64::encode(signing.verifying_key().as_bytes());
-        if arguments.get("pub").and_then(Value::as_str) != Some(public.as_str()) {
-            return Err("the key and pub do not match".into());
-        }
-        Ok(Self { signing })
-    }
-
-    fn same_as(&self, other: &PluginKey) -> bool {
-        self.signing.to_bytes() == other.signing.to_bytes()
-    }
-
-    /// base64url signature over the JCS bytes of `value`.
-    pub fn sign(&self, value: &Value) -> Result<String, String> {
-        let bytes = jcs::canonical(value).map_err(|error| error.to_string())?;
-        Ok(b64::encode(&self.signing.sign(bytes.as_bytes()).to_bytes()))
-    }
-}
+#[cfg(test)]
+use ed25519_dalek::SigningKey;
 
 /// `buwiz.session.open`'s request, checked.
 struct OpenRequest {
@@ -253,6 +206,7 @@ impl Host {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::jcs;
     use ed25519_dalek::{Signature, Verifier as _, VerifyingKey};
 
     /// A provision request for a fixed test seed (never a real key).
@@ -277,7 +231,13 @@ mod tests {
             .unwrap()
             .try_into()
             .unwrap();
-        let public = key.signing.verifying_key();
+        let public = VerifyingKey::from_bytes(
+            &b64::decode_exact(&key.public(), 32)
+                .unwrap()
+                .try_into()
+                .unwrap(),
+        )
+        .unwrap();
         let bytes = jcs::canonical(&cert).unwrap();
         assert!(
             public

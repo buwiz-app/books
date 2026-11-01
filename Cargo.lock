@@ -59,6 +59,7 @@ version = "0.1.0"
 dependencies = [
  "books-core",
  "books-store",
+ "buwiz-plugin",
  "ed25519-dalek",
  "getrandom 0.3.4",
  "office_oxide",
@@ -83,6 +84,17 @@ name = "bumpalo"
 version = "3.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
+
+[[package]]
+name = "buwiz-plugin"
+version = "0.1.0"
+source = "git+https://github.com/buwiz-app/buwiz-sdk?rev=2120c725112e2072b22f6630079fc938b6c9b1e9#2120c725112e2072b22f6630079fc938b6c9b1e9"
+dependencies = [
+ "ed25519-dalek",
+ "getrandom 0.3.4",
+ "serde_json",
+ "sha2",
+]
 
 [[package]]
 name = "cc"

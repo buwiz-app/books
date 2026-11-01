@@ -72,6 +72,7 @@ name = "reconcile_document"
 path = "../../tests/reconcile_document.rs"
 
 [dependencies]
+buwiz-plugin = { git = "https://github.com/buwiz-app/buwiz-sdk", rev = "2120c725112e2072b22f6630079fc938b6c9b1e9" }
 books-core = { path = "../books-core" }
 books-store = { path = "../books-store" }
 # Session certificates are signed with the ed25519 key the Bot provisions (spec 4.4).
