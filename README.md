@@ -114,6 +114,6 @@ The proof of concept in `poc/` is TypeScript and runs on Bun. Use `bun`, not npm
 - Research: nine investigation reports are in `research/traces/`. Read-only work dated 2026-10-29.
 - Live checks: none. No live Rox, BIR or cloud call was made, and the live BIR database was not opened.
 - Tests: the source repos' test suites were not run. Last PoC run (2026-10-29, after ADR 0008, `cd poc && bun test`): 177 pass, 0 fail, 2378 expect() calls, 11 files. The verbatim output is in `poc/README.md`.
-- Git: the first commit holds this research, design and PoC. Pushing to `github.com/buwiz-corp/buwiz-books` is the owner's call.
+- Git: the first commit holds this research, design and PoC. The repo is `github.com/buwiz-app/books` (moved from `buwiz-corp/buwiz-books` on 2026-10-31; the old URL redirects); the local clone is `/Volumes/goldcoders/mini-apps/books`.
 - Owner decisions D4 (cash basis by default) and D9 (reuse `gc-2026-01`) are settled.
 - Open questions that block parts of the build: the BIR source label (D3), the 1701-MS election locks in Forms (B7), the tax review of the open mappings (2551Q row 1 net or gross sales, former D20), the owner of the 1601-C item 17 cap (DD-29), and the cloud repo of record (D13). Cloud blockers B1 and B11 are closed: buwiz-server PR #4 merged on 2026-10-29. D5, D6, D7 and D14 are handed to Forms. See `docs/07-decisions-and-blockers.md`.
