@@ -165,14 +165,17 @@ pub fn statement_view(
                 "sub": if l.line.amount > 0 { "Add it as money in" } else { "Add it as money out" },
             }),
         };
-        rows.push(json!({
+        let mut row = json!({
             "ticket": ticket(store, "sline", l.id)?,
             "date_short": l.line.date.short(),
-            "description": l.line.description,
             "amount_shown": signed(l.line.amount),
             "match": kind,
             "books": books_side,
-        }));
+        });
+        if origin == crate::service::Origin::App {
+            row["description"] = json!(l.line.description);
+        }
+        rows.push(row);
     }
     let (ours, diff) = months::difference(store.conn(), &book, &s)?;
     let hints_used = crate::match_assist::view_extra(
