@@ -275,7 +275,9 @@ fn today_and_ledger_show_checks() {
     let item = needs.iter().find(|n| n["kind"] == "checks").unwrap();
     assert_eq!(item["count"], 1, "one entry, however many findings it has");
     assert_eq!(item["filter"], "checks");
-    let l = s.bot.app("books_ledger_list", json!({ "filter": "checks" }));
+    let l = s
+        .bot
+        .app("books_ledger_list", json!({ "filter": "checks" }));
     let d = data(&l);
     assert_eq!(d["counts"]["checks"], 1);
     assert_eq!(d["rows"][0]["ticket"].as_str(), Some(now.as_str()));
@@ -315,8 +317,16 @@ fn a_finished_statement_clears_unmatched_month() {
     let mut csv = String::from("Date,Description,Debit,Credit,Balance\n");
     let mut total: i64 = 0;
     for (i, r) in rows.iter().enumerate() {
-        let e = data(&s.bot.app("books_entry_get", json!({ "entry": r["ticket"] }))).clone();
-        let amount = e["amount"].as_str().unwrap().trim_start_matches('-').to_string();
+        let e = data(
+            &s.bot
+                .app("books_entry_get", json!({ "entry": r["ticket"] })),
+        )
+        .clone();
+        let amount = e["amount"]
+            .as_str()
+            .unwrap()
+            .trim_start_matches('-')
+            .to_string();
         let cents: i64 = amount.replace(['.', ','], "").parse().unwrap();
         total += cents;
         csv.push_str(&format!(
