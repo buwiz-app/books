@@ -123,7 +123,9 @@ function LedgerPage(p: { go: (page: string, filter?: string) => void; sheet: (mo
                   )}
                 </Each>
               </View>
+              <BulkBar rows={d()?.rows || []} account={ledgerAccount()} month={d()?.month.key || ""} filter={ledgerFilter()} />
               <View class={`flex-row gap-3 px-3 py-2 border-y ${C.line}`}>
+                <Text class="w-[18px]" />
                 <Text class={`w-[52px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Date</Text>
                 <Text class={`flex-1 text-[10.5px] uppercase tracking-wider ${C.dim}`}>What</Text>
                 <Text class={`w-[170px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Category</Text>
@@ -134,7 +136,7 @@ function LedgerPage(p: { go: (page: string, filter?: string) => void; sheet: (mo
                 <Text class={`text-[12.5px] px-3 py-4 ${C.dim}`}>{`No ${ledgerFilter() === "all" ? "" : "matching "}entries in ${d()?.account.name || ""} this month.`}</Text>
               </If>
               <Each of={d()?.rows || []} key={rowKey}>
-                {(r: Any) => <TxRow r={r()} />}
+                {(r: Any) => <BulkRow r={r()} />}
               </Each>
             </View>
           </View>

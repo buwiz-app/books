@@ -78,3 +78,11 @@ ureq = { version = "2.12", default-features = false, features = ["tls"] }
 
 [lints]
 workspace = true
+
+[[test]]
+name = "ledger_batch"
+path = "../../tests/ledger_batch.rs"
+
+[[test]]
+name = "ledger_csv"
+path = "../../tests/ledger_csv.rs"

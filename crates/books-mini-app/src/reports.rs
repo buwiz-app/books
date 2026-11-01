@@ -20,7 +20,7 @@ use books_store::people;
 use books_store::rusqlite::params;
 use serde_json::{Map, Value, json};
 
-use crate::service::{Answer, Refusal, text, ticket};
+use crate::service::{Answer, Origin, Refusal, text, ticket};
 use crate::views::{Chart, Summary, signed};
 
 /// The period a report covers: `period_kind` (month, quarter, year) and
@@ -438,7 +438,10 @@ fn csv_cell(text: &str) -> String {
 
 /// `books_report_csv`: the same report as CSV text, amounts as two-place
 /// decimal text (no thousands separators, a plain minus).
-pub fn report_csv(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
+pub fn report_csv(store: &Store, book: Book, args: &Map<String, Value>, origin: Origin) -> Answer {
+    if text(args, "kind") == Some("ledger") {
+        return crate::ledger_csv::ledger_csv(store, book, args, origin);
+    }
     let r = report(store, book, args)?;
     let plain = |v: &Value| -> String {
         v.as_str()

@@ -1,0 +1,10 @@
+Section,Number,Account,"As of Oct 31, 2026"
+Assets,11010,Bank •••• 4021,412350.00
+Assets,11100,Cash Box,5000.00
+Assets,12600,Creditable Withholding Tax Receivable,11900.00
+Liabilities,22000,Credit Cards,18240.00
+Liabilities,25110,Withholding Tax on Compensation Payable,2808.40
+Liabilities,25120,SSS Contributions Payable,3500.00
+Equity,,Net income this year,480361.00
+Equity,32100,Owner Drawings,-75659.40
+,,Liabilities + equity,429250.00

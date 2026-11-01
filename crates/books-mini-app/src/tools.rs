@@ -15,7 +15,8 @@ use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
 use crate::{
-    cards, checks, forms, handoff, oldbooks, payroll, reconcile, records, reports, views, writes,
+    batch, cards, checks, forms, handoff, oldbooks, payroll, reconcile, records, reports, views,
+    writes,
 };
 
 pub const STATUS: &str = "books_status";
@@ -80,6 +81,7 @@ pub const NUDGE: &str = "books_nudge";
 pub const SIGNIN: &str = "books_app_signin";
 pub const TAX_PROFILES: &str = "books_app_tax_list";
 pub const PROFILE_LINK: &str = "books_app_tax_link";
+pub const BATCH: &str = "books_app_batch";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -204,10 +206,14 @@ fn report_schema() -> Value {
         "type": "object",
         "properties": {
             "book": { "type": "string" },
-            "kind": { "type": "string", "enum": ["pl", "bs", "cf", "tb", "ag"] },
+            "kind": { "type": "string", "enum": ["pl", "bs", "cf", "tb", "ag", "ledger"] },
             "period_kind": { "type": "string", "enum": ["month", "quarter", "year"] },
             "period": { "type": "string", "description": "2026-10, 2026-Q3 or 2026; this period when absent." },
-            "side": { "type": "string", "enum": ["collect", "pay"], "description": "Aging only." }
+            "side": { "type": "string", "enum": ["collect", "pay"], "description": "Aging only." },
+            "from": { "type": "string", "description": "Ledger only: YYYY-MM-DD." },
+            "to": { "type": "string", "description": "Ledger only: YYYY-MM-DD." },
+            "account": { "type": "string", "description": "Ledger only: an account ticket or number." },
+            "filter": { "type": "string", "enum": ["all", "review", "draft", "posted"], "description": "Ledger only." }
         }
     })
 }
@@ -412,6 +418,21 @@ fn write_ref() -> Value {
         "type": "object",
         "required": ["client_request_id", "entry"],
         "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "entry": { "type": "string" } }
+    })
+}
+
+fn batch_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "action", "entries"],
+        "properties": {
+            "client_request_id": { "type": "string" },
+            "book": { "type": "string" },
+            "action": { "type": "string", "enum": ["post", "discard", "recategorize"] },
+            "entries": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 50, "uniqueItems": true, "description": "Entry tickets." },
+            "category": { "type": "string", "description": "Recategorize only: the income or expense account." },
+            "keep_both": { "type": "boolean" }
+        }
     })
 }
 
@@ -879,6 +900,13 @@ pub const TOOLS: &[Tool] = &[
         schema: wage_run_schema,
         description: "Save a pay run as a draft entry; the Ledger posts it.",
     },
+    Tool {
+        name: BATCH,
+        reach: Reach::App,
+        write: true,
+        schema: batch_schema,
+        description: "Post or discard drafts, or give posted entries a category, 1 to 50 at once after the user's click. All or nothing: the first refusal names the entry and changes none.",
+    },
 ];
 
 pub fn find(name: &str) -> Option<&'static Tool> {
@@ -1025,7 +1053,7 @@ pub fn call(
             reports::report(store, book, args)
         }),
         REPORT_CSV => read(books, arguments, |store, book, args| {
-            reports::report_csv(store, book, args)
+            reports::report_csv(store, book, args, origin)
         }),
         PERSON_CREATE => write(books, name, origin, arguments, |tx| {
             records::person_create(tx, arguments)
@@ -1230,6 +1258,9 @@ pub fn call(
         }),
         CROSS_CHECKS => read(books, arguments, |store, book, args| {
             checks::cross_checks(store, book, args)
+        }),
+        BATCH => write(books, name, origin, arguments, |tx| {
+            batch::run(tx, arguments, origin)
         }),
         _ => fail("internal", "Books has no handler for that tool."),
     })

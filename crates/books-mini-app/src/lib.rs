@@ -12,6 +12,7 @@
 
 pub mod apps;
 pub mod b64;
+pub mod batch;
 pub mod cards;
 pub mod checks;
 pub mod cloud;
@@ -20,6 +21,7 @@ pub mod forms;
 pub mod handoff;
 pub mod jcs;
 pub mod jsonrpc;
+pub mod ledger_csv;
 pub mod manifest;
 pub mod oldbooks;
 pub mod payroll;
