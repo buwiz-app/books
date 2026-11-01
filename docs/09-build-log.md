@@ -495,12 +495,3 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox
 owner), PR #16, PR #13 and the two nsh fixes (Rox owner).
-
-## M10 parity
-
-### 2026-11-01 ledger-4: multi-select batch and ledger CSV
-
-- `books_app_batch` (Reach::App, write; window tools 57 to 58 of 64): `{client_request_id, book?, action: post|discard|recategorize, entries: [ticket] 1..50 unique, category? (recategorize), keep_both?}`. `crates/books-mini-app/src/batch.rs` runs each entry through `writes::post`, `writes::discard` or `reconcile::recategorize` inside the one `write()` transaction, so the closed-month gate and any later per-entry gate apply. All or nothing: the first refusal rolls back and names the entry by number (`entry 0042: ...`); a wrong status refuses `wrong_status`. Success: `{action, done, entries}`.
-- `books_report_csv` `kind: "ledger"` (`crates/books-mini-app/src/ledger_csv.rs`; optional `from`, `to`, `account`, `filter`): one row per line in date and entry order, `date,entry,status,form,account,category,person,payee,memo,reference,debit,credit`, two-place amounts, RFC 4180, CRLF, a `'` before text starting with `= + - @`. Without a filter (the UI sends none for the ledger's All view): posted and draft entries only; `filter: all` opts in to voided originals, their reversals and discarded drafts; `posted` drops reversals too. Origins other than the app get no person, payee, memo or reference columns. Refuses `too_large` when the host would refuse the result: `ok` sends the answer twice (text + structuredContent), so the cap is 2 x the serialized answer + 1 KiB slack <= 1 MiB (`ledger_csv::RESULT_MAX`), about 520 KB of CSV. Report kinds are unchanged (goldens in `tests/golden/report-csv`, recorded at 35b1019).
-- UI: `apps/books/ledger_bulk.tsx` (before `ledger.tsx` in `apps.rs`): a tap box per row, Select all on screen, `N selected · Post · Discard · Category…`, Export CSV (copies, like the report export). `ledger.tsx` hunk: the bar and `BulkRow`. Follow-up: the native `books.ledger` screen (W9) needs the same bar.
-- Tests: `tests/ledger_batch.rs`, `tests/ledger_csv.rs` (incl. voided/discarded default vs `all`, and a size test: the largest returned result fits 1 MiB as the host counts it, the whole month refuses `too_large`).
