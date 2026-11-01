@@ -51,7 +51,8 @@ th{font-weight:600;border-bottom:1px solid #999}\
 td.n,th.n{text-align:right;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}\
 tr.t td{font-weight:600;border-top:1px solid #999}\
 .cover dt{color:#555}.cover dd{margin:0 0 2mm}\
-footer{margin-top:8mm;color:#555;font-size:9pt}";
+footer{margin-top:8mm;color:#555;font-size:9pt}\
+@media screen{body{margin:24px}}";
 
 fn report(
     store: &Store,
@@ -258,12 +259,13 @@ pub fn pack(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
     let label = month.label();
     let title = format!("Month pack · {label}");
     let mut html = format!(
-        "<!DOCTYPE html><html lang=en><head><meta charset=utf-8><title>{t}</title><style>{STYLE}</style></head><body>\
+        "<!DOCTYPE html><html lang=en><head><meta charset=utf-8><title>{t}</title><style>{STYLE}{dark}</style></head><body>\
          <div class=cover><h1>{t}</h1><dl>\
          <dt>Book</dt><dd>{book}</dd><dt>Basis</dt><dd>{basis}</dd><dt>Month</dt><dd>{m}</dd>\
          <dt>Generated</dt><dd>{today}</dd>\
          <dt>Drafts this month</dt><dd>{drafts}</dd><dt>Lines to review</dt><dd>{to_review}</dd></dl></div>",
         t = esc(&title),
+        dark = crate::html::SCREEN_DARK,
         book = esc(&book.label),
         basis = s(&pl["basis_label"]),
         m = esc(&label),

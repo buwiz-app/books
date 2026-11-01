@@ -143,6 +143,15 @@ fn a_collect_document_is_a_static_statement_of_account() {
     ] {
         assert!(!page.contains(bad), "page carries {bad}");
     }
+    // light on paper; dark only on a dark screen
+    assert!(
+        page.contains("body{font-family:-apple-system,Helvetica,Arial,sans-serif;color:#1d1d1f;")
+    );
+    assert!(page.contains("@media screen and (prefers-color-scheme:dark){html{color-scheme:dark}body{background:#1c1c1e;"));
+    assert!(
+        !page.contains("@media print{body{background"),
+        "print stays light"
+    );
     assert!(page.contains("Synthetic &lt;b&gt;&amp;Co"));
     assert!(!page.contains("<b>&Co"));
     for want in [

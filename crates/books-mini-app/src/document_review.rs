@@ -304,8 +304,9 @@ pub fn render(
     limit: usize,
 ) -> Result<String, Refusal> {
     let data = format!("data:{};base64,{}", escape(mime), data_base64(bytes));
+    let dark = crate::html::SCREEN_DARK;
     let mut html = format!(
-        "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>{STYLE}</style></head><body><h1>Evidence</h1>"
+        "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>{STYLE}{dark}</style></head><body><h1>Evidence</h1>"
     );
     if mime == "application/pdf" {
         html.push_str(&format!("<object data=\"{data}\" type=\"application/pdf\" width=\"100%\" height=\"900\"><p>This Buwiz Bot cannot show this PDF here. It is kept in Books unchanged.</p></object>"));

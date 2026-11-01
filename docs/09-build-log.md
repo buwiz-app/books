@@ -581,6 +581,16 @@ Status "Open" with only the original amount, so a part-paid statement of account
 counts posted payments only), so the #13 case (the last payment voided, an earlier one standing) now prints Part paid,
 never Settled. Tests: `tests/owed_document.rs` (part-paid collect page), `tests/owed_partial.rs` (pay side after a void).
 
+### Print pages follow a dark screen (2026-11-01)
+
+The print pages (`books_owed_document`, the month pack, the printable reconciliation and the evidence review) were
+light only, which is glaring in a dark Bot. Each page now appends `html::SCREEN_DARK`, a block inside
+`@media screen and (prefers-color-scheme:dark)`: on a dark screen the preview is dark; printing is not `screen`, so
+paper always gets the page's own light style. CONFIRMED in a running Bot (the owed document preview follows dark
+mode) and in headless Chrome forced dark (screen dark, `--print-to-pdf` light). The month pack also gets a 24px screen
+margin (`@media screen`); in print its margin stays `@page`. Tests: `html::tests::the_dark_palette_is_for_the_screen_only`,
+`tests/owed_document.rs`, `tests/month_pack.rs`.
+
 ### Not included
 
 - The native books.ledger drawer does not read `extraction` (evidence-2's `ExtractionPanel` shows in the Books

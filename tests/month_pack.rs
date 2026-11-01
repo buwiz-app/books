@@ -73,6 +73,16 @@ fn the_month_pack_is_one_static_html_resource_built_from_the_reports() {
     assert_eq!(sc["bytes"], json!(html.len()));
     assert!(html.starts_with("<!DOCTYPE html>"));
     assert!(html.contains("<meta charset=utf-8>"));
+    assert!(
+        html.contains("@media screen and (prefers-color-scheme:dark){"),
+        "dark on a dark screen"
+    );
+    assert!(
+        html.contains(
+            "body{font:11pt -apple-system,'Helvetica Neue',Arial,sans-serif;color:#111;margin:0}"
+        ),
+        "light on paper"
+    );
 
     // figures read from the tools, not written here
     let pl = call(

@@ -18,11 +18,22 @@ pub fn escape(text: &str) -> String {
     out
 }
 
+/// The dark palette for a print page on screen. A page's own style is the
+/// light one; this block follows the viewer's dark appearance on screen
+/// only, so the preview is easy on the eyes while printing (not `screen`)
+/// always gives the light page. Every page appends it after its own style.
+pub const SCREEN_DARK: &str = "@media screen and (prefers-color-scheme:dark){\
+html{color-scheme:dark}body{background:#1c1c1e;color:#f2f2f7}\
+th,td{border-color:#3a3a3c}th{border-bottom-color:#636366}\
+tr.t td,tr.total td{border-top-color:#8e8e93}img,object{border-color:#3a3a3c}\
+.book,footer,p.sub,.cover dt{color:#98989d}}";
+
 /// A complete static page. `title` is escaped; `style` and `body` are
-/// markup the caller built from escaped text.
+/// markup the caller built from escaped text. [`SCREEN_DARK`] follows
+/// `style`.
 pub fn page(title: &str, style: &str, body: &str) -> String {
     format!(
-        "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>{}</title><style>{style}</style></head><body>{body}</body></html>",
+        "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>{}</title><style>{style}{SCREEN_DARK}</style></head><body>{body}</body></html>",
         escape(title)
     )
 }
@@ -56,6 +67,19 @@ pub fn base64(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_dark_palette_is_for_the_screen_only() {
+        // printing is not `screen`, so paper always gets the page's light style
+        assert!(SCREEN_DARK.starts_with("@media screen and (prefers-color-scheme:dark){"));
+        assert!(SCREEN_DARK.ends_with("}}"));
+        assert_eq!(
+            SCREEN_DARK.matches('{').count(),
+            SCREEN_DARK.matches('}').count()
+        );
+        let p = page("T", "body{color:#111}", "<p>x</p>");
+        assert!(p.contains(&format!("<style>body{{color:#111}}{SCREEN_DARK}</style>")));
+    }
 
     #[test]
     fn escapes_all_five_characters() {

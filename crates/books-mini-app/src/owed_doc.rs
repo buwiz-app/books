@@ -119,6 +119,9 @@ pub fn render(conn: &Connection, book: &Book, u: &Unpaid) -> Result<String, Refu
     html.push_str(&esc(heading));
     html.push_str("</title><style>");
     html.push_str(STYLE);
+    html.push_str(crate::html::SCREEN_DARK);
+    // the labels are grey on the light page; brighter grey on a dark screen
+    html.push_str("@media screen and (prefers-color-scheme:dark){th{color:#98989d}}");
     html.push_str("</style></head><body><div class=\"book\">");
     html.push_str(&esc(&book.label));
     html.push_str("</div><h1>");
