@@ -22,8 +22,8 @@ use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
 use crate::{
-    cards, checks, forms, handoff, oldbooks, payroll, reconcile, reconcile_document, records,
-    reports, statement_read, views, writes,
+    cards, checks, forms, handoff, oldbooks, owed_repeats, payroll, reconcile, reconcile_document,
+    records, reports, statement_read, views, writes,
 };
 
 pub const STATUS: &str = "books_status";
@@ -100,6 +100,7 @@ pub const STATEMENT_DRAFT_LINES: &str = "books_statement_draft_lines";
 pub const RECONCILE_DOCUMENT: &str = "books_app_reconcile_document";
 pub const CHECKS: &str = "books_checks";
 pub const OWED_DOCUMENT: &str = "books_owed_document";
+pub const OWED_REPEAT: &str = "books_app_owed_repeat";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1049,7 +1050,28 @@ pub const TOOLS: &[Tool] = &[
         schema: owed_document_schema,
         description: "A print page (Statement of account or Bill record) for one owed document, shown by the Books app's print preview.",
     },
+    Tool {
+        name: OWED_REPEAT,
+        reach: Reach::App,
+        write: true,
+        schema: owed_repeat_schema,
+        description: "Start or stop a monthly repeat on an invoice or bill, or add this month's copy after the user's click.",
+    },
 ];
+
+fn owed_repeat_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "owed", "action"],
+        "properties": {
+            "client_request_id": { "type": "string" },
+            "book": { "type": "string" },
+            "owed": { "type": "string" },
+            "action": { "type": "string", "enum": ["start", "stop", "add"] },
+            "month": { "type": "string", "description": "YYYY-MM, add only; this month when absent." }
+        }
+    })
+}
 
 pub fn find(name: &str) -> Option<&'static Tool> {
     TOOLS.iter().find(|t| t.name == name)
@@ -1188,7 +1210,8 @@ pub fn call(
         }),
         OWED_LIST => read(books, arguments, |store, book, args| {
             let list = records::owed_list(store, book.clone(), args, origin)?;
-            owed_proposals::decorate(store, &book, origin, list)
+            let list = owed_proposals::decorate(store, &book, origin, list)?;
+            owed_repeats::decorate(store, book, origin, list)
         }),
         OWED_OPTIONS => read(books, arguments, |store, book, _| {
             records::owed_options(store, book)
@@ -1443,6 +1466,9 @@ pub fn call(
             crate::findings::checks(store, book, args)
         }),
         OWED_DOCUMENT => crate::owed_doc::tool(books, arguments, origin),
+        OWED_REPEAT => write(books, name, origin, arguments, |tx| {
+            owed_repeats::repeat(tx, arguments)
+        }),
         _ => fail("internal", "Books has no handler for that tool."),
     })
 }

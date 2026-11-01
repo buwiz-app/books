@@ -62,6 +62,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
         value={unpaidSide()}
         onPick={(v: string) => unpaidSide.set(v)}
       />
+      <RepeatsDue rows={d()?.repeats?.due ?? []} />
       <Loading res={data} />
       <If when={(d()?.proposals || []).length > 0}>
         <Panel pad class="gap-2">
@@ -123,6 +124,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
                     </View>
                     <Btn label="Record it" tone="go" small onPress={() => settle(r().ticket)} />
                     <Btn label="Cancel document" small onPress={() => act("books_app_owed_cancel", { owed: r().ticket }).catch(() => null)} />
+                    <OwedRepeatToggle ticket={r().ticket} on={r().repeat === "monthly"} />
                   </View>
                 </If>
               </View>

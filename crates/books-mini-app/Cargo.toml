@@ -127,3 +127,7 @@ path = "../../tests/ledger_inbox.rs"
 [[test]]
 name = "ledger_findings"
 path = "../../tests/ledger_findings.rs"
+
+[[test]]
+name = "owed_repeat"
+path = "../../tests/owed_repeat.rs"
