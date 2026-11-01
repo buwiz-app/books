@@ -292,6 +292,29 @@ fn a_tag_narrows_the_pl_and_cash_flow_to_its_entries() {
     );
     assert_eq!(rows(&cf).len(), 2, "{cf}");
     assert_eq!(cf["net"]["label"], "Net cash movement");
+    let cf_row = |report: &Value, name: &str| -> Value {
+        rows(report)
+            .into_iter()
+            .find(|r| r["name"] == name)
+            .cloned()
+            .unwrap_or_else(|| panic!("no {name} row in {report}"))
+    };
+    let cf_in = "Money in from customers and others";
+    let cf_out = "Money out for running the business";
+    assert_eq!(cf_row(&cf, cf_in)["shown"], "0.00", "{cf}");
+    assert_eq!(cf_row(&cf, cf_out)["shown"], "\u{2212}1,234.00", "{cf}");
+    assert_eq!(cf["net"]["shown"], "\u{2212}1,234.00");
+
+    let whole = call(
+        b,
+        "books_report",
+        json!({ "kind": "cf", "period": "2026-10" }),
+    );
+    assert_ne!(cf_row(&whole, cf_in)["shown"], cf_row(&cf, cf_in)["shown"]);
+    assert_ne!(
+        cf_row(&whole, cf_out)["shown"],
+        cf_row(&cf, cf_out)["shown"]
+    );
 
     let csv = call(
         b,
