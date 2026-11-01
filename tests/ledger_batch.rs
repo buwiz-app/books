@@ -107,7 +107,9 @@ fn batch_post_is_all_or_nothing() {
     // the refusal keeps the single write's code and sentence and names the entry
     assert_eq!(r["code"], "period_closed", "{r}");
     assert_eq!(r["refused"], json!(format!("entry {no}")), "{r}");
-    assert!(r["message"].as_str().unwrap().starts_with("The month"), "{r}");
+    let message = r["message"].as_str().unwrap();
+    assert!(message.contains("is closed"), "{r}");
+    assert!(!message.contains("entry "), "the entry is named in refused");
     for e in [&open1, &closed, &open2] {
         assert_eq!(status(b, e), "draft", "nothing posted");
     }
@@ -263,7 +265,14 @@ fn the_window_grants_batch_and_ledger_list_within_the_cap() {
         .collect();
     assert!(before.is_subset(&granted), "a grant was dropped");
     let added: BTreeSet<&String> = granted.difference(&before).collect();
-    let expected = ["books_app_batch".to_string(), "books_ledger_list".to_string()];
-    assert_eq!(added, expected.iter().collect::<BTreeSet<&String>>(), "{added:?}");
+    let expected = [
+        "books_app_batch".to_string(),
+        "books_ledger_list".to_string(),
+    ];
+    assert_eq!(
+        added,
+        expected.iter().collect::<BTreeSet<&String>>(),
+        "{added:?}"
+    );
     assert!(granted.len() <= 64, "{} grants", granted.len());
 }

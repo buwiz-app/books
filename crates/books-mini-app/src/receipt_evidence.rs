@@ -90,28 +90,28 @@ fn tin_shaped(name: &str) -> bool {
         || n.contains("taxpayer")
 }
 
-/// Check `extracted` before anything is written.
+/// Check `extraction` before anything is written.
 pub fn parse(conn: &Connection, book: i64, raw: &Value) -> Result<Extracted, Refusal> {
     let o = raw
         .as_object()
-        .ok_or_else(|| Refusal::invalid("`extracted` is an object."))?;
+        .ok_or_else(|| Refusal::invalid("`extraction` is an object."))?;
     if !o
         .keys()
         .all(|k| ["evidence", "confidence", "fields"].contains(&k.as_str()))
     {
-        return Err(Refusal::invalid("`extracted` has an unknown argument."));
+        return Err(Refusal::invalid("`extraction` has an unknown argument."));
     }
     let ticket = o
         .get("evidence")
         .and_then(Value::as_str)
-        .ok_or_else(|| Refusal::invalid("`extracted.evidence` is an evidence ticket."))?;
+        .ok_or_else(|| Refusal::invalid("`extraction.evidence` is an evidence ticket."))?;
     let evidence = evidence_tools::evidence_id(conn, book, ticket)?;
     let list = match o.get("fields") {
         None => Vec::new(),
         Some(Value::Array(a)) if a.len() <= FIELDS.len() => a.clone(),
         Some(_) => {
             return Err(Refusal::invalid(
-                "`extracted.fields` is a list of at most five fields.",
+                "`extraction.fields` is a list of at most five fields.",
             ));
         }
     };
@@ -267,7 +267,7 @@ fn latest(conn: &Connection, extraction: i64, field: &str) -> Result<Option<Stri
         .map_err(books_store::StoreError::from)?)
 }
 
-/// `books_entry_draft` with optional `extracted`, in the write's transaction.
+/// `books_entry_draft` with optional `extraction`, in the write's transaction.
 pub fn draft(
     conn: &Connection,
     args: &Map<String, Value>,
@@ -275,11 +275,11 @@ pub fn draft(
 ) -> Result<Value, Refusal> {
     let book = writes::book_in(conn, args)?.id;
     let extracted = args
-        .get("extracted")
+        .get("extraction")
         .map(|raw| parse(conn, book, raw))
         .transpose()?;
     let mut plain = args.clone();
-    plain.remove("extracted");
+    plain.remove("extraction");
     // an assistant edit must not clear a review flag the entry already had
     let flagged_before = match plain.get("entry").and_then(Value::as_str) {
         Some(t) if !origin.is_app() => match plumbing::subject(conn, t)? {

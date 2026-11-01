@@ -53,7 +53,7 @@ fn evidence_in(b: &mut Books, tag: &str, book: Option<&str>) -> String {
 fn draft(crid: &str, extracted: Value) -> Value {
     let mut d = json!({"client_request_id":crid,"form":"money_out","date":"2026-10-18","amount":"150.00","account":"11010","category":"68300","payee":"Synthetic Shop"});
     if !extracted.is_null() {
-        d["extracted"] = extracted;
+        d["extraction"] = extracted;
     }
     d
 }
@@ -418,7 +418,8 @@ fn replay_correction_and_responses() {
     assert_eq!(x["proposed_by"], "Assistant");
     assert_eq!(x["confidence"], 70);
     assert_eq!(x["confidence_label"], "Unsure");
-    assert_eq!(x["preview"], Value::Null);
+    // evidence-4 declared the preview tool, so the extraction names it
+    assert_eq!(x["preview"], json!(tools::EVIDENCE_PREVIEW));
     let amount = x["fields"]
         .as_array()
         .unwrap()

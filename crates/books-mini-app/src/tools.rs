@@ -198,7 +198,8 @@ fn draft_schema() -> Value {
             "person_kind": { "type": "string", "description": "With payee: the kind of person to link or make (vendors, customers, employees, owners, lenders, government)." },
             "department": { "type": "string" },
             "location": { "type": "string" },
-            "extracted": receipt_evidence::schema()
+            "extracted": { "type": "object", "description": "What the assistant read, per field: {\"fields\": {\"category\": {\"confidence\": 55}}}. Fields: date, amount, account, to_account, category, payee, memo, reference, lines; confidence is a whole percent." },
+            "extraction": receipt_evidence::schema()
         }
     })
 }
