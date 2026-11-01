@@ -47,7 +47,7 @@ fn the_manifest_has_the_books_identity() {
     assert_eq!(m["protocol"], "2.0.0");
     assert_eq!(m["id"], "app.buwiz.books");
     assert_eq!(m["short"], "books");
-    assert_eq!(m["version"], "0.3.0");
+    assert_eq!(m["version"], "0.4.0");
     assert_eq!(m["publisher"]["id"], "app.buwiz");
     assert_eq!(m["publisher"]["key_id"], "gc-2026-01");
     assert!(m.get("signature").is_none() && m.get("needs").is_none());
