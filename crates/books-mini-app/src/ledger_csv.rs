@@ -1,6 +1,8 @@
 //! The ledger as CSV (`books_report_csv` with `kind: "ledger"`): one row
 //! per line in date and entry order, amounts as two-place decimal text.
 //! The assistant gets no payee, memo, reference or person columns.
+//! Posted and draft entries only; voided originals with their reversals
+//! and discarded drafts come in only with `filter: "all"`.
 
 use books_core::date::Date;
 use books_core::ledger::Status;
@@ -14,8 +16,26 @@ use serde_json::{Map, Value, json};
 use crate::service::{self, Answer, Origin, Refusal};
 use crate::views::{Chart, Summary};
 
-/// Under the 1 MiB tool-result limit, with room for the JSON around it.
-pub const MAX_BYTES: usize = 1_000_000;
+/// The host's limit on one tool result: the text content plus the
+/// structuredContent JSON, in bytes.
+pub const RESULT_MAX: usize = 1024 * 1024;
+
+/// Slack for any escaping difference between serde and the host's
+/// `JSON.stringify`.
+const SLACK: usize = 1024;
+
+/// Bytes the host counts for `answer`: `jsonrpc::ok` sends it twice, as
+/// the text content and as structuredContent.
+pub fn result_bytes(answer: &Value) -> usize {
+    2 * answer.to_string().len() + SLACK
+}
+
+fn too_large() -> Refusal {
+    Refusal::new(
+        "too_large",
+        "The ledger CSV is over the 1 MB result limit. Pick a shorter date range.",
+    )
+}
 
 /// RFC 4180 quoting, and a leading `'` on text that a spreadsheet would
 /// read as a formula.
@@ -44,12 +64,13 @@ fn date_arg(args: &Map<String, Value>, key: &str) -> Result<Option<Date>, Refusa
 pub fn ledger_csv(store: &Store, book: Book, args: &Map<String, Value>, origin: Origin) -> Answer {
     let from = date_arg(args, "from")?;
     let to = date_arg(args, "to")?;
-    let filter = service::text(args, "filter").unwrap_or("all");
-    if !["all", "review", "draft", "posted"].contains(&filter) {
+    let filter = service::text(args, "filter").unwrap_or("");
+    if !["", "all", "review", "draft", "posted"].contains(&filter) {
         return Err(Refusal::invalid(
             "`filter` is all, review, draft or posted.",
         ));
     }
+    let everything = filter == "all";
     let account = match service::text(args, "account") {
         Some(r) if !r.is_empty() && r != "all" => Some(service::account(store, &book, r)?),
         _ => None,
@@ -63,7 +84,7 @@ pub fn ledger_csv(store: &Store, book: Book, args: &Map<String, Value>, origin: 
             from,
             to,
             account_id: account.as_ref().map(|a| a.id),
-            discarded: filter == "all",
+            discarded: everything,
         },
     )?;
     list.sort_by_key(|e| (e.date, e.no));
@@ -77,6 +98,10 @@ pub fn ledger_csv(store: &Store, book: Book, args: &Map<String, Value>, origin: 
     out.push_str("\r\n");
     let mut rows = 0usize;
     for e in list {
+        let live = matches!(e.status, Status::Posted | Status::Draft) && e.reverses.is_none();
+        if !everything && !live {
+            continue;
+        }
         let s = Summary::of(store, &chart, e)?;
         let keep = match filter {
             "review" => s.needs_review(),
@@ -121,11 +146,8 @@ pub fn ledger_csv(store: &Store, book: Book, args: &Map<String, Value>, origin: 
             out.push_str(&cells.join(","));
             out.push_str("\r\n");
             rows += 1;
-            if out.len() > MAX_BYTES {
-                return Err(Refusal::new(
-                    "too_large",
-                    "The ledger CSV is over 1 MB. Pick a shorter date range.",
-                ));
+            if 2 * out.len() > RESULT_MAX {
+                return Err(too_large());
             }
         }
     }
@@ -135,5 +157,10 @@ pub fn ledger_csv(store: &Store, book: Book, args: &Map<String, Value>, origin: 
         (None, Some(t)) => format!("to-{t}"),
         (None, None) => "all".into(),
     };
-    Ok(json!({ "file_name": format!("books-ledger-{span}.csv"), "csv": out, "rows": rows + 1 }))
+    let answer =
+        json!({ "file_name": format!("books-ledger-{span}.csv"), "csv": out, "rows": rows + 1 });
+    if result_bytes(&answer) > RESULT_MAX {
+        return Err(too_large());
+    }
+    Ok(answer)
 }

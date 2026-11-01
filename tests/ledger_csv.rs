@@ -94,6 +94,171 @@ fn ledger_csv_rows_totals_guard_and_assistant_columns() {
     assert_eq!(r["structuredContent"]["code"], "invalid_args", "{r}");
 }
 
+fn fresh_books(dir: &TempDir) -> Books {
+    books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
+    let mut books = Books::new(Paths::in_dir(dir.0.join("store")));
+    run(
+        &mut books,
+        "books_app_book_create",
+        Origin::App,
+        json!({ "client_request_id": "csv-book-0001", "label": "Synthetic Shop" }),
+    );
+    books
+}
+
+fn spend(b: &mut Books, id: &str, date: &str, memo: &str) -> String {
+    let out = run(
+        b,
+        "books_app_post_entry",
+        Origin::App,
+        json!({ "client_request_id": id, "form": "money_out", "date": date, "amount": "10.00", "account": "11000", "category": "67200", "memo": memo }),
+    );
+    out["entry"].as_str().unwrap().to_string()
+}
+
+fn statuses(csv: &str) -> Vec<String> {
+    let mut s: Vec<String> = csv
+        .trim_end_matches("\r\n")
+        .split("\r\n")
+        .skip(1)
+        .map(|l| l.split(',').nth(2).unwrap().to_string())
+        .collect();
+    s.sort();
+    s.dedup();
+    s
+}
+
+/// Without a filter the export is posted and draft entries only, like the
+/// ledger; `filter: "all"` opts in to voided entries, their reversals and
+/// discarded drafts.
+#[test]
+fn ledger_csv_leaves_out_voided_and_discarded_unless_all() {
+    let dir = TempDir::new("ledger-csv-status");
+    let b = &mut fresh_books(&dir);
+    spend(b, "csv-keep-0001", "2026-10-02", "kept");
+    let gone = spend(b, "csv-void-0001", "2026-10-03", "voided");
+    run(
+        b,
+        "books_app_void_entry",
+        Origin::App,
+        json!({ "client_request_id": "csv-void-0002", "entry": gone }),
+    );
+    let drop = run(
+        b,
+        "books_entry_draft",
+        Origin::App,
+        json!({ "client_request_id": "csv-disc-0001", "form": "money_out", "date": "2026-10-04", "amount": "11.00", "account": "11000", "category": "67200" }),
+    )["entry"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    run(
+        b,
+        "books_app_discard_entry",
+        Origin::App,
+        json!({ "client_request_id": "csv-disc-0002", "entry": drop }),
+    );
+    run(
+        b,
+        "books_entry_draft",
+        Origin::App,
+        json!({ "client_request_id": "csv-draft-0001", "form": "money_out", "date": "2026-10-05", "amount": "12.00", "account": "11000", "category": "67200" }),
+    );
+    let month = json!({ "kind": "ledger", "from": "2026-10-01", "to": "2026-10-31" });
+    let plain = run(b, "books_report_csv", Origin::App, month.clone());
+    let csv = plain["csv"].as_str().unwrap();
+    assert_eq!(statuses(csv), ["draft", "posted"], "{csv}");
+    assert!(
+        !csv.contains("voided"),
+        "no voided original or its reversal: {csv}"
+    );
+    // 1 header + 2 lines of the kept entry + 2 lines of the draft
+    assert_eq!(plain["rows"], 5, "{csv}");
+    let mut all = month.clone();
+    all["filter"] = json!("all");
+    let every = run(b, "books_report_csv", Origin::App, all);
+    let csv = every["csv"].as_str().unwrap();
+    assert_eq!(
+        statuses(csv),
+        ["discarded", "draft", "posted", "voided"],
+        "{csv}"
+    );
+    // plus the voided original, its reversal and the discarded draft
+    assert_eq!(every["rows"], 11, "{csv}");
+    let mut posted = month;
+    posted["filter"] = json!("posted");
+    let csv = run(b, "books_report_csv", Origin::App, posted)["csv"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    assert_eq!(statuses(&csv), ["posted"], "{csv}");
+    assert!(!csv.contains("voided"), "{csv}");
+}
+
+/// What the host counts against its 1 MiB result limit: every text
+/// content plus the structuredContent JSON.
+fn host_bytes(result: &Value) -> usize {
+    let text: usize = result["content"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|c| c["text"].as_str())
+        .map(str::len)
+        .sum();
+    text + result["structuredContent"].to_string().len()
+}
+
+/// A CSV the host would refuse is refused by Books with `too_large`, and
+/// the largest one Books returns still fits the host's limit.
+#[test]
+fn ledger_csv_fits_the_tool_result_limit() {
+    const LIMIT: usize = books_mini_app::ledger_csv::RESULT_MAX;
+    let dir = TempDir::new("ledger-csv-size");
+    let b = &mut fresh_books(&dir);
+    let memo = "synthetic memo ".repeat(32);
+    for day in 1..=28u32 {
+        for n in 0..20u32 {
+            spend(
+                b,
+                &format!("csv-size-{day:02}-{n:02}"),
+                &format!("2026-10-{day:02}"),
+                &memo,
+            );
+        }
+    }
+    let mut largest = 0usize;
+    let mut refused = false;
+    for day in 1..=28u32 {
+        let args: Map<String, Value> =
+            json!({ "kind": "ledger", "from": "2026-10-01", "to": format!("2026-10-{day:02}") })
+                .as_object()
+                .unwrap()
+                .clone();
+        let out = tools::call("books_report_csv", &args, Origin::App, b).unwrap();
+        if out["isError"] == true {
+            assert_eq!(
+                out["structuredContent"]["code"], "too_large",
+                "{}",
+                out["structuredContent"]
+            );
+            refused = true;
+            continue;
+        }
+        assert!(
+            !refused,
+            "a longer range fits after a shorter one was refused"
+        );
+        let bytes = host_bytes(&out);
+        assert!(bytes <= LIMIT, "{bytes} bytes for 2026-10-01..{day}");
+        largest = largest.max(bytes);
+    }
+    assert!(refused, "the whole month is over the limit");
+    assert!(
+        largest > LIMIT - 64 * 1024,
+        "largest result {largest} is just under the limit"
+    );
+}
+
 #[test]
 fn ledger_csv_cell_guard() {
     use books_mini_app::ledger_csv::cell;

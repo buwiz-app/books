@@ -213,7 +213,7 @@ fn report_schema() -> Value {
             "from": { "type": "string", "description": "Ledger only: YYYY-MM-DD." },
             "to": { "type": "string", "description": "Ledger only: YYYY-MM-DD." },
             "account": { "type": "string", "description": "Ledger only: an account ticket or number." },
-            "filter": { "type": "string", "enum": ["all", "review", "draft", "posted"], "description": "Ledger only." }
+            "filter": { "type": "string", "enum": ["all", "review", "draft", "posted"], "description": "Ledger only. Without it: posted and draft entries; `all` adds voided entries, their reversals and discarded drafts." }
         }
     })
 }

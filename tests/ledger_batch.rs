@@ -136,10 +136,13 @@ fn batch_discard_and_recategorize_match_the_single_tools_and_repeat() {
         assert_eq!(status(b, e), "discarded");
     }
     // a repeat returns the stored result and changes nothing
-    let audit = |b: &mut Books| ok(b, "books_settings_get", json!({})).to_string().len();
-    let before = audit(b);
+    let ledger = |b: &mut Books| ok(b, "books_ledger_list", json!({ "filter": "all" })).to_string();
+    let before = ledger(b);
     assert_eq!(run(b, "books_app_batch", Origin::App, args), first);
-    assert_eq!(audit(b), before);
+    assert_eq!(ledger(b), before);
+    for e in [&one, &two, &single] {
+        assert_eq!(status(b, e), "discarded");
+    }
 
     // recategorize: "not sure yet" posted lines take a category
     let unsure: Vec<String> = (4..=6)

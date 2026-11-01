@@ -71,7 +71,8 @@ function BulkBar(p: { rows: Any[]; account: string; month: string; filter: strin
     );
   };
   const exportCsv = () => {
-    const args: Record<string, string> = { kind: "ledger", filter: p.filter };
+    const args: Record<string, string> = { kind: "ledger" };
+    if (p.filter !== "all") args.filter = p.filter;
     if (p.month) {
       args.from = `${p.month}-01`;
       args.to = bulkLastDay(p.month);
