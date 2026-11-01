@@ -81,7 +81,7 @@ pub const NUDGE: &str = "books_nudge";
 pub const SIGNIN: &str = "books_app_signin";
 pub const TAX_PROFILES: &str = "books_app_tax_list";
 pub const PROFILE_LINK: &str = "books_app_tax_link";
-pub const MONTH_PACK: &str = "books_month_pack";
+pub const MONTH_PACK: &str = "books_app_month_pack";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -227,7 +227,7 @@ fn reconcile_html(grid: &Value, month: &Period) -> String {
     h
 }
 
-/// `books_month_pack`: `{title, month: {key, label}, html, bytes}`. The
+/// `books_app_month_pack`: `{title, month: {key, label}, html, bytes}`. The
 /// title is neutral (no book label, amount, name or TIN).
 pub fn pack(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
     let month = views::month_arg(args)?;

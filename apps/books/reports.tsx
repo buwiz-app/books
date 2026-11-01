@@ -72,7 +72,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
   const monthPack = () => {
     if (buwiz.preview)
       buwiz
-        .preview({ tool: "books_month_pack", args: { month: d()?.period.key }, title: "Month pack" })
+        .preview({ tool: "books_app_month_pack", args: { month: d()?.period.key }, title: "Month pack" })
         .catch((e: Any) => toast(e.code === "not_supported" ? "Print preview needs Buwiz Bot on a Mac." : errText(e)));
     else toast("Print preview is not available in this Buwiz Bot.");
   };

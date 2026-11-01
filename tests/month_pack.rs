@@ -49,7 +49,7 @@ fn the_month_pack_is_one_static_html_resource_built_from_the_reports() {
     );
     let out = raw(
         b,
-        "books_month_pack",
+        "books_app_month_pack",
         json!({ "month": "2026-10" }),
         Origin::App,
     );
@@ -121,7 +121,7 @@ fn the_month_pack_refuses_a_bad_month_and_the_assistant() {
     for m in ["2026-13", "2026-Q3"] {
         let out = raw(
             &mut books,
-            "books_month_pack",
+            "books_app_month_pack",
             json!({ "month": m }),
             Origin::App,
         );
@@ -141,7 +141,7 @@ fn only_the_window_may_preview_and_the_tool_is_app_only() {
         if app["id"] == "books" {
             assert_eq!(p["preview"], json!({}));
             let names = p["tools"].as_array().unwrap();
-            assert!(names.iter().any(|t| t == "books_month_pack"));
+            assert!(names.iter().any(|t| t == "books_app_month_pack"));
             assert!(names.len() <= 64, "{} window tools", names.len());
         } else {
             assert!(p.get("preview").is_none(), "{}", app["id"]);
@@ -149,11 +149,11 @@ fn only_the_window_may_preview_and_the_tool_is_app_only() {
     }
     let entry = tools::list()
         .into_iter()
-        .find(|t| t["name"] == "books_month_pack")
+        .find(|t| t["name"] == "books_app_month_pack")
         .unwrap();
     assert_eq!(entry["annotations"]["readOnlyHint"], true);
     assert_eq!(entry["_meta"]["buwiz/audience"], json!(["app"]));
-    let t = tools::find("books_month_pack").unwrap();
+    let t = tools::find("books_app_month_pack").unwrap();
     assert_eq!(t.reach, tools::Reach::App);
     for verb in ["submit", "queue", "pay", "paid", "file", "send"] {
         assert!(!t.name.contains(verb));

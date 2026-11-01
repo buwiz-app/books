@@ -493,7 +493,7 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 
 ## M10 parity
 
-- 2026-11-01 reports-4 (month pack): new app-only tool `books_month_pack` (`crates/books-mini-app/src/month_pack.rs`, read-only). It reads `books_report` pl/bs/cf/tb for one month and `books_reconcile_grid`, and returns one static HTML document (inline style only; no script, link or URL; store text escaped) as an MCP `text/html` resource `books://print/month-pack-<YYYY-MM>.html`, with `structuredContent` `{title, month, bytes}`. It refuses with invalid_args above 4 MiB. The Reports page shows a Month pack button for month periods, which calls `buwiz.preview`; the manifest gives the window `permissions.preview = {}`. Window tools: 57 to 58 of 64. Tests: `tests/month_pack.rs`.
+- 2026-11-01 reports-4 (month pack): new app-only tool `books_app_month_pack` (named with the `books_app_` prefix that `tests/manifest_shape.rs` requires of every app-only tool; the task text said `books_month_pack`; `crates/books-mini-app/src/month_pack.rs`, read-only). It reads `books_report` pl/bs/cf/tb for one month and `books_reconcile_grid`, and returns one static HTML document (inline style only; no script, link or URL; store text escaped) as an MCP `text/html` resource `books://print/month-pack-<YYYY-MM>.html`, with `structuredContent` `{title, month, bytes}`. It refuses with invalid_args above 4 MiB. The Reports page shows a Month pack button for month periods, which calls `buwiz.preview`; the manifest gives the window `permissions.preview = {}`. Window tools: 57 to 58 of 64. Tests: `tests/month_pack.rs`.
 
 ## Not yet built
 
