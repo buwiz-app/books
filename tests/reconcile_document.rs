@@ -374,6 +374,13 @@ fn the_window_grants_preview_and_the_document_tool_within_the_budget() {
         .unwrap()
         .iter()
         .filter(|a| a["id"] != "books")
+        // evidence-4: the document library and its card preview evidence
+        .filter(|a| {
+            !matches!(
+                apps::find(a["id"].as_str().unwrap()).map(|app| app.source),
+                Some(apps::AppSource::Tsx(source)) if source.contains(".preview(")
+            )
+        })
     {
         assert!(app["permissions"].get("preview").is_none(), "{}", app["id"]);
     }

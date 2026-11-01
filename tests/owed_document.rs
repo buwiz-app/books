@@ -224,6 +224,14 @@ fn escaping_covers_every_markup_character() {
     );
 }
 
+/// evidence-4: the document library and its card preview evidence too.
+fn calls_preview(id: &str) -> bool {
+    match books_mini_app::apps::find(id).map(|app| app.source) {
+        Some(books_mini_app::apps::AppSource::Tsx(source)) => source.contains(".preview("),
+        _ => false,
+    }
+}
+
 #[test]
 fn only_the_books_window_may_preview() {
     let m = manifest::unsigned(manifest::RELEASE_KEY_ID);
@@ -238,10 +246,10 @@ fn only_the_books_window_may_preview() {
         if app["id"] == "books" {
             assert_eq!(
                 app["permissions"]["preview"],
-                json!({ "max_bytes": 1_048_576 })
+                json!({ "max_bytes": books_mini_app::tools::document_review::PREVIEW_MAX_BYTES })
             );
             assert!(tools.iter().any(|t| t == "books_owed_document"));
-        } else {
+        } else if !calls_preview(app["id"].as_str().unwrap()) {
             assert!(
                 app["permissions"].get("preview").is_none(),
                 "{} may preview",
@@ -267,7 +275,16 @@ fn only_owed_print_calls_preview_and_it_hides_without_the_method() {
             }
         }
     }
-    assert_eq!(callers, ["books/owed_print.tsx"]);
+    callers.sort();
+    // reconcile-2 (statement snapshot) and evidence-4 (evidence card) preview too
+    assert_eq!(
+        callers,
+        [
+            "books/owed_print.tsx",
+            "books/statement_snapshot.tsx",
+            "cards/evidence.tsx"
+        ]
+    );
     let src = std::fs::read_to_string(root.join("books/owed_print.tsx")).unwrap();
     assert!(src.contains("typeof buwiz.preview === \"function\""));
     assert!(src.contains("\"books_owed_document\""));
