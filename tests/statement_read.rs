@@ -328,6 +328,18 @@ fn d_evidence_ticket_is_kept_on_the_statement() {
         json!({ "client_request_id": "r1-ev-accept", "account": BANK, "month": MONTH, "draft": draft }),
     );
     assert_eq!(get(&mut b, Origin::App)["statement"]["evidence"], evidence);
+    // a CSV that replaces it drops the old snapshot
+    let csv = "Date,Description,Amount\n2026-09-02,Coffee shop,-100.00\n";
+    ok(
+        &mut b,
+        Origin::App,
+        tools::STATEMENT_IMPORT,
+        json!({ "client_request_id": "r1-ev-csv", "account": BANK, "month": MONTH, "csv_text": csv, "closing": "900.00" }),
+    );
+    assert!(
+        get(&mut b, Origin::App)["statement"]["evidence"].is_null(),
+        "the replaced statement keeps no snapshot"
+    );
 }
 
 #[test]
