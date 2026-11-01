@@ -495,3 +495,14 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox
 owner), PR #16, PR #13 and the two nsh fixes (Rox owner).
+
+## M10 parity
+
+### ledger-3: amend by reversal (2026-11-01)
+
+- `books_app_void_entry` (App reach, no new tool name; window tool count unchanged) takes optional `amend`, `reason` (3 to 200 characters, no TIN) and `date` (YYYY-MM-DD, default the entry's date). With `amend: true` the original is voided, its mirrored reversal posts on `date`, and a draft replacement with the same lines, payee, memo, reference and person/tag links is saved on `date`. Result: `{entry, status: "voided", voided, reversal, replacement, replacement_no}` (tickets).
+- Migration 16 (`0016_amendments.sql`): `entry.amends_entry_id`, `entry.amended_by_entry_id` and the `amendment` table. The reason is stored there only: no tool output, title, card or audit row carries it.
+- Store `books_store::amend::amend` runs inside the write transaction and reuses `entries::void`, so the closed-month gate on the original's month and on `date` applies unchanged. Refused: drafts (`not_posted`), reversals (`is_reversal`), voided (`already_voided`) or amended (`already_amended`) entries, a missing or short reason (`invalid_args`).
+- `books_entry_get` adds `links {amends, amended_by}` (tickets or null), `link_labels`, and "Replaces entry 0042" as `related` on the replacement; a posted entry's actions are `void, amend, duplicate`.
+- `apps/books/ledger_amend.tsx` (before `ledger.tsx` in `apps.rs`): `AmendButton` (Overlay with a reason and an optional date) and `AmendLinks` chips. Not yet mounted in the drawer: `ledger.tsx` is off limits while the native ledger port lands; the drawer (or `entry.tsx`) mounts `<AmendButton>` when `actions` has `amend` and `<AmendLinks>` under the Kv rows.
+- Tests: `tests/ledger_amend.rs` (4), `books-store` amend unit tests (2).

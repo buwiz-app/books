@@ -10,6 +10,7 @@
 //!   tickets, idempotent audited writes), [`views`] (page data),
 //!   [`writes`], [`records`] (people, tags, unpaid) and [`reports`].
 
+pub mod amend;
 pub mod apps;
 pub mod b64;
 pub mod cards;

@@ -607,7 +607,7 @@ pub fn entry(
     let e = &s.entry;
     let actions: Vec<&str> = match e.status {
         Status::Draft => vec!["discard", "edit", "post"],
-        Status::Posted if e.form != Form::Reversal => vec!["void", "duplicate"],
+        Status::Posted if e.form != Form::Reversal => vec!["void", "amend", "duplicate"],
         _ => vec![],
     };
     // whether a post would go through, without changing anything
@@ -628,6 +628,8 @@ pub fn entry(
         }
         _ => None,
     };
+    let (links, link_labels, replaces) = crate::amend::links(store, e)?;
+    let related = related.or(replaces);
     // for a line that needs review: the categories this payee used before,
     // then what the bank's words name (books_app_recategorize)
     let mut suggest: Vec<Value> = Vec::new();
@@ -691,6 +693,8 @@ pub fn entry(
     obj.insert("actions".into(), json!(actions));
     obj.insert("post_blocker".into(), json!(blocker));
     obj.insert("related".into(), json!(related));
+    obj.insert("links".into(), links);
+    obj.insert("link_labels".into(), link_labels);
     if origin.is_app() {
         obj.insert(
             "who_label".into(),
