@@ -36,6 +36,7 @@ pub mod owed_repeat;
 pub mod people;
 pub mod plumbing;
 pub mod review;
+pub mod slices;
 pub mod statement_drafts;
 pub mod statement_lock;
 

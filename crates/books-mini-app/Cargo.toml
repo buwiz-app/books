@@ -44,6 +44,10 @@ name = "owed_partial"
 path = "../../tests/owed_partial.rs"
 
 [[test]]
+name = "report_compare"
+path = "../../tests/report_compare.rs"
+
+[[test]]
 name = "months_reconcile"
 path = "../../tests/months_reconcile.rs"
 

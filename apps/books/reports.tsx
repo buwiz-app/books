@@ -1,5 +1,6 @@
-// Reports: P&L (with the previous period beside it), balance sheet, cash
-// flow, trial balance, and aging on accrual books. Click a line to see its
+// Reports: P&L, balance sheet and cash flow (each beside the previous
+// period, the same period last year, or alone), trial balance, and aging on
+// accrual books. A tag narrows the P&L and cash flow. Click a line to see its
 // entries in the Ledger. Reports follow the book's basis (ADR 0008).
 
 const REPORT_TABS: [string, string][] = [
@@ -12,6 +13,22 @@ const REPORT_TABS: [string, string][] = [
 const repKind = signal("pl");
 const repPeriodKind = signal("month");
 const repPeriod = signal("");
+const repCompare = signal("previous");
+const repTag = signal("");
+const COMPARE_TABS: [string, string][] = [
+  ["previous", "Previous"],
+  ["last_year", "Last year"],
+  ["none", "None"],
+];
+const canCompare = () => repKind() === "pl" || repKind() === "bs" || repKind() === "cf";
+const canTag = () => repKind() === "pl" || repKind() === "cf";
+const reportArgs = (kind: string, pk: string, per: string, cmp: string, tag: string) => {
+  const args: Record<string, string> = { kind, period_kind: pk };
+  if (per) args.period = per;
+  if (kind === "pl" || kind === "bs" || kind === "cf") args.compare_to = cmp;
+  if (tag && (kind === "pl" || kind === "cf")) args.tag = tag;
+  return args;
+};
 
 function RepRow(p: { r: Any; cols: number; go: (page: string, filter?: string) => void }) {
   const r = p.r;
@@ -45,18 +62,22 @@ function RepRow(p: { r: Any; cols: number; go: (page: string, filter?: string) =
 
 function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
   const data = resource(
-    () => ({ v: ver(), k: repKind(), pk: repPeriodKind(), per: repPeriod() }),
-    (k: Any) => {
-      const args: Record<string, string> = { kind: k.k, period_kind: k.pk };
-      if (k.per) args.period = k.per;
-      return buwiz.call("books_report", args);
-    },
+    () => ({ v: ver(), k: repKind(), pk: repPeriodKind(), per: repPeriod(), cmp: repCompare(), tag: repTag() }),
+    (k: Any) => buwiz.call("books_report", reportArgs(k.k, k.pk, k.per, k.cmp, k.tag)),
+  );
+  const tags = resource(
+    () => ({ v: ver() }),
+    () =>
+      Promise.all([buwiz.call("books_tags_list", { kind: "department" }), buwiz.call("books_tags_list", { kind: "location" })]).then((all: Any[]) => [
+        { ticket: "", name: "All tags" },
+        ...all.flatMap((t: Any) => (t?.rows || []).map((r: Any) => ({ ticket: r.ticket, name: r.name }))),
+      ]),
   );
   const d = () => data() as Any;
-  const cols = () => (repKind() === "tb" ? 3 : repKind() === "pl" ? 2 : 1);
+  const two = () => (d()?.columns?.length || 0) > 1 && Boolean(d()?.compare);
+  const cols = () => (repKind() === "tb" ? 3 : two() ? 2 : 1);
   const exportCsv = () => {
-    const args: Record<string, string> = { kind: repKind(), period_kind: repPeriodKind() };
-    if (repPeriod()) args.period = repPeriod();
+    const args = reportArgs(repKind(), repPeriodKind(), repPeriod(), repCompare(), repTag());
     buwiz.call("books_report_csv", args).then(
       (r: Any) => {
         if (buwiz.copy) {
@@ -87,7 +108,14 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
         </View>
       </Head>
       <View class="flex-row items-center gap-2">
-        <Seg options={REPORT_TABS} value={repKind()} onPick={(v: string) => repKind.set(v)} />
+        <Seg
+          options={REPORT_TABS}
+          value={repKind()}
+          onPick={(v: string) => {
+            repKind.set(v);
+            repCompare.set(v === "pl" ? "previous" : "none");
+          }}
+        />
         <View class="flex-1" />
         <View class="flex-row items-center gap-1">
           <Btn label="‹" small onPress={() => repPeriod.set(d()?.period.prev || "")} />
@@ -95,6 +123,23 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
           <Btn label="›" small onPress={() => repPeriod.set(d()?.period.next || "")} />
         </View>
       </View>
+      <If when={canCompare() || canTag()}>
+        <View class="flex-row items-center gap-2">
+          <If when={canCompare()}>
+            <Text class={`text-[12px] ${C.dim}`}>Compare</Text>
+            <Seg options={COMPARE_TABS} value={repCompare()} onPick={(v: string) => repCompare.set(v)} />
+          </If>
+          <View class="flex-1" />
+          <If when={canTag()}>
+            <View class="w-[200px]">
+              <Pick value={repTag()} options={(tags() as Any) || []} onPick={(o: Any) => repTag.set(o.ticket)} placeholder="All tags" />
+            </View>
+          </If>
+        </View>
+      </If>
+      <If when={Boolean(d()?.tag_note)}>
+        <Text class={`text-[12px] ${C.dim}`}>{d()?.tag_note || ""}</Text>
+      </If>
       <Loading res={data} />
       <If when={Boolean(d()) && repKind() === "ag" && d()?.cash_book}>
         <Panel pad class="gap-2">
@@ -124,16 +169,18 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
       <If when={Boolean(d()) && repKind() !== "ag"}>
         <Panel>
           <View class={`flex-row gap-3 px-3 py-2 border-b ${C.line}`}>
-            <Text class={`flex-1 text-[10.5px] uppercase tracking-wider ${C.dim}`}>{repKind() === "pl" ? "Account" : d()?.columns?.[0] || ""}</Text>
-            <If when={repKind() === "pl"}>
+            <Text class={`flex-1 text-[10.5px] uppercase tracking-wider ${C.dim}`}>{repKind() === "pl" || two() ? "Account" : d()?.columns?.[0] || ""}</Text>
+            <If when={repKind() === "pl" || two()}>
               <Text class={`w-[130px] text-right text-[10.5px] uppercase tracking-wider ${C.dim}`}>{d()?.columns?.[0] || ""}</Text>
+            </If>
+            <If when={two()}>
               <Text class={`w-[130px] text-right text-[10.5px] uppercase tracking-wider ${C.dim}`}>{d()?.columns?.[1] || ""}</Text>
             </If>
             <If when={repKind() === "tb"}>
               <Text class={`w-[130px] text-right text-[10.5px] uppercase tracking-wider ${C.dim}`}>Debit</Text>
               <Text class={`w-[130px] text-right text-[10.5px] uppercase tracking-wider ${C.dim}`}>Credit</Text>
             </If>
-            <If when={repKind() === "bs" || repKind() === "cf"}>
+            <If when={(repKind() === "bs" || repKind() === "cf") && !two()}>
               <Text class={`w-[130px] text-right text-[10.5px] uppercase tracking-wider ${C.dim}`}>{repKind() === "bs" ? "Balance" : "Amount"}</Text>
             </If>
           </View>
@@ -148,6 +195,9 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
                   <View class={`flex-row gap-3 px-3 py-2 border-b ${C.line} ${C.raise}`}>
                     <Text class={`flex-1 text-[13px] font-bold ${C.ink}`}>{s().total?.label || ""}</Text>
                     <Text class={`w-[130px] text-right text-[12.5px] font-bold font-mono ${C.ink}`}>{s().total?.shown || ""}</Text>
+                    <If when={two()}>
+                      <Text class={`w-[130px] text-right text-[12.5px] font-bold font-mono ${C.mute}`}>{s().total?.prev_shown || ""}</Text>
+                    </If>
                   </View>
                 </If>
               </View>
@@ -161,7 +211,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
             </If>
             <If when={repKind() !== "tb"}>
               <Text class={`w-[130px] text-right text-[12.5px] font-bold font-mono ${C.ink}`}>{d()?.net?.shown || ""}</Text>
-              <If when={repKind() === "pl"}>
+              <If when={two()}>
                 <Text class={`w-[130px] text-right text-[12.5px] font-bold font-mono ${C.mute}`}>{d()?.net?.prev_shown || ""}</Text>
               </If>
             </If>
