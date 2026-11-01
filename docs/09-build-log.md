@@ -491,10 +491,6 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 `tools/check-all.sh`: fmt clean; clippy clean; cargo test 117; PoC 177; conformance 182 pass, 7 skipped (rox
 `9c106cc`); host test 17/17; privacy scan 0 findings.
 
-## M10 parity
-
-- 2026-11-01 unpaid-1, partial settlement and payment history. Schema 0019 adds `owed_payment` (one row per settlement, linked to its entry; backfilled from documents already paid). `books_store::owed_payments` settles all or part of a balance and lists payments; paid to date counts only posted entries, so voiding a payment in the Ledger puts its part back. `books_app_owed_settle` takes an optional `amount` and `on` and returns `balance`/`balance_shown`; `books_owed_list` rows add `paid`, `balance` and `state` (`open` | `part_paid`), totals are balances, and `owed` adds a payment-history `detail`. Cancel refuses `has_payments`. The Unpaid page shows balances, a Part paid pill, an amount and date on settle, and a History drawer. Tests: `tests/owed_partial.rs`, the store backfill test.
-
 ## Not yet built
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox
