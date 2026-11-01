@@ -1,4 +1,4 @@
-//! Buwiz Books as a Buwiz Bot mini app (`app.buwiz.books`), protocol 2.0.
+//! Buwiz Books as a Buwiz Bot mini app (`app.buwiz.books`), protocol 1.0.
 //!
 //! - [`jsonrpc`]: the stdio MCP server the Bot spawns;
 //! - [`reserved`]: the reserved `buwiz.*` tools (provision, session

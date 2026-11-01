@@ -50,7 +50,7 @@ impl Bot {
         };
         let seed = [11u8; 32];
         let public = b64::encode(SigningKey::from_bytes(&seed).verifying_key().as_bytes());
-        let p = bot.raw("buwiz.provision", json!({ "protocol": "2.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": public }), Value::Null);
+        let p = bot.raw("buwiz.provision", json!({ "protocol": "1.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": public }), Value::Null);
         assert_eq!(p["isError"], false, "{p}");
         bot
     }

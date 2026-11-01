@@ -4,7 +4,7 @@ Guidance for coding agents in this repo. Before you change a rule, a schema or a
 
 ## What this repo is
 
-Buwiz Books, a Buwiz Bot mini app: plugin id `app.buwiz.books`, publisher `app.buwiz` (key `gc-2026-01`), protocol 2.0. The Rust plugin is `crates/`, `apps/` and `tests/`; the research and design it was built from are `docs/`, `research/`, `data/` and `poc/`. Nothing here deploys or files anything. The TypeScript Books repo at `/Volumes/goldcoders/OSS/buwiz-books` is a reference only.
+Buwiz Books, a Buwiz Bot mini app: plugin id `app.buwiz.books`, publisher `app.buwiz` (key `gc-2026-01`), protocol 1.0 (`buwiz-sdk` `docs/protocol-1.0.md`; 2.0 and 2.1 were its pre-release numbering, which a 1.0 Bot refuses). The Rust plugin is `crates/`, `apps/` and `tests/`; the research and design it was built from are `docs/`, `research/`, `data/` and `poc/`. Nothing here deploys or files anything. The TypeScript Books repo at `/Volumes/goldcoders/OSS/buwiz-books` is a reference only.
 
 ## Invariants
 
@@ -59,7 +59,7 @@ Do not edit these. Re-check HEAD and state before you rely on a citation. HEADs 
 
 - Use `bun` for any TypeScript in this repo (`poc/`). Do not use npm, npx or node here.
 - The Bot's signing and conformance tools are Node. Run them from a Bot checkout. Do not copy them here.
-- Rust (the plugin, `crates/`): `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` must pass clean. `tools/bot/conformance.sh` signs with a throwaway test key (`books-test-01`, never `gc-2026-01`) and runs the Bot's `buwiz-plugin-test`; it needs a Bot checkout at protocol 2.0 (`BUWIZ_BOT_DIR`) with its `server/node_modules` present. `tools/bot/host-test.sh` installs Books in a throwaway Bot broker from a worktree of that checkout at `BUWIZ_BOT_COMMIT`. Keep it on port 8810 or above (8787 is the owner's broker, 8797-8803 the rox session's tests), with `BUWIZ_KEYSTORE=file:` and never the login Keychain (without it the 2.0 broker falls back to the Keychain). Never switch branches in the Bot checkout itself. One protocol version: 2.0, with no shims for older names. No floats: the crate denies float lints.
+- Rust (the plugin, `crates/`): `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` must pass clean. `tools/bot/conformance.sh` signs with a throwaway test key (`books-test-01`, never `gc-2026-01`) and runs the Bot's `buwiz-plugin-test`; it needs a Bot checkout at protocol 1.0 (`BUWIZ_BOT_DIR`) with its `server/node_modules` present. `tools/bot/host-test.sh` installs Books in a throwaway Bot broker from a worktree of that checkout at `BUWIZ_BOT_COMMIT`. Keep it on port 8810 or above (8787 is the owner's broker, 8797-8803 the rox session's tests), with `BUWIZ_KEYSTORE=file:` and never the login Keychain (without it the broker falls back to the Keychain). Never switch branches in the Bot checkout itself. One protocol version: 1.0, with no shims for older names. No floats: the crate denies float lints.
 
 ## Do not
 

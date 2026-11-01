@@ -342,7 +342,7 @@ fn the_assistant_cannot_match_one_line() {
             .verifying_key()
             .as_bytes(),
     );
-    let provision = json!({ "jsonrpc": "2.0", "id": 0, "method": "tools/call", "params": { "name": "buwiz.provision", "arguments": { "protocol": "2.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": books_mini_app::b64::encode(&seed) }, "pub": public } } });
+    let provision = json!({ "jsonrpc": "2.0", "id": 0, "method": "tools/call", "params": { "name": "buwiz.provision", "arguments": { "protocol": "1.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": books_mini_app::b64::encode(&seed) }, "pub": public } } });
     let p = server.handle(&provision).unwrap();
     assert_eq!(p["result"]["isError"], false, "{p}");
     let params = json!({

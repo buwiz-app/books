@@ -12,7 +12,7 @@
 //!
 //! The assistant offers a card with `books_show` (its result carries
 //! `_meta["buwiz/open"]`; the Bot shows it on the user's click). `/books <page or
-//! card>` and the five templates (commands, since protocol 2.0 has no
+//! card>` and the five templates (commands, since protocol 1.0 has no
 //! template field) open them too. Six `@books:` scopes point at a person,
 //! account, period, entry, form or tag; three routines draft at most.
 

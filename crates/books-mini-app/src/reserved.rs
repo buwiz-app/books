@@ -1,6 +1,9 @@
-//! The reserved tools of protocol 2.0 (spec 7.8): `buwiz.provision`,
-//! `buwiz.session.open`, `buwiz.session.close`, `buwiz.ticket.resolve` and
-//! `buwiz.uninstall`. Any other `buwiz.*` name is JSON-RPC -32601 (7.9).
+//! The reserved tools of protocol 1.0 (section 10) Books answers:
+//! `buwiz.provision`, `buwiz.session.open`, `buwiz.session.close`,
+//! `buwiz.ticket.resolve` and `buwiz.uninstall`. Any other `buwiz.*` name is
+//! JSON-RPC -32601 (10.1), `buwiz.account.set` and `buwiz.account.clear`
+//! included: Books declares no accounts (it signs in as its own
+//! `buwiz-books` client), so it leaves them out, as 10.1 allows.
 //!
 //! The Bot generates one ed25519 key per install and sends its seed in
 //! `buwiz.provision`, the first call of every spawn. The seed lives in
@@ -18,7 +21,15 @@ use buwiz_plugin::{CERT_MAX_MS, key::PluginKey};
 
 use crate::b64;
 use crate::service::Books;
-pub use buwiz_plugin::RESERVED;
+/// The reserved tools Books answers (a subset of the SDK's
+/// `buwiz_plugin::RESERVED`, which also names the account tools).
+pub const RESERVED: [&str; 5] = [
+    "buwiz.provision",
+    "buwiz.session.open",
+    "buwiz.session.close",
+    "buwiz.ticket.resolve",
+    "buwiz.uninstall",
+];
 
 #[cfg(test)]
 use ed25519_dalek::SigningKey;
@@ -136,11 +147,12 @@ impl Host {
                     None => ok(json!({ "valid": false })),
                 }
             }
-            _ => {
+            "buwiz.uninstall" => {
                 books.forget_tickets();
                 self.sessions.clear();
                 ok(json!({ "ok": true }))
             }
+            _ => return None,
         }))
     }
 
@@ -149,7 +161,7 @@ impl Host {
             return fail("invalid_args", "this is app.buwiz.books");
         }
         // no check of `protocol` here: the Bot decides compatibility from
-        // the manifest's `protocol` (2.0.0)
+        // the manifest's `protocol` (1.0.0)
         let key = match PluginKey::from_provision(arguments) {
             Ok(key) => key,
             Err(message) => return fail("invalid_args", &message),
@@ -213,7 +225,7 @@ mod tests {
     fn provision_args(seed: [u8; 32]) -> Map<String, Value> {
         let public = b64::encode(SigningKey::from_bytes(&seed).verifying_key().as_bytes());
         json!({
-            "protocol": "2.0.0",
+            "protocol": "1.0.0",
             "plugin": manifest::PLUGIN_ID,
             "key": {"alg": "ed25519", "seed": b64::encode(&seed)},
             "pub": public,

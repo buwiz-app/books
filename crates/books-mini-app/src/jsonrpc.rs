@@ -279,7 +279,7 @@ fn resource_list() -> Value {
     let mut resources = vec![json!({
         "uri": manifest::MANIFEST_URI,
         "name": "manifest",
-        "description": "The Mini App Protocol 2.0 manifest.",
+        "description": "The Mini App Protocol 1.0 manifest.",
         "mimeType": manifest::MANIFEST_MIME,
     })];
     for app in apps::APPS

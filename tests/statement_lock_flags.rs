@@ -307,7 +307,7 @@ fn the_assistant_cannot_reopen_a_statement() {
     let p = call(
         1,
         "buwiz.provision",
-        json!({ "protocol": "2.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": public }),
+        json!({ "protocol": "1.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": public }),
         Value::Null,
     );
     assert_eq!(p["isError"], false, "{p}");

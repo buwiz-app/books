@@ -308,7 +308,7 @@ fn the_server_refuses_the_document_tool_to_the_assistant() {
     let p = call(
         1,
         "buwiz.provision",
-        json!({ "protocol": "2.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": books_mini_app::b64::encode(&seed) }, "pub": public }),
+        json!({ "protocol": "1.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": books_mini_app::b64::encode(&seed) }, "pub": public }),
         Value::Null,
     );
     assert_eq!(p["isError"], false, "{p}");
