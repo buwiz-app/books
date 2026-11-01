@@ -116,13 +116,21 @@ fn month_arg(args: &Map<String, Value>) -> Result<Period, Refusal> {
 }
 
 /// One statement beside the ledger: each line, its match, the difference.
-pub fn statement_view(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
+pub fn statement_view(
+    store: &Store,
+    book: Book,
+    args: &Map<String, Value>,
+    origin: crate::service::Origin,
+) -> Answer {
     let account = account_arg(store, &book, args)?;
     let month = month_arg(args)?;
     let head = json!({ "account": { "ticket": ticket(store, "account", account.id)?, "name": account.name }, "month": { "key": month.key, "label": month.label(), "short": month_short(&month) } });
     let Some((s, lines)) = months::statement(store.conn(), book.id, account.id, &month.key)? else {
         let mut out = head;
         out["statement"] = Value::Null;
+        crate::statement_read::view_extra(
+            store, &book, account.id, &month.key, None, origin, &mut out,
+        )?;
         return Ok(out);
     };
     let found = months::matches(store.conn(), book.id, &s, &lines)?;
@@ -180,6 +188,15 @@ pub fn statement_view(store: &Store, book: Book, args: &Map<String, Value>) -> A
         "can_finish": s.status != "finished" && diff == 0 && suggested == 0 && missing == 0,
         "rows": rows,
     });
+    crate::statement_read::view_extra(
+        store,
+        &book,
+        account.id,
+        &month.key,
+        Some(&s),
+        origin,
+        &mut out,
+    )?;
     Ok(out)
 }
 
@@ -289,6 +306,7 @@ pub fn statement_import(conn: &Connection, args: &Map<String, Value>) -> Answer 
         closing,
         text(args, "file_name"),
     )?;
+    books_store::statement_drafts::keep_balances(conn, id, &parsed.balances)?;
     let key = Period::of(parsed.lines[0].date, PeriodKind::Month).key;
     Ok(with_subject(
         json!({ "month": key, "lines": parsed.lines.len(), "status": "open" }),

@@ -144,6 +144,9 @@ function MatchView() {
         </View>
       </Head>
       <Loading res={data} />
+      <If when={Boolean(d()?.draft)}>
+        <DraftBanner account={recAccount()} month={recMonth()} draft={d()?.draft} />
+      </If>
       <If when={Boolean(d()) && !s()}>
         <Panel pad>
           <Text class={`text-[13px] ${C.mute}`}>No statement for this month yet. Import the bank's CSV to match it.</Text>
@@ -165,6 +168,9 @@ function MatchView() {
                     <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>
                       {r().description}
                     </Text>
+                    <If when={Boolean(r().low)}>
+                      <Pill tone="draft" label={`read ${String(r().confidence)}%`} />
+                    </If>
                     <Text class={`text-[12.5px] font-mono ${C.ink}`}>{r().amount_shown}</Text>
                   </View>
                   <Text class={`w-[28px] text-center font-bold ${r().match === "m" ? C.green : r().match === "s" ? C.amber : C.red}`}>{MARK[r().match]}</Text>
