@@ -187,13 +187,14 @@ fn a_pay_document_is_a_bill_record_and_refusals_hold() {
     );
     assert_eq!(code(&unknown), "not_found");
     // a ticket of another kind is not a document
-    let book = data(&bot.app("books_book_get", json!({})))["book"].clone();
-    if let Some(book) = book.as_str() {
-        assert_eq!(
-            code(&bot.app("books_owed_document", json!({ "owed": book }))),
-            "not_found"
-        );
-    }
+    let book = data(&bot.app("books_book_get", json!({})))["ticket"]
+        .as_str()
+        .expect("books_book_get returns the book ticket")
+        .to_string();
+    assert_eq!(
+        code(&bot.app("books_owed_document", json!({ "owed": book }))),
+        "not_found"
+    );
     // the assistant never gets the page
     assert_eq!(
         code(&bot.agent("books_owed_document", json!({ "owed": inv }))),

@@ -491,10 +491,6 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 `tools/check-all.sh`: fmt clean; clippy clean; cargo test 117; PoC 177; conformance 182 pass, 7 skipped (rox
 `9c106cc`); host test 17/17; privacy scan 0 findings.
 
-## M10 parity
-
-- 2026-11-01, unpaid-2: `books_owed_document` (Reach::App, read-only, args `{book?, owed}`) returns one owed document as a static HTML print page for `buwiz.preview`: an embedded `text/html` resource at `books://print/owed.html` with `structuredContent.title` "Statement of account" (collect) or "Bill record" (pay). Inline style only, every text escaped, no memo, ticket or entry id, refused over 262144 bytes (`too_large`). The manifest grants `permissions.preview = {"max_bytes": 1048576}` to the Books window only (derived from `.preview(` in `apps/books/owed_print.tsx`); the Unpaid page shows a Print button beside Mark paid when the host has the method. Code: `crates/books-mini-app/src/owed_doc.rs`; tests: `tests/owed_document.rs`. Follow-up after unpaid-1: paid-to-date, balance and a payments table.
-
 ## Not yet built
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox

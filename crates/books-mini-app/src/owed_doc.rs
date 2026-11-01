@@ -119,6 +119,10 @@ pub fn render(conn: &Connection, book: &Book, u: &Unpaid) -> Result<String, Refu
     html.push_str("</table><footer>");
     html.push_str(&esc(FOOTER));
     html.push_str("</footer></body></html>");
+    capped(html)
+}
+
+fn capped(html: String) -> Result<String, Refusal> {
     if html.len() > MAX_BYTES {
         return Err(Refusal::new(
             "too_large",
@@ -169,5 +173,18 @@ pub fn tool(books: &mut Books, args: &Map<String, Value>, origin: Origin) -> Val
     match page {
         Ok((html, t)) => result(html, t),
         Err(r) => r.into_result(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_page_over_the_cap_is_refused_and_one_at_the_cap_is_kept() {
+        let at_cap = "a".repeat(MAX_BYTES);
+        assert_eq!(capped(at_cap.clone()).ok(), Some(at_cap));
+        let over = capped("a".repeat(MAX_BYTES + 1)).err().map(|r| r.code);
+        assert_eq!(over.as_deref(), Some("too_large"));
     }
 }
