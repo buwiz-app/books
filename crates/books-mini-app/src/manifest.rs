@@ -23,7 +23,7 @@ pub use buwiz_plugin::manifest::{
 };
 pub const PLUGIN_ID: &str = "app.buwiz.books";
 pub const SHORT: &str = "books";
-pub const VERSION: &str = "0.5.0";
+pub const VERSION: &str = "0.6.0";
 pub const PUBLISHER_ID: &str = "app.buwiz";
 /// The release key (owner decision D9). Tests sign under a test key id.
 pub const RELEASE_KEY_ID: &str = "gc-2026-01";

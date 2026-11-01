@@ -163,7 +163,7 @@ fn initialize_list_provision_open_and_call() {
     let signing = SigningKey::from_bytes(&seed);
     let public = b64::encode(signing.verifying_key().as_bytes());
     let provision = json!({
-        "protocol": "2.0.0", "plugin": "app.buwiz.books",
+        "protocol": "1.0.0", "plugin": "app.buwiz.books",
         "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": public,
     });
     let expected_sha = jcs::sha256_jcs(&jcs::parse(&served).unwrap()).unwrap();
@@ -178,7 +178,7 @@ fn initialize_list_provision_open_and_call() {
     let other = [9u8; 32];
     let refused = plugin.call(
         "buwiz.provision",
-        json!({ "protocol": "2.0.0", "plugin": "app.buwiz.books",
+        json!({ "protocol": "1.0.0", "plugin": "app.buwiz.books",
                 "key": { "alg": "ed25519", "seed": b64::encode(&other) },
                 "pub": b64::encode(SigningKey::from_bytes(&other).verifying_key().as_bytes()) }),
     );
@@ -187,11 +187,22 @@ fn initialize_list_provision_open_and_call() {
         "invalid_args"
     );
 
-    // an unknown buwiz.* is -32601 (7.9)
+    // an unknown buwiz.* is -32601 (10.1); so are the account tools, since
+    // Books declares no accounts, and a push is never taken for an uninstall
     assert_eq!(
         plugin.call("buwiz.sdk.probe", json!({}))["error"]["code"],
         -32601
     );
+    for name in ["buwiz.account.set", "buwiz.account.clear"] {
+        let push =
+            json!({ "account": "google", "label": "default", "access_token": "synthetic-token" });
+        let answer = plugin.call(name, push);
+        assert_eq!(answer["error"]["code"], -32601, "{name}: {answer}");
+        assert!(
+            !answer.to_string().contains("synthetic-token"),
+            "{name}: {answer}"
+        );
+    }
 
     // buwiz.session.open: the certificate is the request, signed over JCS
     let home = manifest::unsigned(manifest::RELEASE_KEY_ID)["apps"]
