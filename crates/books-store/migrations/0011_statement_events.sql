@@ -1,4 +1,4 @@
--- Schema 0012 (M10 parity): every finish and reopen of a bank statement.
+-- Schema 0011 (M10 parity): every finish and reopen of a bank statement.
 -- A reopen keeps its reason (it may be a memo, so no result echoes it).
 CREATE TABLE statement_event (
   event_id     INTEGER PRIMARY KEY,

@@ -374,7 +374,7 @@ fn a_plain_void_is_unchanged_and_the_drawer_offers_amend() {
     let (_dir, mut bot) = booked("amend-plain");
     let original = sale(&mut bot, "post-sale-0142", "2026-10-28");
     let o = bot.agent("books_entry_get", json!({ "entry": original }));
-    assert_eq!(data(&o)["actions"], json!(["void", "amend", "duplicate"]));
+    assert_eq!(data(&o)["actions"], json!(["void", "amend", "copy"]));
     assert_eq!(
         data(&o)["links"],
         json!({ "amends": null, "amended_by": null })

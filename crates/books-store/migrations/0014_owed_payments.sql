@@ -1,4 +1,4 @@
--- Schema 0019 (M10 parity, unpaid-1): one row per settlement of an unpaid
+-- Schema 0014 (M10 parity, unpaid-1): one row per settlement of an unpaid
 -- document, linked to the entry that moved the money. What is paid to date
 -- is the sum of rows whose entry is still posted, so voiding a payment in
 -- the Ledger restores the balance with no extra write.
@@ -15,7 +15,7 @@ CREATE TABLE owed_payment (
 );
 CREATE INDEX owed_payment_by_doc ON owed_payment (unpaid_id);
 
--- Documents marked paid before 0019 settled in full with one entry: the
+-- Documents marked paid before 0014 settled in full with one entry: the
 -- money line is the debit for collect and the credit for pay.
 INSERT INTO owed_payment (book_id, unpaid_id, amount, paid_on, money_account_id, entry_id, created_at)
 SELECT u.book_id, u.unpaid_id, u.amount, u.paid_on,

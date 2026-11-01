@@ -358,7 +358,11 @@ fn evidence_grants_stay_on_the_evidence_apps() {
         books["permissions"]["open"],
         serde_json::json!({ "apps": ["ledger", "evidence"] })
     );
-    assert!(books["permissions"].get("preview").is_none());
+    // the window's preview is Unpaid's print page, snapshots and the month pack, at the shared cap
+    assert_eq!(
+        books["permissions"]["preview"],
+        serde_json::json!({ "max_bytes": books_mini_app::tools::document_review::PREVIEW_MAX_BYTES })
+    );
     let apps::AppSource::Tsx(books_source) = apps::find("books").unwrap().source else {
         panic!("books is a TSX window")
     };

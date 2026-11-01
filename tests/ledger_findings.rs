@@ -116,7 +116,8 @@ impl Bot {
         let entry = data(&d)["entry"].as_str().unwrap().to_string();
         let p = self.app(
             "books_app_post_entry",
-            json!({ "client_request_id": format!("post-{n:04}"), "entry": entry }),
+            // the duplicate check needs lookalikes posted (ledger-1 refuses them without keep_both)
+            json!({ "client_request_id": format!("post-{n:04}"), "entry": entry, "keep_both": true }),
         );
         data(&p);
         entry
@@ -297,12 +298,12 @@ fn today_and_ledger_show_checks() {
     assert_eq!(item["filter"], "checks");
     let l = s
         .bot
-        .app("books_ledger_list", json!({ "filter": "checks" }));
+        .agent("books_ledger_list", json!({ "filter": "checks" }));
     let d = data(&l);
     assert_eq!(d["counts"]["checks"], 1);
     assert_eq!(d["rows"][0]["ticket"].as_str(), Some(now.as_str()));
     let month = Period::of(Date::today(), PeriodKind::Month).previous().key;
-    let l = s.bot.app(
+    let l = s.bot.agent(
         "books_ledger_list",
         json!({ "month": month, "filter": "checks" }),
     );
@@ -328,7 +329,7 @@ fn a_finished_statement_clears_unmatched_month() {
     // one statement for the one bank account the seed posts to, every
     // posted line on it, then finished
     let prev = Period::of(Date::today(), PeriodKind::Month).previous();
-    let entries = s.bot.app(
+    let entries = s.bot.agent(
         "books_ledger_list",
         json!({ "month": prev.key, "filter": "posted" }),
     );

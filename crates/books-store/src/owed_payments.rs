@@ -200,11 +200,11 @@ mod tests {
     use crate::MIGRATIONS;
 
     /// A store at schema 18 with a bill marked paid the old way (one full
-    /// entry, `status = 'paid'`) gains one payment row from 0019's backfill.
+    /// entry, `status = 'paid'`) gains one payment row from 0014's backfill.
     #[test]
     fn migration_backfills_a_document_paid_before_payments() {
         let conn = Connection::open_in_memory().unwrap();
-        for (n, sql) in MIGRATIONS.iter().filter(|m| m.0 < 19) {
+        for (n, sql) in MIGRATIONS.iter().filter(|m| m.0 < 14) {
             conn.execute_batch(sql)
                 .unwrap_or_else(|e| panic!("migration {n}: {e}"));
         }
@@ -252,7 +252,7 @@ mod tests {
             params![unpaid_id, entry],
         )
         .unwrap();
-        for (_, sql) in MIGRATIONS.iter().filter(|m| m.0 >= 19) {
+        for (_, sql) in MIGRATIONS.iter().filter(|m| m.0 >= 14) {
             conn.execute_batch(sql).unwrap();
         }
         let list = payments(&conn, unpaid_id).unwrap();

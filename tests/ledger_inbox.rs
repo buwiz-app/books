@@ -109,7 +109,8 @@ fn ticket(result: &Value) -> String {
 }
 
 fn row(bot: &mut Bot, entry: &str, filter: &str) -> Option<Value> {
-    let list = bot.app(
+    // the ledger is the native books.ledger app now; the Books window lacks the grant
+    let list = bot.agent(
         "books_ledger_list",
         json!({ "month": "2026-10", "filter": filter }),
     );
