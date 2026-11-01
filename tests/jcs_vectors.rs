@@ -1,6 +1,6 @@
 //! JCS against the Buwiz Bot's shared RFC 8785 vectors. The vendored copy
-//! (`tests/fixtures/bot-jcs-vectors.json`, from Bot main at protocol 2.0)
-//! always runs; the Bot's two originals (`broker/rox-v1/src/jcs-vectors.json`,
+//! (`tests/fixtures/bot-jcs-vectors.json`, from Bot main before protocol 1.0)
+//! always runs; the Bot's two originals (`broker/buwiz-protocol/src/jcs-vectors.json`,
 //! `server/test/fixtures/jcs-vectors.json`) run too when `BUWIZ_BOT_DIR` names
 //! a Bot checkout, and must equal the vendored copy.
 
@@ -9,7 +9,7 @@ use serde_json::Value;
 
 const VENDORED: &str = include_str!("fixtures/bot-jcs-vectors.json");
 const BOT_FILES: [&str; 2] = [
-    "broker/rox-v1/src/jcs-vectors.json",
+    "broker/buwiz-protocol/src/jcs-vectors.json",
     "server/test/fixtures/jcs-vectors.json",
 ];
 

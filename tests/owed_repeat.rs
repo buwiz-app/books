@@ -329,7 +329,7 @@ fn the_repeat_tool_is_the_apps_alone() {
     .unwrap();
     let seed = [11u8; 32];
     let public = b64::encode(SigningKey::from_bytes(&seed).verifying_key().as_bytes());
-    let provision = json!({ "name": "buwiz.provision", "arguments": { "protocol": "2.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": public } });
+    let provision = json!({ "name": "buwiz.provision", "arguments": { "protocol": "1.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": public } });
     let p = server
         .handle(&json!({ "jsonrpc": "2.0", "id": 0, "method": "tools/call", "params": provision }))
         .unwrap();

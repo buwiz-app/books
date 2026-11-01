@@ -1,0 +1,24 @@
+{
+  "name": "buwiz-books",
+  "version": "0.6.0",
+  "description": "Your books in Buwiz Bot: today, the ledger, unpaid invoices and bills, reconcile, reports, people, accounts and tags. Only you post, void or close.",
+  "author": { "name": "Buwiz" },
+  "homepage": "https://github.com/buwiz-app/books",
+  "mcpServers": {
+    "books": {
+      "command": "${PLUGIN_ROOT}/bin/books-mini-app",
+      "args": ["mcp"],
+      "env": { "BOOKS_V1_MANIFEST": "${PLUGIN_ROOT}/bin/app.buwiz.books.manifest.json" }
+    }
+  },
+  "buwiz": {
+    "protocol": "1.0.0",
+    "id": "app.buwiz.books",
+    "short": "books",
+    "version": "0.6.0",
+    "server": "books",
+    "files": {},
+    "binaries": {},
+    "publisher": { "id": "app.buwiz", "key_id": "gc-2026-01" }
+  }
+}

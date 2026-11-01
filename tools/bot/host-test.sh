@@ -6,7 +6,7 @@
 # The throwaway broker follows the rox session's recipe (2026-10-29):
 #   - a git worktree of the Bot repo at a pinned commit (never a branch switch
 #     in the Bot checkout itself), with server/node_modules symlinked;
-#   - plain Node (src/app-server.mjs), no rox-broker build;
+#   - plain Node (src/app-server.mjs), no buwiz-broker build;
 #   - its own port (8810 or above; 8787 is the owner's, 8797-8803 the rox
 #     session's), its own GROK_DATA_DIR, a per-run BUWIZ_TRUST_FILE with a
 #     throwaway test key (never gc-2026-01), and BUWIZ_KEYSTORE=file:<dir>, so no
@@ -21,7 +21,7 @@
 #      BUWIZ_BOT_COMMIT (default 2f93df804520738d32137668424427de70ee85ee)
 #      BOOKS_HOST_PORT (default 8810)
 #      BOOKS_TEST_KEY_ID (default books-test-01)
-#      BUWIZ_BROKER_BIN (a rox-broker binary from buwiz-bot main; signs the manifest
+#      BUWIZ_BROKER_BIN (a buwiz-broker binary from buwiz-bot main; signs the manifest
 #        in place of server/src/v1/sign-manifest.mjs)
 set -euo pipefail
 

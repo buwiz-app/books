@@ -438,7 +438,7 @@ fn c_the_assistant_cannot_accept_and_a_routine_cannot_draft() {
     let public = b64::encode(SigningKey::from_bytes(&seed).verifying_key().as_bytes());
     let p = raw(
         "buwiz.provision",
-        json!({ "protocol": "2.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": public }),
+        json!({ "protocol": "1.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": public }),
         Value::Null,
     );
     assert_eq!(p["isError"], false, "{p}");

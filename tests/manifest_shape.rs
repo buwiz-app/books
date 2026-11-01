@@ -44,10 +44,10 @@ fn neutral(title: &str) {
 #[test]
 fn the_manifest_has_the_books_identity() {
     let m = manifest::unsigned(manifest::RELEASE_KEY_ID);
-    assert_eq!(m["protocol"], "2.0.0");
+    assert_eq!(m["protocol"], "1.0.0");
     assert_eq!(m["id"], "app.buwiz.books");
     assert_eq!(m["short"], "books");
-    assert_eq!(m["version"], "0.5.0");
+    assert_eq!(m["version"], "0.6.0");
     assert_eq!(m["publisher"]["id"], "app.buwiz");
     assert_eq!(m["publisher"]["key_id"], "gc-2026-01");
     assert!(m.get("signature").is_none() && m.get("needs").is_none());
@@ -406,4 +406,72 @@ fn evidence_grants_stay_on_the_evidence_apps() {
     let manifest_apps = entries.len();
     assert!(manifest_apps <= 16, "apps: {manifest_apps}");
     assert!(m["scopes"].as_array().unwrap().len() <= 16);
+}
+
+/// The package template (`package/plugin.json`, protocol 1.0 section 7)
+/// stays in step with the served manifest, and the SDK's `package` fills it
+/// from a release folder.
+#[test]
+fn the_package_template_matches_the_manifest_and_fills() {
+    let text = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../package/plugin.json"
+    ))
+    .unwrap();
+    let template: serde_json::Value = serde_json::from_str(&text).unwrap();
+    let m = manifest::unsigned(manifest::RELEASE_KEY_ID);
+    let b = &template["buwiz"];
+    assert_eq!(b["protocol"], m["protocol"]);
+    assert_eq!(b["protocol"], "1.0.0");
+    for key in ["id", "short", "version"] {
+        assert_eq!(b[key], m[key], "buwiz.{key}");
+    }
+    assert_eq!(template["version"], m["version"]);
+    assert_eq!(
+        b["publisher"],
+        serde_json::json!({ "id": "app.buwiz", "key_id": manifest::RELEASE_KEY_ID })
+    );
+    let server = b["server"].as_str().unwrap();
+    let entry = &template["mcpServers"][server];
+    assert_eq!(entry["command"], "${PLUGIN_ROOT}/bin/books-mini-app");
+    assert_eq!(entry["args"], serde_json::json!(["mcp"]));
+    assert_eq!(
+        entry["env"][manifest::MANIFEST_ENV],
+        format!("${{PLUGIN_ROOT}}/bin/{}.manifest.json", manifest::PLUGIN_ID)
+    );
+    // the shorts protocol 1.0 reserves are not Books'
+    assert!(
+        !["buwiz", "office", "skill", "routine", "bot"].contains(&m["short"].as_str().unwrap())
+    );
+
+    let out = std::env::temp_dir().join(format!("books-package-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&out);
+    std::fs::create_dir_all(&out).unwrap();
+    std::fs::write(
+        out.join(format!("{}.manifest.json", manifest::PLUGIN_ID)),
+        m.to_string(),
+    )
+    .unwrap();
+    std::fs::write(
+        out.join("books-mini-app-macos-aarch64"),
+        b"synthetic binary",
+    )
+    .unwrap();
+    let filled = buwiz_plugin::package::fill(
+        &template,
+        &out,
+        manifest::PLUGIN_ID,
+        "books-mini-app",
+        "macos-aarch64",
+        None,
+    )
+    .unwrap();
+    let bin = &filled["buwiz"]["binaries"]["macos-aarch64"];
+    assert_eq!(bin["path"], "bin/books-mini-app");
+    assert_eq!(bin["asset"], "books-mini-app-macos-aarch64");
+    assert!(
+        filled["buwiz"]["files"][format!("bin/{}.manifest.json", manifest::PLUGIN_ID)]["sha256"]
+            .is_string()
+    );
+    let _ = std::fs::remove_dir_all(&out);
 }
