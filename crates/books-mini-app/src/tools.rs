@@ -232,13 +232,14 @@ fn report_schema() -> Value {
         "type": "object",
         "properties": {
             "book": { "type": "string" },
-            "kind": { "type": "string", "enum": ["pl", "bs", "cf", "tb", "ag", "ac"] },
+            "kind": { "type": "string", "enum": ["pl", "bs", "cf", "tb", "ag", "ac", "ps"] },
             "period_kind": { "type": "string", "enum": ["month", "quarter", "year"] },
             "period": { "type": "string", "description": "2026-10, 2026-Q3 or 2026; this period when absent." },
             "side": { "type": "string", "enum": ["collect", "pay"], "description": "Aging only." },
                 "compare_to": { "type": "string", "enum": ["previous", "last_year", "none"], "description": "P&L, balance sheet and cash flow: the period shown beside this one. previous by default on the P&L, none otherwise." },
                 "tag": { "type": "string", "description": "P&L and cash flow only: a department or location ticket from books_tags_list." },
-            "account": { "type": "string", "description": "Account activity (ac) only: an account ticket or number." }
+            "account": { "type": "string", "description": "Account activity (ac) only: an account ticket or number." },
+            "person": { "type": "string", "description": "Kind ps only: a person ticket. The period is a year when period_kind is absent." }
         }
     })
 }
@@ -673,7 +674,7 @@ pub const TOOLS: &[Tool] = &[
         reach: Reach::Everyone,
         write: false,
         schema: report_schema,
-        description: "A report on the book's basis: P&L with the previous period, balance sheet, cash flow, trial balance, or aging (accrual books only). compare_to sets the period beside it (previous, last_year or none); tag narrows the P&L or cash flow to one department or location.",
+        description: "A report on the book's basis: P&L with the previous period, balance sheet, cash flow, trial balance, aging (accrual books only), account activity (ac), or a person statement (ps). compare_to sets the period beside it (previous, last_year or none); tag narrows the P&L or cash flow to one department or location.",
     },
     Tool {
         name: REPORT_CSV,

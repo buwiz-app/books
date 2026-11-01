@@ -603,10 +603,14 @@ fn ag(store: &Store, chart: &Chart, period: &Period, args: &Map<String, Value>) 
 /// `books_report`.
 pub fn report(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
     let chart = Chart::load(store, book)?;
-    let period = period_arg(args)?;
     let kind = text(args, "kind").unwrap_or("pl");
-    if !["pl", "bs", "cf", "tb", "ag"].contains(&kind) {
-        return Err(Refusal::invalid("`kind` is pl, bs, cf, tb or ag."));
+    let period = if kind == "ps" {
+        crate::person_statement::period(args)?
+    } else {
+        period_arg(args)?
+    };
+    if !["pl", "bs", "cf", "tb", "ag", "ac", "ps"].contains(&kind) {
+        return Err(Refusal::invalid("`kind` is pl, bs, cf, tb, ag, ac or ps."));
     }
     let compare = match text(args, "compare_to") {
         None if kind == "pl" => Compare::Previous,
@@ -643,7 +647,8 @@ pub fn report(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
         "tb" => tb(store, &chart, &period)?,
         "ag" => ag(store, &chart, &period, args)?,
         "ac" => crate::activity::report(store, &chart, &period, args)?,
-        _ => return Err(Refusal::invalid("`kind` is pl, bs, cf, tb, ag or ac.")),
+        "ps" => crate::person_statement::report(store, &chart, &period, args)?,
+        _ => return Err(Refusal::invalid("`kind` is pl, bs, cf, tb, ag, ac or ps.")),
     };
     out["compare"] = match &prev {
         Some(p) => json!({ "key": p.key, "label": p.label(), "mode": compare.as_str() }),
@@ -708,6 +713,7 @@ pub fn report_csv(store: &Store, book: Book, args: &Map<String, Value>) -> Answe
                 lines.push(cells.join(","));
             }
         }
+        Some("ps") => lines.extend(crate::person_statement::csv_lines(&r, csv_cell)),
         Some("tb") => {
             lines.push("Number,Account,Debit,Credit".into());
             for row in r["sections"][0]["rows"].as_array().into_iter().flatten() {

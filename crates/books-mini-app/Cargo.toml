@@ -95,6 +95,10 @@ path = "../../tests/owed_document.rs"
 name = "account_activity"
 path = "../../tests/account_activity.rs"
 
+[[test]]
+name = "person_statement"
+path = "../../tests/person_statement.rs"
+
 [dependencies]
 buwiz-plugin = { git = "https://github.com/buwiz-app/buwiz-sdk", rev = "2120c725112e2072b22f6630079fc938b6c9b1e9" }
 books-core = { path = "../books-core" }
