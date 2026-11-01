@@ -506,26 +506,27 @@ to 7..15 in that order.
 
 | Area | Tasks | What the user gets |
 |---|---|---|
-| Evidence | evidence-1, 3, 4 | Stored receipts and documents (per-book dedup, links to entries and owed items), the assistant's classification recorded after the user accepts, a document library app with a card, previews. |
+| Evidence | evidence-1, 2, 3, 4 | Stored receipts and documents (per-book dedup, links to entries and owed items), the assistant's classification recorded after the user accepts, what the assistant read off a receipt with its confidence, a document library app with a card, previews. |
 | Reconcile | reconcile-1..4 | Statement lines the assistant read as a reviewable draft, a statement page snapshot and a printable reconciliation, finish/reopen history and flags, match hints from matched history. |
-| Ledger review | ledger-1..3 | Needs-review inbox (field confidence, what changed, likely duplicates with Keep both), checks findings on Today and the ledger, amend by reversal with a reason. |
+| Ledger review | ledger-1..4 | Needs-review inbox (field confidence, what changed, likely duplicates with Keep both), checks findings on Today and the ledger, amend by reversal with a reason, many drafts posted, discarded or recategorized in one click and the ledger as CSV. |
 | Unpaid | unpaid-1..3 | Partial payments per document, a print page for an owed document, monthly repeats. |
 | Reports | reports-1..4 | Compare to previous period or last year and filter by tag, account activity (kind ac), person statements (kind ps), a month pack print preview. |
 
 ### Inventory
 
-- New tools (14): books_app_evidence_attach, books_app_evidence_detach, books_app_evidence_kind,
+- New tools (15): books_app_batch, books_app_evidence_attach, books_app_evidence_detach, books_app_evidence_kind,
   books_app_evidence_preview, books_app_evidence_review, books_app_month_pack, books_app_owed_repeat,
   books_app_reconcile_document, books_checks, books_evidence_classify, books_evidence_list, books_owed_document,
   books_owed_draft, books_statement_draft_lines. books_report gains kinds ac and ps and the compare_to and tag
-  arguments; books_app_statement_accept gains draft and one-line accepts; books_app_void_entry gains amend.
+  arguments; books_report_csv gains kind=ledger with its from, to, account and filter arguments;
+  books_app_statement_accept gains draft and one-line accepts; books_app_void_entry gains amend.
 - Assistant-callable writes stay drafts only: books_entry_draft, books_owed_draft, books_evidence_classify,
   books_statement_draft_lines (tests/manifest_shape.rs allowlist).
 - New app: evidence (apps/evidence.tsx) and its card (apps/cards/evidence.tsx).
 - New Books window files: activity.tsx, ledger_amend.tsx, ledger_findings.tsx, ledger_review.tsx, owed_print.tsx,
-  owed_repeat.tsx, reconcile_flags.tsx, statement_read.tsx, statement_snapshot.tsx.
-- Migrations 0007..0015: evidence, owed_proposals, evidence_classification, statement_drafts, statement_events,
-  draft_review, amendments, owed_payments, owed_repeat.
+  owed_repeat.tsx, reconcile_flags.tsx, statement_read.tsx, statement_snapshot.tsx, ledger_bulk.tsx.
+- Migrations 0007..0016: evidence, owed_proposals, evidence_classification, statement_drafts, statement_events,
+  draft_review, amendments, owed_payments, owed_repeat, receipt_extraction.
 
 ### Integration decisions (PROPOSAL)
 
@@ -533,16 +534,24 @@ to 7..15 in that order.
   (8 MiB). Owed print, snapshots and the month pack had each added their own block with a different cap.
 - The posted-entry action stays "copy" (ledger-1 renamed it from "duplicate" so it cannot be confused with a likely
   duplicate); the native books.ledger screen now reads "copy" too.
-- Since W9 the ledger is the native books.ledger app, so the Books window has no books_ledger_list grant. Pages that
-  used to jump to the Ledger page call openLedger; tests that read the list call it with agent origin.
+- Since W9 the ledger is the native books.ledger app, so the Books window lost its books_ledger_list grant. Pages that
+  used to jump to the Ledger page call openLedger; tests that read the list call it with agent origin. ledger-4's bulk
+  panel reads the list again, so the window grants books_ledger_list once more beside books_app_batch, two grants well
+  under the 64 cap (tests/ledger_batch.rs computes the set from the manifest instead of a count).
+- A refused batch answers in the refusal shape the other tools use: the single write's code and sentence, plus
+  `refused` naming the entry by number ("entry 0042"), never its content.
 - books_report's kind check accepts pl, bs, cf, tb, ag, ac and ps (the compare/tag validation from reports-1 had left
   ac unreachable after the reports-2 merge).
 
+### The follow-up (evidence-2 and ledger-4)
+
+Both tasks were held back from the first integration and merged after it, in the order evidence-2 then ledger-4, at
+manifest version 0.5.0. evidence-2's migration became 0016 (its 0007 was already main's). The Books window's entry
+drawer now shows what the assistant read off a document beside the entry's own values; the bulk panel posts, discards
+or recategorizes a selection and copies the ledger as CSV.
+
 ### Not included
 
-- parity/evidence-2 (draft card that reaches review drafts and hides the payee): rejected in review; stale against W9's
-  AppSource change and failed to compile after a merge with main.
-- parity/ledger-4: rejected in review; it raised the Books window's tool permissions by two instead of one.
 - Native ledger follow-ups (W9 owns books.ledger): review badges and the review panel in ledger rows, a running-balance
   column, mounting AmendButton and AmendLinks in the native drawer.
 
@@ -647,3 +656,13 @@ comes from reconcile-1 (`statement_drafts::extras`: `statement.evidence_id`, lin
   (11000 is its group). Follow-up once the native ledger lands: a running-balance column there too.
 
 - 2026-11-01 reports-4 (month pack): new app-only tool `books_app_month_pack` (named with the `books_app_` prefix that `tests/manifest_shape.rs` requires of every app-only tool; the task text said `books_month_pack`; `crates/books-mini-app/src/month_pack.rs`, read-only). It reads `books_report` pl/bs/cf/tb for one month and `books_reconcile_grid`, and returns one static HTML document (inline style only; no script, link or URL; store text escaped) as an MCP `text/html` resource `books://print/month-pack-<YYYY-MM>.html`, with `structuredContent` `{title, month, bytes}`. It refuses with invalid_args above 4 MiB. The Reports page shows a Month pack button for month periods, which calls `buwiz.preview`; the manifest gives the window `permissions.preview = {}`. Window tools: 57 to 58 of 64. Tests: `tests/month_pack.rs`.
+
+### 2026-11-01 · evidence-2: receipt extraction provenance on drafts
+
+- Migration 16 (`0016_receipt_extraction.sql`, renumbered from 8 on integration): `entry_extraction` (one per entry: evidence, fields_json, integer confidence, proposed_by) and `entry_extraction_correction` (user changes kept beside the original reading).
+- `books_entry_draft` takes optional `extraction: {evidence, confidence 0..100, fields: [{field: date|amount|category|person|reference, value, confidence}]}` (`crates/books-mini-app/src/receipt_evidence.rs`, path-declared in `tools.rs`; the argument was `extracted` in the task and became `extraction` on integration, since ledger-1's `extracted` already carries the per-field confidence notes). It wraps `writes::draft` in the same write transaction and links the evidence there. Floats, unknown keys, duplicate or TIN-shaped fields, non two-decimal amounts, oversized text, cross-book evidence and closed months are refused with nothing written. Confidence below 80, or missing, sets `needs_review`.
+- `books_entry_get` gives the app `evidence` summaries and `extraction` (suggested versus current, confidence labels, corrected flags); other callers get `evidence_count` and `extracted` only.
+- Draft card (`apps/cards/action.tsx`): evidence summary and extraction review; no amounts or payee name (round 2 dropped the `CP.amounts` branch: `books_show` forwards no such prop); the Preview action appears now that evidence-4 declares `books_app_evidence_preview`.
+- The Books window's entry drawer (`apps/books/entry.tsx`, `ExtractionPanel`) shows the suggested value beside the entry's own, the confidence label, what the user changed and the linked documents. The native `books.ledger` drawer (W9) still does not read `extraction`.
+- Review round 1: every extracted value goes through `privacy::refuse_tin` (`tin_refused`, nothing stored). An assistant edit of a draft with an unsure extraction, or one already flagged, keeps `needs_review`; only an app-origin edit (the user) clears it. Cross-book evidence is refused by both `evidence_tools::evidence_id` and the store's `evidence::link`; the test drafts in book one with book two's evidence. The draft card falls back to the newest draft in the `review` filter and hides the payee as well as amounts unless `amounts` is asked for.
+- Review round 2: the first extraction on an existing draft keeps a `needs_review` flag the entry already had (a bank import line, say) when the assistant's reading is sure; previously that path cleared it. Test `sure_extraction_keeps_an_earlier_review_flag` fails without the fix. Refusal tests assert each refusal code.

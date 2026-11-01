@@ -44,6 +44,9 @@ impl Origin {
 pub struct Refusal {
     pub code: String,
     pub message: String,
+    /// What the refusal is about, for a batch: an entry's number, never its
+    /// content. Sent as `refused` beside the code and the message.
+    pub refused: Option<String>,
 }
 
 impl Refusal {
@@ -51,6 +54,7 @@ impl Refusal {
         Self {
             code: code.to_string(),
             message: message.into(),
+            refused: None,
         }
     }
 
@@ -58,8 +62,19 @@ impl Refusal {
         Self::new("invalid_args", message)
     }
 
+    /// The same refusal, naming what it is about.
+    #[must_use]
+    pub fn about(mut self, subject: impl Into<String>) -> Self {
+        self.refused = Some(subject.into());
+        self
+    }
+
     pub fn into_result(self) -> Value {
-        fail(&self.code, &self.message)
+        let mut out = fail(&self.code, &self.message);
+        if let Some(subject) = &self.refused {
+            out["structuredContent"]["refused"] = Value::String(subject.clone());
+        }
+        out
     }
 }
 
@@ -68,6 +83,7 @@ impl From<StoreError> for Refusal {
         Self {
             code: e.code.to_string(),
             message: e.message,
+            refused: None,
         }
     }
 }
