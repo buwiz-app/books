@@ -129,6 +129,15 @@ fn validate(conn: &Connection, book: i64, id: i64, target: Target) -> Result<()>
 
 pub fn link(conn: &Connection, book: i64, id: i64, target: Target) -> Result<()> {
     validate(conn, book, id, target)?;
+    if let Target::Entry(entry) = target {
+        let status: String =
+            conn.query_row("SELECT status FROM entry WHERE entry_id=?1", [entry], |r| {
+                r.get(0)
+            })?;
+        if status == "discarded" {
+            return Err(error("discarded", "That draft was discarded."));
+        }
+    }
     let (entry, owed) = target.ids();
     conn.execute("INSERT INTO evidence_link(evidence_id,entry_id,owed_id,created_at) VALUES(?1,?2,?3,?4) ON CONFLICT DO NOTHING", params![id, entry, owed, now_iso()])?;
     Ok(())

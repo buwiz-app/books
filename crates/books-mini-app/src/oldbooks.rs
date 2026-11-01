@@ -61,13 +61,6 @@ impl Uploads {
         bytes: Vec<u8>,
     ) -> Result<usize, Refusal> {
         let id = upload_id(id)?;
-        if self
-            .waiting
-            .iter()
-            .any(|(k, p)| k == id && p.len() != parts)
-        {
-            return Err(Refusal::invalid("The upload's part count cannot change."));
-        }
         if parts == 0 || parts > MAX_UPLOAD / 1024 || part >= parts {
             return Err(Refusal::invalid(
                 "`part` counts from 0 and is less than `parts`.",

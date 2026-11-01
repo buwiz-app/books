@@ -512,3 +512,11 @@ return generic metadata, never contents or hashes. No ledger posting, compliance
 PROPOSAL (implementation bounds): page counts are 1 to 100000; metadata lists default to 50 and cap at 200;
 scope suggestions cap at 20. Deduplicated commits retain the first stored metadata. Window permissions stay
 unchanged for the later UI task. `tests/evidence_foundation.rs` and store unit tests cover this foundation.
+
+Review round 1 (2026-11-01): `books_evidence_list` now goes through the `read` helper, so an assistant list on a fresh
+install answers `not_set_up` and creates no database. A commit validates MIME, kind, source, page count and target
+before it takes the staged upload, and any refusal after the take (signature, closed month, rollback) puts the bytes
+back, so the same upload can be retried. The list cursor is the last item's evidence ticket, not a row id. Evidence
+tools refuse unknown arguments, and a link to a discarded draft is refused (`discarded`); voided entries stay valid
+link targets for history. `oldbooks.rs` keeps restart-on-new-count for `books_app_upload_part`; its one change,
+outside this task's file list, stops a retried part counting twice against the 50 MB cap (PROPOSAL: needs owner OK).

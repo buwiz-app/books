@@ -44,8 +44,10 @@ fn multipart_retry_validation_and_limits() {
     let mut u = Uploads::default();
     assert_eq!(u.stage("synthetic", 1, 2, b"B".to_vec()).unwrap(), 1);
     assert_eq!(u.stage("synthetic", 1, 2, b"B".to_vec()).unwrap(), 1);
-    assert!(u.stage("synthetic", 0, 3, b"A".to_vec()).is_err());
-    assert!(u.take("synthetic").is_err());
+    // a changed part count restarts the upload (the legacy upload_part contract)
+    assert_eq!(u.stage("synthetic", 0, 3, b"A".to_vec()).unwrap(), 1);
+    assert_eq!(u.take("synthetic").unwrap_err().code, "incomplete");
+    assert_eq!(u.stage("synthetic", 1, 2, b"B".to_vec()).unwrap(), 1);
     assert_eq!(u.stage("synthetic", 0, 2, b"A".to_vec()).unwrap(), 2);
     assert_eq!(u.take("synthetic").unwrap(), b"AB");
     assert!(u.stage("boundary", 0, 1, vec![0; MAX_UPLOAD]).is_ok());
@@ -76,7 +78,29 @@ fn multipart_retry_validation_and_limits() {
             )["isError"],
             true
         );
+        // the refused commit keeps the staged file for a corrected retry
+        let retry = call(
+            &mut b,
+            tools::EVIDENCE_ATTACH,
+            json!({"client_request_id":format!("retry-commit-{n}"),"op":"commit","upload":upload,"mime":"application/pdf"}),
+        );
+        if n == 1 {
+            assert_eq!(
+                retry["structuredContent"]["code"], "invalid_args",
+                "{retry}"
+            );
+        } else {
+            assert_eq!(retry["isError"], false, "{retry}");
+        }
     }
+    assert_eq!(
+        call(
+            &mut b,
+            tools::EVIDENCE_DETACH,
+            json!({"client_request_id":"extra-arg","op":"link","evidence":"x","target":{}})
+        )["structuredContent"]["code"],
+        "invalid_args"
+    );
     for tool in [tools::EVIDENCE_ATTACH, tools::EVIDENCE_DETACH] {
         let v = tools::call(tool, json!({}).as_object().unwrap(), Origin::Agent, &mut b).unwrap();
         assert_eq!(v["isError"], true);
@@ -276,8 +300,8 @@ fn links_detach_closed_month_and_cross_book_rollback() {
     entries::discard(c, &book, entry).unwrap();
     months::close(c, &book, "2026-01", None).unwrap();
     for (tool, op) in [
-        (tools::EVIDENCE_ATTACH, "link"),
-        (tools::EVIDENCE_DETACH, "detach"),
+        (tools::EVIDENCE_ATTACH, Some("link")),
+        (tools::EVIDENCE_DETACH, None),
     ] {
         let count: i64 = b
             .store()
@@ -286,12 +310,14 @@ fn links_detach_closed_month_and_cross_book_rollback() {
             .query_row("SELECT count(*) FROM evidence_link", [], |r| r.get(0))
             .unwrap();
         assert_eq!(
-            call(
-                &mut b,
-                tool,
-                json!({"client_request_id":format!("closed-{op}"),"op":op,"evidence":other["evidence"],"target":target})
-            )["isError"],
-            true
+            call(&mut b, tool, {
+                let mut args = json!({"client_request_id":format!("closed-{tool}"),"evidence":other["evidence"],"target":target});
+                if let Some(op) = op {
+                    args["op"] = json!(op);
+                }
+                args
+            })["structuredContent"]["code"],
+            "period_closed"
         );
         assert_eq!(
             b.store()
@@ -362,8 +388,8 @@ fn links_detach_closed_month_and_cross_book_rollback() {
             &mut b,
             tools::EVIDENCE_ATTACH,
             json!({"client_request_id":"rollback-commit","op":"commit","upload":"rollback-document","mime":"application/pdf","target":target})
-        )["isError"],
-        true
+        )["structuredContent"]["code"],
+        "period_closed"
     );
     let c = b.store().unwrap().conn();
     assert_eq!(
@@ -376,14 +402,68 @@ fn links_detach_closed_month_and_cross_book_rollback() {
             .unwrap(),
         tickets
     );
-    for tool in [tools::EVIDENCE_ATTACH, tools::EVIDENCE_DETACH] {
+    for (tool, op) in [
+        (tools::EVIDENCE_ATTACH, Some("link")),
+        (tools::EVIDENCE_DETACH, None),
+    ] {
+        let mut args = json!({"client_request_id":format!("owed-closed-{tool}"),"evidence":a["evidence"],"target":{"kind":"owed","ticket":owed_t}});
+        if let Some(op) = op {
+            args["op"] = json!(op);
+        }
         assert_eq!(
-            call(
-                &mut b,
-                tool,
-                json!({"client_request_id":format!("owed-closed-{tool}"),"op":"link","evidence":a["evidence"],"target":{"kind":"owed","ticket":owed_t}})
-            )["isError"],
-            true
+            call(&mut b, tool, args)["structuredContent"]["code"],
+            "period_closed"
         );
     }
+    // the refused commit left its staged file: a retry without the target succeeds
+    let retried = ok(
+        &mut b,
+        tools::EVIDENCE_ATTACH,
+        json!({"client_request_id":"rollback-retry","op":"commit","upload":"rollback-document","mime":"application/pdf"}),
+    );
+    assert!(retried["evidence"].is_string());
+    let c = b.store().unwrap().conn();
+    let open_draft = entries::save_draft(
+        c,
+        &book,
+        None,
+        &entries::DraftInput {
+            date: Date::new(2026, 3, 2).unwrap(),
+            form: entries::Form::Journal,
+            payee: None,
+            memo: None,
+            reference: None,
+            needs_review: false,
+            lines: vec![],
+        },
+        "app",
+    )
+    .unwrap();
+    entries::discard(c, &book, open_draft).unwrap();
+    let open_draft_t = plumbing::ticket_for(c, "entry", open_draft).unwrap();
+    assert_eq!(
+        call(
+            &mut b,
+            tools::EVIDENCE_ATTACH,
+            json!({"client_request_id":"link-discarded","op":"link","evidence":retried["evidence"],"target":{"kind":"entry","ticket":open_draft_t}})
+        )["structuredContent"]["code"],
+        "discarded"
+    );
+}
+
+#[test]
+fn agent_list_on_fresh_install_makes_no_store() {
+    let tmp = TempDir::new("evidence-fresh");
+    let paths = Paths::in_dir(tmp.0.join("db"));
+    let db = paths.db();
+    let mut b = Books::new(paths);
+    let v = tools::call(
+        tools::EVIDENCE_LIST,
+        json!({}).as_object().unwrap(),
+        Origin::Agent,
+        &mut b,
+    )
+    .unwrap();
+    assert_eq!(v["structuredContent"]["code"], "not_set_up");
+    assert!(!db.exists());
 }

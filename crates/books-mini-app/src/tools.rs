@@ -1260,10 +1260,9 @@ pub fn call(
         }),
         EVIDENCE_ATTACH => evidence_tools::attach(books, name, origin, arguments),
         EVIDENCE_DETACH => evidence_tools::detach(books, name, origin, arguments),
-        EVIDENCE_LIST => answer((|| {
-            let store = books.store()?;
-            evidence_tools::list(store.conn(), arguments)
-        })()),
+        EVIDENCE_LIST => read(books, arguments, |store, _book, args| {
+            evidence_tools::list(store.conn(), args)
+        }),
         _ => fail("internal", "Books has no handler for that tool."),
     })
 }

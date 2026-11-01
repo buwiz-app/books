@@ -78,17 +78,64 @@ fn valid_mime(mime: &str, b: &[u8]) -> bool {
     }
 }
 
+const MIMES: [&str; 4] = ["application/pdf", "image/png", "image/jpeg", "image/webp"];
+const KINDS: [&str; 8] = [
+    "statement",
+    "bill",
+    "invoice",
+    "receipt",
+    "payslip",
+    "contract",
+    "tax_form",
+    "other",
+];
+const ATTACH_KEYS: &[&str] = &[
+    "client_request_id",
+    "book",
+    "op",
+    "upload",
+    "part",
+    "parts",
+    "data_base64",
+    "mime",
+    "page_count",
+    "source",
+    "kind",
+    "evidence",
+    "target",
+];
+const DETACH_KEYS: &[&str] = &["client_request_id", "book", "evidence", "target"];
+const LIST_KEYS: &[&str] = &["book", "evidence", "target", "cursor", "limit"];
+
+fn known(args: &Map<String, Value>, keys: &[&str]) -> Result<(), Refusal> {
+    if args.keys().all(|k| keys.contains(&k.as_str())) {
+        Ok(())
+    } else {
+        Err(Refusal::invalid("That request has an unknown argument."))
+    }
+}
+
 pub fn attach(books: &mut Books, name: &str, origin: Origin, args: &Map<String, Value>) -> Value {
     if !origin.is_app() {
         return Refusal::new("forbidden", "Only the app may attach evidence.").into_result();
     }
+    if let Err(r) = known(args, ATTACH_KEYS) {
+        return r.into_result();
+    }
     let mut uploads = std::mem::take(&mut books.uploads);
+    // a refused commit puts the staged file back so the app can retry it
+    let mut held: Option<(String, Vec<u8>)> = None;
     let out = service::write(books, name, origin, args, |tx| {
         let book = writes::book_in(tx, args)?;
         match required(args, "op")? {
             "part" => oldbooks::upload_part(&mut uploads, args),
             "commit" => {
                 let mime = required(args, "mime")?;
+                if !MIMES.contains(&mime) {
+                    return Err(Refusal::invalid(
+                        "Evidence MIME and signature must match a supported format.",
+                    ));
+                }
                 let page_count = match args.get("page_count") {
                     None => None,
                     Some(v) => Some(
@@ -99,23 +146,19 @@ pub fn attach(books: &mut Books, name: &str, origin: Origin, args: &Map<String, 
                 };
                 let source = text(args, "source").unwrap_or("user");
                 let kind = text(args, "kind").unwrap_or("other");
-                if !["user", "assistant"].contains(&source)
-                    || ![
-                        "statement",
-                        "bill",
-                        "invoice",
-                        "receipt",
-                        "payslip",
-                        "contract",
-                        "tax_form",
-                        "other",
-                    ]
-                    .contains(&kind)
-                {
+                if !["user", "assistant"].contains(&source) || !KINDS.contains(&kind) {
                     return Err(Refusal::invalid("Unknown evidence source or kind."));
                 }
-                let bytes = uploads.take(required(args, "upload")?)?;
-                if !valid_mime(mime, &bytes) {
+                let link_to = if args.contains_key("target") {
+                    let t = target(tx, args)?;
+                    evidence::validate_target(tx, book.id, t, true)?;
+                    Some(t)
+                } else {
+                    None
+                };
+                let upload = required(args, "upload")?;
+                let bytes = &held.insert((upload.to_string(), uploads.take(upload)?)).1;
+                if !valid_mime(mime, bytes) {
                     return Err(Refusal::invalid(
                         "Evidence MIME and signature must match a supported format.",
                     ));
@@ -124,7 +167,7 @@ pub fn attach(books: &mut Books, name: &str, origin: Origin, args: &Map<String, 
                     tx,
                     book.id,
                     &Input {
-                        bytes: &bytes,
+                        bytes,
                         mime,
                         page_count,
                         source,
@@ -134,8 +177,8 @@ pub fn attach(books: &mut Books, name: &str, origin: Origin, args: &Map<String, 
                 let token = plumbing::ticket_for(tx, "evidence", id)?;
                 let e = evidence::get(tx, id)?
                     .ok_or_else(|| Refusal::new("not_found", "Evidence missing."))?;
-                if args.contains_key("target") {
-                    evidence::link(tx, book.id, id, target(tx, args)?)?;
+                if let Some(t) = link_to {
+                    evidence::link(tx, book.id, id, t)?;
                 }
                 Ok(
                     json!({"evidence":token,"kind":e.kind,"mime":e.mime,"page_count":e.page_count,"deduplicated":deduplicated}),
@@ -149,6 +192,9 @@ pub fn attach(books: &mut Books, name: &str, origin: Origin, args: &Map<String, 
             _ => Err(Refusal::invalid("op must be part, commit or link.")),
         }
     });
+    if let Some((upload, bytes)) = held.filter(|_| out["isError"] == true) {
+        let _ = uploads.stage(&upload, 0, 1, bytes);
+    }
     books.uploads = uploads;
     out
 }
@@ -156,6 +202,9 @@ pub fn attach(books: &mut Books, name: &str, origin: Origin, args: &Map<String, 
 pub fn detach(books: &mut Books, name: &str, origin: Origin, args: &Map<String, Value>) -> Value {
     if !origin.is_app() {
         return Refusal::new("forbidden", "Only the app may detach evidence.").into_result();
+    }
+    if let Err(r) = known(args, DETACH_KEYS) {
+        return r.into_result();
     }
     service::write(books, name, origin, args, |tx| {
         let book = writes::book_in(tx, args)?;
@@ -166,6 +215,7 @@ pub fn detach(books: &mut Books, name: &str, origin: Origin, args: &Map<String, 
 }
 
 pub fn list(conn: &Connection, args: &Map<String, Value>) -> Answer {
+    known(args, LIST_KEYS)?;
     let book = writes::book_in(conn, args)?;
     let id = text(args, "evidence")
         .map(|v| evidence_id(conn, book.id, v))
@@ -179,11 +229,9 @@ pub fn list(conn: &Connection, args: &Map<String, Value>) -> Answer {
         evidence::validate_target(conn, book.id, t, false)?;
     }
     let after = match text(args, "cursor") {
-        Some(v) => v
-            .parse::<i64>()
-            .ok()
-            .filter(|n| *n >= 0)
-            .ok_or_else(|| Refusal::invalid("Invalid cursor."))?,
+        Some(v) => {
+            evidence_id(conn, book.id, v).map_err(|_| Refusal::invalid("Invalid cursor."))?
+        }
         None => 0,
     };
     let limit = match args.get("limit") {
@@ -196,10 +244,9 @@ pub fn list(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let mut rows = evidence::list(conn, book.id, id, target, after, limit + 1)?;
     let more = rows.len() > limit;
     rows.truncate(limit);
-    let next = if more {
-        rows.last().map(|r| r.id.to_string())
-    } else {
-        None
+    let next = match rows.last() {
+        Some(r) if more => lookup(conn, r.id)?,
+        _ => None,
     };
     let mut items = Vec::new();
     for e in rows {
@@ -274,33 +321,13 @@ fn schema_for(keys: &[&str], required: &[&str]) -> Value {
 }
 
 pub fn attach_schema() -> Value {
-    schema_for(
-        &[
-            "client_request_id",
-            "book",
-            "op",
-            "upload",
-            "part",
-            "parts",
-            "data_base64",
-            "mime",
-            "page_count",
-            "source",
-            "kind",
-            "evidence",
-            "target",
-        ],
-        &["client_request_id", "op"],
-    )
+    schema_for(ATTACH_KEYS, &["client_request_id", "op"])
 }
 
 pub fn detach_schema() -> Value {
-    schema_for(
-        &["client_request_id", "book", "evidence", "target"],
-        &["client_request_id", "evidence", "target"],
-    )
+    schema_for(DETACH_KEYS, &["client_request_id", "evidence", "target"])
 }
 
 pub fn list_schema() -> Value {
-    schema_for(&["book", "evidence", "target", "cursor", "limit"], &[])
+    schema_for(LIST_KEYS, &[])
 }
