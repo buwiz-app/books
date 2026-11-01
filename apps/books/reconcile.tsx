@@ -96,7 +96,6 @@ function ReconcileGrid() {
                           <View
                             class={`rounded-lg px-2 py-1 self-start ${CELL[c().state]}`}
                             onPress={() => {
-                              if (c().state === "done") return;
                               recAccount.set(r().ticket);
                               recMonth.set(c().month);
                             }}
@@ -151,6 +150,9 @@ function MatchView() {
       </If>
       <If when={Boolean(s())}>
         <View class="gap-3.5">
+          <If when={(s()?.flags || []).length > 0}>
+            <FlagsNote flags={s()?.flags || []} />
+          </If>
           <Panel>
             <View class={`flex-row border-b ${C.line}`}>
               <Text class={`flex-1 px-3 py-2.5 text-[11px] uppercase tracking-wider ${C.dim}`}>Bank statement</Text>
@@ -162,6 +164,9 @@ function MatchView() {
                 <View class={`flex-row items-center border-b ${C.line}`}>
                   <View class="flex-1 flex-row items-center gap-2 px-3 py-2 min-h-[38px]">
                     <Text class={`w-[52px] text-[12px] font-mono ${C.ink}`}>{r().date_short}</Text>
+                    <If when={Boolean(r().flag)}>
+                      <View class="w-[7px] h-[7px] rounded-full bg-[#f3b64c]" />
+                    </If>
                     <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>
                       {r().description}
                     </Text>
@@ -200,6 +205,9 @@ function MatchView() {
               <Pill tone="ok" label="Matched" />
             </If>
           </Panel>
+          <If when={Boolean(s()?.reopenable)}>
+            <ReopenFooter onReopen={(reason: string) => call("books_app_statement_finish", { reopen: true, reason })} />
+          </If>
         </View>
       </If>
     </View>

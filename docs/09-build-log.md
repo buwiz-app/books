@@ -495,3 +495,7 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
 
 Nothing in M1 to M9. Open with owners: the D3 source label (Forms owner), the trust entry in the rox source (Rox
 owner), PR #16, PR #13 and the two nsh fixes (Rox owner).
+
+## M10 parity
+
+- 2026-11-01 reconcile-3: a finished statement locks the entries matched to it (`books_store::statement_lock::guard_entry`, called first in `entries::void`; refusal `statement_finished`, "This entry is matched to the bank in a finished month (Oct 2026). Reopen that month's statement in Reconcile first."). `books_app_statement_finish` with `reopen: true` and a 3 to 200 character `reason` reopens it (status open, every match kept) and returns `{account, month, status: "open", reopened: true}`; the reason is stored in the new `statement_event` table (migration 0012) and never echoed. Every finish and reopen writes an event. `books_statement_get` gains display-only `statement.flags` (`duplicate`, `unusual_amount`, `chain_break`; `books_core::statement_flags`, integers only), each row's `flag` and `statement.reopenable`. The Reconcile grid opens a finished cell read-only; MatchView shows the amber `FlagsNote`, a dot on flagged rows and the reopen footer (`apps/books/reconcile_flags.tsx`). No new tool. Tests: `tests/statement_lock_flags.rs` and the core unit tests.

@@ -28,3 +28,4 @@ pub mod privacy;
 pub mod proposal;
 pub mod rules;
 pub mod statement;
+pub mod statement_flags;

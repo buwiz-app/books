@@ -30,6 +30,7 @@ pub mod link;
 pub mod months;
 pub mod people;
 pub mod plumbing;
+pub mod statement_lock;
 
 pub use rusqlite;
 
@@ -41,6 +42,7 @@ const MIGRATIONS: &[(i64, &str)] = &[
     (4, include_str!("../migrations/0004_imports_openings.sql")),
     (5, include_str!("../migrations/0005_certificates.sql")),
     (6, include_str!("../migrations/0006_handoffs.sql")),
+    (12, include_str!("../migrations/0012_statement_events.sql")),
 ];
 
 pub const DATA_DIR_ENV: &str = "BOOKS_DATA_DIR";
@@ -420,7 +422,7 @@ mod tests {
         assert_eq!(mode, 0o700);
         let store = Store::open(&paths).unwrap();
         assert_eq!(store.meta("canary").unwrap().as_deref(), Some(CANARY));
-        assert_eq!(store.meta("schema_version").unwrap().as_deref(), Some("6"));
+        assert_eq!(store.meta("schema_version").unwrap().as_deref(), Some("12"));
         drop(store);
         let other = Paths {
             dir: paths.dir.clone(),

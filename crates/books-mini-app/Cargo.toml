@@ -78,3 +78,7 @@ ureq = { version = "2.12", default-features = false, features = ["tls"] }
 
 [lints]
 workspace = true
+
+[[test]]
+name = "statement_lock_flags"
+path = "../../tests/statement_lock_flags.rs"
