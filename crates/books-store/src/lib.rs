@@ -30,6 +30,7 @@ pub mod link;
 pub mod months;
 pub mod people;
 pub mod plumbing;
+pub mod slices;
 
 pub use rusqlite;
 
