@@ -66,15 +66,21 @@ pub fn render(conn: &Connection, book: &Book, u: &Unpaid) -> Result<String, Refu
     let category = store_books::account(conn, u.category_account_id)?
         .map(|a| a.name)
         .unwrap_or_default();
+    // part paid: money came in (or went out) but some is still due; the
+    // page then shows what was settled and what is left, so a reader is
+    // never asked for the whole amount again (`paid` counts posted
+    // payments only, so a voided one is back in the balance)
+    let part_paid = u.status != "cancelled" && u.paid > 0 && u.balance() > 0;
     let status = match u.status.as_str() {
         "cancelled" => "Cancelled".to_string(),
+        _ if part_paid => "Part paid".to_string(),
         _ if u.balance() > 0 => "Open".to_string(),
         _ => match u.paid_on {
             Some(d) => format!("Settled on {d}"),
             None => "Settled".to_string(),
         },
     };
-    let rows: [(&str, String); 7] = [
+    let mut rows: Vec<(&str, String)> = vec![
         (
             if u.side == "collect" {
                 "Customer"
@@ -92,20 +98,37 @@ pub fn render(conn: &Connection, book: &Book, u: &Unpaid) -> Result<String, Refu
         ),
         ("Category", category),
         ("Amount", format!("PHP {}", money::display(u.amount))),
-        ("Status", status),
     ];
+    if part_paid {
+        rows.push((
+            if u.side == "collect" {
+                "Received to date"
+            } else {
+                "Paid to date"
+            },
+            format!("PHP {}", money::display(u.paid)),
+        ));
+        rows.push((
+            "Balance due",
+            format!("PHP {}", money::display(u.balance())),
+        ));
+    }
+    rows.push(("Status", status));
     let mut html = String::with_capacity(2048);
     html.push_str("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>");
     html.push_str(&esc(heading));
     html.push_str("</title><style>");
     html.push_str(STYLE);
+    html.push_str(crate::html::SCREEN_DARK);
+    // the labels are grey on the light page; brighter grey on a dark screen
+    html.push_str("@media screen and (prefers-color-scheme:dark){th{color:#98989d}}");
     html.push_str("</style></head><body><div class=\"book\">");
     html.push_str(&esc(&book.label));
     html.push_str("</div><h1>");
     html.push_str(&esc(heading));
     html.push_str("</h1><table>");
     for (label, value) in &rows {
-        let class = if *label == "Amount" {
+        let class = if *label == "Amount" || *label == "Balance due" {
             " class=\"amount\""
         } else {
             ""

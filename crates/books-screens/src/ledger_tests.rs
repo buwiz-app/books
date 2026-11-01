@@ -506,6 +506,11 @@ fn ledger_fixtures_match_native_transcripts() {
         "new-save-post",
         "transfer-validation",
         "journal-validation",
+        "review-keep-both",
+        "review-open-duplicate",
+        "row-amend",
+        "amend-links",
+        "running-balance",
         "list-retry",
     ];
     assert_eq!(

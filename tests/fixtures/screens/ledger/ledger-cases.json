@@ -1559,6 +1559,946 @@
       }
     },
     {
+      "name": "review-keep-both",
+      "answers": {
+        "books_ledger_list": [
+          {
+            "data": {
+              "book": {
+                "basis_label": "Cash basis",
+                "year": 2026
+              },
+              "month": {
+                "key": "2026-04",
+                "label": "April 2026",
+                "range": "Apr 1 – Apr 30",
+                "prev": "2026-03",
+                "next": "2026-05"
+              },
+              "accounts": [
+                {
+                  "group": "Assets",
+                  "rows": [
+                    {
+                      "ticket": "account-cash",
+                      "number": "1000",
+                      "name": "Cash"
+                    }
+                  ]
+                }
+              ],
+              "account": {
+                "ticket": null,
+                "number": "",
+                "name": "All accounts",
+                "balance_shown": "2,500.00",
+                "balance_label": "Cash"
+              },
+              "filter": "all",
+              "counts": {
+                "all": 1,
+                "review": 1,
+                "draft": 1,
+                "posted": 0
+              },
+              "rows": [
+                {
+                  "ticket": "entry-001",
+                  "no": "0001",
+                  "date_short": "Apr 2",
+                  "title": "Example seller",
+                  "sub": "Office supplies",
+                  "category": "Office supplies",
+                  "category_color": "#e89b6c",
+                  "amount_shown": "−250.00",
+                  "tone": "neg",
+                  "status": "draft",
+                  "pill": "draft",
+                  "status_label": "Draft",
+                  "proposed_by": "agent",
+                  "low_confidence": true,
+                  "likely_duplicate": true
+                }
+              ]
+            }
+          }
+        ],
+        "books_entry_get": [
+          {
+            "data": {
+              "ticket": "entry-001",
+              "title": "Example seller",
+              "status_label": "Draft",
+              "pill": "draft",
+              "big": "−250.00",
+              "date_label": "Apr 2, 2026",
+              "who_label": "To",
+              "payee": "Example seller",
+              "category": "Office supplies",
+              "reference": "",
+              "no": "0001",
+              "actions": [
+                "discard",
+                "edit",
+                "post"
+              ],
+              "post_blocker": null,
+              "related": null,
+              "suggest": [],
+              "reviewable": false,
+              "lines": [
+                {
+                  "account": "1000 Cash",
+                  "debit_shown": "",
+                  "credit_shown": "250.00"
+                },
+                {
+                  "account": "6000 Office supplies",
+                  "debit_shown": "250.00",
+                  "credit_shown": ""
+                }
+              ],
+              "status": "draft",
+              "review": {
+                "proposed_by": "agent",
+                "fields": [
+                  {
+                    "field": "amount",
+                    "confidence": 62,
+                    "changed_by": "agent"
+                  },
+                  {
+                    "field": "payee",
+                    "confidence": 95,
+                    "changed_by": "agent"
+                  },
+                  {
+                    "field": "memo",
+                    "confidence": null,
+                    "changed_by": "app"
+                  }
+                ],
+                "likely_duplicates": [
+                  {
+                    "ticket": "entry-007",
+                    "no": "0007",
+                    "date": "2026-04-02",
+                    "status": "posted",
+                    "payee": "Example seller",
+                    "amount_shown": "250.00"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "steps": [
+        {
+          "contains": "Example seller"
+        },
+        {
+          "press": "Keep both and post"
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Assistant",
+          "Check fields",
+          "Possible duplicate",
+          "Set by the assistant",
+          "Amount",
+          "Low",
+          "Payee",
+          "High",
+          "Possible duplicates",
+          "Entry 0007 · 2026-04-02",
+          "250.00",
+          "Keep both and post",
+          "Entry 0001 posted"
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_app_post_entry",
+            "args": {
+              "client_request_id": "bk-<open>-1",
+              "entry": "entry-001",
+              "keep_both": true
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "review-open-duplicate",
+      "answers": {
+        "books_ledger_list": [
+          {
+            "data": {
+              "book": {
+                "basis_label": "Cash basis",
+                "year": 2026
+              },
+              "month": {
+                "key": "2026-04",
+                "label": "April 2026",
+                "range": "Apr 1 – Apr 30",
+                "prev": "2026-03",
+                "next": "2026-05"
+              },
+              "accounts": [
+                {
+                  "group": "Assets",
+                  "rows": [
+                    {
+                      "ticket": "account-cash",
+                      "number": "1000",
+                      "name": "Cash"
+                    }
+                  ]
+                }
+              ],
+              "account": {
+                "ticket": null,
+                "number": "",
+                "name": "All accounts",
+                "balance_shown": "2,500.00",
+                "balance_label": "Cash"
+              },
+              "filter": "all",
+              "counts": {
+                "all": 1,
+                "review": 1,
+                "draft": 1,
+                "posted": 0
+              },
+              "rows": [
+                {
+                  "ticket": "entry-001",
+                  "no": "0001",
+                  "date_short": "Apr 2",
+                  "title": "Example seller",
+                  "sub": "Office supplies",
+                  "category": "Office supplies",
+                  "category_color": "#e89b6c",
+                  "amount_shown": "−250.00",
+                  "tone": "neg",
+                  "status": "draft",
+                  "pill": "draft",
+                  "status_label": "Draft",
+                  "proposed_by": "agent",
+                  "low_confidence": true,
+                  "likely_duplicate": true
+                }
+              ]
+            }
+          }
+        ],
+        "books_entry_get": [
+          {
+            "data": {
+              "ticket": "entry-001",
+              "title": "Example seller",
+              "status_label": "Draft",
+              "pill": "draft",
+              "big": "−250.00",
+              "date_label": "Apr 2, 2026",
+              "who_label": "To",
+              "payee": "Example seller",
+              "category": "Office supplies",
+              "reference": "",
+              "no": "0001",
+              "actions": [
+                "discard",
+                "edit",
+                "post"
+              ],
+              "post_blocker": null,
+              "related": null,
+              "suggest": [],
+              "reviewable": false,
+              "lines": [
+                {
+                  "account": "1000 Cash",
+                  "debit_shown": "",
+                  "credit_shown": "250.00"
+                },
+                {
+                  "account": "6000 Office supplies",
+                  "debit_shown": "250.00",
+                  "credit_shown": ""
+                }
+              ],
+              "status": "draft",
+              "review": {
+                "proposed_by": "agent",
+                "fields": [
+                  {
+                    "field": "amount",
+                    "confidence": 62,
+                    "changed_by": "agent"
+                  },
+                  {
+                    "field": "payee",
+                    "confidence": 95,
+                    "changed_by": "agent"
+                  },
+                  {
+                    "field": "memo",
+                    "confidence": null,
+                    "changed_by": "app"
+                  }
+                ],
+                "likely_duplicates": [
+                  {
+                    "ticket": "entry-007",
+                    "no": "0007",
+                    "date": "2026-04-02",
+                    "status": "posted",
+                    "payee": "Example seller",
+                    "amount_shown": "250.00"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "data": {
+              "ticket": "entry-007",
+              "title": "Example seller",
+              "status_label": "Posted",
+              "pill": "ok",
+              "big": "−250.00",
+              "date_label": "Apr 2, 2026",
+              "who_label": "To",
+              "payee": "Example seller",
+              "category": "Office supplies",
+              "reference": "",
+              "no": "0007",
+              "actions": [
+                "void",
+                "amend",
+                "copy"
+              ],
+              "post_blocker": null,
+              "related": null,
+              "suggest": [],
+              "reviewable": false,
+              "lines": [],
+              "status": "posted"
+            }
+          }
+        ]
+      },
+      "steps": [
+        {
+          "contains": "Example seller"
+        },
+        {
+          "press": "Entry 0007 · 2026-04-02"
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Possible duplicates",
+          "Entry 0007 · 2026-04-02",
+          "0007",
+          "Amend",
+          "Void (adds a reversal)"
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-007"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "row-amend",
+      "answers": {
+        "books_entry_get": [
+          {
+            "data": {
+              "ticket": "entry-001",
+              "title": "Example seller",
+              "status_label": "Posted",
+              "pill": "ok",
+              "big": "−250.00",
+              "date_label": "Apr 2, 2026",
+              "who_label": "To",
+              "payee": "Example seller",
+              "category": "Office supplies",
+              "reference": "",
+              "no": "0001",
+              "actions": [
+                "void",
+                "amend",
+                "copy"
+              ],
+              "post_blocker": null,
+              "related": null,
+              "suggest": [],
+              "reviewable": false,
+              "lines": [
+                {
+                  "account": "1000 Cash",
+                  "debit_shown": "",
+                  "credit_shown": "250.00"
+                },
+                {
+                  "account": "6000 Office supplies",
+                  "debit_shown": "250.00",
+                  "credit_shown": ""
+                }
+              ],
+              "status": "posted"
+            }
+          },
+          {
+            "data": {
+              "ticket": "entry-001",
+              "title": "Example seller",
+              "status_label": "Posted",
+              "pill": "ok",
+              "big": "−250.00",
+              "date_label": "Apr 2, 2026",
+              "who_label": "To",
+              "payee": "Example seller",
+              "category": "Office supplies",
+              "reference": "",
+              "no": "0001",
+              "actions": [
+                "void",
+                "amend",
+                "copy"
+              ],
+              "post_blocker": null,
+              "related": null,
+              "suggest": [],
+              "reviewable": false,
+              "lines": [
+                {
+                  "account": "1000 Cash",
+                  "debit_shown": "",
+                  "credit_shown": "250.00"
+                },
+                {
+                  "account": "6000 Office supplies",
+                  "debit_shown": "250.00",
+                  "credit_shown": ""
+                }
+              ],
+              "status": "posted"
+            }
+          },
+          {
+            "data": {
+              "ticket": "entry-003",
+              "title": "Example seller",
+              "status_label": "Draft",
+              "pill": "draft",
+              "big": "−250.00",
+              "date_label": "Apr 2, 2026",
+              "who_label": "To",
+              "payee": "Example seller",
+              "category": "Office supplies",
+              "reference": "",
+              "no": "0003",
+              "actions": [
+                "discard",
+                "edit",
+                "post"
+              ],
+              "post_blocker": null,
+              "related": "Replaces entry 0001",
+              "suggest": [],
+              "reviewable": false,
+              "lines": [
+                {
+                  "account": "1000 Cash",
+                  "debit_shown": "",
+                  "credit_shown": "250.00"
+                },
+                {
+                  "account": "6000 Office supplies",
+                  "debit_shown": "250.00",
+                  "credit_shown": ""
+                }
+              ],
+              "links": {
+                "amends": "entry-001",
+                "amended_by": null
+              },
+              "link_labels": {
+                "amends": "Amends entry 0001",
+                "amended_by": null
+              }
+            }
+          }
+        ],
+        "books_app_void_entry": [
+          {
+            "data": {
+              "entry": "entry-001",
+              "status": "voided",
+              "voided": "entry-001",
+              "reversal": "entry-002",
+              "replacement": "entry-003",
+              "replacement_no": "0003"
+            }
+          }
+        ]
+      },
+      "steps": [
+        {
+          "contains": "Example seller"
+        },
+        {
+          "press": "Amend"
+        },
+        {
+          "press": "Amend entry",
+          "expect": "Give a reason of at least 3 characters."
+        },
+        {
+          "type": "Why it changes (3 to 200 characters)",
+          "value": "wrong category"
+        },
+        {
+          "type": "YYYY-MM-DD",
+          "value": "2026-04-05"
+        },
+        {
+          "press": "Amend entry"
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Amend",
+          "Amend this entry",
+          "It is voided with a reversal, and a draft with the same lines opens for you to correct.",
+          "Reason",
+          "Date (optional)",
+          "Cancel",
+          "Amend entry",
+          "Give a reason of at least 3 characters.",
+          "Draft 0003 saved; the original is voided",
+          "Replaces entry 0001",
+          "Amends entry 0001"
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_app_void_entry",
+            "args": {
+              "client_request_id": "bk-<open>-1",
+              "entry": "entry-001",
+              "amend": true,
+              "reason": "wrong category",
+              "date": "2026-04-05"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-003"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "amend-links",
+      "answers": {
+        "books_entry_get": [
+          {
+            "data": {
+              "ticket": "entry-001",
+              "title": "Example seller",
+              "status_label": "Voided",
+              "pill": "mute",
+              "big": "−250.00",
+              "date_label": "Apr 2, 2026",
+              "who_label": "To",
+              "payee": "Example seller",
+              "category": "Office supplies",
+              "reference": "",
+              "no": "0001",
+              "actions": [],
+              "post_blocker": null,
+              "related": "Cancelled by entry 0002",
+              "suggest": [],
+              "reviewable": false,
+              "lines": [
+                {
+                  "account": "1000 Cash",
+                  "debit_shown": "",
+                  "credit_shown": "250.00"
+                },
+                {
+                  "account": "6000 Office supplies",
+                  "debit_shown": "250.00",
+                  "credit_shown": ""
+                }
+              ],
+              "status": "voided",
+              "links": {
+                "amends": null,
+                "amended_by": "entry-003"
+              },
+              "link_labels": {
+                "amends": null,
+                "amended_by": "Amended by entry 0003"
+              }
+            }
+          },
+          {
+            "data": {
+              "ticket": "entry-003",
+              "title": "Example seller",
+              "status_label": "Draft",
+              "pill": "draft",
+              "big": "−250.00",
+              "date_label": "Apr 2, 2026",
+              "who_label": "To",
+              "payee": "Example seller",
+              "category": "Office supplies",
+              "reference": "",
+              "no": "0003",
+              "actions": [
+                "discard",
+                "edit",
+                "post"
+              ],
+              "post_blocker": null,
+              "related": "Replaces entry 0001",
+              "suggest": [],
+              "reviewable": false,
+              "lines": [
+                {
+                  "account": "1000 Cash",
+                  "debit_shown": "",
+                  "credit_shown": "250.00"
+                },
+                {
+                  "account": "6000 Office supplies",
+                  "debit_shown": "250.00",
+                  "credit_shown": ""
+                }
+              ],
+              "links": {
+                "amends": "entry-001",
+                "amended_by": null
+              },
+              "link_labels": {
+                "amends": "Amends entry 0001",
+                "amended_by": null
+              }
+            }
+          }
+        ]
+      },
+      "steps": [
+        {
+          "contains": "Example seller"
+        },
+        {
+          "press": "Amended by entry 0003"
+        }
+      ],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "+ New",
+          "April 2026",
+          "All accounts",
+          "Assets",
+          "Cash",
+          "‹",
+          "Apr 1 – Apr 30",
+          "›",
+          "All",
+          "Needs review",
+          "Drafts",
+          "Posted",
+          "Date",
+          "What",
+          "Category",
+          "Status",
+          "Amount",
+          "Apr 2",
+          "Example seller",
+          "Voided",
+          "Cancelled by entry 0002",
+          "Amended by entry 0003",
+          "0003",
+          "Replaces entry 0001",
+          "Amends entry 0001"
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-001"
+            }
+          },
+          {
+            "method": "call",
+            "tool": "books_entry_get",
+            "args": {
+              "entry": "entry-003"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "running-balance",
+      "answers": {
+        "books_ledger_list": [
+          {
+            "data": {
+              "book": {
+                "basis_label": "Cash basis",
+                "year": 2026
+              },
+              "month": {
+                "key": "2026-04",
+                "label": "April 2026",
+                "range": "Apr 1 – Apr 30",
+                "prev": "2026-03",
+                "next": "2026-05"
+              },
+              "accounts": [
+                {
+                  "group": "Assets",
+                  "rows": [
+                    {
+                      "ticket": "account-cash",
+                      "number": "1000",
+                      "name": "Cash"
+                    }
+                  ]
+                }
+              ],
+              "account": {
+                "ticket": "account-cash",
+                "number": "1000",
+                "name": "Cash",
+                "balance_shown": "2,250.00"
+              },
+              "filter": "all",
+              "counts": {
+                "all": 1,
+                "review": 0,
+                "draft": 1,
+                "posted": 0
+              },
+              "rows": [
+                {
+                  "ticket": "entry-002",
+                  "no": "0002",
+                  "date_short": "Apr 3",
+                  "title": "Second seller",
+                  "sub": "Office supplies",
+                  "category": "Office supplies",
+                  "category_color": "#e89b6c",
+                  "amount_shown": "−75.00",
+                  "tone": "neg",
+                  "status": "draft",
+                  "pill": "draft",
+                  "status_label": "Draft",
+                  "balance_shown": null
+                },
+                {
+                  "ticket": "entry-001",
+                  "no": "0001",
+                  "date_short": "Apr 2",
+                  "title": "Example seller",
+                  "sub": "Office supplies",
+                  "category": "Office supplies",
+                  "category_color": "#e89b6c",
+                  "amount_shown": "−250.00",
+                  "tone": "neg",
+                  "status": "posted",
+                  "pill": "ok",
+                  "status_label": "Posted",
+                  "balance_shown": "2,250.00"
+                }
+              ],
+              "running_balance": true
+            }
+          }
+        ]
+      },
+      "steps": [],
+      "transcript": {
+        "text": [
+          "Ledger",
+          "Balance",
+          "Balance ₱ 2,250.00",
+          "Apr 2",
+          "Example seller",
+          "2,250.00",
+          "Second seller",
+          "−75.00"
+        ],
+        "calls": [
+          {
+            "method": "call",
+            "tool": "books_ledger_list",
+            "args": {
+              "filter": "all"
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "list-retry",
       "timing_text": "No entries in All accounts this month.",
       "answers": {

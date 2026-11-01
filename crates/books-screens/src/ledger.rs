@@ -85,6 +85,35 @@ struct SheetFields {
     line_account_open: nsh_core::element::Signal<bool>,
 }
 
+/// The drawer's amend form: open for the entry `open_for` (empty when
+/// closed, so another entry never shows it), its reason, optional date and
+/// the last refusal shown under it.
+#[derive(Clone, Copy)]
+struct AmendFields {
+    open_for: nsh_core::element::Signal<String>,
+    reason: nsh_core::element::Signal<String>,
+    date: nsh_core::element::Signal<String>,
+    error: nsh_core::element::Signal<String>,
+}
+
+impl AmendFields {
+    fn new() -> Self {
+        Self {
+            open_for: signal(String::new()),
+            reason: signal(String::new()),
+            date: signal(String::new()),
+            error: signal(String::new()),
+        }
+    }
+
+    fn open(self, ticket: String) {
+        self.reason.set(String::new());
+        self.date.set(String::new());
+        self.error.set(String::new());
+        self.open_for.set(ticket);
+    }
+}
+
 #[derive(Clone, PartialEq)]
 struct JournalLine {
     account: String,
@@ -189,6 +218,7 @@ pub fn build(bridge: Bridge) -> Root {
         let toast_epoch = signal(0_u64);
         let version = signal(0_u64);
         let drawer_busy = signal(false);
+        let amend = AmendFields::new();
         let ids = RequestIds::new();
 
         load_list(
@@ -218,6 +248,7 @@ pub fn build(bridge: Bridge) -> Root {
                 toast_epoch,
                 version,
                 drawer_busy,
+                amend,
                 ids.clone(),
             )
         });
@@ -320,6 +351,7 @@ fn render(
     toast_epoch: nsh_core::element::Signal<u64>,
     version: nsh_core::element::Signal<u64>,
     busy: nsh_core::element::Signal<bool>,
+    amend: AmendFields,
     ids: RequestIds,
 ) -> nsh_core::element::View {
     let data = match list.get() {
@@ -402,6 +434,7 @@ fn render(
             toast_epoch,
             version,
             busy,
+            amend,
             ids.clone(),
         ));
     }
@@ -654,6 +687,22 @@ fn ledger_body(
                 .into(),
             )),
         );
+    // one account picked: books_ledger_list carries the balance after each
+    // posted or voided entry, the same walk as account activity
+    let running = data.get("running_balance").and_then(Value::as_bool) == Some(true);
+    let columns = if running {
+        columns.child(
+            text("Balance").app_class(Some(
+                format!(
+                    "w-[104px] text-right text-[10.5px] uppercase tracking-wider {}",
+                    kit::C_DIM
+                )
+                .into(),
+            )),
+        )
+    } else {
+        columns
+    };
     let mut rows = view().app_class(Some("rounded-b-xl border border-t-0 bg-white dark:bg-[#1d1d1d] border-black/10 dark:border-[#2b2b2b]".into()))
         .child(chips)
         .child(columns);
@@ -678,6 +727,7 @@ fn ledger_body(
                 rows = rows.child(tx_row(
                     screen_owner,
                     row.clone(),
+                    running,
                     bridge.clone(),
                     entry,
                     drawer_entry,
@@ -769,6 +819,7 @@ fn month_button(
 fn tx_row(
     screen_owner: Owner,
     row: Value,
+    running: bool,
     bridge: Bridge,
     entry: nsh_core::element::Signal<ReadState>,
     drawer_entry: nsh_core::element::Signal<String>,
@@ -784,7 +835,24 @@ fn tx_row(
         "pos" => "text-[#157a48] dark:text-[#3fcf89]",
         _ => kit::C_INK,
     };
-    view()
+    let mut what = view()
+        .app_class(Some("flex-1 gap-0.5".into()))
+        .child(
+            text(text_value(row.get("title"), "").to_owned())
+                .app_class(Some(
+                    format!("text-[13px] font-semibold {}", kit::C_INK).into(),
+                ))
+                .number_of_lines(1),
+        )
+        .child(
+            text(text_value(row.get("sub"), "").to_owned())
+                .app_class(Some(format!("text-[11.5px] {}", kit::C_DIM).into()))
+                .number_of_lines(1),
+        );
+    if let Some(badges) = review_badges(&row) {
+        what = what.child(badges);
+    }
+    let result = view()
         .app_class(Some(format!("flex-row items-center gap-3 px-3 py-2.5 border-b border-black/10 dark:border-[#2b2b2b] {bg}").into()))
         .active(|style| style.opacity(0.75))
         .on_press(move || {
@@ -792,12 +860,7 @@ fn tx_row(
             load_entry(screen_owner, bridge.clone(), entry, ticket.clone());
         })
         .child(text(text_value(row.get("date_short"), "").to_owned()).app_class(Some(format!("w-[52px] text-[12.5px] font-mono {}", kit::C_INK).into())))
-        .child(
-            view()
-                .app_class(Some("flex-1 gap-0.5".into()))
-                .child(text(text_value(row.get("title"), "").to_owned()).app_class(Some(format!("text-[13px] font-semibold {}", kit::C_INK).into())).number_of_lines(1))
-                .child(text(text_value(row.get("sub"), "").to_owned()).app_class(Some(format!("text-[11.5px] {}", kit::C_DIM).into())).number_of_lines(1)),
-        )
+        .child(what)
         .child(
             view()
                 .app_class(Some("w-[170px] flex-row items-center gap-1.5".into()))
@@ -812,7 +875,51 @@ fn tx_row(
                     text_value(row.get("pill"), ""),
                 )),
         )
-        .child(text(text_value(row.get("amount_shown"), "").to_owned()).app_class(Some(format!("w-[104px] text-right text-[12.5px] font-mono {tone}").into())))
+        .child(text(text_value(row.get("amount_shown"), "").to_owned()).app_class(Some(format!("w-[104px] text-right text-[12.5px] font-mono {tone}").into())));
+    if running {
+        result.child(
+            text(text_value(row.get("balance_shown"), "").to_owned()).app_class(Some(
+                format!(
+                    "w-[104px] text-right text-[12.5px] font-mono {}",
+                    kit::C_MUTE
+                )
+                .into(),
+            )),
+        )
+    } else {
+        result
+    }
+}
+
+/// The row's review pills (M10 ledger-1): proposed by the assistant or a
+/// routine, a field below the confidence line, a likely duplicate still to
+/// decide. `None` when there is nothing to flag.
+fn review_badges(row: &Value) -> Option<nsh_core::element::View> {
+    let flags = [
+        (
+            row.get("proposed_by").is_some_and(|value| !value.is_null()),
+            "Assistant",
+            "in",
+        ),
+        (
+            row.get("low_confidence").and_then(Value::as_bool) == Some(true),
+            "Check fields",
+            "rev",
+        ),
+        (
+            row.get("likely_duplicate").and_then(Value::as_bool) == Some(true),
+            "Possible duplicate",
+            "draft",
+        ),
+    ];
+    if !flags.iter().any(|(on, _, _)| *on) {
+        return None;
+    }
+    let mut badges = view().app_class(Some("flex-row gap-1 flex-wrap".into()));
+    for (_, label, tone) in flags.iter().filter(|(on, _, _)| *on) {
+        badges = badges.child(pill(label, tone));
+    }
+    Some(badges)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -829,6 +936,7 @@ fn drawer(
     toast_epoch: nsh_core::element::Signal<u64>,
     version: nsh_core::element::Signal<u64>,
     busy: nsh_core::element::Signal<bool>,
+    amend: AmendFields,
     ids: RequestIds,
 ) -> nsh_core::element::View {
     let data = match entry.get() {
@@ -910,6 +1018,34 @@ fn drawer(
         "flex-row gap-2 flex-wrap px-3.5 py-3 border-t border-black/10 dark:border-[#2b2b2b]"
             .into(),
     ));
+    let can_amend = data
+        .as_ref()
+        .is_some_and(|value| has_action(value, "amend"));
+    let amend_form = if can_amend && amend.open_for.get() == drawer_entry.get() {
+        Some(amend_form(
+            screen_owner,
+            bridge.clone(),
+            ids.clone(),
+            list,
+            entry,
+            account.get(),
+            month.get(),
+            filter.get(),
+            drawer_entry,
+            toast,
+            toast_epoch,
+            version,
+            busy,
+            amend,
+        ))
+    } else {
+        None
+    };
+    if can_amend && amend_form.is_none() {
+        actions = actions.child(button("Amend", "plain", move || {
+            amend.open(drawer_entry.get());
+        }));
+    }
     if data.as_ref().is_some_and(|value| has_action(value, "void")) {
         actions = actions.child(button("Void (adds a reversal)", "plain", {
             let ids = ids.clone();
@@ -1041,11 +1177,109 @@ fn drawer(
             }
         }));
     }
-    view()
+    let mut panel = view()
         .app_class(Some("absolute top-0 right-0 bottom-0 w-[340px] border-l bg-white dark:bg-[#1d1d1d] border-black/10 dark:border-[#2b2b2b]".into()))
         .child(top)
-        .child(scroll().app_class(Some("flex-1".into())).child(content))
-        .child(actions)
+        .child(scroll().app_class(Some("flex-1".into())).child(content));
+    if let Some(form) = amend_form {
+        panel = panel.child(form);
+    }
+    panel.child(actions)
+}
+
+/// Amend by reversal (M10 ledger-3): a reason and an optional date. A void
+/// with `amend: true` (no new tool): the original shows Voided, a reversal
+/// posts, and a replacement draft with the same lines opens. Only a press
+/// here amends (DD-20). The reason goes to Books and is never shown back.
+#[allow(clippy::too_many_arguments)]
+fn amend_form(
+    screen_owner: Owner,
+    bridge: Bridge,
+    ids: RequestIds,
+    list: nsh_core::element::Signal<ReadState>,
+    entry: nsh_core::element::Signal<ReadState>,
+    account: String,
+    month: String,
+    filter: String,
+    drawer_entry: nsh_core::element::Signal<String>,
+    toast: nsh_core::element::Signal<String>,
+    toast_epoch: nsh_core::element::Signal<u64>,
+    version: nsh_core::element::Signal<u64>,
+    busy: nsh_core::element::Signal<bool>,
+    amend: AmendFields,
+) -> nsh_core::element::View {
+    let mut form = view()
+        .app_class(Some(
+            "gap-2.5 px-3.5 py-3 border-t border-black/10 dark:border-[#2b2b2b]".into(),
+        ))
+        .child(
+            text("Amend this entry")
+                .app_class(Some(format!("text-[13px] font-bold {}", kit::C_INK).into())),
+        )
+        .child(
+            text("It is voided with a reversal, and a draft with the same lines opens for you to correct.")
+                .app_class(Some(format!("text-[12px] {}", kit::C_DIM).into())),
+        )
+        .child(field(
+            "Reason",
+            text_box(
+                amend.reason.get(),
+                "Why it changes (3 to 200 characters)",
+                false,
+                move |value| amend.reason.set(value),
+            ),
+        ))
+        .child(field(
+            "Date (optional)",
+            text_box(amend.date.get(), "YYYY-MM-DD", false, move |value| {
+                amend.date.set(value)
+            }),
+        ));
+    let error = amend.error.get();
+    if !error.is_empty() {
+        form =
+            form.child(text(error).app_class(Some(format!("text-[12px] {}", kit::C_RED).into())));
+    }
+    form.child(
+        view()
+            .app_class(Some("flex-row gap-2".into()))
+            .child(button("Cancel", "plain", move || {
+                amend.open_for.set(String::new())
+            }))
+            .child(button("Amend entry", "go", move || {
+                let reason = amend.reason.get().trim().to_owned();
+                if reason.chars().count() < 3 {
+                    amend
+                        .error
+                        .set("Give a reason of at least 3 characters.".into());
+                    return;
+                }
+                amend.error.set(String::new());
+                let mut args = json!({"entry":drawer_entry.get(),"amend":true,"reason":reason});
+                let date = amend.date.get().trim().to_owned();
+                if !date.is_empty() {
+                    args["date"] = json!(date);
+                }
+                write_and_refresh(
+                    screen_owner,
+                    bridge.clone(),
+                    ids.clone(),
+                    "books_app_void_entry",
+                    args,
+                    list,
+                    entry,
+                    account.clone(),
+                    month.clone(),
+                    filter.clone(),
+                    drawer_entry,
+                    toast,
+                    toast_epoch,
+                    version,
+                    busy,
+                    WriteAction::Amend,
+                );
+            })),
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1088,6 +1322,46 @@ fn drawer_data(
         && !related.is_empty()
     {
         detail = detail.child(kv("Linked", related));
+    }
+    let open_entry = {
+        let bridge = bridge.clone();
+        move |ticket: String| {
+            drawer_entry.set(ticket.clone());
+            load_entry(screen_owner, bridge.clone(), entry, ticket);
+        }
+    };
+    if let Some(links) = amend_links(&data, open_entry.clone()) {
+        detail = detail.child(links);
+    }
+    let keep_both = {
+        let ids = ids.clone();
+        let bridge = bridge.clone();
+        let account = account.get();
+        let month = month.get();
+        let filter = filter.get();
+        move || {
+            write_and_refresh(
+                screen_owner,
+                bridge.clone(),
+                ids.clone(),
+                "books_app_post_entry",
+                json!({"entry":drawer_entry.get(),"keep_both":true}),
+                list,
+                entry,
+                account.clone(),
+                month.clone(),
+                filter.clone(),
+                drawer_entry,
+                toast,
+                toast_epoch,
+                version,
+                busy,
+                WriteAction::Post,
+            )
+        }
+    };
+    if let Some(review) = review_panel(&data, open_entry, keep_both) {
+        detail = detail.child(review);
     }
     if data.get("reviewable").and_then(Value::as_bool) == Some(true) {
         let mut suggestions = view().app_class(Some("flex-row gap-1.5 flex-wrap".into()));
@@ -1286,6 +1560,141 @@ fn drawer_data(
     detail
 }
 
+/// A field's name in the review panel.
+fn field_name(field: &str) -> &str {
+    match field {
+        "date" => "Date",
+        "amount" => "Amount",
+        "account" => "Account",
+        "to_account" => "To account",
+        "category" => "Category",
+        "payee" => "Payee",
+        "memo" => "Memo",
+        "reference" => "Reference",
+        "lines" => "Lines",
+        other => other,
+    }
+}
+
+/// A whole-percent confidence as a word: High 90+, Check 70-89, Low below
+/// 70. The assistant reports it; Books computes none.
+fn confidence_word(confidence: Option<&Value>) -> &'static str {
+    match confidence.and_then(Value::as_i64) {
+        Some(n) if n >= 90 => "High",
+        Some(n) if n >= 70 => "Check",
+        Some(_) => "Low",
+        None => "—",
+    }
+}
+
+/// The drawer's review notes (M10 ledger-1): the fields the assistant or a
+/// routine set, with the confidence it reported, and the likely duplicates
+/// to open or keep. `None` when there is nothing to show.
+fn review_panel(
+    data: &Value,
+    open_entry: impl Fn(String) + Clone + 'static,
+    keep_both: impl Fn() + 'static,
+) -> Option<nsh_core::element::View> {
+    let review = data.get("review")?;
+    let changed: Vec<&Value> = review
+        .get("fields")
+        .and_then(Value::as_array)
+        .map(|fields| {
+            fields
+                .iter()
+                .filter(|f| {
+                    f.get("changed_by")
+                        .and_then(Value::as_str)
+                        .is_some_and(|by| !by.is_empty() && by != "app")
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let duplicates: &[Value] = review
+        .get("likely_duplicates")
+        .and_then(Value::as_array)
+        .map_or(&[], Vec::as_slice);
+    if changed.is_empty() && duplicates.is_empty() {
+        return None;
+    }
+    let label = |value: &str| {
+        text(value.to_owned()).app_class(Some(format!("text-[12px] {}", kit::C_DIM).into()))
+    };
+    let mut panel = view().app_class(Some("gap-1.5".into()));
+    if !changed.is_empty() {
+        panel = panel.child(label(
+            if text_value(review.get("proposed_by"), "") == "routine" {
+                "Set by a routine"
+            } else {
+                "Set by the assistant"
+            },
+        ));
+        for f in changed {
+            panel = panel.child(kv(
+                field_name(text_value(f.get("field"), "")),
+                confidence_word(f.get("confidence")),
+            ));
+        }
+    }
+    if !duplicates.is_empty() {
+        panel = panel.child(label("Possible duplicates"));
+        for d in duplicates {
+            let ticket = text_value(d.get("ticket"), "").to_owned();
+            let open_entry = open_entry.clone();
+            panel = panel.child(
+                view()
+                    .app_class(Some(
+                        format!(
+                            "flex-row gap-2 rounded-[8px] border px-2.5 py-1.5 {}",
+                            kit::K_LINE
+                        )
+                        .into(),
+                    ))
+                    .on_press(move || open_entry(ticket.clone()))
+                    .child(
+                        text(format!(
+                            "Entry {} · {}",
+                            text_value(d.get("no"), ""),
+                            text_value(d.get("date"), "")
+                        ))
+                        .app_class(Some(format!("flex-1 text-[12px] {}", kit::C_INK).into())),
+                    )
+                    .child(
+                        text(
+                            text_value_or(d.get("amount_shown"), text_value(d.get("status"), ""))
+                                .to_owned(),
+                        )
+                        .app_class(Some(format!("text-[12px] {}", kit::C_DIM).into())),
+                    ),
+            );
+        }
+        if text_value(data.get("status"), "") == "draft" {
+            panel = panel.child(button("Keep both and post", "go", keep_both));
+        }
+    }
+    Some(panel)
+}
+
+/// "Amends entry N" / "Amended by entry N" chips; a press opens that entry.
+fn amend_links(
+    data: &Value,
+    open_entry: impl Fn(String) + Clone + 'static,
+) -> Option<nsh_core::element::View> {
+    let mut chips = view().app_class(Some("flex-row gap-2 flex-wrap".into()));
+    let mut any = false;
+    for key in ["amends", "amended_by"] {
+        let ticket = text_value(data.pointer(&format!("/links/{key}")), "").to_owned();
+        let label = text_value(data.pointer(&format!("/link_labels/{key}")), "").to_owned();
+        if ticket.is_empty() || label.is_empty() {
+            continue;
+        }
+        any = true;
+        let open_entry = open_entry.clone();
+        chips = chips.child(button(&label, "plain", move || open_entry(ticket.clone())));
+    }
+    any.then_some(chips)
+}
+
 #[allow(clippy::too_many_arguments)]
 fn write_and_refresh(
     screen_owner: Owner,
@@ -1340,6 +1749,18 @@ fn write_and_refresh(
                         );
                         duplicate_entry = Some(text_value(result.get("entry"), "").to_owned());
                     }
+                    WriteAction::Amend => {
+                        show_toast(
+                            format!(
+                                "Draft {} saved; the original is voided",
+                                text_value(result.get("replacement_no"), "")
+                            ),
+                            toast,
+                            toast_epoch,
+                        );
+                        duplicate_entry =
+                            Some(text_value(result.get("replacement"), "").to_owned());
+                    }
                 }
                 refresh_after_write(
                     bridge.clone(),
@@ -1374,6 +1795,7 @@ enum WriteAction {
     Void,
     Discard,
     Duplicate,
+    Amend,
 }
 
 async fn refresh_after_write(
@@ -2228,6 +2650,7 @@ fn pill(label: &str, tone: &str) -> nsh_core::element::View {
         "draft" => kit::PILL_DRAFT,
         "rev" => kit::PILL_REV,
         "ok" => "bg-[#dff3e8] dark:bg-[#123423] text-[#157a48] dark:text-[#3fcf89]",
+        "in" => "bg-[#e1ebfb] dark:bg-[#15253f] text-[#2f6fd6] dark:text-[#7fb2ff]",
         _ => kit::PILL_MUTE,
     };
     view()

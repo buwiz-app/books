@@ -300,3 +300,69 @@ fn more_than_500_rows_keeps_the_oldest_and_the_true_closing() {
     check_sums(&r);
     assert_eq!(r["rows"][0]["date"], "2026-10-01");
 }
+
+#[test]
+fn the_ledger_lists_running_balance_matches_account_activity() {
+    let (_dir, mut books) = seeded();
+    let draft = call(
+        &mut books,
+        "books_entry_draft",
+        json!({ "client_request_id": "ac-ledger-draft-01", "form": "money_out", "date": "2026-10-21", "amount": "55.00",
+                "account": BANK, "category": "67200" }),
+        Origin::Agent,
+    );
+    let activity = ac(&mut books, BANK, "2026-10", Origin::App);
+    let by_entry: std::collections::HashMap<&str, &str> = activity["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| {
+            (
+                r["entry"].as_str().unwrap(),
+                r["balance_shown"].as_str().unwrap(),
+            )
+        })
+        .collect();
+    let list = call(
+        &mut books,
+        "books_ledger_list",
+        json!({ "account": BANK, "month": "2026-10", "filter": "all" }),
+        Origin::App,
+    );
+    assert_eq!(list["running_balance"], true);
+    let rows = list["rows"].as_array().unwrap();
+    assert!(
+        rows.iter().any(|r| r["ticket"] == draft["entry"]),
+        "the new draft is listed: {list}"
+    );
+    let mut with_balance = 0;
+    for row in rows {
+        let ticket = row["ticket"].as_str().unwrap();
+        if row["status"] == "draft" {
+            assert!(
+                row["balance_shown"].is_null(),
+                "a draft has no balance: {row}"
+            );
+            continue;
+        }
+        assert_eq!(
+            row["balance_shown"].as_str(),
+            by_entry.get(ticket).copied(),
+            "{row}"
+        );
+        with_balance += 1;
+    }
+    assert_eq!(with_balance, by_entry.len());
+    // newest first: the first posted row carries the closing
+    let first = rows.iter().find(|r| !r["balance_shown"].is_null()).unwrap();
+    assert_eq!(first["balance_shown"], activity["closing"]["shown"]);
+    // all accounts: no running balance
+    let all = call(
+        &mut books,
+        "books_ledger_list",
+        json!({ "month": "2026-10", "filter": "all" }),
+        Origin::App,
+    );
+    assert_eq!(all["running_balance"], false);
+    assert!(all["rows"][0].get("balance_shown").is_none());
+}

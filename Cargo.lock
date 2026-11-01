@@ -304,7 +304,7 @@ checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
 [[package]]
 name = "buwiz-app"
 version = "0.1.0"
-source = "git+https://github.com/buwiz-app/buwiz-sdk?rev=2120c725112e2072b22f6630079fc938b6c9b1e9#2120c725112e2072b22f6630079fc938b6c9b1e9"
+source = "git+https://github.com/buwiz-app/buwiz-sdk?rev=21f6b43c706b094d6d915767015ef4d19dee96fb#21f6b43c706b094d6d915767015ef4d19dee96fb"
 dependencies = [
  "base64",
  "nsh-core",
@@ -315,7 +315,7 @@ dependencies = [
 [[package]]
 name = "buwiz-plugin"
 version = "0.1.0"
-source = "git+https://github.com/buwiz-app/buwiz-sdk?rev=2120c725112e2072b22f6630079fc938b6c9b1e9#2120c725112e2072b22f6630079fc938b6c9b1e9"
+source = "git+https://github.com/buwiz-app/buwiz-sdk?rev=21f6b43c706b094d6d915767015ef4d19dee96fb#21f6b43c706b094d6d915767015ef4d19dee96fb"
 dependencies = [
  "ed25519-dalek 2.2.0",
  "getrandom 0.3.4",
@@ -869,7 +869,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2366,7 +2366,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

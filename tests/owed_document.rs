@@ -143,6 +143,15 @@ fn a_collect_document_is_a_static_statement_of_account() {
     ] {
         assert!(!page.contains(bad), "page carries {bad}");
     }
+    // light on paper; dark only on a dark screen
+    assert!(
+        page.contains("body{font-family:-apple-system,Helvetica,Arial,sans-serif;color:#1d1d1f;")
+    );
+    assert!(page.contains("@media screen and (prefers-color-scheme:dark){html{color-scheme:dark}body{background:#1c1c1e;"));
+    assert!(
+        !page.contains("@media print{body{background"),
+        "print stays light"
+    );
     assert!(page.contains("Synthetic &lt;b&gt;&amp;Co"));
     assert!(!page.contains("<b>&Co"));
     for want in [
@@ -157,11 +166,25 @@ fn a_collect_document_is_a_static_statement_of_account() {
     ] {
         assert!(page.contains(want), "page lacks {want}");
     }
+    // part paid: what came in and what is left, never the whole amount as owed
+    let part = bot.app("books_app_owed_settle", json!({ "client_request_id": "doc-settle-00", "owed": inv, "account": "11000", "amount": "15000.00", "on": "2026-10-20" }));
+    assert_eq!(part["isError"], false, "{part}");
+    let page = html(&bot.app("books_owed_document", json!({ "owed": inv })));
+    for want in [
+        "<td>Part paid</td>",
+        "<th>Received to date</th><td>PHP 15,000.00</td>",
+        "<th>Balance due</th><td class=\"amount\">PHP 30,000.00</td>",
+        "PHP 45,000.00",
+    ] {
+        assert!(page.contains(want), "part-paid page lacks {want}: {page}");
+    }
+    assert!(!page.contains("<td>Open</td>"), "{page}");
     // a settled document says so with its date
     let s = bot.app("books_app_owed_settle", json!({ "client_request_id": "doc-settle-01", "owed": inv, "account": "11000", "date": "2026-10-29" }));
     assert_eq!(s["isError"], false, "{s}");
     let page = html(&bot.app("books_owed_document", json!({ "owed": inv })));
     assert!(page.contains("Settled on 2026-10-29"));
+    assert!(!page.contains("Balance due"), "{page}");
 }
 
 #[test]

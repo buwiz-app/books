@@ -550,10 +550,59 @@ manifest version 0.5.0. evidence-2's migration became 0016 (its 0007 was already
 drawer now shows what the assistant read off a document beside the entry's own values; the bulk panel posts, discards
 or recategorizes a selection and copies the ledger as CSV.
 
+### Native ledger follow-ups (2026-11-01)
+
+The native books.ledger screen (`crates/books-screens/src/ledger.rs`) now shows what the TSX parts from ledger-1,
+ledger-3 and reports-2 show in the Books window. No new tool; the window tool count is unchanged.
+
+| Feature | Native place | Data it reads |
+|---|---|---|
+| Review badges (Assistant, Check fields, Possible duplicate) | `tx_row`, under the row's title (`review_badges`) | `books_ledger_list` row `proposed_by`, `low_confidence`, `likely_duplicate` |
+| Review panel (fields set by the assistant or a routine with a confidence word, likely duplicates that open on a press, Keep both and post) | drawer (`review_panel`); Keep both goes through `write_and_refresh` | `books_entry_get` `review`, `status` |
+| Amend by reversal (reason and optional date; the replacement draft opens) | drawer actions and an inline form above them (`amend_form`, `WriteAction::Amend`), through `write_and_refresh` so the busy guard covers it | `books_entry_get` `actions` has `amend`; `books_app_void_entry` with `amend`, `reason`, `date` |
+| Amend links ("Amends entry N", "Amended by entry N") | drawer (`amend_links`) | `books_entry_get` `links`, `link_labels` |
+| Running-balance column | `ledger_body` header and `tx_row`, only when one account is picked | `books_ledger_list` `running_balance` and row `balance_shown` (new) |
+
+- `books_ledger_list` did not return a running balance (CONFIRMED by reading `views::ledger`), so it gains one rather
+  than the screen computing it: with one account picked (and not an accrual-only account on a cash book), each
+  posted or voided row carries `balance_shown`, the account's balance after that entry in its own sense; drafts carry
+  null; the result says `running_balance: true`. It is the same walk as account activity: `activity::walk` is shared
+  by `activity` and the new `activity::balances_after`, so the two cannot disagree. All accounts: no column.
+- Parity cases added to `tests/fixtures/screens/ledger/ledger-cases.json` and `ledger_tests.rs`: review-keep-both,
+  review-open-duplicate, row-amend (with the short-reason refusal), amend-links, running-balance.
+- Test: `tests/account_activity.rs` `the_ledger_lists_running_balance_matches_account_activity`.
+
+### Owed document: part-paid print (2026-11-01)
+
+Found in the first live check in a running Bot: after a partial payment, the owed document's print page still said
+Status "Open" with only the original amount, so a part-paid statement of account asked for the whole amount again.
+`owed_doc::render` now prints Status "Part paid" and adds "Received to date" (collect) or "Paid to date" (pay) and
+"Balance due" whenever posted payments cover part of the amount. A voided payment is back in the balance (`paid`
+counts posted payments only), so the #13 case (the last payment voided, an earlier one standing) now prints Part paid,
+never Settled. Tests: `tests/owed_document.rs` (part-paid collect page), `tests/owed_partial.rs` (pay side after a void).
+
+### Duplicates: a recategorization is never one (2026-11-01)
+
+Seen in the first live check of the native ledger: "Possible duplicate" flagged a recategorization entry ("Category
+for entry N") and the entry it corrected, since a recategorization repeats the entry's payee, amount and day by
+design. `review::likely_duplicates` now treats an entry with `recategorizes_entry_id` as it treats a reversal: never
+a subject and never a candidate. The corrected entry stays a real transaction and still matches a genuine lookalike.
+Test: `review::tests::a_recategorization_is_never_a_duplicate_of_its_entry_or_others` (fails without the fix).
+
+### Print pages follow a dark screen (2026-11-01)
+
+The print pages (`books_owed_document`, the month pack, the printable reconciliation and the evidence review) were
+light only, which is glaring in a dark Bot. Each page now appends `html::SCREEN_DARK`, a block inside
+`@media screen and (prefers-color-scheme:dark)`: on a dark screen the preview is dark; printing is not `screen`, so
+paper always gets the page's own light style. CONFIRMED in a running Bot (the owed document preview follows dark
+mode) and in headless Chrome forced dark (screen dark, `--print-to-pdf` light). The month pack also gets a 24px screen
+margin (`@media screen`); in print its margin stays `@page`. Tests: `html::tests::the_dark_palette_is_for_the_screen_only`,
+`tests/owed_document.rs`, `tests/month_pack.rs`.
+
 ### Not included
 
-- Native ledger follow-ups (W9 owns books.ledger): review badges and the review panel in ledger rows, a running-balance
-  column, mounting AmendButton and AmendLinks in the native drawer.
+- The native books.ledger drawer does not read `extraction` (evidence-2's `ExtractionPanel` shows in the Books
+  window's entry drawer only).
 
 ### Task notes (as each task recorded them; migration numbers there are the pre-renumbering ones)
 
@@ -635,7 +684,7 @@ comes from reconcile-1 (`statement_drafts::extras`: `statement.evidence_id`, lin
   "Needs review", and in `books_entry_get` `review`; the assistant sees tickets, numbers, dates and statuses only.
   `books_app_post_entry` refuses a flagged draft with `likely_duplicate` unless `keep_both` (writes
   `duplicate_ack`). The drawer action "duplicate" is now "copy". No new tool; window permissions stay 57.
-  Native ledger follow-up (W9): place `ReviewBadges`/`ReviewPanel` in the native `books.ledger` row and drawer.
+  Native ledger follow-up (W9): done, see "Native ledger follow-ups" above.
 
 ### ledger-3: amend by reversal (2026-11-01)
 
@@ -653,7 +702,7 @@ comes from reconcile-1 (`statement_drafts::extras`: `statement.evidence_id`, lin
   `books_report_csv` kind `ac` writes entry numbers between an Opening and a Closing row. New module
   `crates/books-mini-app/src/activity.rs`; the Accounts page opens an account drawer (`apps/books/activity.tsx`)
   instead of jumping to the Ledger. Tests: `tests/account_activity.rs`. The demo's bank posting account is 11010
-  (11000 is its group). Follow-up once the native ledger lands: a running-balance column there too.
+  (11000 is its group). The native ledger's running-balance column landed later (see "Native ledger follow-ups").
 
 - 2026-11-01 reports-4 (month pack): new app-only tool `books_app_month_pack` (named with the `books_app_` prefix that `tests/manifest_shape.rs` requires of every app-only tool; the task text said `books_month_pack`; `crates/books-mini-app/src/month_pack.rs`, read-only). It reads `books_report` pl/bs/cf/tb for one month and `books_reconcile_grid`, and returns one static HTML document (inline style only; no script, link or URL; store text escaped) as an MCP `text/html` resource `books://print/month-pack-<YYYY-MM>.html`, with `structuredContent` `{title, month, bytes}`. It refuses with invalid_args above 4 MiB. The Reports page shows a Month pack button for month periods, which calls `buwiz.preview`; the manifest gives the window `permissions.preview = {}`. Window tools: 57 to 58 of 64. Tests: `tests/month_pack.rs`.
 
