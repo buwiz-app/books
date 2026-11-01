@@ -256,7 +256,27 @@ pub fn nudge(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
                 "count": n,
             }))
         }
-        _ => Err(Refusal::invalid("`kind` is tidy, month_end or bir_pair.")),
+        "review" => {
+            // the routine runs daily and speaks on Mondays; a card asks any day
+            let due = today.weekday() == 0 || args.get("any_day") == Some(&Value::Bool(true));
+            let all = if due {
+                crate::findings::findings(store, book, today)?
+            } else {
+                Vec::new()
+            };
+            let n = all.len();
+            Ok(json!({
+                "kind": "review",
+                "text": if n == 0 || !due { String::new() } else { format!("{n} Books finding{} to look at", if n == 1 { "" } else { "s" }) },
+                "items": if due && n > 0 { vec![json!({ "id": format!("review-{today}-{n}") })] } else { Vec::new() },
+                "counts": crate::findings::counts(&all),
+                "count": n,
+                "open": { "page": "ledger", "filter": "checks" },
+            }))
+        }
+        _ => Err(Refusal::invalid(
+            "`kind` is tidy, month_end, bir_pair or review.",
+        )),
     }
 }
 
@@ -277,6 +297,7 @@ pub fn scopes() -> Value {
         scope("entry", "entry in the Books ledger", "one entry (books_entry_get)"),
         scope("form", "form and period Books feeds for eBIRForms", "a BIR form and period (books_form_proposal)"),
         scope("tag", "tag: a department or location", "a department or location (books_tags_list)"),
+        scope("evidence", "evidence retained in Books", "evidence metadata (books_evidence_list)"),
         {
             "name": "proposal",
             "description": "proposal of Books totals for a BIR form",
@@ -385,6 +406,14 @@ fn matches(label: &str, typed: &str) -> bool {
 /// gives up to 20 choices whose values are tickets.
 pub fn scope(store: &Store, name: &str, value: &str) -> Value {
     let c = store.conn();
+    if name == "evidence" {
+        return match books::all(c).ok().and_then(|b| b.into_iter().next()) {
+            Some(book) => crate::tools::evidence_tools::scope(store, &book, value).unwrap_or_else(
+                |_| json!({"result":"error","message":"That evidence is not in this book."}),
+            ),
+            None => json!({"result":"error","message":"There is no book yet."}),
+        };
+    }
     if plumbing::is_ticket(value) {
         let kind_ok = match plumbing::subject(c, value).ok().flatten() {
             Some((k, _)) => k == name || (name == "tag" && k == "tag"),
@@ -496,7 +525,7 @@ fn choices(store: &Store, book: &Book, name: &str, typed: &str) -> Result<Vec<Va
 
 // --- routines ----------------------------------------------------------------
 
-/// The three routines (docs/08 §3). Only the weekly tidy-up writes, and only
+/// The four routines (docs/08 §3; review is M10 parity). Only the weekly tidy-up writes, and only
 /// drafts.
 pub fn routines() -> Value {
     json!([
@@ -525,6 +554,15 @@ pub fn routines() -> Value {
             "every_s": 86_400,
             "query": { "tool": crate::tools::NUDGE, "field": "text", "args": { "kind": "bir_pair" } },
             "prompt": "A Books hand-off to the BIR draft is out of date. Show the quiet card with books_show {\"card\": \"handoff\"}. Do not fill the BIR draft from it; the owner refreshes it on the Forms page. Say counts only, never amounts."
+        },
+        {
+            "id": "review",
+            "name": "Books review",
+            "description": "Looks over the ledger for findings to check twice (stale drafts, unmatched months, weekend dates, round amounts) and sums up the counts in chat. Changes nothing.",
+            // every_s is at most a day: it runs daily and speaks on Mondays
+            "every_s": 86_400,
+            "query": { "tool": crate::tools::NUDGE, "field": "text", "args": { "kind": "review" } },
+            "prompt": "Books has review findings. Call books_checks and summarise the counts per check only. Change nothing: the owner fixes entries in Books. Say counts only, never amounts, names or memos."
         }
     ])
 }

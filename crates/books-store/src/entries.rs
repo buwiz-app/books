@@ -67,6 +67,10 @@ pub struct Entry {
     pub recategorized_by: Option<i64>,
     /// This entry gives another one's lines a category.
     pub recategorizes: Option<i64>,
+    /// The posted entry this draft replaces (an amend).
+    pub amends: Option<i64>,
+    /// The replacement draft an amend made for this entry.
+    pub amended_by: Option<i64>,
 }
 
 #[derive(Debug, Clone)]
@@ -99,7 +103,7 @@ pub struct DraftInput {
     pub lines: Vec<LineInput>,
 }
 
-const ENTRY_COLUMNS: &str = "entry_id, book_id, entry_no, entry_date, status, form, payee, memo, reference, reverses_entry_id, voided_by_entry_id, origin, needs_review, created_at, posted_at, recategorized_by_entry_id, recategorizes_entry_id";
+const ENTRY_COLUMNS: &str = "entry_id, book_id, entry_no, entry_date, status, form, payee, memo, reference, reverses_entry_id, voided_by_entry_id, origin, needs_review, created_at, posted_at, recategorized_by_entry_id, recategorizes_entry_id, amends_entry_id, amended_by_entry_id";
 
 fn entry_row(r: &Row<'_>) -> rusqlite::Result<Entry> {
     let date: String = r.get(3)?;
@@ -127,6 +131,8 @@ fn entry_row(r: &Row<'_>) -> rusqlite::Result<Entry> {
         posted_at: r.get(14)?,
         recategorized_by: r.get(15)?,
         recategorizes: r.get(16)?,
+        amends: r.get(17)?,
+        amended_by: r.get(18)?,
     })
 }
 
@@ -380,6 +386,7 @@ pub fn void(conn: &Connection, book: &Book, id: i64, date: Date, gate: Gate<'_>)
         ));
     }
     gate(date)?;
+    crate::statement_lock::guard_entry(conn, book.id, id)?;
     let rows = lines(conn, id)?;
     let core = core_lines(conn, &rows)?;
     let mirrored = ledger::mirror(&core);

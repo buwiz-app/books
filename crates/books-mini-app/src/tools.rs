@@ -11,11 +11,19 @@
 
 use serde_json::{Map, Value, json};
 
+#[path = "document_review.rs"]
+pub mod document_review;
+#[path = "evidence_tools.rs"]
+pub(crate) mod evidence_tools;
+#[path = "owed_proposals.rs"]
+pub(crate) mod owed_proposals;
+
 use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
 use crate::{
-    cards, checks, forms, handoff, oldbooks, payroll, reconcile, records, reports, views, writes,
+    cards, checks, forms, handoff, month_pack, oldbooks, owed_repeats, payroll, reconcile,
+    reconcile_document, records, reports, statement_read, views, writes,
 };
 
 pub const STATUS: &str = "books_status";
@@ -80,6 +88,20 @@ pub const NUDGE: &str = "books_nudge";
 pub const SIGNIN: &str = "books_app_signin";
 pub const TAX_PROFILES: &str = "books_app_tax_list";
 pub const PROFILE_LINK: &str = "books_app_tax_link";
+pub const EVIDENCE_ATTACH: &str = "books_app_evidence_attach";
+pub const EVIDENCE_DETACH: &str = "books_app_evidence_detach";
+pub const EVIDENCE_LIST: &str = "books_evidence_list";
+pub const OWED_DRAFT: &str = "books_owed_draft";
+pub const EVIDENCE_CLASSIFY: &str = "books_evidence_classify";
+pub const EVIDENCE_KIND: &str = "books_app_evidence_kind";
+pub const EVIDENCE_PREVIEW: &str = "books_app_evidence_preview";
+pub const EVIDENCE_REVIEW: &str = "books_app_evidence_review";
+pub const STATEMENT_DRAFT_LINES: &str = "books_statement_draft_lines";
+pub const RECONCILE_DOCUMENT: &str = "books_app_reconcile_document";
+pub const CHECKS: &str = "books_checks";
+pub const OWED_DOCUMENT: &str = "books_owed_document";
+pub const OWED_REPEAT: &str = "books_app_owed_repeat";
+pub const MONTH_PACK: &str = "books_app_month_pack";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -126,7 +148,7 @@ fn ledger_schema() -> Value {
             "book": { "type": "string" },
             "month": { "type": "string", "description": "YYYY-MM; this month when absent." },
             "account": { "type": "string", "description": "An account ticket or chart number; every account when absent." },
-            "filter": { "type": "string", "enum": ["all", "review", "draft", "posted"] }
+            "filter": { "type": "string", "enum": ["all", "review", "draft", "posted", "checks"] }
         }
     })
 }
@@ -172,9 +194,16 @@ fn draft_schema() -> Value {
             "person": { "type": "string", "description": "A person ticket." },
             "person_kind": { "type": "string", "description": "With payee: the kind of person to link or make (vendors, customers, employees, owners, lenders, government)." },
             "department": { "type": "string" },
-            "location": { "type": "string" }
+            "location": { "type": "string" },
+            "extracted": { "type": "object", "description": "What the assistant read, per field: {\"fields\": {\"category\": {\"confidence\": 55}}}. Fields: date, amount, account, to_account, category, payee, memo, reference, lines; confidence is a whole percent." }
         }
     })
+}
+
+fn post_schema() -> Value {
+    let mut schema = draft_schema();
+    schema["properties"]["keep_both"] = json!({ "type": "boolean", "description": "Post although the draft looks like another entry; records that the user keeps both." });
+    schema
 }
 
 fn people_schema() -> Value {
@@ -196,7 +225,7 @@ fn tags_schema() -> Value {
 }
 
 fn owed_schema() -> Value {
-    json!({ "type": "object", "properties": { "book": { "type": "string" }, "side": { "type": "string", "enum": ["collect", "pay"] } } })
+    json!({ "type": "object", "properties": { "book": { "type": "string" }, "side": { "type": "string", "enum": ["collect", "pay"] }, "owed": { "type": "string", "description": "A document ticket: adds its payment history as detail." } } })
 }
 
 fn report_schema() -> Value {
@@ -204,10 +233,14 @@ fn report_schema() -> Value {
         "type": "object",
         "properties": {
             "book": { "type": "string" },
-            "kind": { "type": "string", "enum": ["pl", "bs", "cf", "tb", "ag"] },
+            "kind": { "type": "string", "enum": ["pl", "bs", "cf", "tb", "ag", "ac", "ps"] },
             "period_kind": { "type": "string", "enum": ["month", "quarter", "year"] },
             "period": { "type": "string", "description": "2026-10, 2026-Q3 or 2026; this period when absent." },
-            "side": { "type": "string", "enum": ["collect", "pay"], "description": "Aging only." }
+            "side": { "type": "string", "enum": ["collect", "pay"], "description": "Aging only." },
+                "compare_to": { "type": "string", "enum": ["previous", "last_year", "none"], "description": "P&L, balance sheet and cash flow: the period shown beside this one. previous by default on the P&L, none otherwise." },
+                "tag": { "type": "string", "description": "P&L and cash flow only: a department or location ticket from books_tags_list." },
+            "account": { "type": "string", "description": "Account activity (ac) only: an account ticket or number." },
+            "person": { "type": "string", "description": "Kind ps only: a person ticket. The period is a year when period_kind is absent." }
         }
     })
 }
@@ -231,10 +264,12 @@ fn tag_create_schema() -> Value {
 fn owed_create_schema() -> Value {
     json!({
         "type": "object",
-        "required": ["client_request_id", "side", "amount", "category"],
+        "required": ["client_request_id"],
         "properties": {
             "client_request_id": { "type": "string" }, "book": { "type": "string" },
-            "side": { "type": "string", "enum": ["collect", "pay"] },
+            "side": { "type": "string", "enum": ["collect", "pay"], "description": "Required without a proposal, as are amount and category." },
+            "proposal": { "type": "string", "description": "A proposal ticket from books_owed_list; with decision." },
+            "decision": { "type": "string", "enum": ["accept", "discard"] },
             "person": { "type": "string" }, "person_name": { "type": "string" },
             "amount": { "type": "string" }, "category": { "type": "string" },
             "issued": { "type": "string" }, "due": { "type": "string" },
@@ -251,8 +286,26 @@ fn owed_ref() -> Value {
     })
 }
 
+fn owed_settle_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "owed", "account"],
+        "properties": {
+            "client_request_id": { "type": "string" }, "book": { "type": "string" },
+            "owed": { "type": "string" }, "account": { "type": "string" },
+            "amount": { "type": "string", "description": "Two-place decimal text; the whole balance when absent." },
+            "on": { "type": "string", "description": "YYYY-MM-DD; today when absent." },
+            "date": { "type": "string", "description": "Same as on." }
+        }
+    })
+}
+
 fn statement_ref() -> Value {
     json!({ "type": "object", "required": ["account", "month"], "properties": { "book": { "type": "string" }, "account": { "type": "string" }, "month": { "type": "string", "description": "YYYY-MM" } } })
+}
+
+fn reconcile_document_schema() -> Value {
+    json!({ "type": "object", "required": ["account", "month", "kind"], "properties": { "book": { "type": "string" }, "account": { "type": "string" }, "month": { "type": "string", "description": "YYYY-MM" }, "kind": { "type": "string", "enum": ["report", "page"] }, "page": { "type": "integer", "minimum": 1 }, "line": { "type": "integer", "minimum": 1 } } })
 }
 
 fn statement_write() -> Value {
@@ -262,10 +315,11 @@ fn statement_write() -> Value {
         "properties": {
             "client_request_id": { "type": "string" }, "book": { "type": "string" },
             "account": { "type": "string" }, "month": { "type": "string" },
-            "line": { "type": "string", "description": "A statement line ticket." },
+            "line": { "type": ["string", "integer"], "description": "A statement line ticket; for accept, a row's `no` to match that one line." },
             "csv_base64": { "type": "string", "description": "The CSV file's bytes, base64url." },
             "csv_text": { "type": "string" }, "closing": { "type": "string", "description": "The ending balance, two-place text." },
-            "file_name": { "type": "string" }
+            "file_name": { "type": "string" },
+            "entry": { "type": "string", "description": "With accept and a row `no`: the entry ticket to match that line to." }
         }
     })
 }
@@ -392,8 +446,25 @@ fn show_schema() -> Value {
         "tax_option": { "type": "string", "enum": ["graduated", "eight_percent"] }, "deduction": { "type": "string", "enum": ["osd", "itemized"] } } })
 }
 
+fn statement_draft_schema() -> Value {
+    json!({ "type": "object", "required": ["client_request_id", "account", "month", "lines"], "properties": {
+        "client_request_id": { "type": "string" }, "book": { "type": "string" },
+        "account": { "type": "string", "description": "The bank, cash or card account's ticket." },
+        "month": { "type": "string", "description": "YYYY-MM" },
+        "evidence": { "type": "string", "description": "The attached statement's evidence ticket." },
+        "closing": { "type": "string", "description": "The ending balance, two-place text." },
+        "lines": { "type": "array", "minItems": 1, "maxItems": 2000, "items": { "type": "object", "required": ["date", "amount"], "properties": {
+            "date": { "type": "string", "description": "YYYY-MM-DD" },
+            "description": { "type": "string", "maxLength": 80 },
+            "amount": { "type": "string", "description": "Two-place text; money into the account is positive." },
+            "balance": { "type": "string", "description": "The running balance after the line, two-place text." },
+            "page": { "type": "integer", "minimum": 1, "maximum": 500 },
+            "bbox": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 1000 }, "minItems": 4, "maxItems": 4, "description": "left, top, right, bottom in thousandths of the page." },
+            "confidence": { "type": "integer", "minimum": 0, "maximum": 100 } } } } } })
+}
+
 fn nudge_schema() -> Value {
-    json!({ "type": "object", "properties": { "book": { "type": "string" }, "kind": { "type": "string", "enum": ["tidy", "month_end", "bir_pair"] }, "month": { "type": "string" }, "any_day": { "type": "boolean", "description": "Answer on any day, not only on the routine's day." } } })
+    json!({ "type": "object", "properties": { "book": { "type": "string" }, "kind": { "type": "string", "enum": ["tidy", "month_end", "bir_pair", "review"] }, "month": { "type": "string" }, "any_day": { "type": "boolean", "description": "Answer on any day, not only on the routine's day." } } })
 }
 
 fn signin_schema() -> Value {
@@ -412,6 +483,23 @@ fn write_ref() -> Value {
         "type": "object",
         "required": ["client_request_id", "entry"],
         "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "entry": { "type": "string" } }
+    })
+}
+
+fn void_schema() -> Value {
+    let mut s = write_ref();
+    s["properties"]["amend"] = json!({ "type": "boolean", "description": "Also save a replacement draft with the same lines, linked to the voided entry." });
+    s["properties"]["reason"] = json!({ "type": "string", "description": "Why the entry is amended, 3 to 200 characters; needed with amend." });
+    s["properties"]["date"] = json!({ "type": "string", "description": "YYYY-MM-DD for the reversal and the replacement (amend only; default the entry's date)." });
+    s
+}
+
+fn owed_document_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["owed"],
+        "properties": { "book": { "type": "string" }, "owed": { "type": "string", "description": "An owed document ticket." } },
+        "additionalProperties": false
     })
 }
 
@@ -441,6 +529,10 @@ fn account_create_schema() -> Value {
             "type": { "type": "string" }
         }
     })
+}
+
+fn checks_schema() -> Value {
+    json!({ "type": "object", "properties": { "book": { "type": "string" }, "check": { "type": "string", "enum": crate::findings::CHECKS } } })
 }
 
 /// Every Books tool, in `tools/list` order.
@@ -512,15 +604,15 @@ pub const TOOLS: &[Tool] = &[
         name: POST_ENTRY,
         reach: Reach::App,
         write: true,
-        schema: draft_schema,
+        schema: post_schema,
         description: "Post a draft (or save and post a new entry) after the user's click. Refuses an unbalanced entry, and receivable or payable lines on a cash book.",
     },
     Tool {
         name: VOID_ENTRY,
         reach: Reach::App,
         write: true,
-        schema: write_ref,
-        description: "Void a posted entry after the user's click: it shows Voided and a reversal is posted on its date.",
+        schema: void_schema,
+        description: "Void a posted entry after the user's click: it shows Voided and a reversal is posted on its date. With amend, a replacement draft with the same lines is saved too.",
     },
     Tool {
         name: DISCARD_ENTRY,
@@ -583,14 +675,14 @@ pub const TOOLS: &[Tool] = &[
         reach: Reach::Everyone,
         write: false,
         schema: report_schema,
-        description: "A report on the book's basis: P&L with the previous period, balance sheet, cash flow, trial balance, or aging (accrual books only).",
+        description: "A report on the book's basis: P&L with the previous period, balance sheet, cash flow, trial balance, aging (accrual books only), account activity (ac), or a person statement (ps). compare_to sets the period beside it (previous, last_year or none); tag narrows the P&L or cash flow to one department or location.",
     },
     Tool {
         name: REPORT_CSV,
         reach: Reach::Everyone,
         write: false,
         schema: report_schema,
-        description: "The same report as CSV text, amounts as two-place decimal text.",
+        description: "The same report as CSV text, amounts as two-place decimal text; takes the same compare_to and tag.",
     },
     Tool {
         name: PERSON_CREATE,
@@ -617,8 +709,8 @@ pub const TOOLS: &[Tool] = &[
         name: OWED_SETTLE,
         reach: Reach::App,
         write: true,
-        schema: owed_ref,
-        description: "Mark an invoice or bill paid after the user's click: posts the money on that day.",
+        schema: owed_settle_schema,
+        description: "Settle an invoice or bill after the user's click, in full or by an amount: posts the money on that day.",
     },
     Tool {
         name: OWED_CANCEL,
@@ -673,8 +765,8 @@ pub const TOOLS: &[Tool] = &[
         name: STATEMENT_FINISH,
         reach: Reach::App,
         write: true,
-        schema: statement_write,
-        description: "Finish a month when every line matches and the difference is 0.00.",
+        schema: crate::statement_flags::finish_schema,
+        description: "Finish a month when every line matches and the difference is 0.00, or reopen a finished one (`reopen`) with the user's reason.",
     },
     Tool {
         name: RECATEGORIZE,
@@ -879,7 +971,129 @@ pub const TOOLS: &[Tool] = &[
         schema: wage_run_schema,
         description: "Save a pay run as a draft entry; the Ledger posts it.",
     },
+    Tool {
+        name: EVIDENCE_ATTACH,
+        reach: Reach::App,
+        write: true,
+        schema: evidence_tools::attach_schema,
+        description: "Stage, retain or link evidence. App only.",
+    },
+    Tool {
+        name: EVIDENCE_DETACH,
+        reach: Reach::App,
+        write: true,
+        schema: evidence_tools::detach_schema,
+        description: "Detach an evidence link; retain its contents. App only.",
+    },
+    Tool {
+        name: EVIDENCE_LIST,
+        reach: Reach::Everyone,
+        write: false,
+        schema: evidence_tools::list_schema,
+        description: "Read evidence metadata and link counts, never contents.",
+    },
+    Tool {
+        name: OWED_DRAFT,
+        reach: Reach::Everyone,
+        write: true,
+        schema: owed_proposals::draft_schema,
+        description: "Save the assistant's reviewable bill or invoice proposal from imported evidence. Creates no unpaid item, person or entry; the user accepts it in Unpaid.",
+    },
+    Tool {
+        name: EVIDENCE_CLASSIFY,
+        reach: Reach::Everyone,
+        write: true,
+        schema: document_review::classify_schema,
+        description: "Propose what an evidence document is (statement, bill, invoice, receipt, payslip, contract, tax_form or other) with a whole-number confidence 0..100. A DRAFT proposal: the evidence kind changes only when the user accepts it in the app. Assistant only; takes a client_request_id.",
+    },
+    Tool {
+        name: EVIDENCE_KIND,
+        reach: Reach::App,
+        write: true,
+        schema: document_review::kind_schema,
+        description: "Accept or discard a document-kind proposal. App only.",
+    },
+    Tool {
+        name: EVIDENCE_PREVIEW,
+        reach: Reach::App,
+        write: false,
+        schema: document_review::preview_schema,
+        description: "A static print preview of one evidence document, optionally with its linked entry. App only.",
+    },
+    Tool {
+        name: EVIDENCE_REVIEW,
+        reach: Reach::App,
+        write: false,
+        schema: document_review::review_schema,
+        description: "Document-kind proposals: generic kind, confidence and status. App only.",
+    },
+    Tool {
+        name: STATEMENT_DRAFT_LINES,
+        reach: Reach::Everyone,
+        write: true,
+        schema: statement_draft_schema,
+        description: "Hand Books the lines you read from a statement the user attached, with page, box and confidence. Saved as a draft the user accepts in the app; it changes no statement.",
+    },
+    Tool {
+        name: RECONCILE_DOCUMENT,
+        reach: Reach::App,
+        write: false,
+        schema: reconcile_document_schema,
+        description: "A static page for the preview: the reconciliation report or one statement page with its lines boxed. App only.",
+    },
+    Tool {
+        name: CHECKS,
+        reach: Reach::Everyone,
+        write: false,
+        schema: checks_schema,
+        description: "Review findings to look at twice: uncategorized lines, stale drafts, months not matched to a statement, weekend dates, round amounts, money with no person. Counts, entry numbers and months only; never amounts, names or memos.",
+    },
+    Tool {
+        name: OWED_DOCUMENT,
+        reach: Reach::App,
+        write: false,
+        schema: owed_document_schema,
+        description: "A print page (Statement of account or Bill record) for one owed document, shown by the Books app's print preview.",
+    },
+    Tool {
+        name: OWED_REPEAT,
+        reach: Reach::App,
+        write: true,
+        schema: owed_repeat_schema,
+        description: "Start or stop a monthly repeat on an invoice or bill, or add this month's copy after the user's click.",
+    },
+    Tool {
+        name: MONTH_PACK,
+        reach: Reach::App,
+        write: false,
+        schema: month_pack_schema,
+        description: "The month pack: a static print preview of the month's reports and reconcile status.",
+    },
 ];
+
+fn owed_repeat_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "owed", "action"],
+        "properties": {
+            "client_request_id": { "type": "string" },
+            "book": { "type": "string" },
+            "owed": { "type": "string" },
+            "action": { "type": "string", "enum": ["start", "stop", "add"] },
+            "month": { "type": "string", "description": "YYYY-MM, add only; this month when absent." }
+        }
+    })
+}
+
+fn month_pack_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "book": { "type": "string" },
+            "month": { "type": "string", "description": "YYYY-MM; this month when absent." }
+        }
+    })
+}
 
 pub fn find(name: &str) -> Option<&'static Tool> {
     TOOLS.iter().find(|t| t.name == name)
@@ -968,9 +1182,10 @@ pub fn call(
                      SELECT 1 FROM line l JOIN account a ON a.account_id = l.account_id
                      WHERE l.entry_id = e.entry_id AND a.kind = 'unsure')))"
             )?);
-            out["unpaid"] = json!(count(
-                "SELECT count(*) FROM unpaid WHERE book_id = ?1 AND status = 'open'"
-            )?);
+            out["unpaid"] = json!(count(&format!(
+                "SELECT count(*) FROM unpaid WHERE book_id = ?1 AND {}",
+                books_store::people::STILL_OWED_SQL
+            ))?);
             Ok(out)
         }),
         TODAY => read(books, arguments, |store, book, _| {
@@ -1016,7 +1231,9 @@ pub fn call(
             records::tags_list(store, book, args)
         }),
         OWED_LIST => read(books, arguments, |store, book, args| {
-            records::owed_list(store, book, args, origin)
+            let list = records::owed_list(store, book.clone(), args, origin)?;
+            let list = owed_proposals::decorate(store, &book, origin, list)?;
+            owed_repeats::decorate(store, book, origin, list)
         }),
         OWED_OPTIONS => read(books, arguments, |store, book, _| {
             records::owed_options(store, book)
@@ -1033,9 +1250,7 @@ pub fn call(
         TAG_CREATE => write(books, name, origin, arguments, |tx| {
             records::tag_create(tx, arguments)
         }),
-        OWED_CREATE => write(books, name, origin, arguments, |tx| {
-            records::owed_create(tx, arguments)
-        }),
+        OWED_CREATE => owed_proposals::owed_create(books, name, origin, arguments),
         OWED_SETTLE => write(books, name, origin, arguments, |tx| {
             records::owed_settle(tx, arguments)
         }),
@@ -1046,7 +1261,7 @@ pub fn call(
             reconcile::grid(store, book)
         }),
         STATEMENT_GET => read(books, arguments, |store, book, args| {
-            reconcile::statement_view(store, book, args)
+            reconcile::statement_view(store, book, args, origin)
         }),
         SETTINGS_GET => read(books, arguments, |store, book, _| {
             reconcile::settings(store, book)
@@ -1069,13 +1284,19 @@ pub fn call(
             })
         }
         STATEMENT_ACCEPT => write(books, name, origin, arguments, |tx| {
+            if arguments.contains_key("draft") {
+                return statement_read::accept(tx, arguments);
+            }
+            if crate::match_assist::is_one_line(arguments) {
+                return crate::match_assist::accept_one(tx, arguments);
+            }
             reconcile::statement_accept(tx, arguments)
         }),
         STATEMENT_ADD => write(books, name, origin, arguments, |tx| {
             reconcile::statement_add(tx, arguments)
         }),
         STATEMENT_FINISH => write(books, name, origin, arguments, |tx| {
-            reconcile::statement_finish(tx, arguments)
+            crate::statement_flags::finish_or_reopen(tx, arguments)
         }),
         RECATEGORIZE => write(books, name, origin, arguments, |tx| {
             reconcile::recategorize(tx, arguments)
@@ -1231,6 +1452,65 @@ pub fn call(
         CROSS_CHECKS => read(books, arguments, |store, book, args| {
             checks::cross_checks(store, book, args)
         }),
+        EVIDENCE_ATTACH => evidence_tools::attach(books, name, origin, arguments),
+        EVIDENCE_DETACH => evidence_tools::detach(books, name, origin, arguments),
+        EVIDENCE_LIST => read(books, arguments, |store, _book, args| {
+            evidence_tools::list(store.conn(), args)
+        }),
+        OWED_DRAFT => owed_proposals::draft_tool(books, name, origin, arguments),
+        EVIDENCE_CLASSIFY => document_review::classify(books, name, origin, arguments),
+        EVIDENCE_KIND => document_review::decide(books, name, origin, arguments),
+        EVIDENCE_PREVIEW => document_review::preview(books, origin, arguments),
+        EVIDENCE_REVIEW => read(books, arguments, |store, _book, args| {
+            document_review::review(store.conn(), args)
+        }),
+        STATEMENT_DRAFT_LINES => write(books, name, origin, arguments, |tx| {
+            statement_read::draft_lines(tx, arguments, origin)
+        }),
+        RECONCILE_DOCUMENT => {
+            if !origin.is_app() {
+                return Some(fail("forbidden", "Only the app may open this page."));
+            }
+            if !books.exists() {
+                return Some(fail(
+                    "not_set_up",
+                    "There is no book yet. Open Books to make one.",
+                ));
+            }
+            (|| {
+                let store = books.store()?;
+                let book = service::book(store, arguments)?;
+                reconcile_document::document(store, book, arguments)
+            })()
+            .unwrap_or_else(Refusal::into_result)
+        }
+        CHECKS => read(books, arguments, |store, book, args| {
+            crate::findings::checks(store, book, args)
+        }),
+        OWED_DOCUMENT => crate::owed_doc::tool(books, arguments, origin),
+        OWED_REPEAT => write(books, name, origin, arguments, |tx| {
+            owed_repeats::repeat(tx, arguments)
+        }),
+        MONTH_PACK => {
+            let mut out = read(books, arguments, |store, book, args| {
+                month_pack::pack(store, book, args)
+            });
+            // buwiz.preview renders an embedded text/html resource; the html is not repeated as text
+            if out["isError"] == false
+                && let Some(html) = out["structuredContent"]
+                    .as_object_mut()
+                    .and_then(|o| o.remove("html"))
+            {
+                let key = out["structuredContent"]["month"]["key"]
+                    .as_str()
+                    .unwrap_or("")
+                    .to_string();
+                out["content"] = json!([{ "type": "resource", "resource": {
+                    "uri": month_pack::uri(&key), "mimeType": "text/html", "text": html
+                } }]);
+            }
+            out
+        }
         _ => fail("internal", "Books has no handler for that tool."),
     })
 }
@@ -1363,7 +1643,7 @@ fn resolve(arguments: &Map<String, Value>, books: &mut Books) -> Value {
             }
         }
         ("scope", "proposal") => ok(proposal_scope(arguments, books)),
-        ("scope", "person" | "account" | "period" | "entry" | "form" | "tag") => {
+        ("scope", "person" | "account" | "period" | "entry" | "form" | "tag" | "evidence") => {
             if !books.exists() {
                 return ok(json!({ "result": "error", "message": "There is no book yet." }));
             }

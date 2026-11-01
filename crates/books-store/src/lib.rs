@@ -21,15 +21,24 @@ use std::path::{Path, PathBuf};
 
 use rusqlite::{Connection, OptionalExtension as _, params};
 
+pub mod amend;
 pub mod books;
 pub mod certificates;
 pub mod entries;
+pub mod evidence;
 pub mod handoffs;
 pub mod imports;
 pub mod link;
+pub mod match_history;
 pub mod months;
+pub mod owed_payments;
+pub mod owed_repeat;
 pub mod people;
 pub mod plumbing;
+pub mod review;
+pub mod slices;
+pub mod statement_drafts;
+pub mod statement_lock;
 
 pub use rusqlite;
 
@@ -41,6 +50,18 @@ const MIGRATIONS: &[(i64, &str)] = &[
     (4, include_str!("../migrations/0004_imports_openings.sql")),
     (5, include_str!("../migrations/0005_certificates.sql")),
     (6, include_str!("../migrations/0006_handoffs.sql")),
+    (7, include_str!("../migrations/0007_evidence.sql")),
+    (8, include_str!("../migrations/0008_owed_proposals.sql")),
+    (
+        9,
+        include_str!("../migrations/0009_evidence_classification.sql"),
+    ),
+    (10, include_str!("../migrations/0010_statement_drafts.sql")),
+    (11, include_str!("../migrations/0011_statement_events.sql")),
+    (12, include_str!("../migrations/0012_draft_review.sql")),
+    (13, include_str!("../migrations/0013_amendments.sql")),
+    (14, include_str!("../migrations/0014_owed_payments.sql")),
+    (15, include_str!("../migrations/0015_owed_repeat.sql")),
 ];
 
 pub const DATA_DIR_ENV: &str = "BOOKS_DATA_DIR";
@@ -420,7 +441,10 @@ mod tests {
         assert_eq!(mode, 0o700);
         let store = Store::open(&paths).unwrap();
         assert_eq!(store.meta("canary").unwrap().as_deref(), Some(CANARY));
-        assert_eq!(store.meta("schema_version").unwrap().as_deref(), Some("6"));
+        assert_eq!(
+            store.meta("schema_version").unwrap().as_deref(),
+            Some(MIGRATIONS.last().unwrap().0.to_string().as_str())
+        );
         drop(store);
         let other = Paths {
             dir: paths.dir.clone(),

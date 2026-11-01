@@ -32,8 +32,24 @@ name = "ledger_tools"
 path = "../../tests/ledger_tools.rs"
 
 [[test]]
+name = "ledger_amend"
+path = "../../tests/ledger_amend.rs"
+
+[[test]]
+name = "month_pack"
+path = "../../tests/month_pack.rs"
+
+[[test]]
 name = "golden_reports"
 path = "../../tests/golden_reports.rs"
+
+[[test]]
+name = "owed_partial"
+path = "../../tests/owed_partial.rs"
+
+[[test]]
+name = "report_compare"
+path = "../../tests/report_compare.rs"
 
 [[test]]
 name = "months_reconcile"
@@ -59,6 +75,34 @@ path = "../../tests/forms_bridge.rs"
 name = "privacy_outputs"
 path = "../../tests/privacy_outputs.rs"
 
+[[test]]
+name = "evidence_foundation"
+path = "../../tests/evidence_foundation.rs"
+
+[[test]]
+name = "document_review"
+path = "../../tests/document_review.rs"
+
+[[test]]
+name = "statement_read"
+path = "../../tests/statement_read.rs"
+
+[[test]]
+name = "reconcile_document"
+path = "../../tests/reconcile_document.rs"
+
+[[test]]
+name = "owed_document"
+path = "../../tests/owed_document.rs"
+
+[[test]]
+name = "account_activity"
+path = "../../tests/account_activity.rs"
+
+[[test]]
+name = "person_statement"
+path = "../../tests/person_statement.rs"
+
 [dependencies]
 buwiz-plugin = { git = "https://github.com/buwiz-app/buwiz-sdk", rev = "2120c725112e2072b22f6630079fc938b6c9b1e9" }
 books-core = { path = "../books-core" }
@@ -79,3 +123,27 @@ ureq = { version = "2.12", default-features = false, features = ["tls"] }
 
 [lints]
 workspace = true
+
+[[test]]
+name = "owed_proposals"
+path = "../../tests/owed_proposals.rs"
+
+[[test]]
+name = "statement_lock_flags"
+path = "../../tests/statement_lock_flags.rs"
+
+[[test]]
+name = "match_assist"
+path = "../../tests/match_assist.rs"
+
+[[test]]
+name = "ledger_inbox"
+path = "../../tests/ledger_inbox.rs"
+
+[[test]]
+name = "ledger_findings"
+path = "../../tests/ledger_findings.rs"
+
+[[test]]
+name = "owed_repeat"
+path = "../../tests/owed_repeat.rs"

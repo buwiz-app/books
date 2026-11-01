@@ -4,7 +4,7 @@
 // data comes from buwiz.call alone, and every tool called is in the app's
 // permissions.tools. Money arrives as display text from Books: the app
 // never does arithmetic on an amount (invariant 2).
-import { signal, computed, resource, Text, View, Scroll, Input } from "nsh";
+import { signal, computed, resource, Text, View, Scroll, Input, Overlay } from "nsh";
 import { buwiz } from "buwiz";
 
 type Any = any;

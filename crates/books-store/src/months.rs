@@ -367,10 +367,15 @@ pub fn matches(
     let cands = candidates(conn, book_id, s.account_id, &period)?;
     let plain: Vec<statement::Line> = lines.iter().map(|l| l.line.clone()).collect();
     let kept: Vec<Option<i64>> = lines.iter().map(|l| l.matched_entry_id).collect();
-    Ok(statement::match_lines(&plain, &kept, &cands))
+    let hints = crate::match_history::hints(conn, book_id, s.account_id)?;
+    let ids: Vec<i64> = cands.iter().map(|c| c.entry_id).collect();
+    let payees = crate::match_history::payees(conn, &ids)?;
+    Ok(books_core::match_assist::rank(
+        &plain, &kept, &cands, &payees, &hints,
+    ))
 }
 
-fn set_match(conn: &Connection, line_id: i64, entry_id: i64, kind: &str) -> Result<()> {
+pub(crate) fn set_match(conn: &Connection, line_id: i64, entry_id: i64, kind: &str) -> Result<()> {
     conn.execute(
         "UPDATE statement_line SET matched_entry_id = ?2, match_kind = ?3 WHERE line_id = ?1",
         params![line_id, entry_id, kind],
@@ -378,7 +383,7 @@ fn set_match(conn: &Connection, line_id: i64, entry_id: i64, kind: &str) -> Resu
     Ok(())
 }
 
-fn open_statement(
+pub(crate) fn open_statement(
     conn: &Connection,
     book: &Book,
     account_id: i64,
@@ -418,10 +423,23 @@ pub fn accept_suggestions(
     Ok(n)
 }
 
-/// The account a missing bank line goes to: the kind the bank's words
-/// name, else the book's "not sure yet" default for its direction.
-pub fn account_for_line(conn: &Connection, book: &Book, line: &statement::Line) -> Result<Account> {
+/// The account a missing bank line goes to: the category past matches of
+/// its description used, else the kind the bank's words name, else the
+/// book's "not sure yet" default for its direction.
+pub fn account_for_line(
+    conn: &Connection,
+    book: &Book,
+    hint: Option<&books_core::match_assist::Hint>,
+    line: &statement::Line,
+) -> Result<Account> {
     let accounts = books::accounts(conn, book.id)?;
+    if let Some(id) = hint.and_then(|h| h.category_account_id)
+        && let Some(a) = accounts
+            .iter()
+            .find(|a| a.id == id && a.active && !(a.accrual_only() && book.basis == Basis::Cash))
+    {
+        return Ok(a.clone());
+    }
     if let Some(kind) = statement::suggest_kind(&line.description, line.amount)
         && let Some(a) = accounts
             .iter()
@@ -455,7 +473,10 @@ pub fn add_line(
     if line.matched_entry_id.is_some() {
         return Err(error("already_matched", "That line is already in Books."));
     }
-    let category = account_for_line(conn, book, &line.line)?;
+    let hints = crate::match_history::hints(conn, book.id, account_id)?;
+    let hint = books_core::match_assist::hint_for(&hints, &line.line.description);
+    let category = account_for_line(conn, book, hint, &line.line)?;
+    let hinted_payee = hint.and_then(|h| h.payee.clone());
     let c = line.line.amount.abs();
     let (form, lines_in) = if line.line.amount > 0 {
         (
@@ -497,7 +518,7 @@ pub fn add_line(
     let draft = DraftInput {
         date: line.line.date,
         form,
-        payee: None,
+        payee: hinted_payee,
         memo: Some(line.line.description.clone()),
         reference: Some("From bank statement".into()),
         needs_review: false,

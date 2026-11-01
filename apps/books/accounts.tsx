@@ -10,6 +10,9 @@ const GROUP_CHIPS: [string, string][] = [
   ["Expenses", "Expenses"],
 ];
 
+/** The account whose activity drawer is open (Accounts page). */
+const accountDrawer = signal("");
+
 function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
   const group = signal("all");
   const data = resource(
@@ -27,7 +30,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
   };
   const open = (a: Any) => {
     if (a.off) return;
-    openLedger({ account: a.ticket });
+    accountDrawer.set(a.ticket);
   };
   return (
     <View class="gap-3.5">

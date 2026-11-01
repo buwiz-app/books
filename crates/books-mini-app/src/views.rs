@@ -250,6 +250,7 @@ impl Summary {
             );
             row["payee"] = json!(e.payee);
         }
+        crate::inbox::row_keys(store.conn(), e, &mut row)?;
         Ok(row)
     }
 }
@@ -355,6 +356,12 @@ pub fn today(store: &Store, book: Book, origin: Origin) -> Result<Value, Refusal
     let mut needs = Vec::new();
     if review > 0 {
         needs.push(json!({ "kind": "review", "count": review, "title": "Bank lines to categorize", "detail": "Not sure yet · pick a category for each", "go": "ledger", "filter": "review", "tone": "rev" }));
+    }
+    // flagged entries of this month: the ledger the item opens lists them
+    let this_month = Period::of(today, PeriodKind::Month);
+    let checks = crate::findings::flagged(store, chart.book.clone(), today, &this_month)?.len();
+    if checks > 0 {
+        needs.push(json!({ "kind": "checks", "count": checks, "title": "Entries to look at twice", "detail": "Review findings · open the Checks filter", "go": "ledger", "filter": "checks", "tone": "rev" }));
     }
     if !drafts.is_empty() {
         let detail = if origin.is_app() {
@@ -531,8 +538,13 @@ pub fn ledger(
             ..Filter::default()
         },
     )?;
+    let flagged = crate::inbox::flagged(store.conn(), list.iter().map(|s| &s.entry))?;
+    let found =
+        crate::findings::findings_in(store, chart.book.clone(), Date::today(), Some(&month))?;
+    let marks = crate::findings::by_entry(&found);
     let is = |s: &Summary, f: &str| match f {
-        "review" => s.needs_review(),
+        "checks" => marks.contains_key(&s.entry.id),
+        "review" => s.needs_review() || flagged.contains(&s.entry.id),
         "draft" => s.entry.status == Status::Draft && !s.entry.needs_review,
         "posted" => matches!(s.entry.status, Status::Posted | Status::Voided),
         _ => true,
@@ -543,13 +555,18 @@ pub fn ledger(
         "review": list.iter().filter(|s| is(s, "review")).count(),
         "draft": list.iter().filter(|s| is(s, "draft")).count(),
         "posted": list.iter().filter(|s| is(s, "posted")).count(),
+        "checks": list.iter().filter(|s| is(s, "checks")).count(),
     });
     let rows = list
         .iter()
         .filter(|s| is(s, filter))
         .take(200)
-        .map(|s| s.row(store, origin))
-        .collect::<Result<Vec<_>, _>>()?;
+        .map(|s| {
+            let mut row = s.row(store, origin)?;
+            row["checks"] = json!(marks.get(&s.entry.id).cloned().unwrap_or_default());
+            Ok(row)
+        })
+        .collect::<Result<Vec<_>, Refusal>>()?;
     let header = match &selected {
         Some(a) => json!({
             "ticket": ticket(store, "account", a.id)?, "number": a.number, "name": a.name,
@@ -592,6 +609,7 @@ pub fn entry(
         .ok_or_else(|| Refusal::new("not_found", "That entry is not in this book."))?;
     let s = Summary::of(store, &chart, e)?;
     let mut out = s.row(store, origin)?;
+    out["review"] = crate::inbox::review_json(store.conn(), &s.entry, origin)?;
     let lines: Vec<Value> = s
         .lines
         .iter()
@@ -607,7 +625,7 @@ pub fn entry(
     let e = &s.entry;
     let actions: Vec<&str> = match e.status {
         Status::Draft => vec!["discard", "edit", "post"],
-        Status::Posted if e.form != Form::Reversal => vec!["void", "duplicate"],
+        Status::Posted if e.form != Form::Reversal => vec!["void", "amend", "copy"],
         _ => vec![],
     };
     // whether a post would go through, without changing anything
@@ -628,6 +646,8 @@ pub fn entry(
         }
         _ => None,
     };
+    let (links, link_labels, replaces) = crate::amend::links(store, e)?;
+    let related = related.or(replaces);
     // for a line that needs review: the categories this payee used before,
     // then what the bank's words name (books_app_recategorize)
     let mut suggest: Vec<Value> = Vec::new();
@@ -691,6 +711,8 @@ pub fn entry(
     obj.insert("actions".into(), json!(actions));
     obj.insert("post_blocker".into(), json!(blocker));
     obj.insert("related".into(), json!(related));
+    obj.insert("links".into(), links);
+    obj.insert("link_labels".into(), link_labels);
     if origin.is_app() {
         obj.insert(
             "who_label".into(),

@@ -47,13 +47,13 @@ fn the_manifest_has_the_books_identity() {
     assert_eq!(m["protocol"], "2.0.0");
     assert_eq!(m["id"], "app.buwiz.books");
     assert_eq!(m["short"], "books");
-    assert_eq!(m["version"], "0.3.0");
+    assert_eq!(m["version"], "0.4.0");
     assert_eq!(m["publisher"]["id"], "app.buwiz");
     assert_eq!(m["publisher"]["key_id"], "gc-2026-01");
     assert!(m.get("signature").is_none() && m.get("needs").is_none());
-    // M8: three routines, six scopes and the hand-off's, /books and five templates
-    assert_eq!(m["routines"].as_array().unwrap().len(), 3);
-    assert_eq!(m["scopes"].as_array().unwrap().len(), 7);
+    // Four routines (weekly review since M10), eight scopes, /books and five templates.
+    assert_eq!(m["routines"].as_array().unwrap().len(), 4);
+    assert_eq!(m["scopes"].as_array().unwrap().len(), 8);
     assert_eq!(m["commands"].as_array().unwrap().len(), 6);
     assert!(
         m["commands"][0]["description"]
@@ -180,9 +180,24 @@ fn every_books_tool_starts_with_books_and_every_named_tool_exists() {
         assert_eq!(tool["annotations"]["readOnlyHint"], !write, "{name}");
         // DD-20: every write but the draft is the user's click in the app
         let app_only = tool["_meta"]["buwiz/audience"] == serde_json::json!(["app"]);
-        assert_eq!(name.starts_with("books_app_"), app_only, "{name}");
+        // the one read-only app-only tool: the print page for buwiz.preview
+        let app_read = name == "books_owed_document" && !write;
+        assert_eq!(
+            name.starts_with("books_app_") || app_read,
+            app_only,
+            "{name}"
+        );
         if write && !app_only {
-            assert_eq!(name, "books_entry_draft", "the assistant may only draft");
+            assert!(
+                [
+                    "books_entry_draft",
+                    "books_owed_draft",
+                    "books_evidence_classify",
+                    "books_statement_draft_lines",
+                ]
+                .contains(&name),
+                "the assistant may only draft: {name}"
+            );
         }
         // P7 forbidden verbs (invariant 7)
         for verb in ["submit", "queue", "pay", "paid", "file", "send"] {
@@ -286,4 +301,109 @@ fn no_float_type_appears_in_the_crates() {
             }
         }
     }
+}
+
+/// evidence-4: the document library's grants stay on its own apps.
+#[test]
+fn evidence_grants_stay_on_the_evidence_apps() {
+    let m = manifest::unsigned(manifest::RELEASE_KEY_ID);
+    let entries = m["apps"].as_array().unwrap();
+    let entry = |id: &str| {
+        entries
+            .iter()
+            .find(|e| e["id"] == id)
+            .unwrap_or_else(|| panic!("no app {id}"))
+            .clone()
+    };
+    let evidence_only = [
+        tools::EVIDENCE_KIND,
+        tools::EVIDENCE_PREVIEW,
+        tools::EVIDENCE_REVIEW,
+    ];
+    for (e, app) in entries.iter().zip(apps::APPS) {
+        let id = app.id;
+        let p = &e["permissions"];
+        // preview only where a source calls buwiz.preview
+        assert_eq!(
+            p.get("preview").is_some(),
+            matches!(app.source, apps::AppSource::Tsx(s) if s.contains("buwiz.preview(")),
+            "{id}: preview grant"
+        );
+        // evidence attach scope only on the library
+        let attaches_evidence = p["attach"]
+            .as_array()
+            .is_some_and(|a| a.iter().any(|s| s == "evidence"));
+        assert_eq!(attaches_evidence, id == "evidence", "{id}: attach");
+        // the library's file types only on the library
+        let picks_documents = p["pick_file"]["extensions"]
+            .as_array()
+            .is_some_and(|x| x.iter().any(|s| s == ".pdf"));
+        assert_eq!(picks_documents, id == "evidence", "{id}: pick_file");
+        if id != "evidence" && id != "books" {
+            assert!(p.get("pick_file").is_none(), "{id}: pick_file");
+        }
+        assert!(p["tools"].as_array().unwrap().len() <= 64, "{id}: tools");
+        if id != "evidence" && id != "document" {
+            for tool in evidence_only {
+                assert!(
+                    !p["tools"].as_array().unwrap().iter().any(|t| t == tool),
+                    "{id} names {tool}"
+                );
+            }
+        }
+    }
+    // Books' way in is one more open target; its tool list gains nothing
+    let books = entry("books");
+    assert_eq!(
+        books["permissions"]["open"],
+        serde_json::json!({ "apps": ["ledger", "evidence"] })
+    );
+    // the window's preview is Unpaid's print page, snapshots and the month pack, at the shared cap
+    assert_eq!(
+        books["permissions"]["preview"],
+        serde_json::json!({ "max_bytes": books_mini_app::tools::document_review::PREVIEW_MAX_BYTES })
+    );
+    let apps::AppSource::Tsx(books_source) = apps::find("books").unwrap().source else {
+        panic!("books is a TSX window")
+    };
+    let window = called_tools(books_source);
+    for tool in evidence_only.iter().chain(&[tools::EVIDENCE_CLASSIFY]) {
+        assert!(!window.contains(&tool.to_string()), "books names {tool}");
+    }
+    assert_eq!(
+        books["permissions"]["tools"].as_array().unwrap().len(),
+        window.len()
+    );
+    // the inline card: no file picking, no attach, opens only Books
+    let card = entry("document");
+    let cp = &card["permissions"];
+    assert!(cp.get("pick_file").is_none() && cp.get("attach").is_none());
+    assert_eq!(cp["open"], serde_json::json!({ "apps": ["books"] }));
+    assert_eq!(card["placement"], serde_json::json!(["inline"]));
+    // props: opaque tickets and the mode enum, nothing else
+    let props = card["props"]["properties"].as_object().unwrap();
+    let mut keys: Vec<&str> = props.keys().map(String::as_str).collect();
+    keys.sort();
+    assert_eq!(keys, ["evidence", "mode", "proposal", "ticket"]);
+    for key in ["evidence", "proposal", "ticket"] {
+        assert_eq!(props[key]["type"], "string", "{key}");
+        assert_eq!(props[key]["maxLength"], 30, "{key}");
+        assert!(props[key].get("enum").is_none(), "{key}");
+    }
+    assert_eq!(props["mode"]["enum"], serde_json::json!(["review"]));
+    // at most three inline actions in any one footer
+    let apps::AppSource::Tsx(source) = apps::find("document").unwrap().source else {
+        panic!("document is a TSX card")
+    };
+    let card_body = &source[source.find("function DocumentCard").unwrap()..];
+    let mut footers = 0;
+    for foot in card_body.split("<Foot>").skip(1) {
+        let foot = &foot[..foot.find("</Foot>").expect("closed footer")];
+        assert!(foot.matches("<Act ").count() <= 3, "{foot}");
+        footers += 1;
+    }
+    assert!(footers >= 1);
+    let manifest_apps = entries.len();
+    assert!(manifest_apps <= 16, "apps: {manifest_apps}");
+    assert!(m["scopes"].as_array().unwrap().len() <= 16);
 }

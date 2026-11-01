@@ -96,7 +96,6 @@ function ReconcileGrid() {
                           <View
                             class={`rounded-lg px-2 py-1 self-start ${CELL[c().state]}`}
                             onPress={() => {
-                              if (c().state === "done") return;
                               recAccount.set(r().ticket);
                               recMonth.set(c().month);
                             }}
@@ -132,6 +131,8 @@ function MatchView() {
   const s = () => d()?.statement as Any;
   const call = (tool: string, extra: Record<string, Any> = {}) =>
     act(tool, { account: recAccount(), month: recMonth(), ...extra }).catch(() => null);
+  const selectedLine = signal<number | null>(null);
+  const snapPage = signal(0);
   return (
     <View class="gap-3.5">
       <Head title={`Match ${d()?.month?.short || ""} · ${d()?.account?.name || ""}`} sub="statement vs Books">
@@ -140,10 +141,15 @@ function MatchView() {
           <If when={Boolean(s())}>
             <Btn label={`Accept ${String(s()?.suggested || 0)} suggestion${s()?.suggested === 1 ? "" : "s"}`} disabled={!s()?.suggested} onPress={() => call("books_app_statement_accept")} />
           </If>
-          <Btn label="Import statement" onPress={() => importStatement(recAccount())} />
+          <If when={s()?.status !== "finished"}>
+            <Btn label="Import statement" onPress={() => importStatement(recAccount())} />
+          </If>
         </View>
       </Head>
       <Loading res={data} />
+      <If when={Boolean(d()?.draft)}>
+        <DraftBanner account={recAccount()} month={recMonth()} draft={d()?.draft} />
+      </If>
       <If when={Boolean(d()) && !s()}>
         <Panel pad>
           <Text class={`text-[13px] ${C.mute}`}>No statement for this month yet. Import the bank's CSV to match it.</Text>
@@ -151,6 +157,9 @@ function MatchView() {
       </If>
       <If when={Boolean(s())}>
         <View class="gap-3.5">
+          <If when={(s()?.flags || []).length > 0}>
+            <FlagsNote flags={s()?.flags || []} />
+          </If>
           <Panel>
             <View class={`flex-row border-b ${C.line}`}>
               <Text class={`flex-1 px-3 py-2.5 text-[11px] uppercase tracking-wider ${C.dim}`}>Bank statement</Text>
@@ -159,12 +168,24 @@ function MatchView() {
             </View>
             <Each of={s()?.rows || []} key={rowKey}>
               {(r: Any) => (
-                <View class={`flex-row items-center border-b ${C.line}`}>
+                <View
+                  class={`flex-row items-center border-b ${C.line} ${r().no === selectedLine() ? C.panel : ""}`}
+                  onPress={() => {
+                    selectedLine.set(r().no ?? null);
+                    if (r().page) snapPage.set(Number(r().page));
+                  }}
+                >
                   <View class="flex-1 flex-row items-center gap-2 px-3 py-2 min-h-[38px]">
                     <Text class={`w-[52px] text-[12px] font-mono ${C.ink}`}>{r().date_short}</Text>
+                    <If when={Boolean(r().flag)}>
+                      <View class="w-[7px] h-[7px] rounded-full bg-[#f3b64c]" />
+                    </If>
                     <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>
                       {r().description}
                     </Text>
+                    <If when={Boolean(r().low)}>
+                      <Pill tone="draft" label={`read ${String(r().confidence)}%`} />
+                    </If>
                     <Text class={`text-[12.5px] font-mono ${C.ink}`}>{r().amount_shown}</Text>
                   </View>
                   <Text class={`w-[28px] text-center font-bold ${r().match === "m" ? C.green : r().match === "s" ? C.amber : C.red}`}>{MARK[r().match]}</Text>
@@ -175,10 +196,16 @@ function MatchView() {
                     <Text class={`w-[52px] text-[12px] font-mono ${C.ink}`}>{r().books?.date_short || "—"}</Text>
                     <View class="flex-1">
                       <Text class={`text-[12.5px] font-semibold ${C.ink}`}>{r().books?.title || ""}</Text>
-                      <Text class={`text-[11px] ${C.dim}`}>{r().books?.sub || ""}</Text>
+                      <Text class={`text-[11px] ${C.dim}`}>{r().why || r().books?.sub || ""}</Text>
+                      <If when={Boolean(r().hint?.category)}>
+                        <Text class={`text-[11px] ${C.dim}`}>{`Usually ${r().hint?.category || ""}`}</Text>
+                      </If>
                     </View>
                     <If when={r().match === "x"}>
                       <Btn label="+ Add" small onPress={() => call("books_app_statement_add_line", { line: r().ticket })} />
+                    </If>
+                    <If when={r().match === "s" && s()?.status !== "finished"}>
+                      <Btn label="Match" small onPress={() => call("books_app_statement_accept", { line: r().no })} />
                     </If>
                     <If when={r().match !== "x"}>
                       <Text class={`text-[12.5px] font-mono ${C.ink}`}>{r().books?.amount_shown || ""}</Text>
@@ -188,6 +215,21 @@ function MatchView() {
               )}
             </Each>
           </Panel>
+          <If when={snapShown(s())}>
+            <SnapshotPane
+              rows={s()?.rows || []}
+              evidence={Boolean(s()?.snapshot)}
+              selected={selectedLine()}
+              onSelect={(no: number) => selectedLine.set(no)}
+              page={snapPage()}
+              onPage={(n: number) => snapPage.set(n)}
+              account={recAccount()}
+              month={recMonth()}
+            />
+          </If>
+          <If when={!snapShown(s())}>
+            <PrintReconciliation account={recAccount()} month={recMonth()} />
+          </If>
           <Panel pad class="flex-row items-center gap-4">
             <Text class={`text-[12.5px] ${C.mute}`}>{`Statement ending ${s()?.closing_shown || ""}`}</Text>
             <Text class={`text-[12.5px] ${C.mute}`}>{`Books ${s()?.books_shown || ""}`}</Text>
@@ -200,6 +242,9 @@ function MatchView() {
               <Pill tone="ok" label="Matched" />
             </If>
           </Panel>
+          <If when={Boolean(s()?.reopenable)}>
+            <ReopenFooter onReopen={(reason: string) => call("books_app_statement_finish", { reopen: true, reason })} />
+          </If>
         </View>
       </If>
     </View>

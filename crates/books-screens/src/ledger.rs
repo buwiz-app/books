@@ -940,10 +940,7 @@ fn drawer(
             }
         }));
     }
-    if data
-        .as_ref()
-        .is_some_and(|value| has_action(value, "duplicate"))
-    {
+    if data.as_ref().is_some_and(|value| has_action(value, "copy")) {
         actions = actions.child(button("Duplicate", "plain", {
             let ids = ids.clone();
             let bridge = bridge.clone();

@@ -10,25 +10,39 @@
 //!   tickets, idempotent audited writes), [`views`] (page data),
 //!   [`writes`], [`records`] (people, tags, unpaid) and [`reports`].
 
+pub mod activity;
+pub mod amend;
 pub mod apps;
 pub mod b64;
 pub mod cards;
 pub mod checks;
 pub mod cloud;
 pub mod demo;
+pub mod findings;
 pub mod forms;
 pub mod handoff;
+pub mod html;
+pub mod inbox;
 pub mod jcs;
 pub mod jsonrpc;
 pub mod manifest;
+pub mod match_assist;
+pub mod month_pack;
 pub mod oldbooks;
+pub mod owed_detail;
+pub mod owed_doc;
+pub mod owed_repeats;
 pub mod payroll;
+pub mod person_statement;
 pub mod reconcile;
+pub mod reconcile_document;
 pub mod records;
 pub mod reports;
 pub mod reserved;
 pub mod service;
 pub mod sheets;
+pub mod statement_flags;
+pub mod statement_read;
 pub mod tools;
 pub mod views;
 pub mod writes;
