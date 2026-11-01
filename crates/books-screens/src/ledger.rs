@@ -900,6 +900,7 @@ fn drawer(
                 toast,
                 toast_epoch,
                 version,
+                busy,
                 ids.clone(),
                 data,
             ));
@@ -1063,6 +1064,7 @@ fn drawer_data(
     toast: nsh_core::element::Signal<String>,
     toast_epoch: nsh_core::element::Signal<u64>,
     version: nsh_core::element::Signal<u64>,
+    busy: nsh_core::element::Signal<bool>,
     ids: RequestIds,
     data: Value,
 ) -> nsh_core::element::View {
@@ -1112,6 +1114,7 @@ fn drawer_data(
                 let toast_for_action = toast;
                 let toast_epoch_for_action = toast_epoch;
                 let version_for_action = version;
+                let busy_for_action = busy;
                 let ids_for_action = ids.clone();
                 let category_for_action = category.clone();
                 let ticket_for_action = ticket.clone();
@@ -1134,8 +1137,13 @@ fn drawer_data(
                             let filter_state = filter_for_action.clone();
                             let drawer_state = drawer_for_action;
                             let version = version_for_action;
+                            let busy = busy_for_action;
                             let toast = toast_for_action;
                             let toast_epoch = toast_epoch_for_action;
+                            if busy.get() {
+                                return;
+                            }
+                            busy.set(true);
                             let mut args = json!({
                                 "entry":drawer_state.get(),
                                 "category":ticket_for_action.clone()
@@ -1156,8 +1164,12 @@ fn drawer_data(
                                             drawer_state,
                                         )
                                         .await;
+                                        busy.set(false);
                                     }
-                                    Err(error) => show_toast(error.message, toast, toast_epoch),
+                                    Err(error) => {
+                                        busy.set(false);
+                                        show_toast(error.message, toast, toast_epoch);
+                                    }
                                 }
                             });
                         })
