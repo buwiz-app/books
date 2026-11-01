@@ -197,6 +197,7 @@ pub fn statement_view(
         origin,
         &mut out,
     )?;
+    crate::reconcile_document::snapshot_fields(store, &s, &lines, &mut out["statement"])?;
     Ok(out)
 }
 

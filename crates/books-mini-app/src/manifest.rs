@@ -85,6 +85,9 @@ fn permissions(app: &apps::App) -> Value {
             p["open"] = json!({ "apps": ["ledger", "evidence"] });
         }
     }
+    if app.source.contains(".preview(") {
+        p["preview"] = json!({});
+    }
     p
 }
 

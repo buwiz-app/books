@@ -536,3 +536,23 @@ only) accepts it through the existing `months::import` path, leaving out `exclud
 Tests: `tests/statement_read.rs`.
 
 UNCONFIRMED: pick_file still lists only .csv/.json/.xlsx/.xls, so a PDF or image statement cannot be picked yet (evidence UI task).
+
+### 2026-11-01 — reconcile-2
+
+New app-only read tool `books_app_reconcile_document` (`crates/books-mini-app/src/reconcile_document.rs`), called by
+`buwiz.preview`: `{book?, account, month: "YYYY-MM", kind: "report" | "page", page?, line?}` returns one embedded
+`text/html` resource (`books://reconcile/<kind>`) and `structuredContent.title` ("Bank reconciliation · Sep 2026",
+"Statement page 1 · Sep 2026"; no amount, number or name). The report has a summary table and "Money in" / "Money out"
+tables with i128 totals; the page view draws an image snapshot with one percent-positioned box per line (the `line`
+box gets class `hl`) or embeds a PDF with the page's lines listed, and refuses "This statement has no snapshot" and,
+over 8,000,000 bytes, "The snapshot is too large to show here". `html.rs` holds `escape`, `page` and a padded
+RFC 4648 §4 base64 (the base64 crate is only a transitive `ureq` dependency, so none is added). The manifest grants
+`preview: {}` to apps that call `.preview(`. `statement_view` gains `statement.snapshot` and row `no`, `page` and
+`box` (percent text). `apps/books/statement_snapshot.tsx` adds `SnapshotPane` beside MatchView, with "See the page",
+"Print reconciliation" (also shown for CSV statements) and "Create from this line".
+PROPOSAL: the spec named the tool `books_reconcile_document`; `tests/manifest_shape.rs` (DD-20) requires every
+app-audience tool to start with `books_app_`, so it is `books_app_reconcile_document`. Reach::App reads are not
+origin-checked by `tools::call`, so the dispatch arm refuses non-app origins (`forbidden`). Snapshot data
+comes from reconcile-1 (`statement_drafts::extras`: `statement.evidence_id`, line `page` and `bx0..by1` corners).
+- 2026-11-01 review round 1 (reconcile-2): the snapshot pane's page is one signal owned by MatchView (`snapPage`), set by the page tabs (`onPage`) and by pressing a row, so tabs work after a selection and re-selecting a row returns to its page. The pane always renders its button row (See the page when there is a snapshot ticket, Print reconciliation); only the drawn page needs a line with a page and a box. MatchView shows the pane and the standalone Print on one predicate, `snapShown` (snapshot ticket or a drawable line), so the buttons never vanish. New headless UI check `tests/host/snapshot-pane.mjs` (nsh-standin, stand-in bridge, synthetic lines; `bun tests/host/snapshot-pane.mjs <dir with node_modules/esbuild>`): 11 checks pass, and it fails on the round-1 pane.
+- 2026-11-01 review round 2 (reconcile-2): merged `parity/reconcile-1` and `main`. The page view and the boxes read reconcile-1's `statement_drafts::extras` (thousandths corners; `left=x0/10`, `width=(x1-x0)/10`, integer text such as `"12.3%"`); the guessed `box_*` columns and the column probe are gone, and `statement_view` adds only `statement.snapshot` and row `no` (reconcile-1's `view_extra` writes `page`/`box`). The size check reads `evidence.byte_length` before the bytes (tested with a stored length over the cap and small bytes). Only image/png, image/jpeg and application/pdf are shown (webp is `not_supported`). Zero-amount lines go in a third "No amount" table, shown only when there are any. The agent refusal is also tested through `Server::handle` (`permission_denied`). PROPOSAL (owner/integrator): the tool keeps the name `books_app_reconcile_document` because DD-20 requires the `books_app_` prefix for app-only tools.

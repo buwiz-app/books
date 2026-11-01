@@ -132,6 +132,8 @@ function MatchView() {
   const s = () => d()?.statement as Any;
   const call = (tool: string, extra: Record<string, Any> = {}) =>
     act(tool, { account: recAccount(), month: recMonth(), ...extra }).catch(() => null);
+  const selectedLine = signal<number | null>(null);
+  const snapPage = signal(0);
   return (
     <View class="gap-3.5">
       <Head title={`Match ${d()?.month?.short || ""} · ${d()?.account?.name || ""}`} sub="statement vs Books">
@@ -162,7 +164,13 @@ function MatchView() {
             </View>
             <Each of={s()?.rows || []} key={rowKey}>
               {(r: Any) => (
-                <View class={`flex-row items-center border-b ${C.line}`}>
+                <View
+                  class={`flex-row items-center border-b ${C.line} ${r().no === selectedLine() ? C.panel : ""}`}
+                  onPress={() => {
+                    selectedLine.set(r().no ?? null);
+                    if (r().page) snapPage.set(Number(r().page));
+                  }}
+                >
                   <View class="flex-1 flex-row items-center gap-2 px-3 py-2 min-h-[38px]">
                     <Text class={`w-[52px] text-[12px] font-mono ${C.ink}`}>{r().date_short}</Text>
                     <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>
@@ -194,6 +202,21 @@ function MatchView() {
               )}
             </Each>
           </Panel>
+          <If when={snapShown(s())}>
+            <SnapshotPane
+              rows={s()?.rows || []}
+              evidence={Boolean(s()?.snapshot)}
+              selected={selectedLine()}
+              onSelect={(no: number) => selectedLine.set(no)}
+              page={snapPage()}
+              onPage={(n: number) => snapPage.set(n)}
+              account={recAccount()}
+              month={recMonth()}
+            />
+          </If>
+          <If when={!snapShown(s())}>
+            <PrintReconciliation account={recAccount()} month={recMonth()} />
+          </If>
           <Panel pad class="flex-row items-center gap-4">
             <Text class={`text-[12.5px] ${C.mute}`}>{`Statement ending ${s()?.closing_shown || ""}`}</Text>
             <Text class={`text-[12.5px] ${C.mute}`}>{`Books ${s()?.books_shown || ""}`}</Text>
