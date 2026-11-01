@@ -70,6 +70,10 @@ fn shown_or_blank(c: i64) -> String {
     }
 }
 
+fn narrow(c: i128) -> Result<i64, Refusal> {
+    i64::try_from(c).map_err(|_| Refusal::invalid("Too large to show."))
+}
+
 /// The statement of `person` over `period`.
 pub fn statement(
     store: &Store,
@@ -89,8 +93,8 @@ pub fn statement(
             total_out -= i128::from(s.cash);
         }
     }
-    let total_in = i64::try_from(total_in).map_err(|_| Refusal::invalid("Too large to show."))?;
-    let total_out = i64::try_from(total_out).map_err(|_| Refusal::invalid("Too large to show."))?;
+    let total_in = narrow(total_in)?;
+    let total_out = narrow(total_out)?;
     let mut rows = Vec::new();
     for s in list.iter().take(MAX_ROWS) {
         rows.push(json!({
@@ -108,16 +112,16 @@ pub fn statement(
     let mut buckets = Map::new();
     for side in ["collect", "pay"] {
         let mut items = Vec::new();
-        let mut sums = [0i64; 4];
-        let mut total = 0i64;
+        let mut sums = [0i128; 4];
+        let mut total = 0i128;
         for u in people::open_unpaid(store.conn(), chart.book.id, side)?
             .iter()
             .filter(|u| u.person_id == Some(person.id))
         {
             let late = u.due.map_or(0, |d| at.to_days() - d.to_days());
             let b = bucket(late);
-            sums[b] += u.amount;
-            total += u.amount;
+            sums[b] += i128::from(u.amount);
+            total += i128::from(u.amount);
             items.push(json!({
                 "owed": ticket(store, "owed", u.id)?,
                 "side": side,
@@ -131,7 +135,14 @@ pub fn statement(
             }));
         }
         open.insert(side.into(), json!(items));
-        open.insert(format!("total_{side}_shown"), json!(money::display(total)));
+        open.insert(
+            format!("total_{side}_shown"),
+            json!(money::display(narrow(total)?)),
+        );
+        let sums = sums
+            .into_iter()
+            .map(narrow)
+            .collect::<Result<Vec<_>, _>>()?;
         buckets.insert(
             side.into(),
             json!(sums.iter().map(|c| money::display(*c)).collect::<Vec<_>>()),

@@ -257,3 +257,38 @@ fn a_cash_book_keeps_aging_accrual_only() {
     );
     assert_eq!(ag["cash_book"], true);
 }
+
+#[test]
+fn an_accrual_book_has_no_basis_note() {
+    books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
+    let dir = TempDir::new("statement-accrual");
+    let mut books = Books::new(Paths::in_dir(dir.0.join("store")));
+    let b = &mut books;
+    call(
+        b,
+        "books_app_book_create",
+        json!({ "client_request_id": "ps-acc-book-01", "label": "Accrual Test", "basis": "accrual" }),
+        Origin::App,
+    );
+    call(
+        b,
+        "books_app_owed_create",
+        json!({ "client_request_id": "ps-acc-owed-01", "side": "collect", "person_name": "Synthetic Customer", "amount": "450.00",
+                "category": "41000", "issued": "2026-09-01", "due": "2026-09-20" }),
+        Origin::App,
+    );
+    let person = ticket_of(b, "customers", "Synthetic Customer");
+    let ps = call(
+        b,
+        "books_report",
+        json!({ "kind": "ps", "person": person, "period": "2026" }),
+        Origin::App,
+    );
+    assert_eq!(ps["basis"], "accrual", "{ps}");
+    assert!(ps.get("basis_note").is_none(), "{ps}");
+    assert_eq!(ps["open"]["total_collect_shown"], "450.00");
+    assert_eq!(
+        ps["buckets"]["collect"][2], "450.00",
+        "39 days late at today: 31-60"
+    );
+}

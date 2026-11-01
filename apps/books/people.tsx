@@ -17,6 +17,11 @@ function Avatar(p: { initials: string; color: string; big?: boolean }) {
 const stmtKind = signal("year");
 const stmtPeriod = signal("");
 
+const signed = (sign: string, shown: unknown) => {
+  const t = String(shown ?? "");
+  return t === "" || t === "0.00" ? t : `${sign}${t}`;
+};
+
 // One person's statement (books_report kind ps): open items with days
 // late and the aging strip, then the period's money in and out.
 function Statement(p: { person: string }) {
@@ -47,8 +52,8 @@ function Statement(p: { person: string }) {
   const strip = () =>
     (s()?.buckets?.columns || []).map((label: string, i: number) => ({
       label,
-      collect: `+${String(s()?.buckets?.collect?.[i] ?? "")}`,
-      pay: `−${String(s()?.buckets?.pay?.[i] ?? "")}`,
+      collect: signed("+", s()?.buckets?.collect?.[i]),
+      pay: signed("−", s()?.buckets?.pay?.[i]),
     }));
   return (
     <View class={`gap-2 pt-2 border-t ${C.line}`}>
