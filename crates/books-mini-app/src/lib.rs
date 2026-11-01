@@ -22,6 +22,7 @@ pub mod jcs;
 pub mod jsonrpc;
 pub mod manifest;
 pub mod oldbooks;
+pub mod owed_detail;
 pub mod payroll;
 pub mod reconcile;
 pub mod records;
