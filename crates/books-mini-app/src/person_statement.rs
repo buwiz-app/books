@@ -120,8 +120,8 @@ pub fn statement(
         {
             let late = u.due.map_or(0, |d| at.to_days() - d.to_days());
             let b = bucket(late);
-            sums[b] += i128::from(u.amount);
-            total += i128::from(u.amount);
+            sums[b] += i128::from(u.balance());
+            total += i128::from(u.balance());
             items.push(json!({
                 "owed": ticket(store, "owed", u.id)?,
                 "side": side,
@@ -131,7 +131,7 @@ pub fn statement(
                 "due_shown": u.due.map_or_else(|| "\u{2014}".to_string(), Date::short),
                 "days_late": late.max(0),
                 "bucket": b,
-                "amount_shown": money::display(u.amount),
+                "amount_shown": money::display(u.balance()),
             }));
         }
         open.insert(side.into(), json!(items));

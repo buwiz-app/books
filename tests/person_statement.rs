@@ -292,3 +292,33 @@ fn an_accrual_book_has_no_basis_note() {
         "39 days late at today: 31-60"
     );
 }
+
+#[test]
+fn a_part_settled_bill_ages_by_what_is_still_owed() {
+    let (_dir, mut books) = seeded();
+    let b = &mut books;
+    let name = "Synthetic Vendor Part";
+    let made = call(
+        b,
+        "books_app_owed_create",
+        json!({ "client_request_id": "ps-part-0001", "side": "pay", "person_name": name, "amount": "3200.00",
+                "category": "67200", "issued": "2026-08-01", "due": "2026-08-16" }),
+        Origin::App,
+    );
+    call(
+        b,
+        "books_app_owed_settle",
+        json!({ "client_request_id": "ps-part-settle", "owed": made["owed"], "account": "11000", "amount": "1200.00", "on": "2026-09-05" }),
+        Origin::App,
+    );
+    let vendor = ticket_of(b, "vendors", name);
+    let ps = call(
+        b,
+        "books_report",
+        json!({ "kind": "ps", "person": vendor, "period_kind": "month", "period": "2026-09" }),
+        Origin::App,
+    );
+    assert_eq!(ps["open"]["pay"][0]["amount_shown"], "2,000.00", "{ps}");
+    assert_eq!(ps["open"]["total_pay_shown"], "2,000.00");
+    assert_eq!(ps["buckets"]["pay"][2], "2,000.00");
+}
