@@ -80,6 +80,7 @@ pub const NUDGE: &str = "books_nudge";
 pub const SIGNIN: &str = "books_app_signin";
 pub const TAX_PROFILES: &str = "books_app_tax_list";
 pub const PROFILE_LINK: &str = "books_app_tax_link";
+pub const OWED_DOCUMENT: &str = "books_owed_document";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -412,6 +413,15 @@ fn write_ref() -> Value {
         "type": "object",
         "required": ["client_request_id", "entry"],
         "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "entry": { "type": "string" } }
+    })
+}
+
+fn owed_document_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["owed"],
+        "properties": { "book": { "type": "string" }, "owed": { "type": "string", "description": "An owed document ticket." } },
+        "additionalProperties": false
     })
 }
 
@@ -879,6 +889,13 @@ pub const TOOLS: &[Tool] = &[
         schema: wage_run_schema,
         description: "Save a pay run as a draft entry; the Ledger posts it.",
     },
+    Tool {
+        name: OWED_DOCUMENT,
+        reach: Reach::App,
+        write: false,
+        schema: owed_document_schema,
+        description: "A print page (Statement of account or Bill record) for one owed document, shown by the Books app's print preview.",
+    },
 ];
 
 pub fn find(name: &str) -> Option<&'static Tool> {
@@ -1231,6 +1248,7 @@ pub fn call(
         CROSS_CHECKS => read(books, arguments, |store, book, args| {
             checks::cross_checks(store, book, args)
         }),
+        OWED_DOCUMENT => crate::owed_doc::tool(books, arguments, origin),
         _ => fail("internal", "Books has no handler for that tool."),
     })
 }

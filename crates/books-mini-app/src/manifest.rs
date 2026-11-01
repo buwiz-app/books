@@ -59,6 +59,10 @@ fn permissions(app: &apps::App) -> Value {
     if app.id != "books" && app.source.contains(".open({") {
         p["open"] = json!({ "apps": ["books"] });
     }
+    // Unpaid shows an owed document's print page (buwiz.preview)
+    if app.source.contains(".preview(") {
+        p["preview"] = json!({ "max_bytes": 1_048_576 });
+    }
     p
 }
 
