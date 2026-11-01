@@ -190,6 +190,26 @@ fn one_finding_per_check_and_stale_after_thirty_days() {
 }
 
 #[test]
+fn a_book_without_people_has_no_missing_person() {
+    let dir = TempDir::new("findings-nobody");
+    let mut bot = Bot::new(&dir);
+    data(&bot.app(
+        "books_app_book_create",
+        json!({ "client_request_id": "book-0001", "label": "Synthetic Solo" }),
+    ));
+    let prev = Period::of(Date::today(), PeriodKind::Month)
+        .previous()
+        .start;
+    let wed = weekday_in(prev, |w| w == 2, 0);
+    bot.spend(1, wed, "150.00", "68300", None);
+    let found = direct(&dir, Date::today());
+    assert_eq!(findings::counts(&found)["missing_person"], 0, "{found:?}");
+    let out = bot.agent("books_checks", json!({}));
+    let n = data(&out)["counts"]["missing_person"].as_i64().unwrap_or(0);
+    assert_eq!(n, 0, "{out}");
+}
+
+#[test]
 fn checks_show_tickets_and_months_only() {
     let mut s = seed();
     let money = regex_free_two_decimals;
