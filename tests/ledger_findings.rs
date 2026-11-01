@@ -264,11 +264,21 @@ fn review_routine_writes_nothing() {
 #[test]
 fn today_and_ledger_show_checks() {
     let mut s = seed();
+    // Today counts the flagged entries of this month, the ledger it opens
+    let this_month = Period::of(Date::today(), PeriodKind::Month);
+    let t = s.bot.app("books_today", json!({}));
+    let needs = data(&t)["needs"].as_array().unwrap().clone();
+    assert!(needs.iter().all(|n| n["kind"] != "checks"), "{needs:?}");
+    let now = s.bot.spend(8, this_month.start, "20000.00", "68300", None);
     let t = s.bot.app("books_today", json!({}));
     let needs = data(&t)["needs"].as_array().unwrap().clone();
     let item = needs.iter().find(|n| n["kind"] == "checks").unwrap();
-    assert_eq!(item["count"], 5);
+    assert_eq!(item["count"], 1, "one entry, however many findings it has");
     assert_eq!(item["filter"], "checks");
+    let l = s.bot.app("books_ledger_list", json!({ "filter": "checks" }));
+    let d = data(&l);
+    assert_eq!(d["counts"]["checks"], 1);
+    assert_eq!(d["rows"][0]["ticket"].as_str(), Some(now.as_str()));
     let month = Period::of(Date::today(), PeriodKind::Month).previous().key;
     let l = s.bot.app(
         "books_ledger_list",
@@ -286,6 +296,54 @@ fn today_and_ledger_show_checks() {
     want.sort();
     assert_eq!(got, want, "{d}");
     assert_eq!(d["counts"]["checks"], 4);
+}
+
+#[test]
+fn a_finished_statement_clears_unmatched_month() {
+    let mut s = seed();
+    let before = s.bot.agent("books_checks", json!({}));
+    assert_eq!(data(&before)["counts"]["unmatched_month"], 1);
+    // one statement for the one bank account the seed posts to, every
+    // posted line on it, then finished
+    let prev = Period::of(Date::today(), PeriodKind::Month).previous();
+    let entries = s.bot.app(
+        "books_ledger_list",
+        json!({ "month": prev.key, "filter": "posted" }),
+    );
+    let rows = data(&entries)["rows"].as_array().unwrap().clone();
+    assert_eq!(rows.len(), 7);
+    let mut csv = String::from("Date,Description,Debit,Credit,Balance\n");
+    let mut total: i64 = 0;
+    for (i, r) in rows.iter().enumerate() {
+        let e = data(&s.bot.app("books_entry_get", json!({ "entry": r["ticket"] }))).clone();
+        let amount = e["amount"].as_str().unwrap().trim_start_matches('-').to_string();
+        let cents: i64 = amount.replace(['.', ','], "").parse().unwrap();
+        total += cents;
+        csv.push_str(&format!(
+            "{},SYNTH LINE {i},\"{amount}\",,\n",
+            e["date"].as_str().unwrap()
+        ));
+    }
+    let closing = format!("-{}.{:02}", total / 100, total % 100);
+    let import = s.bot.app(
+        "books_app_statement_import",
+        json!({ "client_request_id": "stmt-import-01", "account": "11000", "csv_base64": b64::encode(csv.as_bytes()), "file_name": "synthetic.csv", "closing": closing }),
+    );
+    data(&import);
+    let accept = s.bot.app(
+        "books_app_statement_accept",
+        json!({ "client_request_id": "stmt-accept-01", "account": "11000", "month": prev.key }),
+    );
+    data(&accept);
+    let done = s.bot.app(
+        "books_app_statement_finish",
+        json!({ "client_request_id": "stmt-finish-01", "account": "11000", "month": prev.key }),
+    );
+    data(&done);
+    let after = s.bot.agent("books_checks", json!({}));
+    let d = data(&after);
+    assert_eq!(d["counts"]["unmatched_month"], 0, "{d}");
+    assert_eq!(d["counts"]["round_amount"], 1);
 }
 
 #[test]

@@ -356,7 +356,9 @@ pub fn today(store: &Store, book: Book, origin: Origin) -> Result<Value, Refusal
     if review > 0 {
         needs.push(json!({ "kind": "review", "count": review, "title": "Bank lines to categorize", "detail": "Not sure yet · pick a category for each", "go": "ledger", "filter": "review", "tone": "rev" }));
     }
-    let checks = crate::findings::findings(store, chart.book.clone(), Date::today())?.len();
+    // flagged entries of this month: the ledger the item opens lists them
+    let this_month = Period::of(today, PeriodKind::Month);
+    let checks = crate::findings::flagged(store, chart.book.clone(), today, &this_month)?.len();
     if checks > 0 {
         needs.push(json!({ "kind": "checks", "count": checks, "title": "Entries to look at twice", "detail": "Review findings · open the Checks filter", "go": "ledger", "filter": "checks", "tone": "rev" }));
     }
@@ -535,7 +537,8 @@ pub fn ledger(
             ..Filter::default()
         },
     )?;
-    let found = crate::findings::findings(store, chart.book.clone(), Date::today())?;
+    let found =
+        crate::findings::findings_in(store, chart.book.clone(), Date::today(), Some(&month))?;
     let marks = crate::findings::by_entry(&found);
     let is = |s: &Summary, f: &str| match f {
         "checks" => marks.contains_key(&s.entry.id),

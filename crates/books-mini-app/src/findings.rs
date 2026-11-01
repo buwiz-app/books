@@ -67,6 +67,18 @@ fn is_money(form: Form) -> bool {
 /// Every finding in `book` as of `today`, ordered by check then entry
 /// number (uncapped; the tool caps).
 pub fn findings(store: &Store, book: Book, today: Date) -> Result<Vec<Finding>, Refusal> {
+    findings_in(store, book, today, None)
+}
+
+/// The entry findings for entries dated in `within` (the month a ledger page
+/// lists), or every finding when `None`. Month-level findings
+/// (`unmatched_month`) are left out of a scoped call: they have no entry.
+pub fn findings_in(
+    store: &Store,
+    book: Book,
+    today: Date,
+    within: Option<&Period>,
+) -> Result<Vec<Finding>, Refusal> {
     let c = store.conn();
     let chart = Chart::load(store, book)?;
     let book_id = chart.book.id;
@@ -83,7 +95,12 @@ pub fn findings(store: &Store, book: Book, today: Date) -> Result<Vec<Finding>, 
         HashSet::new()
     };
     let this_month = Period::of(today, PeriodKind::Month);
-    let mut list = entries::list(c, book_id, &Filter::default())?;
+    let scope = Filter {
+        from: within.map(|p| p.start),
+        to: within.map(|p| p.end),
+        ..Filter::default()
+    };
+    let mut list = entries::list(c, book_id, &scope)?;
     list.sort_by_key(|e| e.no);
 
     let mut by_check: Vec<Vec<Finding>> = vec![Vec::new(); CHECKS.len()];
@@ -127,6 +144,9 @@ pub fn findings(store: &Store, book: Book, today: Date) -> Result<Vec<Finding>, 
             }
         }
     }
+    if within.is_some() {
+        return Ok(by_check.into_iter().flatten().collect());
+    }
     let statements = months::statements(c, book_id)?;
     let mut unmatched: BTreeSet<String> = BTreeSet::new();
     for (key, account) in used {
@@ -149,9 +169,15 @@ pub fn findings(store: &Store, book: Book, today: Date) -> Result<Vec<Finding>, 
     Ok(by_check.into_iter().flatten().collect())
 }
 
-/// The entries with at least one finding (for the ledger's Checks filter).
-pub fn flagged(store: &Store, book: Book, today: Date) -> Result<HashSet<i64>, Refusal> {
-    Ok(findings(store, book, today)?
+/// The entries dated in `within` with at least one finding (what the
+/// ledger's Checks filter lists for that month).
+pub fn flagged(
+    store: &Store,
+    book: Book,
+    today: Date,
+    within: &Period,
+) -> Result<HashSet<i64>, Refusal> {
+    Ok(findings_in(store, book, today, Some(within))?
         .into_iter()
         .filter_map(|f| f.entry_id)
         .collect())

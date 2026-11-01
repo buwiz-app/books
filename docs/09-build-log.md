@@ -505,7 +505,10 @@ The owner asked the agent to do the release steps the goal had kept for them (M9
   Not granted to the window (slot budget); the window sees findings through books_today (needs item kind "checks")
   and books_ledger_list (filter "checks", counts.checks, rows[].checks ids).
 - Routine review (4 of 8), every_s 86400 (host maximum; speaks on Mondays like weekly-tidy), declares no writes.
-  books_nudge kind "review" and quiet card id "review" (counts per check, open ledger filter checks).
+  books_nudge kind "review" (counts per check, open ledger filter checks; computed only on its due day). No quiet
+  card: the routine summarises counts in chat, since quiet.tsx has no review branch and W9 forbids editing it.
+- Today's "checks" item counts the flagged entries of this month (what the ledger it opens lists); the ledger
+  computes findings for the listed month only.
 - apps/books/ledger_findings.tsx: check-id words and a Checks chip label for the ledger and drawer.
 - Follow-up (native, W9): the Checks chip on books.ledger and the quiet Review card render in books-screens, since
   ledger.tsx and quiet.tsx are deleted there.
