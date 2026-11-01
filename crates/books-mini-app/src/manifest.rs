@@ -59,6 +59,9 @@ fn permissions(app: &apps::App) -> Value {
     if app.id != "books" && app.source.contains(".open({") {
         p["open"] = json!({ "apps": ["books"] });
     }
+    if app.source.contains(".preview(") {
+        p["preview"] = json!({});
+    }
     p
 }
 

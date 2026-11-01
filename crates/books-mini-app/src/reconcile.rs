@@ -180,6 +180,7 @@ pub fn statement_view(store: &Store, book: Book, args: &Map<String, Value>) -> A
         "can_finish": s.status != "finished" && diff == 0 && suggested == 0 && missing == 0,
         "rows": rows,
     });
+    crate::reconcile_document::snapshot_fields(store, &s, &lines, &mut out["statement"])?;
     Ok(out)
 }
 

@@ -520,3 +520,22 @@ back, so the same upload can be retried. The list cursor is the last item's evid
 tools refuse unknown arguments, and a link to a discarded draft is refused (`discarded`); voided entries stay valid
 link targets for history. `oldbooks.rs` keeps restart-on-new-count for `books_app_upload_part`; its one change,
 outside this task's file list, stops a retried part counting twice against the 50 MB cap (PROPOSAL: needs owner OK).
+
+### 2026-11-01 — reconcile-2
+
+New app-only read tool `books_app_reconcile_document` (`crates/books-mini-app/src/reconcile_document.rs`), called by
+`buwiz.preview`: `{book?, account, month: "YYYY-MM", kind: "report" | "page", page?, line?}` returns one embedded
+`text/html` resource (`books://reconcile/<kind>`) and `structuredContent.title` ("Bank reconciliation · Sep 2026",
+"Statement page 1 · Sep 2026"; no amount, number or name). The report has a summary table and "Money in" / "Money out"
+tables with i128 totals; the page view draws an image snapshot with one percent-positioned box per line (the `line`
+box gets class `hl`) or embeds a PDF with the page's lines listed, and refuses "This statement has no snapshot" and,
+over 8,000,000 bytes, "The snapshot is too large to show here". `html.rs` holds `escape`, `page` and a padded
+RFC 4648 §4 base64 (the base64 crate is only a transitive `ureq` dependency, so none is added). The manifest grants
+`preview: {}` to apps that call `.preview(`. `statement_view` gains `statement.snapshot` and row `no`, `page` and
+`box` (percent text). `apps/books/statement_snapshot.tsx` adds `SnapshotPane` beside MatchView, with "See the page",
+"Print reconciliation" (also shown for CSV statements) and "Create from this line".
+PROPOSAL: the spec named the tool `books_reconcile_document`; `tests/manifest_shape.rs` (DD-20) requires every
+app-audience tool to start with `books_app_`, so it is `books_app_reconcile_document`. Reach::App reads are not
+origin-checked by `tools::call`, so the dispatch arm refuses non-app origins (`forbidden`). Assumed reconcile-1
+columns, read only when present: `statement.evidence_id`, `statement_line.page` and `box_left/top/width/height` in
+hundredths of a percent; the integrator renames these call sites if reconcile-1 picked other names.

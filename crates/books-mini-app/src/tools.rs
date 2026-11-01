@@ -18,7 +18,8 @@ use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
 use crate::{
-    cards, checks, forms, handoff, oldbooks, payroll, reconcile, records, reports, views, writes,
+    cards, checks, forms, handoff, oldbooks, payroll, reconcile, reconcile_document, records,
+    reports, views, writes,
 };
 
 pub const STATUS: &str = "books_status";
@@ -86,6 +87,7 @@ pub const PROFILE_LINK: &str = "books_app_tax_link";
 pub const EVIDENCE_ATTACH: &str = "books_app_evidence_attach";
 pub const EVIDENCE_DETACH: &str = "books_app_evidence_detach";
 pub const EVIDENCE_LIST: &str = "books_evidence_list";
+pub const RECONCILE_DOCUMENT: &str = "books_app_reconcile_document";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -259,6 +261,10 @@ fn owed_ref() -> Value {
 
 fn statement_ref() -> Value {
     json!({ "type": "object", "required": ["account", "month"], "properties": { "book": { "type": "string" }, "account": { "type": "string" }, "month": { "type": "string", "description": "YYYY-MM" } } })
+}
+
+fn reconcile_document_schema() -> Value {
+    json!({ "type": "object", "required": ["account", "month", "kind"], "properties": { "book": { "type": "string" }, "account": { "type": "string" }, "month": { "type": "string", "description": "YYYY-MM" }, "kind": { "type": "string", "enum": ["report", "page"] }, "page": { "type": "integer", "minimum": 1 }, "line": { "type": "integer", "minimum": 1 } } })
 }
 
 fn statement_write() -> Value {
@@ -906,6 +912,13 @@ pub const TOOLS: &[Tool] = &[
         schema: evidence_tools::list_schema,
         description: "Read evidence metadata and link counts, never contents.",
     },
+    Tool {
+        name: RECONCILE_DOCUMENT,
+        reach: Reach::App,
+        write: false,
+        schema: reconcile_document_schema,
+        description: "A static page for the preview: the reconciliation report or one statement page with its lines boxed. App only.",
+    },
 ];
 
 pub fn find(name: &str) -> Option<&'static Tool> {
@@ -1263,6 +1276,23 @@ pub fn call(
         EVIDENCE_LIST => read(books, arguments, |store, _book, args| {
             evidence_tools::list(store.conn(), args)
         }),
+        RECONCILE_DOCUMENT => {
+            if !origin.is_app() {
+                return Some(fail("forbidden", "Only the app may open this page."));
+            }
+            if !books.exists() {
+                return Some(fail(
+                    "not_set_up",
+                    "There is no book yet. Open Books to make one.",
+                ));
+            }
+            (|| {
+                let store = books.store()?;
+                let book = service::book(store, arguments)?;
+                reconcile_document::document(store, book, arguments)
+            })()
+            .unwrap_or_else(Refusal::into_result)
+        }
         _ => fail("internal", "Books has no handler for that tool."),
     })
 }
