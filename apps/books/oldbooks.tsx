@@ -6,10 +6,10 @@
 const csvChart = signal(null as Any);
 const csvJournal = signal(null as Any);
 
-function pickOne(ext: string, then: (f: Any) => void) {
+function pickOne(extensions: string[], then: (f: Any) => void) {
   if (!buwiz.pickFile) return toast("Picking files is not available in this Buwiz Bot.");
   buwiz
-    .pickFile({ extensions: [ext] })
+    .pickFile({ extensions })
     .then((files: Any[]) => (files.length ? then(files[0]) : null))
     .catch((e: Any) => toast(errText(e)));
 }
@@ -75,15 +75,15 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
             <Text class={`text-[13.5px] font-bold ${C.ink}`}>Web Buwiz Books</Text>
             <Text class={`text-[12.5px] ${C.mute}`}>The export file (.json) from Settings › Export in web Books. Books reads accounts, people, tags and posted transactions. Tax profiles, TINs and certificates stay out.</Text>
             <View class="flex-row">
-              <Btn label="Pick the export…" tone="go" onPress={() => pickOne(".json", (f: Any) => importWeb(f).catch(() => null))} />
+              <Btn label="Pick the export…" tone="go" onPress={() => pickOne([".json"], (f: Any) => importWeb(f).catch(() => null))} />
             </View>
           </Panel>
           <Panel pad class="flex-1 gap-2">
-            <Text class={`text-[13.5px] font-bold ${C.ink}`}>CSV files</Text>
-            <Text class={`text-[12.5px] ${C.mute}`}>A chart of accounts and a journal, from QuickBooks, Xero or a spreadsheet.</Text>
+            <Text class={`text-[13.5px] font-bold ${C.ink}`}>CSV or Excel files</Text>
+            <Text class={`text-[12.5px] ${C.mute}`}>A chart of accounts and a journal, from QuickBooks, Xero or a spreadsheet (.csv, .xlsx or .xls; a workbook reads its sheet named Chart or Journal, else its first).</Text>
             <View class="flex-row gap-2 flex-wrap items-center">
-              <Btn label={csvChart() ? `Chart: ${String(csvChart().name)}` : "Pick the chart…"} onPress={() => pickOne(".csv", (f: Any) => csvChart.set(f))} />
-              <Btn label={csvJournal() ? `Journal: ${String(csvJournal().name)}` : "Pick the journal…"} onPress={() => pickOne(".csv", (f: Any) => csvJournal.set(f))} />
+              <Btn label={csvChart() ? `Chart: ${String(csvChart().name)}` : "Pick the chart…"} onPress={() => pickOne([".csv", ".xlsx", ".xls"], (f: Any) => csvChart.set(f))} />
+              <Btn label={csvJournal() ? `Journal: ${String(csvJournal().name)}` : "Pick the journal…"} onPress={() => pickOne([".csv", ".xlsx", ".xls"], (f: Any) => csvJournal.set(f))} />
               <Btn label="Bring them in" tone="go" disabled={!csvChart() || !csvJournal()} onPress={() => importCsv().catch(() => null)} />
             </View>
           </Panel>

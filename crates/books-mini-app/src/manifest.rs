@@ -45,10 +45,11 @@ fn permissions(app: &apps::App) -> Value {
         p["copy"] = json!(true);
     }
     // Reconcile picks a CSV bank statement (M4); Import picks old books, a
-    // web Books export or CSV files (M5). Sources split `buwiz` and the
+    // web Books export or CSV files (M5); either takes a spreadsheet too. Sources split `buwiz` and the
     // method across lines, so the method's own name is the signal.
     if app.source.contains(".pickFile(") {
-        p["pick_file"] = json!({ "extensions": [".csv", ".json"], "max_bytes": 52_428_800 });
+        p["pick_file"] =
+            json!({ "extensions": [".csv", ".json", ".xlsx", ".xls"], "max_bytes": 52_428_800 });
     }
     // Forms attaches a hand-off to the chat (M7)
     if app.source.contains(".attach(") {

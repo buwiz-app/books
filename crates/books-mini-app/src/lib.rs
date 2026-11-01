@@ -28,6 +28,7 @@ pub mod records;
 pub mod reports;
 pub mod reserved;
 pub mod service;
+pub mod sheets;
 pub mod tools;
 pub mod views;
 pub mod writes;
