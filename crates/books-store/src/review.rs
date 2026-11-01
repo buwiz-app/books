@@ -163,7 +163,10 @@ struct Shape {
 
 fn shape(conn: &Connection, entry_id: i64) -> Result<Option<Shape>> {
     let mut stmt = conn.prepare(
-        "SELECT e.book_id, e.status IN ('draft', 'posted') AND e.form <> 'reversal', e.entry_date, e.payee, e.reference,
+        // a reversal or a recategorization moves an entry's own amount: it
+        // shares the payee, amount and day by design, so it never is one
+        "SELECT e.book_id, e.status IN ('draft', 'posted') AND e.form <> 'reversal' AND e.recategorizes_entry_id IS NULL,
+                e.entry_date, e.payee, e.reference,
                 coalesce((SELECT sum(l.debit) FROM line l WHERE l.entry_id = e.entry_id), 0)
          FROM entry e WHERE e.entry_id = ?1",
     )?;
@@ -206,6 +209,7 @@ pub fn likely_duplicates(conn: &Connection, book_id: i64, entry_id: i64) -> Resu
         "SELECT e.entry_id, e.entry_no, e.entry_date, e.payee, e.reference
          FROM entry e
          WHERE e.book_id = ?1 AND e.entry_id <> ?2 AND e.status IN ('draft', 'posted') AND e.form <> 'reversal'
+           AND e.recategorizes_entry_id IS NULL
            AND e.entry_date >= ?3 AND e.entry_date <= ?4
            AND coalesce((SELECT sum(l.debit) FROM line l WHERE l.entry_id = e.entry_id), 0) = ?5
            AND NOT EXISTS (SELECT 1 FROM entry_copy c
@@ -374,5 +378,49 @@ mod tests {
         assert_eq!(acked(c, b).unwrap(), vec![a]);
         assert!(unacked_duplicates(c, book.id, b).unwrap().is_empty());
         assert!(unacked_duplicates(c, book.id, a).unwrap().is_empty());
+    }
+
+    #[test]
+    fn a_recategorization_is_never_a_duplicate_of_its_entry_or_others() {
+        const OPEN: crate::entries::Gate<'static> = &|_| Ok(());
+        let (_t, store, book) = open("review-recat");
+        let c = store.conn();
+        let acct = |n: &str| books::account_by_number(c, book.id, n).unwrap().unwrap();
+        let unsure = |day: u8| {
+            let input = DraftInput {
+                date: Date::new(2026, 10, day).unwrap(),
+                form: Form::MoneyOut,
+                payee: Some("Synthetic Power".into()),
+                memo: None,
+                reference: None,
+                needs_review: true,
+                lines: vec![
+                    LineInput {
+                        account_id: acct("69999").id,
+                        debit: 249_900,
+                        credit: 0,
+                        facts: Facts::default(),
+                    },
+                    LineInput {
+                        account_id: acct("11000").id,
+                        debit: 0,
+                        credit: 249_900,
+                        facts: Facts::default(),
+                    },
+                ],
+            };
+            let id = entries::save_draft(c, &book, None, &input, "app").unwrap();
+            entries::post(c, &book, id, OPEN).unwrap();
+            id
+        };
+        let bill = unsure(15);
+        let fix = crate::months::recategorize(c, &book, bill, &acct("66200"), OPEN).unwrap();
+        // same payee, same amount, same day: still not a duplicate either way
+        assert!(likely_duplicates(c, book.id, bill).unwrap().is_empty());
+        assert!(likely_duplicates(c, book.id, fix).unwrap().is_empty());
+        // a real lookalike still flags the entry, but never the recategorization
+        let twin = unsure(16);
+        assert_eq!(likely_duplicates(c, book.id, twin).unwrap(), vec![bill]);
+        assert_eq!(likely_duplicates(c, book.id, bill).unwrap(), vec![twin]);
     }
 }

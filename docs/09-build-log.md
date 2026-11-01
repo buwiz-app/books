@@ -581,6 +581,14 @@ Status "Open" with only the original amount, so a part-paid statement of account
 counts posted payments only), so the #13 case (the last payment voided, an earlier one standing) now prints Part paid,
 never Settled. Tests: `tests/owed_document.rs` (part-paid collect page), `tests/owed_partial.rs` (pay side after a void).
 
+### Duplicates: a recategorization is never one (2026-11-01)
+
+Seen in the first live check of the native ledger: "Possible duplicate" flagged a recategorization entry ("Category
+for entry N") and the entry it corrected, since a recategorization repeats the entry's payee, amount and day by
+design. `review::likely_duplicates` now treats an entry with `recategorizes_entry_id` as it treats a reversal: never
+a subject and never a candidate. The corrected entry stays a real transaction and still matches a genuine lookalike.
+Test: `review::tests::a_recategorization_is_never_a_duplicate_of_its_entry_or_others` (fails without the fix).
+
 ### Print pages follow a dark screen (2026-11-01)
 
 The print pages (`books_owed_document`, the month pack, the printable reconciliation and the evidence review) were
