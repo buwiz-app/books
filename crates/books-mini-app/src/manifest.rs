@@ -13,28 +13,23 @@
 
 use std::path::{Path, PathBuf};
 
-use serde_json::{Map, Value, json};
+use serde_json::{Value, json};
 
 use crate::{apps, jcs, tools};
 
-pub const PROTOCOL: &str = "2.0.0";
+pub use buwiz_plugin::manifest::{
+    MANIFEST_MIME, MANIFEST_URI, PROTOCOL, fingerprint, permissions_digest,
+};
 pub const PLUGIN_ID: &str = "app.buwiz.books";
 pub const SHORT: &str = "books";
 pub const VERSION: &str = "0.2.0";
 pub const PUBLISHER_ID: &str = "app.buwiz";
 /// The release key (owner decision D9). Tests sign under a test key id.
 pub const RELEASE_KEY_ID: &str = "gc-2026-01";
-pub const MANIFEST_URI: &str = "buwiz://manifest";
-pub const MANIFEST_MIME: &str = "application/json";
 /// The signed manifest file this process serves.
 pub const MANIFEST_ENV: &str = "BOOKS_V1_MANIFEST";
 /// The props key an app takes its subject from.
 pub const TICKET_PROP: &str = "ticket";
-
-/// `sha256:<hex>` of an app source as served (spec 6.2).
-pub fn fingerprint(source: &str) -> String {
-    format!("sha256:{}", jcs::sha256_hex(source.as_bytes()))
-}
 
 /// What each app may reach (spec 5.6). `tools` is exactly the Books tools
 /// its source names (checked in `tests/manifest_shape.rs`).
@@ -276,10 +271,4 @@ impl Source {
 fn read(path: &Path) -> Result<String, String> {
     // the path is the operator's; the error names the variable, not the file
     std::fs::read_to_string(path).map_err(|error| format!("{MANIFEST_ENV}: {error}"))
-}
-
-/// `sha256(JCS(permissions))`, an absent object being `{}` (spec 4.4).
-pub fn permissions_digest(app: &Value) -> Result<String, String> {
-    let empty = Value::Object(Map::new());
-    jcs::sha256_jcs(app.get("permissions").unwrap_or(&empty)).map_err(|error| error.to_string())
 }
