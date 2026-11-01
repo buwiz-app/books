@@ -63,6 +63,10 @@ path = "../../tests/privacy_outputs.rs"
 name = "evidence_foundation"
 path = "../../tests/evidence_foundation.rs"
 
+[[test]]
+name = "document_review"
+path = "../../tests/document_review.rs"
+
 [dependencies]
 books-core = { path = "../books-core" }
 books-store = { path = "../books-store" }

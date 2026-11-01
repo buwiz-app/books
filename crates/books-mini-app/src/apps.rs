@@ -95,6 +95,19 @@ pub const APPS: &[App] = &[
         id: "quiet",
         source: card_app!("quiet.tsx"),
     },
+    // the document library and its "What is this document?" card (evidence-4)
+    App {
+        id: "evidence",
+        source: concat!(
+            include_str!("../../../apps/books/kit.tsx"),
+            "\n",
+            include_str!("../../../apps/evidence.tsx"),
+        ),
+    },
+    App {
+        id: "document",
+        source: card_app!("evidence.tsx"),
+    },
 ];
 
 /// The app with this id.
