@@ -10,6 +10,7 @@ use books_store::Store;
 use books_store::books::Book;
 use books_store::months::{self, Statement, StatementLine};
 use books_store::rusqlite::{Connection, OptionalExtension as _};
+use books_store::statement_drafts::{self as drafts, Extra};
 use std::collections::HashMap;
 
 use serde_json::{Map, Value, json};
@@ -21,87 +22,35 @@ use crate::service::{self, Refusal};
 /// kept under so the Bot never answers `result_too_large`.
 pub const MAX_DOCUMENT: usize = 8_000_000;
 
-/// A line's box on its page, in hundredths of a percent of the page.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct LineBox {
-    pub page: i64,
-    pub left: i64,
-    pub top: i64,
-    pub width: i64,
-    pub height: i64,
+/// A line's box on its page, as reconcile-1 stores it: page corners
+/// `[x0, y0, x1, y1]` in thousandths of the page.
+pub type Bbox = books_store::statement_drafts::Bbox;
+
+/// The statement's snapshot evidence and each line's page and box, in line
+/// order (reconcile-1's `statement.evidence_id` and `statement_line` columns).
+fn snapshot_of(conn: &Connection, statement: i64) -> Result<(Option<i64>, Vec<Extra>), Refusal> {
+    Ok(drafts::extras(conn, statement)?)
 }
 
-fn has_column(conn: &Connection, table: &str, column: &str) -> Result<bool, Refusal> {
-    let n: i64 = conn
-        .query_row(
-            "SELECT count(*) FROM pragma_table_info(?1) WHERE name = ?2",
-            [table, column],
-            |r| r.get(0),
-        )
-        .map_err(books_store::StoreError::from)?;
-    Ok(n > 0)
+/// Thousandths of the page as CSS percent text: `1234` is `"123.4%"`.
+pub fn percent(thousandths: i64) -> String {
+    let v = thousandths.clamp(0, 1000);
+    format!("{}.{}%", v / 10, v % 10)
 }
 
-/// The statement's snapshot evidence (reconcile-1's `statement.evidence_id`).
-pub fn snapshot_of(conn: &Connection, statement: i64) -> Result<Option<i64>, Refusal> {
-    if !has_column(conn, "statement", "evidence_id")? {
-        return Ok(None);
-    }
-    Ok(conn
-        .query_row(
-            "SELECT evidence_id FROM statement WHERE statement_id = ?1",
-            [statement],
-            |r| r.get::<_, Option<i64>>(0),
-        )
-        .optional()
-        .map_err(books_store::StoreError::from)?
-        .flatten())
-}
-
-/// A line's page and box (reconcile-1's `statement_line` columns).
-pub fn box_of(conn: &Connection, line: i64) -> Result<Option<LineBox>, Refusal> {
-    if !has_column(conn, "statement_line", "page")? {
-        return Ok(None);
-    }
-    let found = conn
-        .query_row(
-            "SELECT page, box_left, box_top, box_width, box_height FROM statement_line WHERE line_id = ?1",
-            [line],
-            |r| {
-                Ok((
-                    r.get::<_, Option<i64>>(0)?,
-                    r.get::<_, Option<i64>>(1)?,
-                    r.get::<_, Option<i64>>(2)?,
-                    r.get::<_, Option<i64>>(3)?,
-                    r.get::<_, Option<i64>>(4)?,
-                ))
-            },
-        )
-        .optional()
-        .map_err(books_store::StoreError::from)?;
-    Ok(match found {
-        Some((Some(page), Some(left), Some(top), Some(width), Some(height))) if page >= 1 => {
-            let c = |v: i64| v.clamp(0, 10_000);
-            Some(LineBox {
-                page,
-                left: c(left),
-                top: c(top),
-                width: c(width),
-                height: c(height),
-            })
-        }
-        _ => None,
-    })
-}
-
-/// Hundredths of a percent as CSS text: `1234` is `"12.34%"`.
-pub fn percent(hundredths: i64) -> String {
-    let v = hundredths.clamp(0, 10_000);
-    format!("{}.{:02}%", v / 100, v % 100)
+/// CSS `left/top/width/height` for a corner box, from integer math.
+pub fn box_css(b: &Bbox) -> String {
+    format!(
+        "left:{};top:{};width:{};height:{}",
+        percent(b[0]),
+        percent(b[1]),
+        percent(b[2] - b[0]),
+        percent(b[3] - b[1])
+    )
 }
 
 /// The `statement_view` hunk: whether the statement has a snapshot, and each
-/// row's page and box (percent text), unless an earlier hunk set them.
+/// row's `no`. Page and box come from reconcile-1's `view_extra`.
 pub fn snapshot_fields(
     store: &Store,
     s: &Statement,
@@ -109,20 +58,13 @@ pub fn snapshot_fields(
     statement: &mut Value,
 ) -> Result<(), Refusal> {
     let conn = store.conn();
-    statement["snapshot"] = json!(snapshot_of(conn, s.id)?.is_some());
+    statement["snapshot"] = json!(snapshot_of(conn, s.id)?.0.is_some());
     let no = numbers(conn, s.id)?;
     let Some(rows) = statement["rows"].as_array_mut() else {
         return Ok(());
     };
     for (row, l) in rows.iter_mut().zip(lines) {
         row["no"] = json!(no.get(&l.id));
-        if row.get("page").is_some() {
-            continue;
-        }
-        if let Some(b) = box_of(conn, l.id)? {
-            row["page"] = json!(b.page);
-            row["box"] = json!({ "left": percent(b.left), "top": percent(b.top), "width": percent(b.width), "height": percent(b.height) });
-        }
     }
     Ok(())
 }
@@ -225,7 +167,8 @@ pub fn document(store: &Store, book: Book, args: &Map<String, Value>) -> Result<
         let text = html::page(&title, STYLE, &body);
         return Ok(result("report", title, text));
     }
-    let Some(evidence) = snapshot_of(store.conn(), s.id)? else {
+    let (evidence, extras) = snapshot_of(store.conn(), s.id)?;
+    let Some(evidence) = evidence else {
         return Err(Refusal::new(
             "no_snapshot",
             "This statement has no snapshot",
@@ -258,18 +201,18 @@ pub fn document(store: &Store, book: Book, args: &Map<String, Value>) -> Result<
             [evidence],
             |r| r.get(0),
         )
-        .map_err(books_store::StoreError::from)?;
+        .optional()
+        .map_err(books_store::StoreError::from)?
+        .ok_or_else(|| Refusal::new("no_snapshot", "This statement has no snapshot"))?;
     let data = format!("data:{mime};base64,{}", html::base64(&bytes));
     let no = numbers(store.conn(), s.id)?;
     let lit = |l: &StatementLine| highlight.is_some() && highlight == no.get(&l.id).copied();
-    let mut on_page = Vec::new();
-    for l in &lines {
-        if let Some(b) = box_of(store.conn(), l.id)?
-            && b.page == page_no
-        {
-            on_page.push((l, b));
-        }
-    }
+    let on_page: Vec<(&StatementLine, Option<Bbox>)> = lines
+        .iter()
+        .zip(&extras)
+        .filter(|(_, e)| e.page == Some(page_no))
+        .map(|(l, e)| (l, e.bbox))
+        .collect();
     let shown = |l: &StatementLine| {
         escape(&format!(
             "{} · {}",
@@ -283,16 +226,13 @@ pub fn document(store: &Store, book: Book, args: &Map<String, Value>) -> Result<
         escape(&month.label())
     );
     match mime.as_str() {
-        "image/png" | "image/jpeg" | "image/webp" => {
+        "image/png" | "image/jpeg" => {
             body.push_str(&format!("<div class=\"sheet\" style=\"position:relative\"><img src=\"{data}\" style=\"width:100%\" alt=\"Statement page {page_no}\">"));
-            for (l, b) in &on_page {
+            for (l, b) in on_page.iter().filter_map(|(l, b)| b.map(|b| (l, b))) {
                 let hl = if lit(l) { " hl" } else { "" };
                 body.push_str(&format!(
-                    "<div class=\"box{hl}\" style=\"left:{};top:{};width:{};height:{}\" title=\"{}\"></div>",
-                    percent(b.left),
-                    percent(b.top),
-                    percent(b.width),
-                    percent(b.height),
+                    "<div class=\"box{hl}\" style=\"{}\" title=\"{}\"></div>",
+                    box_css(&b),
                     shown(l)
                 ));
             }
@@ -358,11 +298,11 @@ fn report_body(
         money::display(ours),
         money::display(diff)
     ));
-    for (heading, money_in) in [("Money in", true), ("Money out", false)] {
+    for (heading, sign) in [("Money in", 1), ("Money out", -1), ("No amount", 0)] {
         let mut total: i128 = 0;
         let mut rows = String::new();
         for (l, m) in lines.iter().zip(found) {
-            if (l.line.amount > 0) != money_in || l.line.amount == 0 {
+            if l.line.amount.signum() != sign {
                 continue;
             }
             let magnitude = i128::from(l.line.amount).abs();
@@ -374,6 +314,9 @@ fn report_body(
                 money::display(i64::try_from(magnitude).unwrap_or(i64::MAX)),
                 state_label(m)
             ));
+        }
+        if sign == 0 && rows.is_empty() {
+            continue;
         }
         let total = i64::try_from(total)
             .map_err(|_| Refusal::new("overflow", "That total is too large to show."))?;

@@ -1,8 +1,7 @@
 //! M10 parity reconcile-2: books_app_reconcile_document, the static pages
 //! buwiz.preview shows (the reconciliation report and one statement page).
-//! Synthetic data only. The snapshot columns reconcile-1 adds
-//! (statement.evidence_id, statement_line page and box) are added here by
-//! ALTER TABLE so this task tests on its own base.
+//! Synthetic data only. Snapshots use reconcile-1's real migration columns
+//! (statement.evidence_id, statement_line page and bx0..by1 thousandths).
 
 use books_core::money;
 use books_mini_app::service::{Books, Origin};
@@ -46,17 +45,11 @@ fn sql(books: &mut Books, text: &str) {
     books.store().unwrap().conn().execute_batch(text).unwrap();
 }
 
-/// reconcile-1's columns, with the four lines boxed on page 1.
+/// The four lines boxed on page 1 (thousandths of the page corners).
 fn snapshot(books: &mut Books, bytes: &[u8], mime: &str) {
     sql(
         books,
-        "ALTER TABLE statement ADD COLUMN evidence_id INTEGER;
-         ALTER TABLE statement_line ADD COLUMN page INTEGER;
-         ALTER TABLE statement_line ADD COLUMN box_left INTEGER;
-         ALTER TABLE statement_line ADD COLUMN box_top INTEGER;
-         ALTER TABLE statement_line ADD COLUMN box_width INTEGER;
-         ALTER TABLE statement_line ADD COLUMN box_height INTEGER;
-         UPDATE statement_line SET page = 1, box_left = 500, box_top = 1000 * line_no, box_width = 9000, box_height = 450;",
+        "UPDATE statement_line SET page = 1, bx0 = 50, by0 = 100 * line_no, bx1 = 950, by1 = 100 * line_no + 45;",
     );
     let conn = books.store().unwrap().conn();
     let book: i64 = conn
@@ -171,7 +164,7 @@ fn a_png_page_boxes_each_line_and_highlights_one() {
     assert!(text.contains("<img src=\"data:image/png;base64,iVBORw0KGgo"));
     assert_eq!(text.matches("<div class=\"box").count(), 4);
     assert_eq!(text.matches("<div class=\"box hl\"").count(), 1);
-    assert!(text.contains("left:5.00%;top:20.00%;width:90.00%;height:4.50%"));
+    assert!(text.contains("left:5.0%;top:20.0%;width:90.0%;height:4.5%"));
     assert_eq!(
         out["structuredContent"]["title"],
         "Statement page 1 · Sep 2026"
@@ -200,7 +193,7 @@ fn a_png_page_boxes_each_line_and_highlights_one() {
         (row["no"].as_i64(), row["page"].as_i64()),
         (Some(2), Some(1))
     );
-    assert_eq!(row["box"]["top"], "20.00%");
+    assert_eq!(row["box"]["top"], "20.0%");
 }
 
 #[test]
@@ -232,6 +225,110 @@ fn a_page_needs_a_snapshot_that_fits_the_preview() {
     assert_eq!(
         refusal(&call(&mut b, Origin::App, args)),
         "The snapshot is too large to show here"
+    );
+}
+
+#[test]
+fn the_size_is_checked_before_the_bytes_are_read() {
+    let (_dir, mut b) = setup("rd-precheck");
+    snapshot(&mut b, b"%PDF-1.4 synthetic", "application/pdf");
+    let args = json!({ "account": "11010", "month": "2026-09", "kind": "page" });
+    html(&call(&mut b, Origin::App, args.clone()));
+    // the stored length alone is over the cap; the bytes would fit
+    sql(&mut b, "UPDATE evidence SET byte_length = 7000000");
+    assert_eq!(
+        refusal(&call(&mut b, Origin::App, args)),
+        "The snapshot is too large to show here"
+    );
+}
+
+#[test]
+fn only_png_jpeg_and_pdf_snapshots_are_shown() {
+    let (_dir, mut b) = setup("rd-webp");
+    snapshot(&mut b, b"RIFF synthetic WEBP", "image/webp");
+    let out = call(
+        &mut b,
+        Origin::App,
+        json!({ "account": "11010", "month": "2026-09", "kind": "page" }),
+    );
+    assert_eq!(out["isError"], true, "{out}");
+    assert_eq!(out["structuredContent"]["code"], "not_supported");
+}
+
+#[test]
+fn a_zero_amount_line_is_listed_on_its_own() {
+    let (_dir, mut b) = setup("rd-zero");
+    sql(
+        &mut b,
+        "INSERT INTO statement_line (statement_id, line_no, line_date, description, amount)
+         SELECT statement_id, 5, '2026-09-25', 'Fee waived', 0 FROM statement",
+    );
+    let text = html(&call(
+        &mut b,
+        Origin::App,
+        json!({ "account": "11010", "month": "2026-09", "kind": "report" }),
+    ));
+    let zero = text.find("<h2>No amount</h2>").expect("a No amount table");
+    assert!(text[zero..].contains("Fee waived"));
+    assert_eq!(text.matches("Fee waived").count(), 1);
+    let (_d2, mut c) = setup("rd-nozero");
+    let text = html(&call(
+        &mut c,
+        Origin::App,
+        json!({ "account": "11010", "month": "2026-09", "kind": "report" }),
+    ));
+    assert!(!text.contains("No amount"));
+}
+
+#[test]
+fn the_server_refuses_the_document_tool_to_the_assistant() {
+    use books_mini_app::jsonrpc::Server;
+    use books_mini_app::manifest::Source;
+    use ed25519_dalek::SigningKey;
+    let dir = TempDir::new("rd-server");
+    let mut server = Server::new(
+        Source::default(),
+        Books::new(Paths::in_dir(dir.0.join("store"))),
+    );
+    let mut call = |id: i64, name: &str, args: Value, caller: Value| {
+        let mut params = json!({ "name": name, "arguments": args });
+        if !caller.is_null() {
+            params["_meta"] = json!({ "buwiz/caller": caller });
+        }
+        server
+            .handle(
+                &json!({ "jsonrpc": "2.0", "id": id, "method": "tools/call", "params": params }),
+            )
+            .unwrap()["result"]
+            .clone()
+    };
+    let seed = [11u8; 32];
+    let public =
+        books_mini_app::b64::encode(SigningKey::from_bytes(&seed).verifying_key().as_bytes());
+    let p = call(
+        1,
+        "buwiz.provision",
+        json!({ "protocol": "2.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": books_mini_app::b64::encode(&seed) }, "pub": public }),
+        Value::Null,
+    );
+    assert_eq!(p["isError"], false, "{p}");
+    let ts = i64::try_from(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis(),
+    )
+    .unwrap();
+    let out = call(
+        2,
+        "books_app_reconcile_document",
+        json!({ "account": "11010", "month": "2026-09", "kind": "report" }),
+        json!({ "origin": "agent", "plugin": manifest::PLUGIN_ID, "ts": ts }),
+    );
+    assert_eq!(out["isError"], true, "{out}");
+    assert_eq!(
+        out["structuredContent"]["code"], "permission_denied",
+        "{out}"
     );
 }
 
