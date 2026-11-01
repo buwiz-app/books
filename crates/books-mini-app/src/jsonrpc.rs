@@ -2,7 +2,7 @@
 //!
 //! Methods: `initialize`, `ping`, `tools/list`, `tools/call`,
 //! `resources/list`, `resources/templates/list`, `resources/read`.
-//! Notifications get no answer. Resources (the manifest and the app
+//! Notifications get no answer. Resources (the manifest and TSX app
 //! sources) are readable before `buwiz.provision`; tools are not (P7).
 //!
 //! Nothing is logged: no argument, no subject and never the key (P4).
@@ -237,7 +237,16 @@ impl Server {
             );
         }
         let app = apps::by_uri(uri).ok_or((INVALID_PARAMS, "no such resource".to_string()))?;
-        Ok(json!({ "contents": [{ "uri": uri, "mimeType": apps::MIME, "text": app.source }] }))
+        let source = match app.source {
+            apps::AppSource::Tsx(source) => source,
+            apps::AppSource::Native { .. } => {
+                return Err((
+                    INVALID_PARAMS,
+                    format!("native app {} has no TSX source", app.id),
+                ));
+            }
+        };
+        Ok(json!({ "contents": [{ "uri": uri, "mimeType": apps::MIME, "text": source }] }))
     }
 }
 
@@ -273,7 +282,10 @@ fn resource_list() -> Value {
         "description": "The Mini App Protocol 2.0 manifest.",
         "mimeType": manifest::MANIFEST_MIME,
     })];
-    for app in apps::APPS {
+    for app in apps::APPS
+        .iter()
+        .filter(|app| matches!(app.source, apps::AppSource::Tsx(_)))
+    {
         resources.push(json!({
             "uri": format!("{}{}", apps::URI_PREFIX, app.id),
             "name": app.id,

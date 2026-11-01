@@ -2,7 +2,7 @@
 //! `books-mini-app manifest [--key-id <id>]`: print the unsigned manifest as
 //! JCS text, under publisher key id `gc-2026-01` unless `--key-id` names a
 //! test key id.
-//! `books-mini-app app-source <id>`: print an app's served source, for the
+//! `books-mini-app app-source <id>`: print a TSX app's served source, for the
 //! signing step (`sign-manifest.mjs --app <id>=<file>`).
 //! `books-mini-app seed <demo.json>`: replay a synthetic demo book into the
 //! store `BOOKS_DATA_DIR` names (the test the Bot and the golden tests).
@@ -37,7 +37,13 @@ fn main() -> ExitCode {
         ["manifest", "--key-id", key_id] if valid_key_id(key_id) => print_manifest(key_id),
         ["seed", file] => seed(file),
         ["app-source", id] => match books_mini_app::apps::find(id) {
-            Some(app) => print_text(app.source),
+            Some(app) => match app.source {
+                books_mini_app::apps::AppSource::Tsx(source) => print_text(source),
+                books_mini_app::apps::AppSource::Native { .. } => {
+                    eprintln!("books-mini-app: app {id} is native and has no TSX source");
+                    ExitCode::from(2)
+                }
+            },
             None => {
                 eprintln!("books-mini-app: no app {id}");
                 ExitCode::from(2)
