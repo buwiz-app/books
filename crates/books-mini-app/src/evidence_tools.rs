@@ -60,7 +60,7 @@ fn target(conn: &Connection, args: &Map<String, Value>) -> Result<Target, Refusa
     }
 }
 
-fn evidence_id(conn: &Connection, book: i64, value: &str) -> Result<i64, Refusal> {
+pub fn evidence_id(conn: &Connection, book: i64, value: &str) -> Result<i64, Refusal> {
     let id = subject(conn, "evidence", value)?;
     evidence::get(conn, id)?
         .filter(|e| e.book_id == book)

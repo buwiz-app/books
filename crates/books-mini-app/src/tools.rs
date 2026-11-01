@@ -13,6 +13,8 @@ use serde_json::{Map, Value, json};
 
 #[path = "evidence_tools.rs"]
 pub(crate) mod evidence_tools;
+#[path = "receipt_evidence.rs"]
+pub(crate) mod receipt_evidence;
 
 use crate::jsonrpc::{fail, ok};
 use crate::manifest;
@@ -178,7 +180,8 @@ fn draft_schema() -> Value {
             "person": { "type": "string", "description": "A person ticket." },
             "person_kind": { "type": "string", "description": "With payee: the kind of person to link or make (vendors, customers, employees, owners, lenders, government)." },
             "department": { "type": "string" },
-            "location": { "type": "string" }
+            "location": { "type": "string" },
+            "extracted": receipt_evidence::schema()
         }
     })
 }
@@ -1007,7 +1010,10 @@ pub fn call(
             views::ledger(store, book, args, origin)
         }),
         ENTRY_GET => read(books, arguments, |store, book, args| {
-            views::entry(store, book, service::required(args, "entry")?, origin)
+            let (id, ticket) = (book.id, service::required(args, "entry")?);
+            let mut out = views::entry(store, book, ticket, origin)?;
+            receipt_evidence::decorate(store.conn(), id, ticket, origin, &mut out)?;
+            Ok(out)
         }),
         ENTRY_OPTIONS => read(books, arguments, |store, book, _| {
             views::entry_options(store, book)
@@ -1016,7 +1022,7 @@ pub fn call(
             views::accounts(store, book, args)
         }),
         ENTRY_DRAFT => write(books, name, origin, arguments, |tx| {
-            writes::draft(tx, arguments, origin)
+            receipt_evidence::draft(tx, arguments, origin)
         }),
         POST_ENTRY => write(books, name, origin, arguments, |tx| {
             writes::post(tx, arguments)

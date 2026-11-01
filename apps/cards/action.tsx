@@ -11,6 +11,30 @@ function firstEntry(filter: string) {
 
 const plain = (amount: Any) => String(amount || "").replace(/^[+−]\s?/, "");
 
+// amounts show only when the user asked for them (the card's `amounts` prop)
+const showAmounts = () => CP.amounts === true || CP.amounts === "true";
+const FIELD_LABEL: Record<string, string> = { date: "Date", amount: "Amount", category: "Category", person: "Paid to", reference: "Reference" };
+
+/** What the assistant read off the evidence, against the draft as it is now. */
+function Extraction(props: { x: Any }) {
+  const x = () => props.x as Any;
+  const shown = (f: Any, v: Any) => (f.field === "amount" && !showAmounts() ? "hidden" : String(v ?? "—"));
+  return (
+    <View>
+      <Row label={`Read by ${String(x()?.proposed_by || "Assistant")}`} text={`${String(x()?.confidence_label || "")}${x()?.needs_review ? " · check before posting" : ""}`} />
+      <Each of={x()?.fields || []} key={(f: Any) => String(f.field)}>
+        {(f: Any) => (
+          <Row
+            label={FIELD_LABEL[String(f().field)] || String(f().field)}
+            sub={`Read ${shown(f(), f().suggested)} · ${String(f().confidence_label || "")}`}
+            text={`${f().corrected ? "Now " : ""}${shown(f(), f().current)}`}
+          />
+        )}
+      </Each>
+    </View>
+  );
+}
+
 function DraftCard() {
   const done = signal(false);
   const r = read(
@@ -18,6 +42,8 @@ function DraftCard() {
     () => firstEntry("draft").then((t: Any) => (t ? buwiz.call("books_entry_get", { entry: t }) : { none: true })),
   );
   const d = () => r() as Any;
+  // Books names the preview tool once it declares one; until then the action stays hidden
+  const canPreview = () => Boolean(d()?.extraction?.preview && d()?.extraction?.evidence);
   return (
     <View>
       <Wait res={r} />
@@ -30,21 +56,34 @@ function DraftCard() {
             <Foot>
               <Act label="Post" primary onPress={() => act("books_app_post_entry", { entry: d()?.ticket }).then(() => done.set(true)).catch(() => null)} />
               <Act label="Edit in Books" onPress={() => openBooks("ledger")} />
-              <Act label="Discard" onPress={() => act("books_app_discard_entry", { entry: d()?.ticket }).catch(() => null)} />
+              <If when={canPreview()}>
+                <Act label="Preview" onPress={() => buwiz.preview({ tool: d()?.extraction.preview, args: { evidence: d()?.extraction.evidence, entry: d()?.ticket }, title: "Evidence" })} />
+              </If>
+              <If when={!canPreview()}>
+                <Act label="Discard" onPress={() => act("books_app_discard_entry", { entry: d()?.ticket }).catch(() => null)} />
+              </If>
             </Foot>
           }
         >
           <Meta text={`${String(d()?.date_short || "")} · ${String(d()?.title || "Draft")}`} right={<Pill tone={d()?.pill} label={d()?.status_label || ""} />} />
-          <Hero text={`₱ ${plain(d()?.amount_shown)}`} />
+          <If when={showAmounts()}>
+            <Hero text={`₱ ${plain(d()?.amount_shown)}`} />
+          </If>
           <List>
             <Each of={d()?.lines || []} key={rowKey}>
-              {(l: Any) => <Row label={l().account || ""} value={l().debit_shown || l().credit_shown || ""} />}
+              {(l: Any) => <Row label={l().account || ""} value={showAmounts() ? l().debit_shown || l().credit_shown || "" : ""} />}
             </Each>
           </List>
+          <If when={(d()?.evidence || []).length > 0}>
+            <Row label="Evidence" text={(d()?.evidence || []).map((e: Any) => String(e.label || "")).join(" · ")} />
+          </If>
+          <If when={Boolean(d()?.extraction)}>
+            <Extraction x={d()?.extraction} />
+          </If>
         </Body>
       </If>
       <If when={done()}>
-        <Settled text={`Posted ${plain(d()?.amount_shown)} · ${String(d()?.title || "")}`} sub={`${String(d()?.date_short || "")} · in the Ledger and the P&L`} />
+        <Settled text={`Posted${showAmounts() ? ` ${plain(d()?.amount_shown)}` : ""} · ${String(d()?.title || "")}`} sub={`${String(d()?.date_short || "")} · in the Ledger and the P&L`} />
       </If>
     </View>
   );

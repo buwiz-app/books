@@ -520,3 +520,11 @@ back, so the same upload can be retried. The list cursor is the last item's evid
 tools refuse unknown arguments, and a link to a discarded draft is refused (`discarded`); voided entries stay valid
 link targets for history. `oldbooks.rs` keeps restart-on-new-count for `books_app_upload_part`; its one change,
 outside this task's file list, stops a retried part counting twice against the 50 MB cap (PROPOSAL: needs owner OK).
+
+### 2026-11-01 · evidence-2: receipt extraction provenance on drafts
+
+- Migration 8 (`0008_receipt_extraction.sql`): `entry_extraction` (one per entry: evidence, fields_json, integer confidence, proposed_by) and `entry_extraction_correction` (user changes kept beside the original reading).
+- `books_entry_draft` takes optional `extracted: {evidence, confidence 0..100, fields: [{field: date|amount|category|person|reference, value, confidence}]}` (`crates/books-mini-app/src/receipt_evidence.rs`, path-declared in `tools.rs`). It wraps `writes::draft` in the same write transaction and links the evidence there. Floats, unknown keys, duplicate or TIN-shaped fields, non two-decimal amounts, oversized text, cross-book evidence and closed months are refused with nothing written. Confidence below 80, or missing, sets `needs_review`.
+- `books_entry_get` gives the app `evidence` summaries and `extraction` (suggested versus current, confidence labels, corrected flags); other callers get `evidence_count` and `extracted` only.
+- Draft card (`apps/cards/action.tsx`): evidence summary and extraction review; amounts only with the `amounts` prop; the Preview action stays hidden until `books_app_evidence_preview` is declared.
+- Follow-up: the Ledger drawer (`ledger.tsx`, being replaced by the native ledger) does not yet show the extraction; the native `books.ledger` drawer should read `extraction` from `books_entry_get`.
