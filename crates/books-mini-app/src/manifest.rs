@@ -67,9 +67,10 @@ fn permissions(app: &apps::App) -> Value {
             p["attach"] = json!(["proposal"]);
         }
     }
-    // a card opens the Books window at a page (M8)
-    if app.id != "books" && source.is_some_and(|source| source.contains(".open({")) {
-        p["open"] = json!({ "apps": ["books"] });
+    // the window opens the ledger's native screen; a card opens the Books
+    // window at a page (M8)
+    if source.is_some_and(|source| source.contains(".open({")) {
+        p["open"] = json!({ "apps": [if app.id == "books" { "ledger" } else { "books" }] });
     } else if !open_apps.is_empty() {
         p["open"] = json!({ "apps": open_apps });
     }
@@ -132,6 +133,22 @@ fn app_entry(app: &apps::App) -> Value {
             },
             "placement": ["full", "inline"],
             "inline": { "width": 360, "height": 120, "min_height": 96, "max_height": 240, "resizable": false, "wait_ready": true },
+            "permissions": permissions(app),
+        }),
+        "ledger" => json!({
+            "id": "ledger",
+            // neutral: no business name, amount or TIN (D1, RK-10)
+            "title": "Ledger",
+            "description": "A month of ledger entries: filter, review, post, void or draft one. The native screen.",
+            "props": {
+                "type": "object",
+                "properties": {
+                    "account": { "type": "string", "maxLength": 30 },
+                    "month": { "type": "string", "maxLength": 7 },
+                    "filter": { "type": "string", "enum": ["all", "review", "draft", "posted"] }
+                }
+            },
+            "placement": ["full"],
             "permissions": permissions(app),
         }),
         id => {

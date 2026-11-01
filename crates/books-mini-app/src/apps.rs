@@ -36,7 +36,7 @@ const BOOKS: &str = concat!(
     "\n",
     include_str!("../../../apps/books/today.tsx"),
     "\n",
-    include_str!("../../../apps/books/ledger.tsx"),
+    include_str!("../../../apps/books/entry.tsx"),
     "\n",
     include_str!("../../../apps/books/accounts.tsx"),
     "\n",
@@ -102,6 +102,24 @@ pub const APPS: &[App] = &[
     App {
         id: "pair",
         source: AppSource::Tsx(card_app!("pair.tsx")),
+    },
+    App {
+        id: "ledger",
+        source: AppSource::Native {
+            screen: "books.ledger",
+            abi: 1,
+            tools: &[
+                crate::tools::LEDGER_LIST,
+                crate::tools::ENTRY_GET,
+                crate::tools::ENTRY_OPTIONS,
+                crate::tools::ENTRY_DRAFT,
+                crate::tools::POST_ENTRY,
+                crate::tools::VOID_ENTRY,
+                crate::tools::DISCARD_ENTRY,
+                crate::tools::RECATEGORIZE,
+            ],
+            open_apps: &[],
+        },
     },
     App {
         id: "quiet",
