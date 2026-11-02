@@ -1,4 +1,4 @@
-//! Monthly repeats of unpaid documents (M10 parity, unpaid-3).
+//! Monthly repeats of unpaid documents.
 //!
 //! A document marked to repeat monthly is a template. Each later month,
 //! up to today's, may get one copy, made only when the user adds it: no

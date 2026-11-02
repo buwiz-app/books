@@ -1,8 +1,7 @@
-//! M8 through the server, as the Bot calls it: the assistant offers cards and
-//! never posts or hands over (M8-07), a routine's turn writes only the
-//! drafts it declares (M8-06), the six scopes and `/books` resolve to
-//! tickets and cards (M8-01, M8-04), the templates open their cards
-//! (M8-05), and quiet cards carry counts, never amounts. Synthetic data.
+//! Chat cards through the server, as the Bot calls it: the assistant offers
+//! cards and never posts or hands over, a routine's turn writes only the
+//! drafts it declares, the six scopes and `/books` resolve to tickets and
+//! cards, the templates open their cards, and quiet cards carry counts, never amounts. Synthetic data.
 
 use books_mini_app::demo;
 use books_mini_app::jsonrpc::Server;

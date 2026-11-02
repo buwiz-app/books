@@ -1,7 +1,6 @@
 //! Posting the normalized entries for the measures engine: balance and
 //! one-side checks, the reversal mirror and orphan rules, and each line's
-//! signed amount (`measure_side`). Port of `poc/src/ledger.ts`
-//! (`postLedger()`, `sameWindowReversalEntries()`, `sumMeasure()`).
+//! signed amount (`measure_side`).
 //!
 //! This is the engine's read of a set of entries, separate from
 //! [`crate::ledger`], which holds the rules a post in the store enforces.

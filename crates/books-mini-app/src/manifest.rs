@@ -1,4 +1,4 @@
-//! The 2.0 manifest (spec 5) for `app.buwiz.books`.
+//! The protocol 1.0 manifest for `app.buwiz.books`.
 //!
 //! [`unsigned`] builds it from this build's code: TSX fingerprints are the
 //! SHA-256 of the source bytes `resources/read` answers ([`crate::apps`]),
@@ -25,14 +25,14 @@ pub const PLUGIN_ID: &str = "app.buwiz.books";
 pub const SHORT: &str = "books";
 pub const VERSION: &str = "0.6.0";
 pub const PUBLISHER_ID: &str = "app.buwiz";
-/// The release key (owner decision D9). Tests sign under a test key id.
+/// The release key. Tests sign under a test key id.
 pub const RELEASE_KEY_ID: &str = "gc-2026-01";
 /// The signed manifest file this process serves.
 pub const MANIFEST_ENV: &str = "BOOKS_V1_MANIFEST";
 /// The props key an app takes its subject from.
 pub const TICKET_PROP: &str = "ticket";
 
-/// What each app may reach (spec 5.6). `tools` is exactly the Books tools
+/// What each app may reach (protocol 1.0 §12). `tools` is exactly the Books tools
 /// its source names or native definition declares (checked in `tests/manifest_shape.rs`).
 fn permissions(app: &apps::App) -> Value {
     let (source, tools, open_apps) = match app.source {
@@ -46,31 +46,31 @@ fn permissions(app: &apps::App) -> Value {
         ),
     };
     let mut p = json!({ "tools": tools });
-    // the window copies a report's CSV to the clipboard (M3 export)
+    // the window copies a report's CSV to the clipboard
     if let Some(source) = source {
         if source.contains("buwiz.copy(") {
             p["copy"] = json!(true);
         }
-        // Reconcile picks a CSV bank statement (M4); Import picks old books, a
-        // web Books export or CSV files (M5); either takes a spreadsheet too.
+        // Reconcile picks a CSV bank statement; Import picks old books, a
+        // web Books export or CSV files; either takes a spreadsheet too.
         // Sources split `buwiz` and the method across lines, so the method's
         // own name is the signal.
         if source.contains(".pickFile(") {
             p["pick_file"] = json!({ "extensions": [".csv", ".json", ".xlsx", ".xls"], "max_bytes": 52_428_800 });
         }
-        // Forms attaches a hand-off to the chat (M7)
+        // Forms attaches a hand-off to the chat
         if source.contains(".attach(") {
             p["attach"] = json!(["proposal"]);
         }
     }
     // the window opens the ledger's native screen; a card opens the Books
-    // window at a page (M8)
+    // window at a page
     if source.is_some_and(|source| source.contains(".open({")) {
         p["open"] = json!({ "apps": [if app.id == "books" { "ledger" } else { "books" }] });
     } else if !open_apps.is_empty() {
         p["open"] = json!({ "apps": open_apps });
     }
-    // evidence-4: the document library, its card and the Books window's way in
+    // the document library, its card and the Books window's way in
     if let Some(source) = source {
         if app.id == "evidence" {
             p["pick_file"] = json!({ "extensions": [".pdf", ".png", ".jpg", ".jpeg", ".webp"], "max_bytes": 52_428_800 });
@@ -78,7 +78,7 @@ fn permissions(app: &apps::App) -> Value {
         if source.contains("buwiz.attach(\"evidence\"") {
             p["attach"] = json!(["evidence"]);
         }
-        // evidence-4, reconcile snapshots, Unpaid's owed print page and the month pack share one preview cap
+        // the document library, reconcile snapshots, Unpaid's owed print page and the month pack share one preview cap
         if source.contains(".preview(") {
             p["preview"] = json!({ "max_bytes": crate::tools::document_review::PREVIEW_MAX_BYTES });
         }
@@ -114,7 +114,7 @@ fn app_entry(app: &apps::App) -> Value {
     let mut entry = match app.id {
         "books" => json!({
             "id": "books",
-            // neutral: no business name, amount or TIN (D1, RK-10)
+            // neutral: no business name, amount or TIN
             "title": "Books",
             "description": "Your books: today, the ledger, unpaid invoices and bills, reports, people, accounts and tags. Only you post, void or close here.",
             "props": {
@@ -136,7 +136,7 @@ fn app_entry(app: &apps::App) -> Value {
         }),
         "home" => json!({
             "id": "home",
-            // neutral: no business name, amount or TIN (D1, RK-10)
+            // neutral: no business name, amount or TIN
             "title": "Books",
             "description": "Books home: setup status and counts only.",
             "props": {
@@ -177,7 +177,7 @@ fn app_entry(app: &apps::App) -> Value {
         }),
         "ledger" => json!({
             "id": "ledger",
-            // neutral: no business name, amount or TIN (D1, RK-10)
+            // neutral: no business name, amount or TIN
             "title": "Ledger",
             "description": "A month of ledger entries: filter, review, post, void or draft one. The native screen.",
             "props": {
@@ -195,7 +195,7 @@ fn app_entry(app: &apps::App) -> Value {
             let (title, description, height, max_height) = card_kind(id);
             json!({
                 "id": id,
-                // neutral: no business name, amount or TIN (D1, RK-10)
+                // neutral: no business name, amount or TIN
                 "title": title,
                 "description": description,
                 "props": {
@@ -232,7 +232,7 @@ fn app_entry(app: &apps::App) -> Value {
 const CARD_WIDTH: u32 = 560;
 
 /// A card app's title, description, first height and max height
-/// (docs/design/inline-cards.md). The card reports its natural height with
+/// The card reports its natural height with
 /// buwiz.fit; its parts are bounded (a list scrolls inside 240 points), so the
 /// height stays under the max and the footer is never cut off.
 fn card_kind(id: &str) -> (&'static str, &'static str, u32, u32) {
@@ -284,7 +284,7 @@ pub fn unsigned(key_id: &str) -> Value {
         "publisher": { "id": PUBLISHER_ID, "key_id": key_id, "name": "Buwiz" },
         "commands": [
             { "name": "books", "description": "Open your books: a page (ledger, unpaid, reconcile, forms…) or a card (cash, month, unpaid, pl)", "args": "[page or card]", "resolve": tools::RESOLVE },
-            // templates (TMP): starter flows, each a command that opens its card (M8)
+            // templates: starter flows, each a command that opens its card
             { "name": "books-receipt", "description": "Record a receipt: attach the photo or PDF, the assistant drafts it, you post", "resolve": tools::RESOLVE },
             { "name": "books-tidy", "description": "Tidy up the bank lines: pick a category for each", "resolve": tools::RESOLVE },
             { "name": "books-close", "description": "Close last month: the checks, then close", "resolve": tools::RESOLVE },
@@ -337,7 +337,7 @@ impl Source {
         }
     }
 
-    /// `manifest_sha256` (spec 5.2 step 7): SHA-256 of the served manifest's JCS bytes.
+    /// `manifest_sha256` (protocol 1.0 §6.2 step 9): SHA-256 of the served manifest's JCS bytes.
     pub fn sha256(&self) -> Result<String, String> {
         jcs::sha256_jcs(&self.value()?).map_err(|error| error.to_string())
     }

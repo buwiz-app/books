@@ -1,4 +1,4 @@
-// Ledger review findings (M10 parity, ledger-2): the words for each check id that books_ledger_list puts on a row
+// Ledger review findings: the words for each check id that books_ledger_list puts on a row
 // (`checks`) and the 'Checks' chip label. Words only: a finding never carries an amount, a payee or a memo.
 // The ledger page and entry drawer read these; the Checks filter itself is `filter: "checks"` on the ledger list.
 

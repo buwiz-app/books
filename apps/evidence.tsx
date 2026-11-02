@@ -1,4 +1,4 @@
-// Books documents (evidence-4): the document library. Add a PDF or image (pick -> read -> the foundation's multipart
+// Books documents: the document library. Add a PDF or image (pick -> read -> the foundation's multipart
 // books_app_evidence_attach), list generic metadata, preview it (static, through buwiz.preview), attach its scope
 // ticket to the chat so the assistant can work from it, and accept or discard the assistant's proposed kind.
 // Bytes only ever leave Books inside the preview; the list carries kind, type, pages and link counts.

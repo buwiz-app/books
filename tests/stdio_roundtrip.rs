@@ -119,7 +119,7 @@ fn initialize_list_provision_open_and_call() {
     );
     assert_eq!(names[5..], books_mini_app::tools::names()[..]);
 
-    // resources are readable before provision; tools are not (P7)
+    // resources are readable before provision; tools are not (protocol 1.0 §23.2 P7)
     let read = plugin.request("resources/read", json!({ "uri": "buwiz://manifest" }));
     let served = read["result"]["contents"][0]["text"]
         .as_str()
@@ -264,7 +264,7 @@ fn initialize_list_provision_open_and_call() {
         "permission_denied"
     );
 
-    // /books resolves to an open of home with a ticket; the ticket's title is neutral (P3)
+    // /books resolves to an open of home with a ticket; the ticket's title is neutral
     let resolved = plugin.call_as(
         "books_resolve",
         json!({ "kind": "command", "name": "books", "value": "sdk-probe", "complete": false, "context": { "attached": [] } }),
@@ -304,7 +304,7 @@ fn initialize_list_provision_open_and_call() {
         json!({ "valid": false })
     );
 
-    // P4: nothing on stderr, so never the seed
+    // nothing on stderr, so never the seed (protocol 1.0 §23.2 P4)
     let stderr = plugin.finish();
     assert!(
         !stderr.contains(&b64::encode(&seed)),

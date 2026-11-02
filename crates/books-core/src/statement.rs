@@ -1,4 +1,4 @@
-//! Bank and card statements (M4): read a CSV statement, then match its
+//! Bank and card statements: read a CSV statement, then match its
 //! lines against the ledger. Pure: no store, no float.
 //!
 //! A line's amount is money into the account (positive) or out of it

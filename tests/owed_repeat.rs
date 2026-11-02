@@ -1,4 +1,4 @@
-//! Monthly repeats of unpaid documents (M10 parity, unpaid-3): the user
+//! Monthly repeats of unpaid documents: the user
 //! adds each month's copy from the app; nothing writes one by itself.
 //! Synthetic people, references and amounts only.
 

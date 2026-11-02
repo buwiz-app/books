@@ -1,4 +1,4 @@
-//! M10 parity reconcile-1: a statement the assistant read from a page the
+//! A statement the assistant read from a page the
 //! user attached. The assistant drafts the lines (`books_statement_draft_lines`);
 //! the user accepts or dismisses them in the app (`books_app_statement_accept`
 //! with `draft`). Books never reads the page: it stores what it is given.

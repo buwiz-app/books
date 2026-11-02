@@ -1,4 +1,4 @@
-//! Display-only anomaly flags on a bank statement (M10 parity): a repeated
+//! Display-only anomaly flags on a bank statement: a repeated
 //! date and amount, an amount far from the payee's usual, and a month whose
 //! lines do not carry last month's ending to this one's. Integers only; a
 //! flag never blocks Finish.

@@ -891,7 +891,7 @@ fn tx_row(
     }
 }
 
-/// The row's review pills (M10 ledger-1): proposed by the assistant or a
+/// The row's review pills: proposed by the assistant or a
 /// routine, a field below the confidence line, a likely duplicate still to
 /// decide. `None` when there is nothing to flag.
 fn review_badges(row: &Value) -> Option<nsh_core::element::View> {
@@ -1187,10 +1187,10 @@ fn drawer(
     panel.child(actions)
 }
 
-/// Amend by reversal (M10 ledger-3): a reason and an optional date. A void
+/// Amend by reversal: a reason and an optional date. A void
 /// with `amend: true` (no new tool): the original shows Voided, a reversal
 /// posts, and a replacement draft with the same lines opens. Only a press
-/// here amends (DD-20). The reason goes to Books and is never shown back.
+/// here amends. The reason goes to Books and is never shown back.
 #[allow(clippy::too_many_arguments)]
 fn amend_form(
     screen_owner: Owner,
@@ -1587,7 +1587,7 @@ fn confidence_word(confidence: Option<&Value>) -> &'static str {
     }
 }
 
-/// The drawer's review notes (M10 ledger-1): the fields the assistant or a
+/// The drawer's review notes: the fields the assistant or a
 /// routine set, with the confidence it reported, and the likely duplicates
 /// to open or keep. `None` when there is nothing to show.
 fn review_panel(

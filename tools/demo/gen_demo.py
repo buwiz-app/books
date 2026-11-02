@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Write fixtures/demo/buwiz-trading-2026.json: the synthetic demo book the
-drawings show (Books Mini App), as a list of Books tool calls.
+"""Write fixtures/demo/buwiz-trading-2026.json: the synthetic demo book,
+as a list of Books tool calls.
 
 Every name, amount and memo is synthetic. Amounts are integer centavos here and
 two-place decimal text in the output; no float is used. The script checks the

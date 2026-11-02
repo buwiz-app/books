@@ -1,7 +1,0 @@
-{
- "order": 0,
- "what": "Scratch BIR profile recipe (B2)",
- "owner": "BIR owner",
- "status": "done",
- "note": "BIR's broker harness recipe (rox session, 2026-10-30); never the live BIR database"
-}

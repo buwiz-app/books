@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# tools/privacy-scan.sh — the privacy gate (docs/06 §8; AGENTS invariants 3,
-# 13 and 14). Three parts, all synthetic data:
-#   1. the PoC scanner's self-test (run-time canaries) and its scan of every
-#      proposal, vector and fixture (poc/test/privacy.test.ts);
-#   2. the repo scan: data/, fixtures/, docs/plan/seed/ and the app sources
-#      (poc/tools/scan-repo.ts);
-#   3. the Rust output scan: what the assistant, titles and the store file
-#      carry (tests/privacy_outputs.rs).
+# tools/privacy-scan.sh — the privacy gate (AGENTS invariant 3). All synthetic
+# data, two Rust test targets:
+#   1. tests/privacy_repo.rs: the scanner's self-test with run-time canaries,
+#      and its scan of data/, fixtures/, tests/fixtures/, the app and screen
+#      sources, every vector, every synthetic fixture and every proposal;
+#   2. tests/privacy_outputs.rs: what the assistant, titles and the store
+#      file carry.
 set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-(cd "$REPO/poc" && bun test test/privacy.test.ts 2>&1 | tail -3)
-(cd "$REPO" && bun run poc/tools/scan-repo.ts)
-cargo test --quiet --manifest-path "$REPO/Cargo.toml" -p books-mini-app --test privacy_outputs 2>&1 | grep -E 'test result|FAILED|panicked'
+out="$(cargo test --quiet --manifest-path "$REPO/Cargo.toml" -p books-mini-app \
+  --test privacy_repo --test privacy_outputs 2>&1)" || status=$?
+grep -E 'test result|FAILED|panicked' <<<"$out" || true
+exit "${status:-0}"

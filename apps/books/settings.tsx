@@ -1,6 +1,6 @@
 // Settings: Book (name, basis, fiscal year), Months (close and reopen with
 // a reason), Defaults (the category mappings, shorter; accrual-only rows
-// dim on a cash book), Link & data (drawing: Books Mini App › Settings).
+// dim on a cash book), Link & data.
 
 const setTab = signal("book");
 const SET_TABS: [string, string][] = [
@@ -194,7 +194,7 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
   );
 }
 
-/** Buwiz sign-in (optional, D19) and the link to one tax profile by ID. */
+/** Buwiz sign-in (optional) and the link to one tax profile by ID. */
 function CloudLink() {
   const code = signal(null as Any);
   const note = signal("");

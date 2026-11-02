@@ -8,8 +8,8 @@
 //! The Bot generates one ed25519 key per install and sends its seed in
 //! `buwiz.provision`, the first call of every spawn. The seed lives in
 //! [`PluginKey`] and nowhere else: never written, logged, echoed or put in an
-//! error message (P4), and `Debug` is not derived. Every other tool is
-//! refused until a provision succeeds (P7).
+//! error message, and `Debug` is not derived. Every other tool is refused
+//! until a provision succeeds (protocol 1.0 §23.2 P4, P7).
 
 use std::collections::HashMap;
 
@@ -78,7 +78,7 @@ impl OpenRequest {
         })
     }
 
-    /// The certificate of spec 4.4.
+    /// The session certificate (protocol 1.0 §5.5).
     fn certificate(&self, plugin: &str) -> Value {
         json!({
             "v": 1,
@@ -102,7 +102,7 @@ pub struct Host {
 }
 
 impl Host {
-    /// Whether `buwiz.provision` has succeeded (P7).
+    /// Whether `buwiz.provision` has succeeded.
     pub fn provisioned(&self) -> bool {
         self.key.is_some()
     }

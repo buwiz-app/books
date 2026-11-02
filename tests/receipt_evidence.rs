@@ -418,7 +418,7 @@ fn replay_correction_and_responses() {
     assert_eq!(x["proposed_by"], "Assistant");
     assert_eq!(x["confidence"], 70);
     assert_eq!(x["confidence_label"], "Unsure");
-    // evidence-4 declared the preview tool, so the extraction names it
+    // the manifest declares the preview tool, so the extraction names it
     assert_eq!(x["preview"], json!(tools::EVIDENCE_PREVIEW));
     let amount = x["fields"]
         .as_array()

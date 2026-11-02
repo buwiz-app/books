@@ -1,5 +1,5 @@
-//! The month pack: one static HTML document for `buwiz.preview` (Bot
-//! bridge.md, "preview"): the month's P&L, balance sheet, cash flow, trial
+//! The month pack: one static HTML document for `buwiz.preview`
+//! (protocol 1.0 §13.5): the month's P&L, balance sheet, cash flow, trial
 //! balance and reconcile status. Every figure is read from the reports'
 //! own JSON (`*_shown` text); nothing is summed here. The page loads
 //! nothing: one inline style, no script, no link, no URL.

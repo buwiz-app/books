@@ -1,8 +1,8 @@
-// Amend by reversal (ledger-3): the entry drawer's Amend button and its
+// Amend by reversal: the entry drawer's Amend button and its
 // link chips. An amend is a void with `amend: true` (no new tool): the
 // original shows Voided, a reversal posts, and a replacement draft with the
 // same lines opens for the user to correct and post. Only a click here
-// amends (DD-20). The reason goes to Books and is never shown back.
+// amends. The reason goes to Books and is never shown back.
 
 /** "Amend" in the drawer of a posted entry: a reason and an optional date. */
 function AmendButton(p: { entry: string; busy: boolean }) {

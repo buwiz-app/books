@@ -1,4 +1,4 @@
-// Headless second-instance test of the Books plugin against a real Buwiz Bot broker (docs/06 section 13.2 steps 6-11).
+// Headless second-instance test of the Books plugin against a real Buwiz Bot broker.
 // Run it through tools/bot/host-test.sh, which starts the throwaway broker. Direct use:
 //   node books-host-test.mjs <buwiz worktree> <run dir> <books binary> <port>
 // It reuses the Bot's own test helpers (openApp, envelope) from the worktree. Step 11 runs the Books window's served
@@ -76,7 +76,7 @@ const { generate } = await import(pathToFileURL(`${WT}/server/src/v1/ed.mjs`).hr
 const forged = await post("/v1/host/call", envelope(open, "books_status", {}, {}, generate().seed));
 check("an envelope signed by another key is refused", forged.json.ok === false, refusal(forged));
 
-// 10. M1 through the broker: the Books window makes a book, drafts, posts, voids and lists
+// 10. the ledger through the broker: the Books window makes a book, drafts, posts, voids and lists
 const win = await openApp(sessions, signed, "books");
 check("the Books window session opens", !!win.res.cert && !!win.res.cert_sig);
 let n = 0;

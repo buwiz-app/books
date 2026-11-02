@@ -1,4 +1,4 @@
-//! books_report compare_to and tag (reports-1), on the golden book
+//! books_report compare_to and tag, on the golden book
 //! (fixtures/demo/buwiz-trading-2026.json, synthetic).
 
 use books_mini_app::demo;

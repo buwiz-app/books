@@ -1,4 +1,4 @@
-//! ledger-2 review findings through the server: one finding per check, tickets
+//! Review findings through the server: one finding per check, tickets
 //! and months only, the review routine writes nothing, and Today / the
 //! ledger's Checks filter carry them. Synthetic data only.
 
@@ -116,7 +116,7 @@ impl Bot {
         let entry = data(&d)["entry"].as_str().unwrap().to_string();
         let p = self.app(
             "books_app_post_entry",
-            // the duplicate check needs lookalikes posted (ledger-1 refuses them without keep_both)
+            // the duplicate check needs lookalikes posted (a post refuses them without keep_both)
             json!({ "client_request_id": format!("post-{n:04}"), "entry": entry, "keep_both": true }),
         );
         data(&p);

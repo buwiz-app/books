@@ -1,13 +1,12 @@
 //! Deterministic JSON, the form every hash and byte comparison is taken
-//! over. Port of `poc/src/canonical.ts`: `canonical()` sorts object keys,
-//! writes no whitespace and takes safe integers only; `pretty()` is the
-//! file form (`prettyJson()`: two-space indent, sorted keys, trailing
-//! newline). Strings are escaped exactly as JavaScript's `JSON.stringify`
-//! escapes them, so Rust and the PoC hash the same bytes.
+//! over. `canonical()` sorts object keys, writes no whitespace and takes
+//! safe integers only; `pretty()` is the file form (two-space indent,
+//! sorted keys, trailing newline). Strings are escaped exactly as
+//! JavaScript's `JSON.stringify` escapes them, so hashes match the vectors
+//! in `fixtures/vectors/`.
 //!
 //! Numbers are read as integers only. A JSON number with a fraction or an
-//! exponent is refused, as the PoC refuses a number that is not a safe
-//! integer.
+//! exponent is refused.
 
 use std::cmp::Ordering;
 use std::fmt;

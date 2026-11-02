@@ -1,9 +1,0 @@
-{
- "milestone": "M1",
- "order": 3,
- "title": "books-core: the cash-basis rule",
- "owner": "Claude",
- "status": "done",
- "evidence": "7e5f183 · cash book refuses receivable/payable lines and receipt-tagged sales (books-core ledger tests)",
- "updated": "2026-10-29"
-}

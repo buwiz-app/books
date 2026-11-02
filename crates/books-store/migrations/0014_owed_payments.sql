@@ -1,4 +1,4 @@
--- Schema 0014 (M10 parity, unpaid-1): one row per settlement of an unpaid
+-- Schema 0014: one row per settlement of an unpaid
 -- document, linked to the entry that moved the money. What is paid to date
 -- is the sum of rows whose entry is still posted, so voiding a payment in
 -- the Ledger restores the balance with no extra write.

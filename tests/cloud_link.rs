@@ -1,4 +1,4 @@
-//! M9: Buwiz sign-in and the tax-profile link, against a fake cloud (no
+//! Buwiz sign-in and the tax-profile link, against a fake cloud (no
 //! network, no real account). Device sign-in as `buwiz-books`, scope
 //! `books`; each new refresh token is in the store before its access token
 //! is used; a refused refresh signs out; a profile list with a TIN is

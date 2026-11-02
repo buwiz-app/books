@@ -1,9 +1,9 @@
-//! M7 Slice B against a test harness (no scratch BIR profile exists, B2):
+//! Slice B against a test harness (no scratch BIR profile here):
 //! the demo book's Q3 2551Q goes from Books to a fake BIR draft the way
-//! the assistant does it (docs/01 9.2), and a later change marks the
+//! the assistant does it, and a later change marks the
 //! hand-off out of date until the owner refreshes it.
 //!
-//! The fake BIR takes a fill only with source `document` (D3) and only on
+//! The fake BIR takes a fill only with source `document` and only on
 //! input keys the 2551Q crosswalk lets Books fill; it has no send.
 
 use std::collections::BTreeMap;

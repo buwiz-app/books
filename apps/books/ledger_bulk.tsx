@@ -1,8 +1,7 @@
 // Ledger multi-select on the Reports page: tick rows, then Post, Discard
 // or give them one category in one click (books_app_batch, all or
 // nothing), and the ledger as CSV (books_report_csv kind "ledger"). The
-// Ledger itself is a native screen; only a click here changes entries
-// (DD-20).
+// Ledger itself is a native screen; only a click here changes entries.
 
 const BULK_FILTERS = [
   ["draft", "Drafts"],

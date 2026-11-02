@@ -1,4 +1,4 @@
-// Review notes on an entry (M10 parity, ledger-1): who proposed it, the
+// Review notes on an entry: who proposed it, the
 // fields the assistant or a routine set with the confidence the assistant
 // reported (Books computes none), and likely duplicates the user decides on.
 

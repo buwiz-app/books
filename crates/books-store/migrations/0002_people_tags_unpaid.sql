@@ -1,4 +1,4 @@
--- Schema 0002 (M2): people, tags and unpaid documents. No TIN column:
+-- Schema 0002: people, tags and unpaid documents. No TIN column:
 -- the BIR app keeps every TIN (invariant 4). A person is a name and a kind.
 
 CREATE TABLE person (

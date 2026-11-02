@@ -1,4 +1,4 @@
-//! M3 Reports: P&L with the previous period beside it, the balance sheet,
+//! Reports: P&L with the previous period beside it, the balance sheet,
 //! cash flow, the trial balance and aging (accrual books only). Every row
 //! of the P&L and the balance sheet names its account, so a click opens
 //! its lines in the Ledger. Reports follow the book's basis (ADR 0008);

@@ -1,5 +1,4 @@
-//! M8: Books in the Bot chat (drawings: Books Inline Cards, Books Guided
-//! Chat). Four kinds of inline card, each its own app with only the tools
+//! Books in the Bot chat. Five kinds of inline card, each its own app with only the tools
 //! it calls:
 //!
 //! - `answer` (360): cash now, this month, a person, unpaid: amounts,
@@ -14,7 +13,7 @@
 //! `_meta["buwiz/open"]`; the Bot shows it on the user's click). `/books <page or
 //! card>` and the five templates (commands, since protocol 1.0 has no
 //! template field) open them too. Six `@books:` scopes point at a person,
-//! account, period, entry, form or tag; three routines draft at most.
+//! account, period, entry, form or tag; routines draft at most.
 
 use books_core::date::{Date, MONTH_NAMES, Period, PeriodKind};
 use books_core::input::FormCode;
@@ -32,7 +31,7 @@ use serde_json::{Map, Value, json};
 use crate::forms;
 use crate::service::{Answer, Refusal, text};
 
-/// `(card, app, title)`. Titles are neutral: no name, amount or TIN (D1).
+/// `(card, app, title)`. Titles are neutral: no name, amount or TIN.
 pub const CARDS: [(&str, &str, &str); 15] = [
     ("cash", "answer", "Books · Cash now"),
     ("month", "answer", "Books · This month"),
@@ -71,7 +70,7 @@ const CARD_PROPS: [&str; 11] = [
     "deduction",
 ];
 
-/// `_meta["buwiz/open"]` for a card (spec 9.6): the Bot shows it on a click.
+/// `_meta["buwiz/open"]` for a card (protocol 1.0 §16.2): the Bot shows it on a click.
 pub fn open(
     card: &str,
     args: &Map<String, Value>,
@@ -402,7 +401,7 @@ fn matches(label: &str, typed: &str) -> bool {
     typed.is_empty() || label.to_lowercase().contains(&typed.to_lowercase())
 }
 
-/// Resolve an `@books:` scope (spec 9.2): a ticket gives its token; text
+/// Resolve an `@books:` scope (protocol 1.0 §15.2): a ticket gives its token; text
 /// gives up to 20 choices whose values are tickets.
 pub fn scope(store: &Store, name: &str, value: &str) -> Value {
     let c = store.conn();
@@ -525,8 +524,7 @@ fn choices(store: &Store, book: &Book, name: &str, typed: &str) -> Result<Vec<Va
 
 // --- routines ----------------------------------------------------------------
 
-/// The four routines (docs/08 §3; review is M10 parity). Only the weekly tidy-up writes, and only
-/// drafts.
+/// The four routines. Only the weekly tidy-up writes, and only drafts.
 pub fn routines() -> Value {
     json!([
         {
@@ -568,7 +566,7 @@ pub fn routines() -> Value {
 }
 
 /// The writes a routine declares (the broker checks too; Books checks
-/// again, P6). Books lets a routine write drafts only.
+/// again, protocol 1.0 §23.2 P6). Books lets a routine write drafts only.
 pub fn routine_writes(routine: &str) -> Vec<String> {
     routines()
         .as_array()
@@ -652,7 +650,7 @@ pub fn command_open(command: &str, value: &str) -> Option<Value> {
     }
 }
 
-/// The `/books` choices: the pages (values are tickets, spec 9.2).
+/// The `/books` choices: the pages (values are tickets, protocol 1.0 §15.2).
 pub fn page_choices(store: &Store, typed: &str) -> Result<Vec<Value>, Refusal> {
     let detail = |p: &str| match p {
         "today" => "cash, month, what needs you",

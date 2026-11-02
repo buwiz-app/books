@@ -1,7 +1,7 @@
-// Buwiz Books home (P0 stub): a neutral label and the setup status with a
+// Buwiz Books home: a neutral label and the setup status with a
 // count of books. No amounts, TINs or names: inline cards from a
-// first-party publisher mount without a click (RK-21), so this card shows
-// counts and status only. Imports only nsh and buwiz (spec 6.3); data comes
+// first-party publisher mount without a click, so this card shows
+// counts and status only. Imports only nsh and buwiz (protocol 1.0 §11.2); data comes
 // from buwiz.call alone. Every tool called here is in permissions.tools.
 import { signal, Text, View } from "nsh";
 import { buwiz } from "buwiz";

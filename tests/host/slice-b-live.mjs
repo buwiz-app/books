@@ -1,4 +1,4 @@
-// M7 Slice B, live (docs/01 9.2, AGENTS.md 15): the demo book's Q3 2551Q goes from Books into a real BIR draft on a
+// Slice B, live (AGENTS.md invariant 15): the demo book's Q3 2551Q goes from Books into a real BIR draft on a
 // scratch BIR profile, and a later Books change marks the hand-off out of date until the owner refreshes it.
 // Run it through tools/bir/slice-b-live.sh. Direct use:
 //   node slice-b-live.mjs <buwiz worktree> <run dir> <books binary> <bir binary> <bir source tree>
@@ -111,7 +111,7 @@ try {
     check(`${id} installed and running`, installed.ok && plugins.runtime(id).state === "running");
   }
 
-  // a fake the Bot: an app's session and its signed calls; the owner works through these
+  // a fake Bot: an app's session and its signed calls; the owner works through these
   async function open(plugin, app) {
     const manifest = plugins.manifestOf(plugins.rowOf(plugin));
     const ks = generate();

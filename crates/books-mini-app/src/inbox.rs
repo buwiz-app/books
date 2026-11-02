@@ -1,4 +1,4 @@
-//! The needs-review inbox (M10 parity, ledger-1): what the assistant or a
+//! The needs-review inbox: what the assistant or a
 //! routine proposed on a draft, field by field, the confidence the Bot's
 //! assistant reported for each (Books computes none), and the likely
 //! duplicates a post must be told to keep (`keep_both`). The assistant

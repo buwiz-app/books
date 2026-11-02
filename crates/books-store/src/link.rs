@@ -1,7 +1,7 @@
-//! M9: the link to buwiz-cloud. The book links to one approved tax profile
-//! by its opaque id only (never a TIN, docs/01 5.7), and the rotating
+//! The link to buwiz-cloud. The book links to one approved tax profile
+//! by its opaque id only (never a TIN), and the rotating
 //! refresh token lives in the encrypted store, written before the access
-//! token it came with is used (P-C4: reusing an old refresh token revokes
+//! token it came with is used (reusing an old refresh token revokes
 //! the whole grant).
 
 use rusqlite::{Connection, OptionalExtension as _, params};

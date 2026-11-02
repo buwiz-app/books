@@ -1,7 +1,7 @@
 //! The kind catalogue (`data/categories.v1.json`: 62 kinds, each with its
 //! default line facts), the closed vocabularies of line facts
 //! (`data/tax-attributes.v1.json`) and the chart presets (`data/presets/`).
-//! All three are compiled in, so the binary and the PoC read the same bytes.
+//! All three are compiled in.
 //!
 //! A kind is accounting meaning, never form meaning (invariant 8): the
 //! bridge reads line facts, not account numbers.
@@ -83,7 +83,7 @@ impl AccountType {
 }
 
 /// The facts a line carries, as text in a closed vocabulary. `None` is
-/// "not set": [`Facts::normalized`] fills the defaults the PoC uses.
+/// "not set": [`Facts::normalized`] fills the defaults.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Facts {
     pub measure_side: Option<String>,
@@ -103,7 +103,7 @@ pub struct Facts {
     pub final_tax_withheld: Option<String>,
 }
 
-/// The fact names, in the PoC's order (`NormLine`).
+/// The fact names, in canonical order.
 pub const FACT_NAMES: [&str; 15] = [
     "measure_side",
     "income_class",
@@ -182,7 +182,7 @@ impl Facts {
         out
     }
 
-    /// The PoC's defaults (`normalizeLine`): income class `none`, document
+    /// The defaults: income class `none`, document
     /// `other`, person `self`, contribution side `none`, credit `none`,
     /// final tax `unknown`.
     pub fn normalized(&self) -> Facts {

@@ -1,4 +1,4 @@
-// The shell every Books inline card shares (docs/design/inline-cards.md). A card sits inside the Bot's card frame,
+// The shell every Books inline card shares. A card sits inside the Bot's card frame,
 // which draws the one header (the title, refresh, maximize); Books draws only the body, in the Bot's own card
 // language (the Bot's app/src/cards/mod.rs: 12 padding, 8 gap, 13 text, 12 notes, 28-point pill buttons, primary
 // first and right-aligned):

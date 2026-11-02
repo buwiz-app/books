@@ -14,7 +14,7 @@ path = "src/lib.rs"
 name = "books-mini-app"
 path = "src/main.rs"
 
-# The workspace-level tests (docs/05 §P0 lists `tests/`).
+# The workspace-level tests in `tests/`.
 [[test]]
 name = "jcs_vectors"
 path = "../../tests/jcs_vectors.rs"
@@ -111,17 +111,17 @@ path = "../../tests/receipt_evidence.rs"
 buwiz-plugin = { git = "https://github.com/buwiz-app/buwiz-sdk", rev = "79883a820597c623c9259cc0fac0c4166bdde093" }
 books-core = { path = "../books-core" }
 books-store = { path = "../books-store" }
-# Session certificates are signed with the ed25519 key the Bot provisions (spec 4.4).
+# Session certificates are signed with the ed25519 key the Bot provisions (protocol 1.0 §5.5).
 ed25519-dalek = { version = "2", default-features = false, features = ["zeroize"] }
-# Tickets: 130 bits from the OS CSPRNG (spec 9.5).
+# Tickets: 130 bits from the OS CSPRNG (protocol 1.0 §15.4).
 getrandom = "0.3"
-# Manifest hash, permissions digest and app fingerprints (spec 4.4, 5.2, 6.2).
+# Manifest hash, permissions digest and app fingerprints (protocol 1.0 §6.2, §11.2, §12).
 sha2 = "0.10"
 serde_json = "1"
 # A chart, journal or statement picked as an .xlsx or .xls reads as its CSV
 # (`sheets.rs`); values only, no number computed here.
 office_oxide = { version = "0.1.16", default-features = false }
-# M9: device sign-in to buwiz-cloud and the tax-profile list, over TLS
+# Device sign-in to buwiz-cloud and the tax-profile list, over TLS
 # (rustls); used only when BOOKS_CLOUD_URL is set.
 ureq = { version = "2.12", default-features = false, features = ["tls"] }
 
@@ -159,3 +159,11 @@ path = "../../tests/ledger_batch.rs"
 [[test]]
 name = "ledger_csv"
 path = "../../tests/ledger_csv.rs"
+
+[[test]]
+name = "engine_rules"
+path = "../../tests/engine_rules.rs"
+
+[[test]]
+name = "privacy_repo"
+path = "../../tests/privacy_repo.rs"

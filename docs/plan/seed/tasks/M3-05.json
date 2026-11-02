@@ -1,9 +1,0 @@
-{
- "milestone": "M3",
- "order": 4,
- "title": "Export CSV",
- "owner": "Claude",
- "status": "done",
- "evidence": "9d801a6 · CSV via rox.copy; protocol v1 has no save-file permission (preview/print is the other route)",
- "updated": "2026-10-29"
-}

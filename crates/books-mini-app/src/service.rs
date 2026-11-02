@@ -11,7 +11,7 @@ use serde_json::{Map, Value, json};
 use crate::jcs;
 use crate::jsonrpc::{fail, ok};
 
-/// Who a `tools/call` comes from (`_meta["buwiz/caller"]`, spec 8.4).
+/// Who a `tools/call` comes from (`_meta["buwiz/caller"]`, protocol 1.0 §16.1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Origin {
     App,
@@ -33,7 +33,7 @@ impl Origin {
     }
 
     /// The app sees names, memos and lines; the model sees totals and
-    /// tickets (D11 option a).
+    /// tickets.
     pub fn is_app(self) -> bool {
         self == Self::App
     }
@@ -102,11 +102,11 @@ pub struct Books {
     store: Option<Store>,
     /// The ticket of the Books home, which needs no store.
     home_ticket: Option<String>,
-    /// Picked files arriving in parts (M5).
+    /// Picked files arriving in parts.
     pub uploads: crate::oldbooks::Uploads,
-    /// The cloud sign-in (M9): memory only; the refresh token is in the store.
+    /// The cloud sign-in: memory only; the refresh token is in the store.
     pub cloud: crate::cloud::Session,
-    /// How Books reaches buwiz-cloud; `None` when no cloud is set (D19).
+    /// How Books reaches buwiz-cloud; `None` when no cloud is set.
     pub transport: Option<Box<dyn crate::cloud::Transport>>,
 }
 
@@ -143,7 +143,7 @@ impl Books {
         Ok(self.store.as_mut().expect("just opened"))
     }
 
-    /// The store, the cloud session and the transport at once (M9).
+    /// The store, the cloud session and the transport at once.
     pub fn cloud_parts(
         &mut self,
     ) -> Result<
@@ -184,7 +184,7 @@ impl Books {
         title(store, &kind, id)
     }
 
-    /// `buwiz.uninstall`: forget every ticket; the book stays (D10).
+    /// `buwiz.uninstall`: forget every ticket; the book stays.
     pub fn forget_tickets(&mut self) {
         self.home_ticket = None;
         if self.exists()
@@ -195,7 +195,7 @@ impl Books {
     }
 }
 
-/// The neutral title of a subject (P3, D1): no amount, TIN or legal name.
+/// The neutral title of a subject: no amount, TIN or legal name.
 /// A ticket's neutral title, for a scope token.
 pub fn title_of(store: &Store, ticket: &str) -> Option<String> {
     let (kind, id) = plumbing::subject(store.conn(), ticket).ok()??;

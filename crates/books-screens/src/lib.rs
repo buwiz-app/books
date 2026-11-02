@@ -1,3 +1,8 @@
+//! Books' native screens, `books.quiet` and `books.ledger`. The manifest
+//! declares their ids and ABI; `books-mini-app` serves the TSX apps. Fit
+//! follows layout, so fit counts can differ between the test stand-in and
+//! the engine.
+
 mod kit;
 mod ledger;
 mod quiet;

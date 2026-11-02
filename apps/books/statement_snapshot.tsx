@@ -1,4 +1,4 @@
-// Reconcile: the statement snapshot beside the match list (M10 parity).
+// Reconcile: the statement snapshot beside the match list.
 // Boxes come from Rust as percent text; the real page and the report show
 // through buwiz.preview (macOS), which runs books_app_reconcile_document as the app.
 

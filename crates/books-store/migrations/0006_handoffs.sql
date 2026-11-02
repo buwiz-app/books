@@ -1,8 +1,8 @@
--- Schema 6 (M7): a hand-off of one form's Books totals to the BIR draft.
+-- Schema 6: a hand-off of one form's Books totals to the BIR draft.
 -- The app's click makes it and attaches it to the chat; the assistant
--- fills the BIR draft with source `document` (D3); the owner's click in
+-- fills the BIR draft with source `document`; the owner's click in
 -- Books ("BIR shows these values") records the digest of what was handed
--- (B5). A later change to the inputs makes it out of date; a refresh
+-- A later change to the inputs makes it out of date; a refresh
 -- makes a new one and the old one is superseded. No TIN, no BIR ticket.
 
 CREATE TABLE handoff (

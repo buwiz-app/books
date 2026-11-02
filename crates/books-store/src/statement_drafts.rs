@@ -1,4 +1,4 @@
-//! Statements the assistant read (M10 parity reconcile-1): drafted lines
+//! Statements the assistant read: drafted lines
 //! with their page, box and confidence, kept apart from the statement until
 //! the user accepts them in the app. Books stores what it is given; it never
 //! reads the page itself. Money is integer centavos.

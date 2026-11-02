@@ -1,7 +1,7 @@
--- Schema 0003 (M4): month locks and their events, bank statements and
+-- Schema 0003: month locks and their events, bank statements and
 -- their lines, the book's default categories, and recategorized entries.
 
--- A month that is closed refuses every post and void dated in it (DD-16).
+-- A month that is closed refuses every post and void dated in it.
 -- A month with no row is open.
 CREATE TABLE period (
   book_id    INTEGER NOT NULL REFERENCES book (book_id),

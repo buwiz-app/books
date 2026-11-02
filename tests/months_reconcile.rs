@@ -1,7 +1,6 @@
-//! M4 on the golden book (synthetic): October matches the bank, a closed
+//! Months and reconcile on the golden book (synthetic): October matches the bank, a closed
 //! month refuses changes, reopening needs a reason, and "not sure yet"
-//! lines take a category. Exit: "October matches the bank in the demo; a
-//! closed month refuses changes."
+//! lines take a category.
 
 use books_mini_app::demo;
 use books_mini_app::service::{Books, Origin};

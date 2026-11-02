@@ -1,6 +1,6 @@
 // Buwiz Books, the window (app `books`). This file is the kit every page
 // shares; the plugin serves kit, pages and window joined into one source
-// (crates/books-mini-app/src/apps.rs). Imports only nsh and buwiz (spec 6.3);
+// (crates/books-mini-app/src/apps.rs). Imports only nsh and buwiz (protocol 1.0 §11.2);
 // data comes from buwiz.call alone, and every tool called is in the app's
 // permissions.tools. Money arrives as display text from Books: the app
 // never does arithmetic on an amount (invariant 2).
@@ -10,7 +10,7 @@ import { buwiz } from "buwiz";
 type Any = any;
 const PROPS = (buwiz.props || {}) as { ticket?: string; page?: string; account?: string; month?: string; filter?: string; form?: string; tax_option?: string; deduction?: string };
 
-/** Colors: the drawing's dark palette, with a light twin for each. */
+/** Colors: a dark palette, with a light twin for each. */
 const C = {
   bg: "bg-[#f6f6f4] dark:bg-[#151515]",
   rail: "bg-[#efefec] dark:bg-[#0f0f0f]",
@@ -32,7 +32,7 @@ const C = {
   violetBg: "bg-[#6a46c9] dark:bg-[#b79bff]",
 };
 
-/** Pill tones (`st` in the drawing). */
+/** Pill tones (`st`). */
 const PILL: Record<string, string> = {
   ok: "bg-[#dff3e8] dark:bg-[#123423] text-[#157a48] dark:text-[#3fcf89]",
   draft: "bg-[#f8ecd2] dark:bg-[#3a2e12] text-[#a2650f] dark:text-[#f3b64c]",
@@ -56,7 +56,7 @@ const rowKey = (row: Any) => JSON.stringify(row);
 
 const errText = (e: Any) => (e && e.message ? String(e.message) : String(e));
 
-/** A client_request_id: unique per call, never a subject (DD-17). */
+/** A client_request_id: unique per call, never a subject. */
 let seq = 0;
 const OPEN_TAG = String(Date.now()).slice(-8);
 const rid = () => `bk-${OPEN_TAG}-${(seq += 1)}`;

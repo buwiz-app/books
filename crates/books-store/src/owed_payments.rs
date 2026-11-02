@@ -1,4 +1,4 @@
-//! Settling unpaid documents in parts (M10 parity, unpaid-1).
+//! Settling unpaid documents in parts.
 //!
 //! Each settlement posts one money entry and keeps one `owed_payment` row
 //! linked to it. What is paid to date counts only rows whose entry is still

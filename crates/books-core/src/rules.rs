@@ -1,11 +1,9 @@
-//! The versioned data the bridge reads, compiled in so the binary and the
-//! PoC read the same bytes: the measures catalogue
+//! The versioned data the bridge reads, compiled in: the measures catalogue
 //! (`data/measures.v1.json`), the mapping rule sets (`data/rules/`), the
 //! crosswalks (`data/crosswalk/`), the kind catalogue and the closed
-//! vocabularies of line facts. Port of `poc/src/load.ts` `loadData()`,
-//! `vocabFrom()` and `indexCrosswalk()`, with the same pin checks: a rule
-//! set and its crosswalk name the same schema digest, and every rule set
-//! reads the loaded measures catalogue.
+//! vocabularies of line facts. Pin checks: a rule set and its crosswalk
+//! name the same schema digest, and every rule set reads the loaded
+//! measures catalogue.
 //!
 //! There is no rate, threshold or due-date file: Books loads no compliance
 //! data (ADR 0007). The raw JSON of the catalogue, the mappings, the Forms

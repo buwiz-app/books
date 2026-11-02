@@ -1,4 +1,4 @@
-//! Evidence classification review and the static preview (evidence-4); synthetic data only.
+//! Evidence classification review and the static preview; synthetic data only.
 use books_core::date::Date;
 use books_core::ledger::Basis;
 use books_mini_app::{

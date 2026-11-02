@@ -1,4 +1,4 @@
-//! M10 parity (reconcile-3): a finished statement locks its matched
+//! A finished statement locks its matched
 //! entries until it is reopened with a reason; flags are display only.
 //! Synthetic demo book and statement only.
 

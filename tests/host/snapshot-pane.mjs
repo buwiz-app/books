@@ -1,5 +1,5 @@
 // The reconcile snapshot pane, mounted headless on nsh-standin.mjs with a stand-in bridge (synthetic data only).
-// Usage: bun tests/host/snapshot-pane.mjs <dir holding node_modules/esbuild> (e.g. a Bot worktree's server/).
+// Usage: node tests/host/snapshot-pane.mjs <dir holding node_modules/esbuild> (e.g. a Bot worktree's server/).
 // Checks: page tabs work after a row is selected; selecting a row switches the pane to its page; "See the page"
 // and "Print reconciliation" stay reachable with a snapshot but no drawable rows; Print alone for a CSV statement.
 import { readFileSync } from "node:fs";

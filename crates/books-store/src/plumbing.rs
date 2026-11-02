@@ -1,6 +1,6 @@
-//! Idempotency (DD-17: every write takes a `client_request_id`; a repeat
+//! Idempotency (every write takes a `client_request_id`; a repeat
 //! returns the stored result), audit rows (no memo, TIN or amount) and
-//! tickets (spec 9.5: `tkt_` plus 26 Crockford base32 characters, 130 bits
+//! tickets (protocol 1.0 §15.4: `tkt_` plus 26 Crockford base32 characters, 130 bits
 //! from the OS CSPRNG), kept in the store so they survive a restart.
 
 use rusqlite::{Connection, OptionalExtension as _, params};
@@ -148,7 +148,7 @@ pub fn subject(conn: &Connection, ticket: &str) -> Result<Option<(String, i64)>>
         .optional()?)
 }
 
-/// Revoke every ticket (`buwiz.uninstall`). The book itself is kept (D10).
+/// Revoke every ticket (`buwiz.uninstall`). The book itself is kept.
 pub fn revoke_all(conn: &Connection) -> Result<()> {
     conn.execute(
         "UPDATE ticket SET revoked_at = ?1 WHERE revoked_at IS NULL",

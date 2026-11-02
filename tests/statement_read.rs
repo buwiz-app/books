@@ -1,4 +1,4 @@
-//! M10 parity reconcile-1: a statement the assistant read becomes a draft
+//! A statement the assistant read becomes a draft
 //! the user accepts in the app. Synthetic data only.
 
 use books_mini_app::jsonrpc::Server;

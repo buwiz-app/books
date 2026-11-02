@@ -1,6 +1,6 @@
 // Certificates: the 2307s customers sent, with status. Only a received 2307
 // counts toward a form; a 2306 is final tax and never does. Building SAWT is
-// the BIR app's (drawing: Books Mini App › Certificates).
+// the BIR app's.
 
 const certFilter = signal("all");
 const certSheet = signal(false);

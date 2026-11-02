@@ -1,6 +1,6 @@
 // Action cards, the Decision class: what is decided, then its buttons in the footer, and the click is the
 // user's. The assistant may draft; posting, categorizing, marking paid, matching and closing happen here,
-// behind a press (DD-20). Once done, a card settles to one line.
+// behind a press. Once done, a card settles to one line.
 
 /** The entry a card is about: its prop, else the newest of a ledger filter. */
 function firstEntry(filter: string) {

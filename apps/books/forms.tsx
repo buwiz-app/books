@@ -1,8 +1,7 @@
 // Forms: Books totals beside the BIR boxes they fill, for 2551Q, 1601-C and
 // 1701-MS. A number opens the lines behind it. The 1701-MS tax option is
 // read from the BIR draft (the assistant passes it); Books never sets it,
-// and switching it here only previews which boxes change (drawing: Books
-// Mini App › Forms; Books Tax Bridge › Map 3).
+// and switching it here only previews which boxes change.
 
 const formNow = signal(["2551Q", "1601C", "1701MS"].includes(String(PROPS.form)) ? String(PROPS.form) : "2551Q");
 const taxOption = signal(String(PROPS.tax_option || ""));

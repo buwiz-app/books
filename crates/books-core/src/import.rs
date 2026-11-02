@@ -1,7 +1,7 @@
-//! Bringing old books in (M5): a web Buwiz Books export, or CSV files (a
+//! Bringing old books in: a web Buwiz Books export, or CSV files (a
 //! chart and a journal), read into one [`Plan`] the store then applies.
-//! Pure: no store, no float. And Map 1: a suggested kind, with a
-//! confidence, for each imported account; the owner confirms it.
+//! Pure: no store, no float. Each imported account gets a suggested kind,
+//! with a confidence; the owner confirms it.
 //!
 //! Books reads only the fields it keeps. Nothing that holds a TIN is read:
 //! the web export's Philippine tax tables (`ph*`) are skipped whole, and
@@ -102,7 +102,7 @@ pub struct Plan {
     pub skipped: Vec<Skipped>,
 }
 
-/// What an imported account most likely is (plan 2.2, "Map 1").
+/// What an imported account most likely is.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Suggestion {
     /// A kind id of `data/categories.v1.json`, `mixed` or `unsure`.
@@ -955,7 +955,7 @@ pub fn parse_csv_journal(text: &str) -> Result<Vec<Entry>, String> {
     Ok(entries)
 }
 
-/// Map 1 keyword rules, most specific first: (words that start a word of
+/// Kind keyword rules, most specific first: (words that start a word of
 /// the name, kind, confidence). A rule applies only when the kind's type
 /// fits the account's.
 const KEYWORD_RULES: &[(&[&str], &str, u8)] = &[
@@ -1130,7 +1130,7 @@ fn compatible(a: AccountType, b: AccountType) -> bool {
         )
 }
 
-/// Map 1: the kind an imported account most likely is, with a confidence.
+/// The kind an imported account most likely is, with a confidence.
 /// Only kinds of a fitting type are suggested (revenue and other income fit
 /// each other, as do cost of revenue, expense and other expense).
 ///

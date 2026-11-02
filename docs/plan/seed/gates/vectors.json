@@ -1,8 +1,0 @@
-{
- "order": 4,
- "name": "Rust = PoC vectors",
- "result": "pass",
- "value": "17 / 17",
- "at": "2026-10-30",
- "note": "byte for byte (bf33be7); rechecked at 5de7f90"
-}

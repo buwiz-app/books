@@ -1,4 +1,4 @@
-// Monthly repeats on the Unpaid page (M10 parity, unpaid-3). A document
+// Monthly repeats on the Unpaid page. A document
 // marked "Repeat monthly" shows up here each month; the user adds the copy
 // with one click. Nothing adds a copy by itself.
 

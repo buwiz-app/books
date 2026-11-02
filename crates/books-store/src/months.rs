@@ -1,4 +1,4 @@
-//! M4: month locks (DD-16), bank statements and their matches, giving
+//! Month locks, bank statements and their matches, giving
 //! "not sure yet" lines a category, the book's default categories and its
 //! settings.
 //!
@@ -88,7 +88,7 @@ pub fn close(conn: &Connection, book: &Book, key: &str, reason: Option<&str>) ->
     Ok(())
 }
 
-/// Reopen a closed month: a reason is required (DD-16).
+/// Reopen a closed month: a reason is required.
 pub fn reopen(conn: &Connection, book: &Book, key: &str, reason: &str) -> Result<()> {
     if !is_closed(conn, book.id, key)? {
         return Err(error("not_closed", "That month is not closed."));

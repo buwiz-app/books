@@ -1,4 +1,4 @@
-//! People, tags and unpaid documents (M2).
+//! People, tags and unpaid documents.
 //!
 //! A person is a name and a kind (vendor, customer, employee, owner,
 //! lender, government); banks and cards are the book's cash and card
