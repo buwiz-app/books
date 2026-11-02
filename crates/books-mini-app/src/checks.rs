@@ -51,6 +51,11 @@ fn row(check: &str, left: (&str, i64), right: (&str, i64)) -> Value {
     })
 }
 
+/// A refusal about the form as the caller asked for it, not a fault in Books.
+fn form_level(refusal: &Refusal) -> bool {
+    refusal.code == forms::FORM_PERIOD || refusal.code == "invalid_args"
+}
+
 /// A filed box this check cannot compare; it is no difference, and the
 /// value is not repeated.
 fn not_compared(check: &str, why: &str) -> Value {
@@ -262,23 +267,33 @@ pub fn cross_checks(store: &Store, book: Book, args: &Map<String, Value>) -> Ans
         };
         let label = Period::parse(period).map_or_else(|| period.to_string(), |p| p.label());
         let check = format!("filed {} {label} {key} vs Books", form.as_str());
+        // the item's own context when it gives one (an empty one or null is
+        // none), else the latest hand-off's; anything but an object is refused
         let context = match f.get("form_context") {
-            Some(context @ Value::Object(_)) => context.clone(),
-            _ => handoffs
+            Some(Value::Object(context)) if !context.is_empty() => Value::Object(context.clone()),
+            None | Some(Value::Null) | Some(Value::Object(_)) => handoffs
                 .iter()
                 .find(|h| h.form == form.as_str() && h.period_key == period)
                 .and_then(|h| serde_json::from_str(&h.form_context).ok())
                 .unwrap_or_else(|| json!({})),
+            Some(_) => {
+                return Err(Refusal::invalid(
+                    "A filed value's `form_context` is an object, as books_form_proposal takes it.",
+                ));
+            }
         };
+        // the caller's mistakes about the form (a period it doesn't have, a
+        // form context it can't read) are rows; a fault in Books refuses
         let built = match forms::build(c, &book, form, period, &context) {
             Ok(built) => built,
-            Err(refusal) => {
+            Err(refusal) if form_level(&refusal) => {
                 rows.push(not_compared(
                     &check,
                     &format!("Books can't build it: {}", refusal.message),
                 ));
                 continue;
             }
+            Err(refusal) => return Err(refusal),
         };
         let books = built
             .proposal
@@ -306,4 +321,23 @@ pub fn cross_checks(store: &Store, book: Book, args: &Map<String, Value>) -> Ans
     Ok(
         json!({ "year": y, "rows": rows, "differences": differences, "not_compared": not_compared_count }),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn only_the_callers_form_mistakes_become_rows() {
+        assert!(form_level(&Refusal::new(forms::FORM_PERIOD, "period_kind")));
+        assert!(form_level(&Refusal::invalid(
+            "a form context Books can't read"
+        )));
+        for code in ["store", "engine", "bridge", "bridge_input", "internal"] {
+            assert!(
+                !form_level(&Refusal::new(code, "Books' own fault")),
+                "{code}"
+            );
+        }
+    }
 }

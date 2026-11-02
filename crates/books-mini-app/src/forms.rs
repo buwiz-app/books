@@ -19,6 +19,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use books_core::catalog::{AccountType, Catalog, Facts};
 use books_core::date::{Date, MONTHS, Period, PeriodKind};
+use books_core::engine_error::EngineError;
 use books_core::input::{FormCode, form_context_from_value, normalize_fixture};
 use books_core::ledger::{KindRef, Status};
 use books_core::money;
@@ -154,6 +155,10 @@ fn opening_shape(measure: &str) -> Option<(&'static str, bool, Facts)> {
         KindRef::Kind(kind.into()).facts_for(&own).normalized(),
     ))
 }
+
+/// The refusal code of a period the form does not have (a month for a
+/// quarterly form, a bad key): the caller's, not a fault in Books.
+pub const FORM_PERIOD: &str = "form_period";
 
 /// The book as the bridge's input, and the lines it holds.
 pub fn fixture(c: &Connection, book: &Book) -> Result<(Value, Vec<Held>), Refusal> {
@@ -385,9 +390,16 @@ pub fn build(
     let input =
         normalize_fixture(&fx, vocab).map_err(|e| Refusal::new("bridge_input", e.to_string()))?;
     let context = form_context_from_value(ctx).map_err(|e| Refusal::invalid(e.to_string()))?;
-    let mut proposal = build_proposal(data, &input, form, period, &context, None)
-        .map_err(|e| Refusal::new("bridge", e.to_string()))?;
-    let p = Period::parse(period).ok_or_else(|| Refusal::invalid("No such period."))?;
+    let mut proposal = build_proposal(data, &input, form, period, &context, None).map_err(|e| {
+        // a period the form doesn't have is the caller's; anything else is Books'
+        match &e {
+            EngineError::Proposal { code, .. } if code == "period_kind" || code == "bad_period" => {
+                Refusal::new(FORM_PERIOD, e.to_string())
+            }
+            _ => Refusal::new("bridge", e.to_string()),
+        }
+    })?;
+    let p = Period::parse(period).ok_or_else(|| Refusal::new(FORM_PERIOD, "No such period."))?;
     let in_window: Vec<&Held> = held_lines.iter().filter(|h| p.contains(h.date)).collect();
     let mut held = Vec::new();
     for m in &data.rules(form).mappings {

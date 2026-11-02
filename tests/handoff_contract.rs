@@ -440,6 +440,41 @@ fn a_filed_1701ms_box_compares_under_the_tax_option_its_hand_off_read() {
         "{row}"
     );
     assert_eq!(filed(b, "1,200,000", false)["ok"], true);
+    // an empty context or null is none, so the hand-off's applies; any other
+    // non-object refuses the call
+    for given in [json!({}), Value::Null] {
+        let out = ok(
+            b,
+            Origin::Agent,
+            "books_cross_checks",
+            json!({ "year": "2026", "filed": [{ "form": "1701MS", "period": "2026", "key": "frm1701MS:txtSalesRevenueNo5a", "value": "1,190,000", "form_context": given }] }),
+        );
+        let row = out["rows"].as_array().unwrap().last().unwrap().clone();
+        assert_eq!(
+            (row["ok"].as_bool(), row["compared"].as_bool()),
+            (Some(false), None),
+            "{given}: {row}"
+        );
+    }
+    let refused = call(
+        b,
+        Origin::Agent,
+        "books_cross_checks",
+        json!({ "year": "2026", "filed": [{ "form": "1701MS", "period": "2026", "key": "frm1701MS:txtSalesRevenueNo5a", "value": "1,200,000", "form_context": "graduated" }] }),
+    );
+    assert_eq!(
+        refused["structuredContent"]["code"], "invalid_args",
+        "{refused}"
+    );
+    // a period the form doesn't have is the caller's: a row, with the reason
+    let out = ok(
+        b,
+        Origin::Agent,
+        "books_cross_checks",
+        json!({ "year": "2026", "filed": [{ "form": "1601C", "period": "2026-Q1", "key": "frm1601c:txtTax14", "value": "1.00" }] }),
+    );
+    let row = out["rows"].as_array().unwrap().last().unwrap().clone();
+    assert_eq!(row["compared"], false, "{row}");
 }
 
 #[test]
