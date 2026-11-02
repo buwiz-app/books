@@ -4,6 +4,7 @@
   "description": "Your books in Buwiz Bot: today, the ledger, unpaid invoices and bills, reconcile, reports, people, accounts and tags. Only you post, void or close.",
   "author": { "name": "Buwiz" },
   "homepage": "https://github.com/buwiz-app/books",
+  "license": "Apache-2.0",
   "mcpServers": {
     "books": {
       "command": "${PLUGIN_ROOT}/bin/books-mini-app",

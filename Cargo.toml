@@ -5,7 +5,7 @@ members = ["crates/books-core", "crates/books-store", "crates/books-mini-app", "
 [workspace.package]
 edition = "2024"
 rust-version = "1.88"
-license = "UNLICENSED"
+license = "Apache-2.0"
 publish = false
 
 [workspace.lints.rust]
