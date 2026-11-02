@@ -1,37 +1,43 @@
 #!/usr/bin/env bash
-# tools/bir/slice-b-live.sh — Slice B, live: Books' Q3 2551Q into a real BIR draft on a scratch BIR profile, and
-# a later Books change marks the hand-off out of date (tests/host/slice-b-live.mjs). Headless, no port.
+# tools/bir/slice-b-live.sh — Slice B, live: Books' Q3 2551Q into a real eBIRForms draft on a scratch eBIRForms
+# data folder, and a later Books change marks the hand-off out of date (tests/host/slice-b-live.mjs). Headless, no
+# port. Not a check-all gate.
 #
-# The recipe is BIR's own broker harness (crates/bir-shell/v1-tests/broker.test.mjs):
-#   - the Bot's broker modules from a git worktree of the Bot repo at a pinned commit (never a branch switch in the
-#     Bot checkout itself), with server/node_modules symlinked;
-#   - a bir-mini-app debug build (crates/bir-shell, its own workspace, --features agent) that you build yourself in
-#     a worktree of the BIR repo, with your own CARGO_TARGET_DIR, under the Bot's scripts/wait-build lock;
-#   - BIR's HOME, BIR_DATABASE_PATH and a throwaway BIR_DB_KEY in this run's temp dir, EBIR_TEST_ENV=1,
-#     BIR_AUTH_BYPASS=1, BIR_SFTP_DRY_RUN=1, so BIR never opens the owner's database or reaches the Keychain;
+#   - the Bot's v1 broker modules from a git worktree of the Bot repo (never a branch switch in the Bot checkout
+#     itself), with server/node_modules symlinked;
+#   - release builds of books-mini-app (here) and of ebirforms-mini-app and its host-seed example (in EBIRFORMS_DIR),
+#     under the Bot's scripts/wait-build lock;
+#   - eBIRForms' data folder in this run's temp dir, seeded with eBIRForms' own synthetic taxpayer (host-seed), with
+#     BUWIZ_NO_KEYCHAIN=1 and its Buwiz account URL on a closed loopback port, so nothing reaches the owner's data,
+#     the Keychain or the network;
 #   - one throwaway test key (books-test-01, never gc-2026-01) and a trust file of this run only.
-# Everything is removed on exit (KEEP_TMP=1 keeps the temp dir; it holds test keys and the scratch BIR database).
+# Everything is removed on exit (KEEP_TMP=1 keeps the temp dir; it holds test keys and the scratch database).
 #
-# Env: BIR_MINI_APP_BIN  the bir-mini-app debug binary (required)
-#      BIR_DIR           the BIR source tree the binary was built from (mini apps, the made-up test taxpayer)
-#      BUWIZ_BOT_DIR     default /Volumes/goldcoders/Projects/rox
+# Env: EBIRFORMS_DIR     an eBIRForms mini app checkout (github.com/buwiz-app/ebirforms) (required)
+#      BUWIZ_BOT_DIR     a Buwiz Bot checkout with server/node_modules installed (required)
 #      BUWIZ_BOT_COMMIT  default origin/main
+#      EBIRFORMS_TARGET_DIR  eBIRForms' cargo target dir (default EBIRFORMS_DIR/target)
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-BOT_DIR="${BUWIZ_BOT_DIR:-/Volumes/goldcoders/Projects/rox}"
+BOT_DIR="${BUWIZ_BOT_DIR:-}"
 BOT_COMMIT="${BUWIZ_BOT_COMMIT:-origin/main}"
-BIR_BIN="${BIR_MINI_APP_BIN:-}"
-BIR_DIR="${BIR_DIR:-}"
+EBIR_DIR="${EBIRFORMS_DIR:-}"
 
 die() { echo "slice-b-live: $*" >&2; exit 2; }
-[ -x "$BIR_BIN" ] || die "set BIR_MINI_APP_BIN to a bir-mini-app debug build"
-[ -f "$BIR_DIR/crates/bir-shell/v1-tests/broker.test.mjs" ] || die "set BIR_DIR to the BIR source tree the binary was built from"
-[ -d "$BOT_DIR/server/node_modules/@modelcontextprotocol/sdk" ] || die "$BOT_DIR/server/node_modules is missing; install it in the Bot checkout yourself"
+[ -f "$EBIR_DIR/crates/ebirforms-mini-app/Cargo.toml" ] || die "set EBIRFORMS_DIR to an eBIRForms mini app checkout"
+[ -d "$BOT_DIR/server/node_modules/@modelcontextprotocol/sdk" ] || die "set BUWIZ_BOT_DIR to a Bot checkout with server/node_modules installed"
 command -v node >/dev/null || die "node is needed to run the Bot's broker modules"
+WAIT="$BOT_DIR/scripts/wait-build"
+[ -x "$WAIT" ] || WAIT=""
 
-cargo build --release --quiet -p books-mini-app --manifest-path "$REPO/Cargo.toml"
+${WAIT:+"$WAIT"} env CARGO_TARGET_DIR="$REPO/target" cargo build --release --quiet -p books-mini-app --manifest-path "$REPO/Cargo.toml"
 BIN="$REPO/target/release/books-mini-app"
+EBIR_TARGET="${EBIRFORMS_TARGET_DIR:-$EBIR_DIR/target}"
+${WAIT:+"$WAIT"} env CARGO_TARGET_DIR="$EBIR_TARGET" cargo build --release --quiet -p ebirforms-mini-app --bin ebirforms-mini-app \
+  --example host-seed --manifest-path "$EBIR_DIR/Cargo.toml"
+EBIR_BIN="$EBIR_TARGET/release/ebirforms-mini-app"
+[ -x "$EBIR_BIN" ] || die "no ebirforms-mini-app at $EBIR_BIN"
 
 # the physical path: the Bot's modules compare resolved paths
 TMP="$(cd "$(mktemp -d "${TMPDIR%/}/books-slice-b.XXXXXX")" && pwd -P)"
@@ -41,12 +47,16 @@ WT="$TMP/bot"
 cleanup() {
   git -C "$BOT_DIR" worktree remove --force "$WT" >/dev/null 2>&1 || true
   git -C "$BOT_DIR" worktree prune
-  if [ "${KEEP_TMP:-0}" = 1 ]; then echo "kept $TMP (test keys and the scratch BIR database; delete it after)" >&2; else rm -rf "$TMP"; fi
+  if [ "${KEEP_TMP:-0}" = 1 ]; then echo "kept $TMP (test keys and the scratch database; delete it after)" >&2; else rm -rf "$TMP"; fi
 }
 trap cleanup EXIT
 
 git -C "$BOT_DIR" worktree add --detach --quiet "$WT" "$BOT_COMMIT"
 ln -s "$BOT_DIR/server/node_modules" "$WT/server/node_modules"
-mkdir -m 700 "$TMP/run"
+mkdir -m 700 "$TMP/run" "$TMP/run/ebirforms"
 
-node --disable-warning=ExperimentalWarning "$REPO/tests/host/slice-b-live.mjs" "$WT" "$TMP/run" "$BIN" "$BIR_BIN" "$BIR_DIR"
+# eBIRForms' synthetic taxpayer in the scratch data folder
+touch "$TMP/run/ebirforms/host-test-scratch"
+EBIRFORMS_DATA_DIR="$TMP/run/ebirforms" BUWIZ_NO_KEYCHAIN=1 "$EBIR_TARGET/release/examples/host-seed"
+
+node --disable-warning=ExperimentalWarning "$REPO/tests/host/slice-b-live.mjs" "$WT" "$TMP/run" "$BIN" "$EBIR_BIN"

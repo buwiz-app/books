@@ -302,7 +302,7 @@ pub fn scopes() -> Value {
             "description": "proposal of Books totals for a BIR form",
             "resolve": crate::tools::RESOLVE,
             "attach": true,
-            "hint": "A Books proposal holds the input boxes of one BIR form. Read it with books_handoff_get. Open that form's BIR draft, fill the boxes once with source \"document\" (never \"user\"), read them back and compare each value exactly, then validate and save the draft. Never send or file. If Books says it is out of date, do not fill it."
+            "hint": "A Books proposal holds the input boxes of one BIR form. Read it with books_handoff_get and follow its `how`: ebirforms_form_open with its `form_open`, ebirforms_form_fill once with its `form_fill` as given (never source \"user\"), read back and compare as amounts (eBIRForms adds thousands separators; some forms show whole pesos), then validate and save the draft. Never queue, send or file. If Books says it is out of date, do not fill it."
         }
     ])
 }

@@ -215,16 +215,27 @@ pub fn cross_checks(store: &Store, book: Book, args: &Map<String, Value>) -> Ans
                 "Each filed value is {form, period, key, value}.",
             ));
         };
+        // eBIRForms shows amounts with thousands separators, some forms in
+        // whole pesos
+        let mut plain = value.trim().replace(',', "");
+        if !plain.contains('.') {
+            plain.push_str(".00");
+        }
         let filed =
-            money::parse(value).map_err(|e| Refusal::invalid(format!("filed value: {e}")))?;
+            money::parse(&plain).map_err(|e| Refusal::invalid(format!("filed value: {e}")))?;
         let built = forms::build(c, &book, form, period, &json!({}))?;
-        let now = built
+        let Some(now) = built
             .proposal
             .fill_args
             .get(key)
             .and_then(|v| money::parse(v).ok())
             .or_else(|| built.preview.get(key).copied())
-            .unwrap_or(0);
+        else {
+            return Err(Refusal::invalid(format!(
+                "Books has no value for {key} on {} {period}: compare only the boxes Books hands over.",
+                form.as_str()
+            )));
+        };
         let label = Period::parse(period).map_or_else(|| period.to_string(), |p| p.label());
         rows.push(row(
             &format!("filed {} {label} vs Books", form.as_str()),

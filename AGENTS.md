@@ -30,8 +30,8 @@ These cannot be inferred from the code.
 4. **The user's click does the work.** Tools with `Reach::App` (post, void, close and reopen a month, confirm, hand
    off, import, sign in, and the other changes a person makes) run only from the user's click in the Books app. The
    assistant saves drafts. Resolves and routines only read; a routine writes only the drafts it declares.
-5. **Books never sends, submits, files, queues or pays.** Never call `bir_form_send`, or any tool whose name contains
-   submit, queue, pay, paid, file or send. Values Books gives to BIR use fill source `document`.
+5. **Books never sends, submits, files, queues or pays.** Never call an eBIRForms queue or send tool, or any tool
+   whose name contains submit, queue, pay, paid, file or send. Values Books gives to BIR use fill source `document`.
 6. **The chart of accounts is not form meaning** ([ADR 0006](docs/adr/0006-tax-meaning-on-lines-not-accounts.md)).
    Accounting facts live on line attributes, and measures select lines by attribute. Never infer a form field from an
    account number or subtype, and never put a compliance choice on a line or profile.
@@ -54,7 +54,9 @@ These cannot be inferred from the code.
 - Throwaway Bot brokers use port 8810 or above and `BUWIZ_KEYSTORE=file:`, never the login Keychain. Port 8787 is the
   owner's broker. Never touch the owner's Bot data folder. Use a worktree of the Bot repo, and never switch branches
   in the Bot checkout itself.
-- The live Slice B test (`tools/bir/slice-b-live.sh`) runs only on a scratch BIR profile.
+- The live Slice B test (`tools/bir/slice-b-live.sh`) runs only on a scratch eBIRForms data folder.
+- The hand-off contract with eBIRForms is `tests/fixtures/handoff/`, the same files as eBIRForms'
+  `tests/fixtures/books-handoff/`, pinned by one hash in both repos (`tests/handoff_contract.rs`).
 - One protocol version, 1.0, with no shims for older names (2.0 and 2.1 were its pre-release numbering).
 - The Bot's signing and conformance tools are Node; run them from a Bot checkout, never copy them here.
 

@@ -438,7 +438,7 @@ fn handoff_create_schema() -> Value {
 fn cross_checks_schema() -> Value {
     json!({ "type": "object", "properties": {
         "book": { "type": "string" }, "year": { "type": "string" },
-        "filed": { "type": "array", "description": "Values BIR shows as filed, read from eBIRForms: [{form, period, key, value}].",
+        "filed": { "type": "array", "description": "Values BIR shows as filed, read from eBIRForms: [{form, period, key, value}]. Only boxes Books hands over; values as eBIRForms shows them (thousands separators, whole pesos) are fine.",
             "items": { "type": "object", "properties": { "form": { "type": "string" }, "period": { "type": "string" }, "key": { "type": "string" }, "value": { "type": "string" } } } } } })
 }
 
@@ -872,7 +872,7 @@ pub const TOOLS: &[Tool] = &[
         reach: Reach::Everyone,
         write: false,
         schema: handoff_ref,
-        description: "The input boxes of an attached Books proposal, to fill once into the BIR draft with source document. Refuses one the books no longer match.",
+        description: "The input boxes of an attached Books proposal, with the exact arguments for ebirforms_form_open (`form_open`, add the taxpayer's `tin`) and ebirforms_form_fill (`form_fill`: source document and this hand-off's `source_ref`). Fill once, as `how` says. Refuses one the books no longer match.",
     },
     Tool {
         name: HANDOFF_CONFIRM,
