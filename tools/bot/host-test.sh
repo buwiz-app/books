@@ -18,7 +18,7 @@
 #
 # Env: BUWIZ_BOT_DIR (default /Volumes/goldcoders/Projects/rox): a Buwiz Bot
 #        checkout holding BUWIZ_BOT_COMMIT
-#      BUWIZ_BOT_COMMIT (default 2f93df804520738d32137668424427de70ee85ee)
+#      BUWIZ_BOT_COMMIT (default 25afbb7966043ec3d5be8e240d09ab3aa1b907cc)
 #      BOOKS_HOST_PORT (default 8810)
 #      BOOKS_TEST_KEY_ID (default books-test-01)
 #      BUWIZ_BROKER_BIN (a buwiz-broker binary from buwiz-bot main; signs the manifest
@@ -27,7 +27,7 @@ set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 BOT_DIR="${BUWIZ_BOT_DIR:-/Volumes/goldcoders/Projects/rox}"
-BOT_COMMIT="${BUWIZ_BOT_COMMIT:-2f93df804520738d32137668424427de70ee85ee}"
+BOT_COMMIT="${BUWIZ_BOT_COMMIT:-25afbb7966043ec3d5be8e240d09ab3aa1b907cc}"
 PORT="${BOOKS_HOST_PORT:-8810}"
 KEY_ID="${BOOKS_TEST_KEY_ID:-books-test-01}"
 PLUGIN_ID="app.buwiz.books"
