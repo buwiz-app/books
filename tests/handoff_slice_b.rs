@@ -418,9 +418,12 @@ fn m7_06_cross_checks_agree_on_the_demo_and_flag_a_filed_difference() {
             { "form": "1601C", "period": "2026-09", "key": "frm1601c:TaxWithheld", "value": "1" },
             { "form": "1601C", "period": "2026-09", "key": "frm1601c:TaxWithheld", "value": "2" },
             { "form": "1601C", "period": "2026-09", "key": "frm1601c:txtTax14", "value": "42,000" },
-            // a box Books never hands over, and a value that is not an amount
-            { "form": "2551Q", "period": "2026-Q1", "key": "frm2551Qv2018:txtTIN1", "value": "123-456-789" },
+            // a box Books never hands over, and a period the form doesn't have
+            { "form": "1601C", "period": "2026-09", "key": "frm1601c:txtTIN1", "value": "123-456-789" },
+            { "form": "1601C", "period": "2026-Q1", "key": "frm1601c:txtTax14", "value": "42,000.00" },
+            // a blank or non-amount value on an amount box is a difference
             { "form": "2551Q", "period": "2026-Q1", "key": "txtATCAmt1", "value": "01/15/2026" },
+            { "form": "2551Q", "period": "2026-Q1", "key": "txtATCAmt1", "value": "" },
         ] }),
     );
     let rows: Vec<Value> = filed["rows"]
@@ -428,33 +431,53 @@ fn m7_06_cross_checks_agree_on_the_demo_and_flag_a_filed_difference() {
         .unwrap()
         .iter()
         .rev()
-        .take(5)
+        .take(7)
         .rev()
         .cloned()
         .collect();
-    let shown: Vec<(&str, &str, bool)> = rows
+    let shown: Vec<(&str, bool, bool)> = rows
         .iter()
         .map(|r| {
             (
                 r["left_shown"].as_str().unwrap(),
-                r["note"].as_str().unwrap(),
                 r["ok"].as_bool().unwrap(),
+                r["compared"] != false,
             )
         })
         .collect();
     assert_eq!(
         shown,
         [
-            ("1", "ok", true),
-            ("2", "different choice · open the form", false),
-            ("42,000.00", "ok", true),
-            ("—", "not compared · Books doesn't hand this box over", true),
-            ("—", "not compared · the filed value is not an amount", true),
+            ("1", true, true),
+            ("2", false, true),
+            ("42,000.00", true, true),
+            ("—", true, false),
+            ("—", true, false),
+            ("not an amount", false, true),
+            ("not an amount", false, true),
         ],
         "{filed}"
     );
-    assert_eq!(rows[3]["compared"], false);
-    assert_eq!(filed["differences"], 1, "only the different choice");
+    assert_eq!(
+        rows[3]["note"],
+        "not compared · Books doesn't hand this box over"
+    );
+    assert!(
+        rows[4]["note"]
+            .as_str()
+            .unwrap()
+            .starts_with("not compared · Books can't build it"),
+        "{}",
+        rows[4]
+    );
+    assert_eq!(
+        (
+            filed["differences"].as_i64(),
+            filed["not_compared"].as_i64()
+        ),
+        (Some(3), Some(2)),
+        "{filed}"
+    );
     assert!(
         !filed.to_string().contains("456-789"),
         "a box Books doesn't hand over is not repeated"

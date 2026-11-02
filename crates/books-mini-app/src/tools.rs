@@ -438,8 +438,8 @@ fn handoff_create_schema() -> Value {
 fn cross_checks_schema() -> Value {
     json!({ "type": "object", "properties": {
         "book": { "type": "string" }, "year": { "type": "string" },
-        "filed": { "type": "array", "description": "Values BIR shows as filed, read from eBIRForms: [{form, period, key, value}]. Only boxes Books hands over; values as eBIRForms shows them (thousands separators, whole pesos) are fine.",
-            "items": { "type": "object", "properties": { "form": { "type": "string" }, "period": { "type": "string" }, "key": { "type": "string" }, "value": { "type": "string" } } } } } })
+        "filed": { "type": "array", "description": "Values BIR shows as filed, read from eBIRForms: [{form, period, key, value, form_context?}]. Only boxes Books hands over; values as eBIRForms shows them (thousands separators, whole pesos) are fine. A 1701-MS value needs the tax option: pass `form_context` as books_form_proposal takes it, or Books uses the one its latest hand-off read.",
+            "items": { "type": "object", "properties": { "form": { "type": "string" }, "period": { "type": "string" }, "key": { "type": "string" }, "value": { "type": "string" }, "form_context": { "type": "object" } } } } } })
 }
 
 fn show_schema() -> Value {

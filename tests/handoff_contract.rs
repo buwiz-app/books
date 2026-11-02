@@ -5,7 +5,8 @@
 //! `ebirforms_form_fill`. One hand-off per form, made from the demo book, is
 //! kept in `tests/fixtures/handoff/`; eBIRForms keeps the same files in
 //! `tests/fixtures/books-handoff/` and fills each into a real draft. Both
-//! repos pin [`CONTRACT_SHA256`] over the four files, so a change on either
+//! repos pin [`CONTRACT_SHA256`] over the five files (with `amounts.json`, the
+//! amount rule both sides parse by), so a change on either
 //! side fails until both carry it. With `EBIRFORMS_DIR` set, this test also
 //! compares the files with the eBIRForms checkout's copy.
 //!
@@ -41,9 +42,12 @@ const FORMS: [(&str, &str, &str, &str); 3] = [
 /// eBIRForms' input schemas for the two tools, as its tools/list answers them.
 const SCHEMA_FILE: &str = "form-tools.schema.json";
 
-/// SHA-256 over the four files (names sorted, each `name\0bytes\0`). The same
+/// Amounts as a form shows them and their centavos, for both repos' parsers.
+const AMOUNTS_FILE: &str = "amounts.json";
+
+/// SHA-256 over the five files (names sorted, each `name\0bytes\0`). The same
 /// constant is in eBIRForms' `tests/fill_sources.rs`.
-const CONTRACT_SHA256: &str = "101d25a3f8197376de3368122ce23de1accfb394df444356317da7cbda74be77";
+const CONTRACT_SHA256: &str = "f5bdd660adf30fc98d65f7e5b950fca059afef5fbb483d1a0a8e6da003e721bd";
 
 fn dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/handoff")
@@ -162,6 +166,7 @@ fn pretty(value: &Value) -> String {
 fn contract_sha256(dir: &Path) -> String {
     let mut names: Vec<&str> = FORMS.iter().map(|f| f.3).collect();
     names.push(SCHEMA_FILE);
+    names.push(AMOUNTS_FILE);
     names.sort_unstable();
     let mut hash = Sha256::new();
     for name in names {
@@ -367,4 +372,86 @@ fn the_schema_check_refuses_what_ebirforms_would() {
         )
         .is_err()
     );
+}
+
+#[test]
+fn a_filed_1701ms_box_compares_under_the_tax_option_its_hand_off_read() {
+    let temp = TempDir::new("checks-1701ms");
+    let mut books = demo_books(&temp);
+    let b = &mut books;
+    let context = json!({ "/taxpayer/tax_option": "graduated", "/taxpayer/deduction": "osd" });
+    let filed = |b: &mut Books, value: &str, with_context: bool| {
+        let mut item = json!({ "form": "1701MS", "period": "2026", "key": "frm1701MS:txtSalesRevenueNo5a", "value": value });
+        if with_context {
+            item["form_context"] = context.clone();
+        }
+        let out = ok(
+            b,
+            Origin::Agent,
+            "books_cross_checks",
+            json!({ "year": "2026", "filed": [item] }),
+        );
+        out["rows"].as_array().unwrap().last().unwrap().clone()
+    };
+    // before any hand-off, without a form context: Books can't compare it
+    let row = filed(b, "1,200,000", false);
+    assert_eq!(row["compared"], false, "{row}");
+    assert!(
+        row["note"]
+            .as_str()
+            .unwrap()
+            .contains("can't compare it yet"),
+        "{row}"
+    );
+    // the owner acknowledges the year's return events, as before a hand-off
+    let view = ok(
+        b,
+        Origin::App,
+        "books_form_proposal",
+        json!({ "form": "1701MS", "period": "2026", "form_context": context }),
+    );
+    for (i, r) in view["returns"].as_array().into_iter().flatten().enumerate() {
+        ok(
+            b,
+            Origin::App,
+            "books_app_return_ok",
+            json!({ "client_request_id": format!("ack-1701ms-{i}"), "entry": r["ticket"] }),
+        );
+    }
+    // with the context, a filed value that isn't Books' is a difference
+    let row = filed(b, "1,190,000", true);
+    assert_eq!(
+        (row["ok"].as_bool(), row["compared"].as_bool()),
+        (Some(false), None),
+        "{row}"
+    );
+    assert_eq!(filed(b, "1,200,000", true)["ok"], true);
+    // after the owner hands 1701-MS over, its context is the one used
+    ok(
+        b,
+        Origin::App,
+        "books_app_handoff_create",
+        json!({ "client_request_id": "handoff-1701ms", "form": "1701MS", "period": "2026", "form_context": context }),
+    );
+    let row = filed(b, "1,190,000", false);
+    assert_eq!(
+        (row["ok"].as_bool(), row["left_shown"].as_str()),
+        (Some(false), Some("1,190,000.00")),
+        "{row}"
+    );
+    assert_eq!(filed(b, "1,200,000", false)["ok"], true);
+}
+
+#[test]
+fn amounts_read_as_the_shared_vectors_say() {
+    let vectors: Value =
+        serde_json::from_str(&std::fs::read_to_string(dir().join(AMOUNTS_FILE)).unwrap()).unwrap();
+    for v in vectors["vectors"].as_array().unwrap() {
+        let shown = v["shown"].as_str().unwrap();
+        assert_eq!(
+            books_core::money::parse_shown(shown).ok(),
+            v["centavos"].as_i64(),
+            "{shown:?}"
+        );
+    }
 }

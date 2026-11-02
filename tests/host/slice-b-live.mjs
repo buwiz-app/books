@@ -13,7 +13,7 @@
 // queued or sent. It prints step results only: no TIN, ticket, key or signature.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { pathToFileURL } from "node:url";
@@ -214,10 +214,13 @@ try {
   check("no TIN in any Books result, to the owner's app or the assistant", !seen.some((r) => r.plugin === BOOKS && tinIn(r.text)));
   check("no eBIRForms ticket in any Books result", !seen.some((r) => r.plugin === BOOKS && r.text.includes(taxpayer)));
   check("no TIN in eBIRForms' answers to the assistant (it names taxpayers by ticket)", !seen.some((r) => r.plugin === EBIR && tinIn(r.text)));
-  const logs = readdirSync(join(RUN, "logs")).map((f) => readFileSync(join(RUN, "logs", f), "utf8"));
+  // the broker's logs, and eBIRForms' own (its BUWIZ_LOG_DIR is <data folder>/logs)
+  const filesIn = (dir) => (existsSync(dir) ? readdirSync(dir, { recursive: true }).map((f) => join(dir, String(f))) : []);
+  const logFiles = [...filesIn(join(RUN, "logs")), ...filesIn(join(EBIR_DATA, "logs"))].filter((f) => statSync(f).isFile());
+  const logs = logFiles.map((f) => readFileSync(f, "utf8"));
   const secrets = readdirSync(join(RUN, "keys")).map((f) => readFileSync(join(RUN, "keys", f), "utf8").trim());
   const dbKey = existsSync(join(EBIR_DATA, "ebirforms.key")) ? readFileSync(join(EBIR_DATA, "ebirforms.key"), "utf8").trim() : "";
-  check("no TIN, plugin key or eBIRForms database key in the broker's logs", logs.length > 0 && !logs.some((t) => tinIn(t) || [...secrets, dbKey].some((k) => k && t.includes(k))));
+  check("no TIN, plugin key or eBIRForms database key in the broker's or eBIRForms' logs", logFiles.some((f) => f.startsWith(join(EBIR_DATA, "logs"))) && logs.length > 0 && !logs.some((t) => tinIn(t) || [...secrets, dbKey].some((k) => k && t.includes(k))));
 
   status = results.every((r) => r.ok) ? 0 : 1;
 } catch (e) {
