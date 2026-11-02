@@ -119,3 +119,8 @@ The proof of concept in `poc/` is TypeScript and runs on Bun. Use `bun`, not npm
 - Git: the first commit holds this research, design and PoC. The repo is `github.com/buwiz-app/books` (moved from `buwiz-corp/buwiz-books` on 2026-10-31; the old URL redirects); the local clone is `/Volumes/goldcoders/mini-apps/books`.
 - Owner decisions D4 (cash basis by default) and D9 (reuse `gc-2026-01`) are settled.
 - Open questions that block parts of the build: the BIR source label (D3), the 1701-MS election locks in Forms (B7), the tax review of the open mappings (2551Q row 1 net or gross sales, former D20), the owner of the 1601-C item 17 cap (DD-29), and the cloud repo of record (D13). Cloud blockers B1 and B11 are closed: buwiz-server PR #4 merged on 2026-10-29. D5, D6, D7 and D14 are handed to Forms. See `docs/07-decisions-and-blockers.md`.
+
+## License
+
+Buwiz Books is free and open source under the [Apache License 2.0](LICENSE)
+(`NOTICE` holds the copyright line), as Buwiz Bot is.
