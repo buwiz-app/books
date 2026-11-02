@@ -1,5 +1,5 @@
-//! M6: Payroll and Certificates, the two record pages the Forms page leans
-//! on. Amounts only (docs/08): no employee TIN, no 2316, no tax table.
+//! Payroll and Certificates, the two record pages the Forms page leans
+//! on. Amounts only: no employee TIN, no 2316, no tax table.
 //!
 //! - **A pay run** is one journal entry whose lines carry payroll facts
 //!   (`document_kind` `payroll_register`, the pay component, the employee

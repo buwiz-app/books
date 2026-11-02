@@ -1,4 +1,4 @@
-//! M10 parity (unpaid-1): an owed document settles in parts. Each part is
+//! An owed document settles in parts. Each part is
 //! one posted entry and one payment row; voiding a payment's entry puts
 //! the balance back. Synthetic book, people and amounts only.
 

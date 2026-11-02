@@ -1,4 +1,4 @@
-//! M6: the certificates customers send (2307, and the final-tax 2306). A
+//! The certificates customers send (2307, and the final-tax 2306). A
 //! certificate is a posted line with `document_kind` `certificate_2307` or
 //! `certificate_2306`; its status changes later (the paper arrives, or is
 //! lost) without touching the posted line, as a `certificate_status` row.

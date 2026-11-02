@@ -247,7 +247,7 @@ fn escaping_covers_every_markup_character() {
     );
 }
 
-/// evidence-4: the document library and its card preview evidence too.
+/// The document library and its card preview evidence too.
 fn calls_preview(id: &str) -> bool {
     match books_mini_app::apps::find(id).map(|app| app.source) {
         Some(books_mini_app::apps::AppSource::Tsx(source)) => source.contains(".preview("),
@@ -299,8 +299,8 @@ fn only_owed_print_calls_preview_and_it_hides_without_the_method() {
         }
     }
     callers.sort();
-    // reconcile-2 (statement snapshot), reports-4 (month pack), evidence-4 (evidence card)
-    // and evidence-2 (the draft card's receipt) preview too
+    // the statement snapshot, the month pack, the evidence card and the
+    // draft card's receipt preview too
     assert_eq!(
         callers,
         [

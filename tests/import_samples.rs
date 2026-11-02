@@ -1,7 +1,7 @@
-//! The M5 import samples (`fixtures/import/`): a web Buwiz Books export, a
+//! The import samples (`fixtures/import/`): a web Buwiz Books export, a
 //! QuickBooks chart and journal, and a plain spreadsheet chart and journal.
 //! Each parses; every entry balances; Q3 2026 sales are 300,000.00 and
-//! returns 10,000.00 in all three; Map 1 finds the sales, returns and bank
+//! returns 10,000.00 in all three; the kind suggester finds the sales, returns and bank
 //! accounts; and no name or memo keeps a run of nine digits.
 
 use books_core::catalog::AccountType;

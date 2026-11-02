@@ -1,9 +1,0 @@
-{
- "milestone": "M9",
- "order": 3,
- "title": "Trust entry for dev.goldcoders.books",
- "owner": "Rox owner",
- "status": "done",
- "evidence": "5bc6282: at the owner's word, dev.goldcoders.books (gc-2026-01) added to approved_plugins in the trust file the owner's Rox reads (Grok Shell.app's bundled server/trust.json); the rox session asked to add it to server/src/v1/trust.json",
- "updated": "2026-10-30"
-}

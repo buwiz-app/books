@@ -1,14 +1,14 @@
-//! M5/M6: the bridge over the store. The book becomes the PoC's input
-//! (`buwiz-poc-fixture/3`), normalized by the ported loader (closed
-//! vocabularies, the cash-basis rule), then the ported engine builds the
+//! The bridge over the store. The book becomes the engine's input
+//! (`buwiz-poc-fixture/3`), normalized by the loader (closed
+//! vocabularies, the cash-basis rule), then the engine builds the
 //! proposal (`books_core::proposal::build_proposal`), the same code the 17
 //! vectors prove.
 //!
-//! - **Holds (plan 2.2).** A line on an account that is "not sure yet", or
+//! - **Holds.** A line on an account that is "not sure yet", or
 //!   imported and not confirmed, or mixed without its own facts, goes in
 //!   with neutral facts and holds every box its account type could feed:
 //!   those boxes are not proposed, and the hold says why.
-//! - **Opening totals (plan 2.3).** Each comes in as one opening entry on
+//! - **Opening totals.** Each comes in as one opening entry on
 //!   its last day, so a measure counts it and its lineage shows it.
 //! - **Periods.** A quarter or a year is closed when every month in it is.
 //!
@@ -909,7 +909,7 @@ pub fn overview(store: &Store, book: Book, args: &Map<String, Value>) -> Result<
     Ok(json!({ "cards": cards }))
 }
 
-/// `books_app_form_lineage`: the ledger lines behind one box (app only, D11).
+/// `books_app_form_lineage`: the ledger lines behind one box (app only).
 pub fn lineage(store: &Store, book: Book, args: &Map<String, Value>) -> Result<Value, Refusal> {
     let form = form_arg(args)?;
     let period = text(args, "period").map_or_else(|| default_period(form), str::to_string);

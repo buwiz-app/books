@@ -1,9 +1,0 @@
-{
- "milestone": "M0",
- "order": 5,
- "title": "Answer the five plan decisions",
- "owner": "You",
- "status": "done",
- "evidence": "Answered in the build goal, 2026-10-29: void=Voided, import=web Books then CSV, confirm=owner, mid-year=opening totals, ctx=assistant passes form_context, amounts=asked-for cards only, TMP=templates",
- "updated": "2026-10-29"
-}

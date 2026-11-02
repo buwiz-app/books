@@ -1,5 +1,5 @@
-//! M9: sign-in to buwiz-cloud and the tax-profile link (docs/01 5.7, P-C4,
-//! P-C8). Optional (D19): Books works offline, and nothing here reaches the
+//! Sign-in to buwiz-cloud and the tax-profile link. Optional: Books works
+//! offline, and nothing here reaches the
 //! network until the user signs in or lists tax profiles. A release build
 //! signs in to `https://api.buwiz.com`; `BOOKS_CLOUD_URL` names another
 //! cloud, or, set empty, turns the cloud off. A debug build has no cloud
@@ -141,7 +141,8 @@ pub fn start(t: &dyn Transport, s: &mut Session) -> Answer {
     }))
 }
 
-/// Keep the new refresh token, then the access token (P-C4).
+/// Keep the new refresh token, then the access token: reusing an old
+/// refresh token revokes the whole grant.
 fn keep(c: &Connection, s: &mut Session, v: &Value) -> Result<(), Refusal> {
     let (Some(access), Some(refresh)) = (text_of(v, "access_token"), text_of(v, "refresh_token"))
     else {

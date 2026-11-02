@@ -1,4 +1,4 @@
-//! The payment history of one unpaid document (M10 parity, unpaid-1), as
+//! The payment history of one unpaid document, as
 //! `books_owed_list` `detail` when the call names `owed`.
 
 use books_core::date::Date;

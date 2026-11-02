@@ -2,7 +2,7 @@
 # tools/bot/conformance.sh — run the Buwiz Bot's plugin conformance tool
 # (buwiz-plugin-test) against the release build of books-mini-app.
 #
-# docs/06-testing-plan.md §13.2 steps 1-5, then the runner:
+# Steps 1-5, then the runner:
 #   1. build the release binary;
 #   2. a fresh 0700 temp dir outside the repo;
 #   3. a throwaway ed25519 test key (buwiz-plugin-test --keygen);

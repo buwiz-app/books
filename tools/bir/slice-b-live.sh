@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# tools/bir/slice-b-live.sh — M7 Slice B, live: Books' Q3 2551Q into a real BIR draft on a scratch BIR profile, and
+# tools/bir/slice-b-live.sh — Slice B, live: Books' Q3 2551Q into a real BIR draft on a scratch BIR profile, and
 # a later Books change marks the hand-off out of date (tests/host/slice-b-live.mjs). Headless, no port.
 #
-# The recipe is BIR's own broker harness (crates/bir-shell/v1-tests/broker.test.mjs), from the rox session
-# (2026-10-30):
+# The recipe is BIR's own broker harness (crates/bir-shell/v1-tests/broker.test.mjs):
 #   - the Bot's broker modules from a git worktree of the Bot repo at a pinned commit (never a branch switch in the
 #     Bot checkout itself), with server/node_modules symlinked;
 #   - a bir-mini-app debug build (crates/bir-shell, its own workspace, --features agent) that you build yourself in

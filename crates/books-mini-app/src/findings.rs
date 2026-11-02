@@ -1,4 +1,4 @@
-//! Review findings (M10 parity, ledger-2): what a bookkeeper would look at
+//! Review findings: what a bookkeeper would look at
 //! twice, computed from the ledger each time and never stored, so nothing
 //! is written and nothing needs dismissing. Bookkeeping hygiene only: no
 //! rates, thresholds of tax law or AI (invariant 1). Not the BIR cross-check

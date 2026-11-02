@@ -1,4 +1,4 @@
-//! M10 parity: a finished statement locks the entries matched to it. A
+//! A finished statement locks the entries matched to it. A
 //! void of such an entry is refused until the statement is reopened, with
 //! a reason, which keeps every match and writes a `statement_event`.
 

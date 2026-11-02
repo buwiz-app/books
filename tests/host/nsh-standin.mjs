@@ -8,7 +8,7 @@
 //     prop and called as `p.onChange(v)` fails here as it does in the Bot;
 //   - `<Input>`'s onChange gets `{ value }` (nsh docs/dev/elements.md).
 // It draws nothing: the tree is host nodes ({host, props, kids}) to query and press. Imports allowed are those of
-// spec 6.3 (`nsh`, `buwiz`); the caller supplies the bridge.
+// protocol 1.0 §11.2 (`nsh`, `buwiz`); the caller supplies the bridge.
 
 // ---- the reactive graph: signals, memos, effects, owners (Solid's algorithm, CLEAN / CHECK / DIRTY) ----
 

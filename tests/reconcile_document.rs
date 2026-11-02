@@ -1,6 +1,6 @@
-//! M10 parity reconcile-2: books_app_reconcile_document, the static pages
+//! books_app_reconcile_document, the static pages
 //! buwiz.preview shows (the reconciliation report and one statement page).
-//! Synthetic data only. Snapshots use reconcile-1's real migration columns
+//! Synthetic data only. Snapshots use the statement read's real migration columns
 //! (statement.evidence_id, statement_line page and bx0..by1 thousandths).
 
 use books_core::money;
@@ -374,7 +374,7 @@ fn the_window_grants_preview_and_the_document_tool_within_the_budget() {
         .unwrap()
         .iter()
         .filter(|a| a["id"] != "books")
-        // evidence-4: the document library and its card preview evidence
+        // the document library and its card preview evidence
         .filter(|a| {
             !matches!(
                 apps::find(a["id"].as_str().unwrap()).map(|app| app.source),

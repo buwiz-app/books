@@ -1,6 +1,4 @@
-//! Entries and the rules a post enforces, ported from the PoC
-//! (`poc/src/ledger.ts` `postLedger`, `poc/src/load.ts` `normalizeLine`
-//! and `checkCashBasis`):
+//! Entries and the rules a post enforces:
 //!
 //! - at least two lines; each line is a debit or a credit, never both,
 //!   never negative;
@@ -44,7 +42,7 @@ impl Basis {
     }
 }
 
-/// An entry's state (plan machine 1).
+/// An entry's state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Status {
     Draft,
@@ -74,7 +72,7 @@ impl Status {
     }
 }
 
-/// What an account means to the bridge (plan 2.2, "Map 1").
+/// What an account means to the bridge.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum KindRef {
     /// One kind: its default facts apply to every line.
@@ -110,7 +108,7 @@ impl KindRef {
     }
 
     /// A line's facts: the kind's defaults under the line's own facts,
-    /// then the PoC's defaults.
+    /// then the default facts.
     pub fn facts_for(&self, own: &Facts) -> Facts {
         match self {
             Self::Kind(id) => match Catalog::get().kind(id) {
@@ -297,7 +295,7 @@ pub fn check(lines: &[Line], basis: Basis) -> Result<(), LedgerError> {
 
 /// The reversal of posted lines: each line mirrored (debit and credit
 /// swapped), every fact kept, so a measure of the reversal is the exact
-/// negative of the original (`mirrors` in the PoC).
+/// negative of the original.
 pub fn mirror(lines: &[Line]) -> Vec<Line> {
     lines
         .iter()

@@ -1,9 +1,0 @@
-{
- "milestone": "M1",
- "order": 0,
- "title": "Spike: SQLCipher build and a strings test",
- "owner": "Claude",
- "status": "done",
- "evidence": "7e5f183 · SQLCipher (vendored OpenSSL); strings test: no plain text, wrong key refused · books-store 13 pass",
- "updated": "2026-10-29"
-}

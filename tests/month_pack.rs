@@ -1,4 +1,4 @@
-//! M10 reports-4: the month pack, a static print preview for `buwiz.preview`
+//! The month pack, a static print preview for `buwiz.preview`
 //! (synthetic golden book, `fixtures/demo/buwiz-trading-2026.json`).
 
 use books_mini_app::service::{Books, Origin};
@@ -158,7 +158,7 @@ fn only_the_window_may_preview_and_the_tool_is_app_only() {
             assert!(names.len() <= 64, "{} window tools", names.len());
         } else if !matches!(
             books_mini_app::apps::find(app["id"].as_str().unwrap()).map(|a| a.source),
-            // evidence-4: the document library and its card preview evidence
+            // the document library and its card preview evidence
             Some(books_mini_app::apps::AppSource::Tsx(source)) if source.contains(".preview(")
         ) {
             assert!(p.get("preview").is_none(), "{}", app["id"]);

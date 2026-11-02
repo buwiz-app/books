@@ -1,11 +1,8 @@
 //! The normalized input the measures engine reads: profiles with their
 //! accounting basis and period statuses, entries, lines carrying
-//! accounting facts only, and the acknowledged return events. Port of
-//! `poc/src/types.ts` and of the normalizing half of `poc/src/load.ts`
-//! (`normalizeFixture()`, `normalizeEntry()`, `normalizeLine()`,
-//! `normalizeProfile()`, `checkCashBasis()`).
+//! accounting facts only, and the acknowledged return events.
 //!
-//! Money stays two-place decimal text here, exactly as the PoC keeps it;
+//! Money stays two-place decimal text here;
 //! the posting step parses it to integer centavos. Memos and labels are
 //! dropped by normalizing, so they cannot reach a hash or a proposal. A
 //! line or profile carrying a compliance attribute (tax type, ATC,
@@ -66,8 +63,8 @@ impl FormCode {
 /// `/taxpayer/tax_option`). Books never decides, infers or defaults them.
 pub type FormContext = BTreeMap<String, String>;
 
-/// One journal line after normalization (`NormLine`). Every field is
-/// written to JSON, `null` included, so the hash matches the PoC's.
+/// One journal line after normalization. Every field is written to JSON,
+/// `null` included, so the hash matches the vectors.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NormLine {
     pub line_id: String,
@@ -325,9 +322,9 @@ fn string_map(v: Option<&Value>, what: &str) -> Result<BTreeMap<String, String>,
     }
 }
 
-/// Port of `isValidDate()`: `YYYY-MM-DD` naming a real day. As in the PoC
-/// (which builds the day with `Date.UTC`, mapping years 0 to 99 onto the
-/// 1900s), years below 100 are not valid.
+/// `YYYY-MM-DD` naming a real day. Years below 100 are not valid (the
+/// vectors were made with `Date.UTC`, which maps years 0 to 99 onto the
+/// 1900s).
 pub fn is_valid_date(text: &str) -> bool {
     let b = text.as_bytes();
     if b.len() != 10 || b[4] != b'-' || b[7] != b'-' {
@@ -723,12 +720,11 @@ pub fn normalize_profile(raw: &Value) -> Result<NormProfile, EngineError> {
     })
 }
 
-/// `ACCOUNTING_BASES` and `DEFAULT_ACCOUNTING_BASIS` (owner decision,
-/// 2026-10-29: cash by default).
+/// The accounting bases; cash is the default (ADR 0008).
 pub const ACCOUNTING_BASES: [&str; 2] = ["cash", "accrual"];
 pub const DEFAULT_ACCOUNTING_BASIS: &str = "cash";
 
-/// Port of `checkCashBasis()` (ADR 0008). A cash-basis book posts a sale on
+/// The cash-basis rule (ADR 0008). A cash-basis book posts a sale on
 /// the day the money is received and an expense on the day it is paid, so
 /// it has no trade receivable or payable lines, and its sales line carries
 /// the invoice it settles (`sale_invoice`), never `payment_receipt`.

@@ -1,8 +1,7 @@
-//! The Books store: one SQLCipher file per Mac, its key in a 0600 key file
-//! (ADR 0002, D2 option a). It refuses to open with a wrong key or when
-//! SQLCipher is not linked (an unlinked SQLite would ignore `PRAGMA key`
-//! and write plain text: risk RK-7), and records the cipher version it was
-//! created with.
+//! The Books store: one SQLCipher file per Mac, its key in a 0600 key file.
+//! It refuses to open with a wrong key or when SQLCipher is not linked (an
+//! unlinked SQLite would ignore `PRAGMA key` and write plain text), and
+//! records the cipher version it was created with.
 //!
 //! - [`Paths`]: where the file and the key live (`BOOKS_DATA_DIR`,
 //!   `BOOKS_DB_KEY_FILE`);

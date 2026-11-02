@@ -1,6 +1,6 @@
 //! Text a person types into Books (a book label, a payee, a memo, a
 //! reference) must not carry a TIN (invariants 3 and 4). Books refuses it
-//! with an explanation (open question Q-4, option a).
+//! with an explanation.
 //!
 //! A TIN is nine digits, optionally followed by a three- or five-digit
 //! branch, written with or without dashes or spaces. Amounts are not text a

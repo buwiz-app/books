@@ -1,5 +1,5 @@
 //! `books_owed_document`: one owed document as a static HTML print page for
-//! `buwiz.preview` (bridge.md, "Print preview"). A collect document is a
+//! `buwiz.preview` (protocol 1.0 §13.5). A collect document is a
 //! "Statement of account" and a pay document a "Bill record": Books issues
 //! no BIR documents (ADR 0007), so never an invoice or an official receipt.
 //!

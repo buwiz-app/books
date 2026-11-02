@@ -1,11 +1,12 @@
-//! MCP over stdio: JSON-RPC 2.0, one message per line (spec 14.3).
+//! MCP over stdio: JSON-RPC 2.0, one message per line.
 //!
 //! Methods: `initialize`, `ping`, `tools/list`, `tools/call`,
 //! `resources/list`, `resources/templates/list`, `resources/read`.
 //! Notifications get no answer. Resources (the manifest and TSX app
-//! sources) are readable before `buwiz.provision`; tools are not (P7).
+//! sources) are readable before `buwiz.provision`; tools are not
+//! (protocol 1.0 §6.1, §23.2 P7).
 //!
-//! Nothing is logged: no argument, no subject and never the key (P4).
+//! Nothing is logged: no argument, no subject and never the key (protocol 1.0 §23.2 P4).
 
 use std::io::{BufRead, Write};
 
@@ -32,7 +33,7 @@ the user posts, voids or closes, in the Books app. Books never computes tax, nev
 and never sends, files or pays anything.";
 
 // Result shapes are the SDK's: `structuredContent` for `ok`, a
-// `code`/`message` refusal for `fail` (spec 14.1).
+// `code`/`message` refusal for `fail`.
 pub use buwiz_plugin::{fail, ok};
 
 fn error_response(id: Value, code: i64, message: &str) -> Value {
@@ -43,7 +44,7 @@ struct Caller {
     origin: Origin,
     app: Option<String>,
     open_id: Option<String>,
-    /// The routine whose turn this is (spec 5.9), if any.
+    /// The routine whose turn this is, if any.
     routine: Option<String>,
 }
 
@@ -162,7 +163,7 @@ impl Server {
                 Some(Ok(result)) => Ok(result),
             };
         }
-        // P7: nothing before a successful provision
+        // nothing before a successful provision (protocol 1.0 §23.2 P7)
         if !self.host.provisioned() {
             return Err((INVALID_REQUEST, "buwiz.provision must come first".into()));
         }
@@ -176,24 +177,24 @@ impl Server {
         Ok(tools::call(name, arguments, caller.origin, &mut self.books).expect("a listed tool"))
     }
 
-    /// The origin checks Books owns (docs/01 §4.4), as BIR makes them.
+    /// The origin checks Books owns, as BIR makes them.
     fn authorize(&self, name: &str, caller: &Caller) -> Result<(), String> {
         let tool = tools::find(name).ok_or("no such tool")?;
-        // DD-20: post, void, close, reopen, confirm and hand-off are the
+        // post, void, close, reopen, confirm and hand-off are the
         // user's clicks in the Books app
         if tool.reach == tools::Reach::App && caller.origin != Origin::App {
             return Err(format!(
                 "{name} needs the user's click in the Books app; the assistant can save a draft instead"
             ));
         }
-        // P6: resolve and routine calls only read
+        // resolve and routine calls only read (protocol 1.0 §23.2 P6)
         if matches!(caller.origin, Origin::Resolve | Origin::Routine) && !tools::read_only(name) {
             return Err(format!(
                 "{name} changes Books data, so it does not run here"
             ));
         }
         // a routine's turn writes only what the routine declares, and Books
-        // lets a routine declare drafts only (P6, M8)
+        // lets a routine declare drafts only
         if let Some(routine) = &caller.routine
             && !tools::read_only(name)
             && !crate::cards::routine_writes(routine)

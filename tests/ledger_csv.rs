@@ -1,4 +1,4 @@
-//! ledger-4: `books_report_csv` with `kind: "ledger"` exports one row per
+//! `books_report_csv` with `kind: "ledger"` exports one row per
 //! line in date and entry order, two-place amounts, RFC 4180 with CRLF and
 //! a formula guard; the assistant gets no payee, memo, reference or person
 //! columns; the report kinds are unchanged. Synthetic data only.
@@ -272,7 +272,7 @@ fn ledger_csv_cell_guard() {
 }
 
 /// pl, bs, cf, tb and ag CSV are byte-identical to the goldens recorded
-/// from main before ledger-4. `BOOKS_BLESS=1` rewrites them.
+/// before the ledger CSV kind. `BOOKS_BLESS=1` rewrites them.
 #[test]
 fn report_kinds_are_unchanged() {
     let dir = TempDir::new("report-csv-golden");

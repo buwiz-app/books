@@ -1,4 +1,4 @@
-//! ledger-4: `books_app_batch` posts, discards or recategorizes many
+//! `books_app_batch` posts, discards or recategorizes many
 //! entries in one transaction, all or nothing, idempotent on its
 //! client_request_id; only the app may call it. Synthetic data only.
 
@@ -234,9 +234,9 @@ fn batch_refuses_the_assistant_and_bad_lists() {
     );
 }
 
-/// ledger-4 adds exactly two window tools, `books_app_batch` and the
-/// `books_ledger_list` the bulk panel reads, both under the 64 cap. The
-/// set before the task is the window's own grants with the bulk panel's
+/// The bulk panel adds exactly two window tools, `books_app_batch` and the
+/// `books_ledger_list` it reads, both under the 64 cap. The set before
+/// it is the window's own grants with the bulk panel's
 /// source taken out, so no count is written down here.
 #[test]
 fn the_window_grants_batch_and_ledger_list_within_the_cap() {

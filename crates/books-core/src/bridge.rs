@@ -1,6 +1,4 @@
 //! The bridge: accounting measures to Forms input boxes, with lineage.
-//! Port of `poc/src/bridge.ts` (`runBridge()`, `checkFormContext()`,
-//! `nontaxableThirteenthCentavos()` and what they use).
 //!
 //! The bridge reads Forms-provided choices (`form_context`) to pick between
 //! alternative boxes and never decides, infers or defaults them. It holds
@@ -23,7 +21,7 @@ use crate::money;
 use crate::posting::{Ledger, in_range, money_text, to_centavos};
 use crate::rules::{Aggregation, LoadedData, Mapping, RuleSet};
 
-/// A blocking item or warning (`Item`). `ids` is empty when the PoC omits it.
+/// A blocking item or warning. `ids` may be empty.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Item {
     pub code: String,

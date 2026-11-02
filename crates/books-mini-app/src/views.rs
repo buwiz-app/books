@@ -2,7 +2,7 @@
 //! text (`80,000.00`, `+80,000.00`, `−1,350.00`) and every bar as a whole
 //! percent, so an app never does arithmetic on money (invariant 2).
 //!
-//! The model sees totals and tickets only (D11 option a): payees, memos,
+//! The model sees totals and tickets only: payees, memos,
 //! references and lines are for the app.
 
 use std::collections::HashMap;
@@ -46,7 +46,7 @@ pub fn pct(part: i64, whole: i64) -> i64 {
     i64::try_from(p.min(100)).unwrap_or(100)
 }
 
-/// A category's dot color: by kind, as the drawing colors them.
+/// A category's dot color, by kind.
 pub fn color(a: &Account) -> &'static str {
     match &a.kind {
         KindRef::Unsure | KindRef::Mixed => "#ff7d75",
@@ -115,7 +115,7 @@ pub struct Summary {
     /// For a reversal: what the voided entry was.
     pub voided_what: Option<String>,
     /// A line sits on a "not sure yet" account: it holds every box it
-    /// could feed until the user picks a category (plan 2.2).
+    /// could feed until the user picks a category.
     pub unsure: bool,
 }
 

@@ -1,6 +1,6 @@
 //! The writes. Each runs inside [`service::write`]: one transaction, the
 //! `client_request_id` replay, an audit row. Posting, voiding and
-//! discarding are app-only (DD-20): the assistant and routines may only
+//! discarding are app-only: the assistant and routines may only
 //! draft.
 
 use books_core::catalog::{AccountType, Facts};
@@ -216,8 +216,7 @@ fn draft_input(
     })
 }
 
-/// The month gate: a post or void dated in a closed month is refused
-/// (DD-16).
+/// The month gate: a post or void dated in a closed month is refused.
 pub fn gate<'a>(
     conn: &'a Connection,
     book: &Book,
@@ -376,7 +375,7 @@ pub fn post(conn: &Connection, args: &Map<String, Value>) -> Answer {
 }
 
 /// `books_app_void_entry`: mark the entry voided and post its reversal,
-/// dated like the original (DD-15).
+/// dated like the original.
 pub fn void(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let book = book_in(conn, args)?;
     let e = entry_in(conn, &book, service::required(args, "entry")?)?;

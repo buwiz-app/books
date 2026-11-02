@@ -1,4 +1,4 @@
--- M10 parity reconcile-1: statements the assistant read, and where each line sits on its page.
+-- Statements the assistant read, and where each line sits on its page.
 ALTER TABLE statement ADD COLUMN evidence_id INTEGER REFERENCES evidence(id);
 ALTER TABLE statement_line ADD COLUMN balance INTEGER;
 ALTER TABLE statement_line ADD COLUMN page INTEGER CHECK (page IS NULL OR page BETWEEN 1 AND 500);

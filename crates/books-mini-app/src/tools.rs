@@ -1,10 +1,10 @@
-//! Books' own tools. Every name starts with `books_` (spec 5.3; RK-5: a
-//! tool that does not is skipped silently by the Bot's agent surface).
+//! Books' own tools. Every name starts with `books_` (a tool that does not
+//! is skipped silently by the Bot's agent surface).
 //!
-//! Who may call what (docs/01 §5.5, DD-20):
+//! Who may call what:
 //! - reads: the app and the assistant (the assistant gets totals and
-//!   tickets, never memos or lines; D11);
-//! - `books_entry_draft`: the app and the assistant (D16), and a routine
+//!   tickets, never memos or lines);
+//! - `books_entry_draft`: the app and the assistant, and a routine
 //!   that declares it;
 //! - `books_app_*`: the app only, behind a person's click. They carry
 //!   `_meta["buwiz/audience"] = ["app"]`, so the model never sees them.
@@ -1132,7 +1132,7 @@ pub fn names() -> Vec<&'static str> {
     TOOLS.iter().map(|t| t.name).collect()
 }
 
-/// Whether `name` changes nothing (`readOnlyHint`, P8).
+/// Whether `name` changes nothing (`readOnlyHint`, protocol 1.0 §23.2 P8).
 pub fn read_only(name: &str) -> bool {
     find(name).is_some_and(|t| !t.write)
 }
@@ -1458,7 +1458,7 @@ pub fn call(
             let mut out = read(books, arguments, |store, book, args| {
                 cards::show(store, book, args)
             });
-            // the card offer rides on the result's _meta (spec 9.6), never in the text
+            // the card offer rides on the result's _meta, never in the text
             if let Some(open) = out["structuredContent"]
                 .as_object_mut()
                 .and_then(|o| o.remove("_open"))
@@ -1695,7 +1695,7 @@ fn resolve(arguments: &Map<String, Value>, books: &mut Books) -> Value {
     }
 }
 
-/// A card offer as a resolve `open` (spec 9.2).
+/// A card offer as a resolve `open` (protocol 1.0 §15.2).
 fn card_result(open: Value) -> Value {
     let mut out = json!({ "result": "open", "app": open["app"], "props": open["props"], "title": open["title"], "placement": "inline" });
     if let Some(t) = open.get("ticket") {

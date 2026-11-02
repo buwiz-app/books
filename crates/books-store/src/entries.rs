@@ -1,7 +1,7 @@
 //! Entries and their lines. A draft can be saved half done; posting runs
 //! every ledger rule ([`books_core::ledger::check`]) on the book's basis. A
 //! posted entry never changes: a void marks it `voided` and posts a
-//! mirrored reversal dated like the original (DD-15), so both stay in the
+//! mirrored reversal dated like the original, so both stay in the
 //! ledger and the totals skip the pair.
 
 use books_core::catalog::Facts;
@@ -337,7 +337,7 @@ pub fn core_lines(conn: &Connection, rows: &[LineRow]) -> Result<Vec<ledger::Lin
         .collect()
 }
 
-/// A period gate the caller supplies (closed months refuse changes; M4).
+/// A period gate the caller supplies (closed months refuse changes).
 pub type Gate<'a> = &'a dyn Fn(Date) -> Result<()>;
 
 /// Post a draft: every ledger rule on the book's basis, then `posted`.

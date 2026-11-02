@@ -3,8 +3,8 @@
 //! chart presets ([`catalog`]), the ledger's posting rules ([`ledger`]) and
 //! the TIN refusal for typed text ([`privacy`]).
 //!
-//! The measures engine and the Forms bridge, ported from the PoC (`poc/src`)
-//! byte for byte against `fixtures/vectors/`: deterministic JSON
+//! The measures engine and the Forms bridge, checked byte for byte against
+//! `fixtures/vectors/`: deterministic JSON
 //! ([`canonical`]), the compiled-in rule sets and crosswalks ([`rules`]),
 //! the normalized input ([`input`]), posting for measurement ([`posting`]),
 //! the accounting measures with lineage ([`measures`]), the mapping onto

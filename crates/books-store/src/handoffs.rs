@@ -1,10 +1,10 @@
-//! M7: hand-offs of a form's Books totals to the BIR draft (schema 6).
+//! Hand-offs of a form's Books totals to the BIR draft (schema 6).
 //!
 //! The store keeps what was handed and when; whether a hand-off is still
 //! current is the mini app's question (it recomputes the proposal and
 //! compares the inputs hash). Books never reaches BIR: the assistant fills
 //! the BIR draft from what `books_handoff_get` gives it, with source
-//! `document` (D3), and the owner's click here confirms it (B5).
+//! `document`, and the owner's click here confirms it.
 
 use rusqlite::{Connection, OptionalExtension as _, Row, params};
 

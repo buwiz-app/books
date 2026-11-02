@@ -1,4 +1,4 @@
-//! The needs-review inbox (M10 parity, ledger-1) through the server: field
+//! The needs-review inbox through the server: field
 //! confidence and what-changed notes on drafts, the likely-duplicate flag,
 //! and the post gate the user clears with "Keep both". Synthetic data only.
 

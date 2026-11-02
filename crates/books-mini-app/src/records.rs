@@ -1,4 +1,4 @@
-//! M2 pages: People (one page, seven kinds), Tags (departments and
+//! Pages: People (one page, seven kinds), Tags (departments and
 //! locations) and Unpaid (to collect and to pay). Tool names avoid the
 //! words Books never uses for a tool (invariant 7: pay, paid, file, send,
 //! submit, queue), so the Unpaid tools are `books_owed_*` and marking a
@@ -20,7 +20,7 @@ use crate::service::{self, Answer, Origin, Refusal, text, ticket, with_subject};
 use crate::views::{self, Chart, Summary, pct, signed};
 use crate::writes;
 
-/// The People page's kinds, in the drawing's order.
+/// The People page's kinds, in display order.
 pub const KINDS: [(&str, &str); 7] = [
     ("banks", "Banks & cards"),
     ("vendors", "Vendors"),

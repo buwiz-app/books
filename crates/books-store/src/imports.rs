@@ -1,10 +1,10 @@
-//! M5: applying an import [`Plan`] to a book, the owner's account matches
-//! (Map 1), opening totals with proof for a mid-year start, and the
+//! Applying an import [`Plan`] to a book: the owner's account matches,
+//! opening totals with proof for a mid-year start, and the
 //! owner's OK of a return event.
 //!
 //! An import runs in the caller's one transaction: it all lands or none of
-//! it does. Every imported account starts unconfirmed with the kind Map 1
-//! suggests; its lines hold every box they could feed until the owner
+//! it does. Every imported account starts unconfirmed with its suggested
+//! kind; its lines hold every box they could feed until the owner
 //! confirms (owner decision: the owner confirms account matches).
 
 use books_core::catalog::{AccountType, Catalog, Facts};
@@ -63,7 +63,7 @@ fn free_number(conn: &Connection, book: &Book, ty: AccountType) -> Result<String
     ))
 }
 
-/// Apply `plan` to `book`. `suggest` is Map 1 (`books_core::import::suggest_kind`).
+/// Apply `plan` to `book`. `suggest` is the kind suggester (`books_core::import::suggest_kind`).
 pub fn apply(
     conn: &Connection,
     book: &Book,

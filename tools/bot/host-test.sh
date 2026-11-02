@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 # tools/bot/host-test.sh — the second-instance test: install Books in a real
-# Buwiz Bot broker and call it through the host routes, headless
-# (docs/06-testing-plan.md §13.2 steps 6-11).
+# Buwiz Bot broker and call it through the host routes, headless.
 #
-# The throwaway broker follows the rox session's recipe (2026-10-29):
+# The throwaway broker:
 #   - a git worktree of the Bot repo at a pinned commit (never a branch switch
 #     in the Bot checkout itself), with server/node_modules symlinked;
 #   - plain Node (src/app-server.mjs), no buwiz-broker build;
-#   - its own port (8810 or above; 8787 is the owner's, 8797-8803 the rox
-#     session's), its own GROK_DATA_DIR, a per-run BUWIZ_TRUST_FILE with a
+#   - its own port (8810 or above; 8787 is the owner's, 8797-8803 the
+#     Bot's own tests), its own GROK_DATA_DIR, a per-run BUWIZ_TRUST_FILE with a
 #     throwaway test key (never gc-2026-01), and BUWIZ_KEYSTORE=file:<dir>, so no
 #     plugin key reaches the login Keychain.
 # Then tests/host/books-host-test.mjs: inspect, install, resolve /books, open
@@ -18,7 +17,7 @@
 #
 # Env: BUWIZ_BOT_DIR (default /Volumes/goldcoders/Projects/rox): a Buwiz Bot
 #        checkout holding BUWIZ_BOT_COMMIT
-#      BUWIZ_BOT_COMMIT (default 25afbb7966043ec3d5be8e240d09ab3aa1b907cc)
+#      BUWIZ_BOT_COMMIT (default 5196cb720806bcaf5b52e28bd624797a15876756)
 #      BOOKS_HOST_PORT (default 8810)
 #      BOOKS_TEST_KEY_ID (default books-test-01)
 #      BUWIZ_BROKER_BIN (a buwiz-broker binary from buwiz-bot main; signs the manifest
@@ -27,14 +26,14 @@ set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 BOT_DIR="${BUWIZ_BOT_DIR:-/Volumes/goldcoders/Projects/rox}"
-BOT_COMMIT="${BUWIZ_BOT_COMMIT:-25afbb7966043ec3d5be8e240d09ab3aa1b907cc}"
+BOT_COMMIT="${BUWIZ_BOT_COMMIT:-5196cb720806bcaf5b52e28bd624797a15876756}"
 PORT="${BOOKS_HOST_PORT:-8810}"
 KEY_ID="${BOOKS_TEST_KEY_ID:-books-test-01}"
 PLUGIN_ID="app.buwiz.books"
 
 die() { echo "host-test: $*" >&2; exit 2; }
 [ "$KEY_ID" != "gc-2026-01" ] || die "the test key id must not be gc-2026-01"
-[ "$PORT" -ge 8810 ] 2>/dev/null || die "use a port of 8810 or above (8787 is the owner's broker, 8797-8803 the rox session's tests)"
+[ "$PORT" -ge 8810 ] 2>/dev/null || die "use a port of 8810 or above (8787 is the owner's broker)"
 ! lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1 || die "port $PORT is in use"
 [ -d "$BOT_DIR/server/node_modules/@modelcontextprotocol/sdk" ] || die "$BOT_DIR/server/node_modules is missing; install it in the Bot checkout yourself"
 command -v node >/dev/null || die "node is needed to run the Bot's broker and tools"
@@ -110,7 +109,7 @@ for _ in $(seq 1 150); do
 done
 [ -s "$TMP/data/host-token" ] || { tail -20 "$TMP/broker.log" >&2; die "the broker did not start"; }
 
-# The owner's own Bot keeps Books' plugin key in the login Keychain once Books is installed there (M9-05), so the
+# The owner's own Bot keeps Books' plugin key in the login Keychain once Books is installed there, so the
 # check is that this run left that entry as it was (its attributes only, never the secret) and used the file keystore.
 keychain_stamp() {
   security find-generic-password -s dev.goldcoders.rox.plugin-key -a "$PLUGIN_ID" 2>/dev/null | grep '"mdat"' || echo none

@@ -1,9 +1,0 @@
-{
- "milestone": "M9",
- "order": 2,
- "title": "Link the book to a tax profile by id",
- "owner": "Claude",
- "status": "done",
- "evidence": "811c22f: books_app_tax_link stores the opaque UUID only, for a profile the cloud lists now; a list with a TIN is refused",
- "updated": "2026-10-29"
-}

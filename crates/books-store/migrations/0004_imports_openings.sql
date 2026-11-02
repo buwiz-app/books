@@ -1,9 +1,9 @@
--- Schema 0004 (M5): where an account came from and its suggested kind
--- (Map 1), opening totals with proof for a mid-year start, the owner's OK
+-- Schema 0004: where an account came from and its suggested kind,
+-- opening totals with proof for a mid-year start, the owner's OK
 -- of a return event, and the import log.
 
 ALTER TABLE account ADD COLUMN source TEXT NOT NULL DEFAULT 'preset' CHECK (source IN ('preset', 'user', 'import'));
--- the kind Map 1 suggested and how sure (0 to 100); the owner confirms
+-- the suggested kind and how sure (0 to 100); the owner confirms
 ALTER TABLE account ADD COLUMN kind_suggested TEXT;
 ALTER TABLE account ADD COLUMN confidence INTEGER;
 -- the old books' name, when the imported account was matched to a preset one

@@ -1,7 +1,7 @@
 //! The golden book (`fixtures/demo/buwiz-trading-2026.json`, synthetic):
 //! seeded through the tools as the app, its reports must give the
-//! drawing's numbers (M3-04): the October P&L nets 251,151.00 and the trial
-//! balance at Oct 31 totals 1,224,548.40 a side. Then the M2 exits: People
+//! expected numbers: the October P&L nets 251,151.00 and the trial
+//! balance at Oct 31 totals 1,224,548.40 a side. Then People
 //! shows totals per person, and marking an invoice paid records the money
 //! on that day.
 
@@ -266,7 +266,7 @@ fn m1_m2_today_people_and_mark_paid_on_the_golden_book() {
         .unwrap();
     assert_eq!(ops["spent_shown"], "46,200.00");
 
-    // Unpaid: mark paid records the money on that day (M2 exit)
+    // Unpaid: mark paid records the money on that day
     let owed = call(
         b,
         "books_owed_list",
@@ -322,7 +322,7 @@ fn m1_m2_today_people_and_mark_paid_on_the_golden_book() {
         pl["net"]["shown"], "311,151.00",
         "the paid invoice is October income on a cash book"
     );
-    // marking paid is the user's click in the app (DD-20)
+    // marking paid is the user's click in the app
     assert_eq!(
         tools::find("books_app_owed_settle").unwrap().reach,
         tools::Reach::App

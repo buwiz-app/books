@@ -1,4 +1,4 @@
-//! Monthly repeats of unpaid documents (M10 parity, unpaid-3): the
+//! Monthly repeats of unpaid documents: the
 //! `books_app_owed_repeat` write and the repeat fields `books_owed_list`
 //! carries. The user adds each month's copy from the app; no routine and
 //! no assistant writes one (cards.rs routines change nothing here).

@@ -1,7 +1,6 @@
 // Old books: bring in a web Buwiz Books export or CSV files, match each
-// account once (Map 1: Books suggests, the owner confirms), and opening
-// totals with proof for a book that starts mid-year (drawing: Books Tax
-// Bridge › Map 1, Four starting points).
+// account once (Books suggests, the owner confirms), and opening
+// totals with proof for a book that starts mid-year.
 
 const csvChart = signal(null as Any);
 const csvJournal = signal(null as Any);

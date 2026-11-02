@@ -5,7 +5,7 @@
 //! `books-mini-app app-source <id>`: print a TSX app's served source, for the
 //! signing step (`sign-manifest.mjs --app <id>=<file>`).
 //! `books-mini-app seed <demo.json>`: replay a synthetic demo book into the
-//! store `BOOKS_DATA_DIR` names (the test the Bot and the golden tests).
+//! store `BOOKS_DATA_DIR` names (a test Bot and the golden tests).
 //! `books-mini-app package <plugin.json> <out> <platform> [--published <plugin.json>]`:
 //! fill a release's plugin.json (protocol 1.0 section 7) from the signed
 //! manifest and the binary in `<out>`, for `buwiz-broker sign-manifest
@@ -115,7 +115,7 @@ fn seed(file: &str) -> ExitCode {
     }
 }
 
-/// `^[a-z0-9][a-z0-9-]{0,63}$` (spec 5.4).
+/// `^[a-z0-9][a-z0-9-]{0,63}$` (protocol 1.0 §4).
 fn valid_key_id(id: &str) -> bool {
     let bytes = id.as_bytes();
     !bytes.is_empty()

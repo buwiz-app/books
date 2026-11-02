@@ -1,9 +1,0 @@
-{
- "milestone": "M1",
- "order": 9,
- "title": "Command description that does not repeat the plugin title",
- "owner": "Claude",
- "status": "done",
- "evidence": "7e5f183 · command description 'Open your books' (manifest test)",
- "updated": "2026-10-29"
-}

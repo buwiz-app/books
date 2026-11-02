@@ -1,9 +1,0 @@
-{
- "milestone": "M9",
- "order": 4,
- "title": "Sign with gc-2026-01 and install in your Rox",
- "owner": "You",
- "status": "done",
- "evidence": "5bc6282: signed with gc-2026-01 (Keychain, owner's Allow), verified against the trusted key; installed in the owner's Rox (broker 8787): inspect ok, install ok, /books opens Books, signed books_status answered",
- "updated": "2026-10-30"
-}

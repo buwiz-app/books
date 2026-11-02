@@ -1,4 +1,4 @@
--- Schema 0005 (M6): a certificate's status as it changes. A 2307 is a
+-- Schema 0005: a certificate's status as it changes. A 2307 is a
 -- posted line (document_kind certificate_2307) and a posted line never
 -- changes, so receiving the paper later, or losing it, is a row here; the
 -- latest row is the status the bridge reads. Only received ones count.

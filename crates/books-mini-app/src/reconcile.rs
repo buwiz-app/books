@@ -1,4 +1,4 @@
-//! M4 pages: Reconcile (accounts by month, then a statement beside the
+//! Pages: Reconcile (accounts by month, then a statement beside the
 //! ledger) and Settings (book, months, defaults, link and data), with
 //! their writes. Every write here is the user's click in the app.
 

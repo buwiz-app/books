@@ -1,7 +1,7 @@
 //! Amend by reversal through `books_app_void_entry {amend: true}` (no new
 //! window tool): the original is voided with a posted reversal and a draft
 //! replacement with the same lines opens for the user to correct and post.
-//! App-only like every void (DD-20). The reason goes to the store's
+//! App-only like every void. The reason goes to the store's
 //! `amendment` table and nowhere else: no result, title, card or log.
 
 use books_core::date::Date;

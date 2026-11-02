@@ -2,7 +2,7 @@
 // an entry, Post or Void) and the new-entry sheet (Money in, Money out,
 // Transfer, Journal). The Ledger itself is a native screen
 // (crates/books-screens); `openLedger` opens it. The assistant drafts; only
-// a click here posts or voids (DD-20).
+// a click here posts or voids.
 
 /** The open entry's ticket, for the drawer. */
 const drawerEntry = signal("");
@@ -162,7 +162,7 @@ function Kv(p: { k: string; v: Any }) {
 }
 
 /**
- * What the assistant read off a document (evidence-2): the suggested value
+ * What the assistant read off a document: the suggested value
  * beside the one the entry carries now, how sure the reading was, and the
  * evidence it came from. Read-only; `books_entry_get` sends `extraction` and
  * `evidence` to the app only.

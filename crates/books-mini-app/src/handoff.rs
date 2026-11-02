@@ -1,13 +1,13 @@
-//! M7: the hand-off to the BIR draft, model-mediated (docs/01 9.2, DD-11).
+//! The hand-off to the BIR draft, model-mediated.
 //!
 //! 1. The owner clicks "Hand to BIR draft": `books_app_handoff_create`
 //!    records the ready proposal's input boxes and the app attaches the
 //!    hand-off to the chat (`buwiz.attach("proposal", ticket)`).
 //! 2. The assistant reads it with `books_handoff_get` and fills the BIR
-//!    draft once with source `document` (D3), reads it back, validates and
+//!    draft once with source `document`, reads it back, validates and
 //!    saves a draft. Books never calls BIR, and nothing is ever sent.
 //! 3. The owner clicks "BIR shows these values":
-//!    `books_app_handoff_confirm` records `fill_args_sha256` (B5).
+//!    `books_app_handoff_confirm` records `fill_args_sha256`.
 //!
 //! A hand-off is current while the proposal's inputs hash is unchanged; a
 //! later change (a line, a reopened month, a certificate's status) makes it
@@ -30,7 +30,7 @@ use crate::forms::{self, Built};
 use crate::service::{Answer, Origin, Refusal, required, text, with_subject};
 use crate::writes;
 
-/// The source label the BIR fill takes (D3; never `user`, never `from_card`).
+/// The source label the BIR fill takes (never `user`, never `from_card`).
 pub const SOURCE: &str = "document";
 
 fn form_arg(args: &Map<String, Value>) -> Result<FormCode, Refusal> {

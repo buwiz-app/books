@@ -1,7 +1,7 @@
-//! M5: old books in. A web Buwiz Books export, or a CSV chart and journal,
+//! Old books in. A web Buwiz Books export, or a CSV chart and journal,
 //! become one import plan (`books_core::import`), applied in one
 //! transaction (`books_store::imports::apply`). Then the owner matches each
-//! imported account to a kind (Map 1: suggested, never assumed), enters
+//! imported account to a kind (suggested, never assumed), enters
 //! opening totals with proof for a mid-year start, and OKs return events.
 //!
 //! Files arrive in parts: the Bot caps one call's arguments at 256 KiB, so the
@@ -435,7 +435,7 @@ pub fn account_match(conn: &Connection, args: &Map<String, Value>) -> Answer {
     ))
 }
 
-/// `books_app_accounts_confirm`: confirm every suggestion Map 1 is sure of.
+/// `books_app_accounts_confirm`: confirm every suggestion the suggester is sure of.
 pub fn confirm_sure(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let book = writes::book_in(conn, args)?;
     let min = args

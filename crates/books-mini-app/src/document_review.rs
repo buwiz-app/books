@@ -16,7 +16,7 @@ use crate::writes;
 
 /// The ticket kind of a classification proposal.
 pub const PROPOSAL: &str = "evidence_proposal";
-/// The host's preview ceiling (Bot manifest.md: `permissions.preview.max_bytes`).
+/// The host's preview ceiling (protocol 1.0 §12: `permissions.preview.max_bytes`).
 pub const PREVIEW_MAX_BYTES: usize = 8 * 1024 * 1024;
 /// The card the assistant's proposal offers in the chat.
 pub const CARD_APP: &str = "document";
@@ -92,7 +92,7 @@ pub fn classify(books: &mut Books, name: &str, origin: Origin, args: &Map<String
             json!({ "proposal": proposal, "status": "draft", "kind": kind, "confidence": confidence, "_open": open }),
         )
     });
-    // the card offer rides on _meta (spec 9.6), as books_show's does
+    // the card offer rides on _meta, as books_show's does
     if let Some(open) = out["structuredContent"]
         .as_object_mut()
         .and_then(|o| o.remove("_open"))

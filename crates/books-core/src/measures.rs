@@ -1,5 +1,4 @@
-//! The accounting measures of `data/measures.v1.json`. Port of
-//! `poc/src/measures.ts` (`computeMeasure()` and its measure table).
+//! The accounting measures of `data/measures.v1.json`.
 //!
 //! Each measure selects posted lines by their accounting facts, never by
 //! account, and sums their signed centavos exactly. No rate, election,
@@ -9,9 +8,9 @@
 //! a measure deliberately leaves out are listed with the rule that excludes
 //! them.
 //!
-//! The catalogue lists 20 measures. The PoC implements 19 of them;
-//! `certificates_2316_received` is `planned` there and fails closed here
-//! with `measure_not_implemented`, as it does in the PoC.
+//! The catalogue lists 20 measures and 19 are implemented;
+//! `certificates_2316_received` is `planned` and fails closed with
+//! `measure_not_implemented`.
 
 use std::collections::{BTreeMap, HashSet};
 
@@ -69,7 +68,7 @@ pub fn is_compensation_component(component: Option<&str>) -> bool {
     component.is_some_and(|c| COMPENSATION_COMPONENTS.contains(&c))
 }
 
-/// `IMPLEMENTED_MEASURES`, in the PoC's order.
+/// The implemented measures, in catalogue order.
 pub const IMPLEMENTED_MEASURES: [&str; 19] = [
     "gross_sales",
     "sales_returns",
@@ -267,9 +266,9 @@ fn return_event_reason(l: &PostedLine, window: &Window) -> Option<&'static str> 
     None
 }
 
-/// Port of `computeMeasure()`: one measure over one window, with lineage.
-/// Fails with `measure_not_implemented` for a measure the PoC does not
-/// implement (fail closed).
+/// One measure over one window, with lineage. Fails with
+/// `measure_not_implemented` for a measure that is not implemented (fail
+/// closed).
 pub fn compute_measure(
     id: &str,
     ledger: &Ledger,

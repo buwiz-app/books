@@ -1,8 +1,0 @@
-{
- "order": 7,
- "name": "Privacy scan",
- "result": "pass",
- "value": "0 findings",
- "at": "2026-10-30",
- "note": "self-test, repo scan, Rust output scan; 5de7f90"
-}

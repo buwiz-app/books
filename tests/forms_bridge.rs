@@ -1,11 +1,11 @@
-//! M5 and M6 through the tools, on synthetic books only.
+//! Imports and the Forms page through the tools, on synthetic books only.
 //!
-//! - M5-06: the three sample charts (web Books, a QuickBooks CSV, a
+//! - The three sample charts (web Books, a QuickBooks CSV, a
 //!   spreadsheet CSV) give 2551Q Q3 2026 `txtATCAmt1` = 290,000.00 once
 //!   the owner confirms the matches, OKs the return and closes Q3; before
-//!   the matches are confirmed that box is held (M5-04).
-//! - M5-05: a mid-year start counts its opening totals, with proof.
-//! - M6-06..08: the Forms page reads payroll and received 2307s; a 2306
+//!   the matches are confirmed that box is held.
+//! - A mid-year start counts its opening totals, with proof.
+//! - The Forms page reads payroll and received 2307s; a 2306
 //!   and a pending 2307 never count; lineage is the app's only.
 
 use books_mini_app::service::{Books, Origin};
@@ -192,7 +192,7 @@ fn m5_06_three_sample_charts_give_the_same_2551q_box() {
         );
         assert_eq!(lin["rows"].as_array().unwrap().len(), 4, "{which}: {lin}");
         assert_eq!(lin["total_shown"], "290,000.00");
-        // the assistant never sees lines (D11): the broker hides the tool from it
+        // the assistant never sees lines: the broker hides the tool from it
         assert_eq!(
             tools::find("books_app_form_lineage").unwrap().reach,
             tools::Reach::App
@@ -389,7 +389,7 @@ fn m6_payroll_and_certificates_feed_the_forms_page() {
         "books_form_proposal",
         json!({ "form": "1601C", "period": "2026-09" }),
     );
-    // item 16 fails closed until its tax review: the drawing's "Ready · 1 held"
+    // item 16 fails closed until its tax review: "Ready · 1 held"
     assert_eq!(
         (c["status"].as_str(), c["status_label"].as_str()),
         (Some("ready_held"), Some("Ready · 1 held")),

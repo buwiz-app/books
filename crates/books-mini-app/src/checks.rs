@@ -1,4 +1,4 @@
-//! M7-06: cross-checks (plan 3.4). Each compares two ways of reaching the
+//! Cross-checks. Each compares two ways of reaching the
 //! same total and says ok or how far apart they are:
 //!
 //! - the four quarters' net sales against the year's (2551Q against

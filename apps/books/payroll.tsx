@@ -1,7 +1,7 @@
 // Payroll: pay runs and their gross pay, amounts only. Employee TINs, 2316s,
 // the tax table and the 1601-C filing are in the BIR app. A new run saves
 // as a draft with each employee's pay as payroll recorded it; Post makes it
-// count (drawing: Books Mini App › Payroll).
+// count.
 
 const runSheet = signal(false);
 

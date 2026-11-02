@@ -24,7 +24,7 @@ fn tsx_source(app: &apps::App) -> &'static str {
     }
 }
 
-/// A neutral title (D1, RK-10, invariant 13): no digits (amounts, TINs),
+/// A neutral title (invariant 13): no digits (amounts, TINs),
 /// no currency sign, and short.
 fn neutral(title: &str) {
     assert!(
@@ -51,7 +51,7 @@ fn the_manifest_has_the_books_identity() {
     assert_eq!(m["publisher"]["id"], "app.buwiz");
     assert_eq!(m["publisher"]["key_id"], "gc-2026-01");
     assert!(m.get("signature").is_none() && m.get("needs").is_none());
-    // Four routines (weekly review since M10), eight scopes, /books and five templates.
+    // Four routines, eight scopes, /books and five templates.
     assert_eq!(m["routines"].as_array().unwrap().len(), 4);
     assert_eq!(m["scopes"].as_array().unwrap().len(), 8);
     assert_eq!(m["commands"].as_array().unwrap().len(), 6);
@@ -60,7 +60,7 @@ fn the_manifest_has_the_books_identity() {
             .as_str()
             .unwrap()
             .starts_with("Open your books"),
-        "M1-10: not the plugin title again"
+        "not the plugin title again"
     );
     // a test run signs under a test key id; nothing else changes
     let test = manifest::unsigned("books-test-01");
@@ -178,7 +178,7 @@ fn every_books_tool_starts_with_books_and_every_named_tool_exists() {
         assert!(tool["description"].as_str().unwrap().chars().count() <= 1024);
         let write = !tools::read_only(name);
         assert_eq!(tool["annotations"]["readOnlyHint"], !write, "{name}");
-        // DD-20: every write but the draft is the user's click in the app
+        // every write but the draft is the user's click in the app
         let app_only = tool["_meta"]["buwiz/audience"] == serde_json::json!(["app"]);
         // the one read-only app-only tool: the print page for buwiz.preview
         let app_read = name == "books_owed_document" && !write;
@@ -199,7 +199,7 @@ fn every_books_tool_starts_with_books_and_every_named_tool_exists() {
                 "the assistant may only draft: {name}"
             );
         }
-        // P7 forbidden verbs (invariant 7)
+        // forbidden verbs (invariant 7)
         for verb in ["submit", "queue", "pay", "paid", "file", "send"] {
             assert!(!name.contains(verb), "{name} contains {verb}");
         }
@@ -303,7 +303,7 @@ fn no_float_type_appears_in_the_crates() {
     }
 }
 
-/// evidence-4: the document library's grants stay on its own apps.
+/// The document library's grants stay on its own apps.
 #[test]
 fn evidence_grants_stay_on_the_evidence_apps() {
     let m = manifest::unsigned(manifest::RELEASE_KEY_ID);
@@ -408,11 +408,11 @@ fn evidence_grants_stay_on_the_evidence_apps() {
     assert!(m["scopes"].as_array().unwrap().len() <= 16);
 }
 
-/// The package template (`package/plugin.json`, protocol 1.0 section 7)
-/// stays in step with the served manifest, and the SDK's `package` fills it
-/// from a release folder.
+/// The package template (`package/plugin.json`, protocol 1.0 §7) repeats
+/// nothing the signed manifest decides, and the SDK's `package` fills it
+/// from a release folder with the manifest's values.
 #[test]
-fn the_package_template_matches_the_manifest_and_fills() {
+fn the_package_template_leaves_the_manifest_fields_to_packaging() {
     let text = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../../package/plugin.json"
@@ -421,15 +421,13 @@ fn the_package_template_matches_the_manifest_and_fills() {
     let template: serde_json::Value = serde_json::from_str(&text).unwrap();
     let m = manifest::unsigned(manifest::RELEASE_KEY_ID);
     let b = &template["buwiz"];
-    assert_eq!(b["protocol"], m["protocol"]);
-    assert_eq!(b["protocol"], "1.0.0");
-    for key in ["id", "short", "version"] {
-        assert_eq!(b[key], m[key], "buwiz.{key}");
+    // the signed manifest decides these at packaging; the template repeats none
+    for key in ["protocol", "id", "short", "version", "publisher"] {
+        assert!(b.get(key).is_none(), "buwiz.{key} comes from the manifest");
     }
-    assert_eq!(template["version"], m["version"]);
-    assert_eq!(
-        b["publisher"],
-        serde_json::json!({ "id": "app.buwiz", "key_id": manifest::RELEASE_KEY_ID })
+    assert!(
+        template.get("version").is_none(),
+        "version comes from the manifest"
     );
     let server = b["server"].as_str().unwrap();
     let entry = &template["mcpServers"][server];
@@ -466,6 +464,16 @@ fn the_package_template_matches_the_manifest_and_fills() {
         None,
     )
     .unwrap();
+    let fb = &filled["buwiz"];
+    assert_eq!(fb["protocol"], "1.0.0");
+    for key in ["id", "short", "version"] {
+        assert_eq!(fb[key], m[key], "buwiz.{key}");
+    }
+    assert_eq!(filled["version"], m["version"]);
+    assert_eq!(
+        fb["publisher"],
+        serde_json::json!({ "id": "app.buwiz", "key_id": manifest::RELEASE_KEY_ID })
+    );
     let bin = &filled["buwiz"]["binaries"]["macos-aarch64"];
     assert_eq!(bin["path"], "bin/books-mini-app");
     assert_eq!(bin["asset"], "books-mini-app-macos-aarch64");

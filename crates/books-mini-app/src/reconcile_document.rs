@@ -22,12 +22,12 @@ use crate::service::{self, Refusal};
 /// kept under so the Bot never answers `result_too_large`.
 pub const MAX_DOCUMENT: usize = 8_000_000;
 
-/// A line's box on its page, as reconcile-1 stores it: page corners
+/// A line's box on its page, as the statement read stores it: page corners
 /// `[x0, y0, x1, y1]` in thousandths of the page.
 pub type Bbox = books_store::statement_drafts::Bbox;
 
 /// The statement's snapshot evidence and each line's page and box, in line
-/// order (reconcile-1's `statement.evidence_id` and `statement_line` columns).
+/// order (the statement read's `statement.evidence_id` and `statement_line` columns).
 fn snapshot_of(conn: &Connection, statement: i64) -> Result<(Option<i64>, Vec<Extra>), Refusal> {
     Ok(drafts::extras(conn, statement)?)
 }
@@ -50,7 +50,7 @@ pub fn box_css(b: &Bbox) -> String {
 }
 
 /// The `statement_view` hunk: whether the statement has a snapshot, and each
-/// row's `no`. Page and box come from reconcile-1's `view_extra`.
+/// row's `no`. Page and box come from the statement read's `view_extra`.
 pub fn snapshot_fields(
     store: &Store,
     s: &Statement,

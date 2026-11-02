@@ -1,4 +1,4 @@
-// Reconcile flags and reopen (M10 parity): display-only notes about a
+// Reconcile flags and reopen: display-only notes about a
 // statement's lines, and the reasoned reopen of a finished month.
 
 /** An amber panel listing the statement's flags; they never block Finish. */

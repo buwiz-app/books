@@ -1,4 +1,4 @@
-// "What is this document?" (evidence-4): the assistant's proposed kind for one Books document, as a generic kind,
+// "What is this document?": the assistant's proposed kind for one Books document, as a generic kind,
 // a whole-number confidence and a link count. Props are opaque tickets and a mode only. At most three buttons:
 // Accept, Discard, Preview; once decided, one button opens the matching Books page. Nothing here creates an entry,
 // an unpaid item, statement lines or a certificate: the page it opens is where the user does that.

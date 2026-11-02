@@ -1,5 +1,5 @@
 // Today: cash now, the month so far, unpaid totals, then what needs the
-// user and the quick actions (drawing: Books Mini App › Today).
+// user and the quick actions.
 
 const ICON_TONE: Record<string, string> = {
   rev: PILL.rev,

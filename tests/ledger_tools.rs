@@ -1,4 +1,4 @@
-//! The M1 tools through the server, as the Bot calls them: the app makes the
+//! The ledger tools through the server, as the Bot calls them: the app makes the
 //! book, the assistant drafts, only the app posts and voids, a repeat
 //! returns the stored result, every write leaves an audit row, the model
 //! sees totals and tickets but no payee or memo, and the store file holds
@@ -148,7 +148,7 @@ fn m1_book_draft_post_void_through_the_server() {
         )),
         "request_id_reused"
     );
-    // a TIN in the label is refused (Q-4 option a)
+    // a TIN in the label is refused
     assert_eq!(
         code(&bot.app(
             "books_app_book_create",
@@ -172,7 +172,7 @@ fn m1_book_draft_post_void_through_the_server() {
         "a repeat returns the stored draft"
     );
 
-    // the assistant cannot post or void (DD-20); the refusal says why
+    // the assistant cannot post or void; the refusal says why
     let post = json!({ "client_request_id": "post-supplies-01", "entry": entry });
     let refused = bot.agent("books_app_post_entry", post.clone());
     assert_eq!(code(&refused), "permission_denied");
@@ -189,7 +189,7 @@ fn m1_book_draft_post_void_through_the_server() {
         "an undeclared routine write"
     );
 
-    // the model's ledger view: amounts and tickets, no payee or memo (D11)
+    // the model's ledger view: amounts and tickets, no payee or memo
     let seen = bot.agent("books_ledger_list", json!({ "month": "2026-10" }));
     let text = seen.to_string();
     assert!(!text.contains(PAYEE) && !text.contains(MEMO), "{text}");
@@ -293,7 +293,7 @@ fn m1_book_draft_post_void_through_the_server() {
         "supplies, the voided sale and its reversal"
     );
 
-    // the ticket titles are neutral (P3)
+    // the ticket titles are neutral (protocol 1.0 §23.2 P3)
     let t = bot.raw(
         "buwiz.ticket.resolve",
         json!({ "ticket": entry }),
@@ -330,7 +330,7 @@ fn m1_book_draft_post_void_through_the_server() {
     assert_eq!(leaked, 0);
     drop(store);
 
-    // the encrypted file holds no plain text (M1 exit)
+    // the encrypted file holds no plain text
     let bytes = std::fs::read(dir.0.join("store/books.db")).unwrap();
     for needle in [
         MEMO,

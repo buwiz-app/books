@@ -1,6 +1,5 @@
-//! The PoC vectors (`fixtures/vectors/`), reproduced by the Rust engine
-//! byte for byte (M6-05). Port of the vector half of
-//! `poc/test/vectors.test.ts`.
+//! The vectors (`fixtures/vectors/`), reproduced by the Rust engine byte
+//! for byte.
 //!
 //! For each of the 16 case vectors: the Rust proposal built from the
 //! vector's `input`, `form`, `period` and `form_context` has the same

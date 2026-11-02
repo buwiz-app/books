@@ -1,4 +1,4 @@
-// Statement read (M10 parity reconcile-1): the lines the assistant read from
+// Statement read: the lines the assistant read from
 // a statement the user attached, shown beside the month before they count.
 // The user leaves lines out, gives the closing if the page had none, and
 // uses them or puts them aside. Books never reads the page itself.

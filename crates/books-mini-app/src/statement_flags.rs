@@ -1,4 +1,4 @@
-//! M10 parity (reconcile-3): display-only anomaly flags on a statement and
+//! Display-only anomaly flags on a statement and
 //! the reasoned reopen of a finished one. `books_app_statement_finish` with
 //! `reopen: true` reopens; otherwise it finishes and records the event.
 

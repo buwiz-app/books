@@ -1,8 +1,5 @@
 //! A proposal: accounting measures with lineage, and the fill arguments the
-//! bridge derived from them for Forms input boxes. Port of
-//! `poc/src/proposal.ts` (`buildProposal()`, `scopeInput()`,
-//! `onlyProfileId()`, `computeInputsHash()`, `freshness()`,
-//! `assertFillKey()`, `assertFillable()` and the crosswalk discipline).
+//! bridge derived from them for Forms input boxes.
 //!
 //! A proposal carries no tax amount, rate, due date or penalty: Forms
 //! computes those. Only crosswalk input keys with a fill policy are ever
@@ -31,7 +28,7 @@ pub const PROPOSAL_FORMAT: &str = "buwiz-poc-proposal/3";
 const FILL_POLICIES: [&str; 3] = ["fill_mvp", "fill_p6", "fill_p7"];
 
 /// Election inputs that Forms owns and has not locked against the profile
-/// election (verify.md s2 #3, #10; B7).
+/// election.
 const ELECTION_RULES: [&str; 4] = ["1701MS.I.12", "1701MS.I.17", "1701MS.I.18", "2551Q.I.13"];
 
 fn is_fill_policy(policy: &str) -> bool {
@@ -319,7 +316,6 @@ fn hashed_inputs(
                     .is_some_and(|end| end >= year_start.as_str() && end <= period_end.as_str())
             })
     };
-    // Indices into scope.entries: the PoC's Set holds entry objects.
     let mut scoped: Vec<usize> = (0..scope.entries.len())
         .filter(|i| in_window(&scope.entries[*i]))
         .collect();

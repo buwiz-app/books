@@ -1,9 +1,0 @@
-{
- "milestone": "M2",
- "order": 0,
- "title": "People page: 7 kinds, list and details, no TIN",
- "owner": "Claude",
- "status": "done",
- "evidence": "9d801a6 · People: 7 kinds, totals per person, no TIN; the model sees no names · golden_reports",
- "updated": "2026-10-29"
-}

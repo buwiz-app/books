@@ -1,7 +1,5 @@
-//! The errors of the measures engine and the bridge. The PoC throws one
-//! class per concern (`InputError`, `LedgerError`, `CrosswalkViolation`,
-//! `ProposalError`, `MoneyError`); here they are one enum so a caller can
-//! match on the concern and, where the PoC has one, on the code.
+//! The errors of the measures engine and the bridge: one enum, so a caller
+//! can match on the concern and, where it has one, on the code.
 
 use std::fmt;
 
@@ -10,26 +8,26 @@ use crate::money::MoneyError;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EngineError {
-    /// `InputError` (poc/src/load.ts): the input breaks a closed vocabulary,
+    /// The input breaks a closed vocabulary,
     /// carries a compliance attribute or breaks the cash-basis rule.
     Input(String),
-    /// `LedgerError` (poc/src/ledger.ts), with its code: unbalanced,
+    /// A ledger error, with its code: unbalanced,
     /// line_sides, duplicate_id, orphan_reversal, reversed_twice,
     /// reversal_not_mirror, reversal_before_original, measure_not_implemented,
     /// netting_mismatch, counted_twice, and money_overflow (Rust only: a sum
-    /// beyond `i64`, which the PoC's bigint never meets).
+    /// beyond `i64`).
     Ledger { code: String, detail: String },
-    /// `CrosswalkViolation` (poc/src/proposal.ts): a value the bridge must
+    /// A crosswalk violation: a value the bridge must
     /// never send.
     Crosswalk(String),
-    /// `ProposalError` (poc/src/proposal.ts), with its code: no_profile,
+    /// A proposal error, with its code: no_profile,
     /// profile_required, period_kind, bad_period, not_ready, stale.
     Proposal { code: String, message: String },
-    /// `MoneyError` (poc/src/money.ts).
+    /// A money error.
     Money(String),
-    /// A value outside canonical JSON (poc/src/canonical.ts).
+    /// A value outside canonical JSON.
     Canonical(String),
-    /// A data file that does not load or whose pins disagree (loadData()).
+    /// A data file that does not load or whose pins disagree.
     Data(String),
 }
 
@@ -52,7 +50,7 @@ impl EngineError {
         Self::Input(message.into())
     }
 
-    /// The PoC error code, where the PoC class has one.
+    /// The error code, for a ledger or proposal error.
     pub fn code(&self) -> Option<&str> {
         match self {
             Self::Ledger { code, .. } | Self::Proposal { code, .. } => Some(code),

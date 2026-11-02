@@ -1,6 +1,6 @@
 //! The privacy gate's Rust part: on a synthetic book, everything the
 //! assistant can read carries no memo, payee, reference or TIN-like run;
-//! every ticket title is neutral (P3); the store file holds none of them as
+//! every ticket title is neutral; the store file holds none of them as
 //! plain text. A scanner that catches nothing proves nothing, so the needles
 //! are planted first and the app's own view must show them.
 

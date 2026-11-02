@@ -1,6 +1,6 @@
 // Reconcile: accounts down, months across (red means to do), then a
 // statement beside Books with matches, suggestions and missing lines, the
-// difference, and Finish (drawing: Books Mini App › Reconcile).
+// difference, and Finish.
 
 const recAccount = signal("");
 const recMonth = signal("");
