@@ -3,8 +3,11 @@
 //! the assistant does it, and a later change marks the
 //! hand-off out of date until the owner refreshes it.
 //!
-//! The fake BIR takes a fill only with source `document` and only on
-//! input keys the 2551Q crosswalk lets Books fill; it has no send.
+//! The fake eBIRForms takes `ebirforms_form_fill`'s arguments as the real
+//! one does (`user` only from a card; a `source_ref` is {plugin, handoff,
+//! inputs_hash}); it has no send. It also holds Books to its own rule: only
+//! input keys the 2551Q crosswalk lets Books fill. `handoff_contract` and
+//! eBIRForms' own test check the real tool.
 
 use std::collections::BTreeMap;
 
@@ -55,9 +58,22 @@ impl FakeBir {
         self.opened = Some((form.into(), year, period));
     }
 
-    fn fill(&mut self, fields: &Map<String, Value>, source: &str) -> Result<(), String> {
-        if source != "document" {
-            return Err(format!("source {source} is not the hand-off label"));
+    fn fill(&mut self, args: &Value) -> Result<(), String> {
+        let fields = args["fields"].as_object().ok_or("`fields` is required")?;
+        let source = args["source"].as_str().unwrap_or("ai");
+        if source == "user" && args["from_card"] != true {
+            return Err("source user is only a card answer".into());
+        }
+        if let Some(r) = args.get("source_ref") {
+            let keys: Vec<&str> = r
+                .as_object()
+                .ok_or("source_ref")?
+                .keys()
+                .map(String::as_str)
+                .collect();
+            if keys != ["handoff", "inputs_hash", "plugin"] {
+                return Err(format!("source_ref has {keys:?}"));
+            }
         }
         let data = rules::shared().unwrap();
         let crosswalk = data.crosswalk(FormCode::F2551Q);
@@ -178,6 +194,22 @@ fn slice_b_q3_2551q_reaches_a_bir_draft_and_a_later_change_marks_it_out_of_date(
         Value::Object(fill.clone()),
         json!({ "txtATCAmt1": "290000.00", "frm2551Qv2018:txt15": "0.00" })
     );
+    // eBIRForms' arguments, ready to pass: form_open (plus the taxpayer) and form_fill
+    assert_eq!(
+        got["form_open"],
+        json!({ "code": "2551Q", "year": 2026, "period": 3 })
+    );
+    let form_fill = got["form_fill"].clone();
+    assert_eq!(form_fill["fields"], Value::Object(fill.clone()));
+    assert_eq!(form_fill["source"], "document");
+    assert_eq!(form_fill["source_ref"]["plugin"], "app.buwiz.books");
+    assert_eq!(
+        form_fill["source_ref"]["inputs_hash"]
+            .as_str()
+            .unwrap()
+            .len(),
+        64
+    );
     let text = got.to_string();
     assert!(
         !text.contains("\"e") && !text.contains("tkt_"),
@@ -189,11 +221,13 @@ fn slice_b_q3_2551q_reaches_a_bir_draft_and_a_later_change_marks_it_out_of_date(
         got["year"].as_i64().unwrap(),
         got["bir_period"].as_i64().unwrap(),
     );
+    let mut as_user = form_fill.clone();
+    as_user["source"] = json!("user");
     assert!(
-        bir.fill(&fill, "user").is_err(),
+        bir.fill(&as_user).is_err(),
         "a Books value is never the user's"
     );
-    bir.fill(&fill, got["source"].as_str().unwrap()).unwrap();
+    bir.fill(&form_fill).unwrap();
     // read back: every input equals its fill_args string exactly
     for (k, v) in &fill {
         assert_eq!(bir.fields.get(k).map(String::as_str), v.as_str(), "{k}");
@@ -348,10 +382,104 @@ fn m7_06_cross_checks_agree_on_the_demo_and_flag_a_filed_difference() {
         json!({ "year": "2026", "filed": [{ "form": "2551Q", "period": "2026-Q1", "key": "txtATCAmt1", "value": "295000.00" }] }),
     );
     let last = filed["rows"].as_array().unwrap().last().unwrap().clone();
-    assert_eq!(last["check"], "filed 2551Q Q1 2026 vs Books");
+    assert_eq!(last["check"], "filed 2551Q Q1 2026 txtATCAmt1 vs Books");
     assert_eq!(
         (last["ok"].as_bool(), filed["differences"].as_i64()),
         (Some(false), Some(1)),
         "{last}"
+    );
+    // values as eBIRForms shows them: thousands separators, whole pesos
+    for shown in ["290,000.00", "290,000"] {
+        let filed = ok(
+            b,
+            Origin::Agent,
+            "books_cross_checks",
+            json!({ "year": "2026", "filed": [{ "form": "2551Q", "period": "2026-Q1", "key": "txtATCAmt1", "value": shown }] }),
+        );
+        let last = filed["rows"].as_array().unwrap().last().unwrap().clone();
+        assert_eq!(last["left_shown"], "290,000.00", "{shown}: {last}");
+    }
+
+    // one call, every kind of box: none aborts it
+    for m in ["2026-07", "2026-08", "2026-09"] {
+        ok(
+            b,
+            Origin::App,
+            "books_app_month_close",
+            json!({ "client_request_id": format!("close-{m}"), "month": m }),
+        );
+    }
+    let filed = ok(
+        b,
+        Origin::Agent,
+        "books_cross_checks",
+        json!({ "year": "2026", "filed": [
+            // 1601-C "Taxes withheld" is a choice: eBIRForms reads it back as its option
+            { "form": "1601C", "period": "2026-09", "key": "frm1601c:TaxWithheld", "value": "1" },
+            { "form": "1601C", "period": "2026-09", "key": "frm1601c:TaxWithheld", "value": "2" },
+            { "form": "1601C", "period": "2026-09", "key": "frm1601c:txtTax14", "value": "42,000" },
+            // a box Books never hands over, and a period the form doesn't have
+            { "form": "1601C", "period": "2026-09", "key": "frm1601c:txtTIN1", "value": "123-456-789" },
+            { "form": "1601C", "period": "2026-Q1", "key": "frm1601c:txtTax14", "value": "42,000.00" },
+            // a blank or non-amount value on an amount box is a difference
+            { "form": "2551Q", "period": "2026-Q1", "key": "txtATCAmt1", "value": "01/15/2026" },
+            { "form": "2551Q", "period": "2026-Q1", "key": "txtATCAmt1", "value": "" },
+        ] }),
+    );
+    let rows: Vec<Value> = filed["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .rev()
+        .take(7)
+        .rev()
+        .cloned()
+        .collect();
+    let shown: Vec<(&str, bool, bool)> = rows
+        .iter()
+        .map(|r| {
+            (
+                r["left_shown"].as_str().unwrap(),
+                r["ok"].as_bool().unwrap(),
+                r["compared"] != false,
+            )
+        })
+        .collect();
+    assert_eq!(
+        shown,
+        [
+            ("1", true, true),
+            ("2", false, true),
+            ("42,000.00", true, true),
+            ("—", true, false),
+            ("—", true, false),
+            ("not an amount", false, true),
+            ("not an amount", false, true),
+        ],
+        "{filed}"
+    );
+    assert_eq!(
+        rows[3]["note"],
+        "not compared · Books doesn't hand this box over"
+    );
+    assert!(
+        rows[4]["note"]
+            .as_str()
+            .unwrap()
+            .starts_with("not compared · Books can't build it"),
+        "{}",
+        rows[4]
+    );
+    assert_eq!(
+        (
+            filed["differences"].as_i64(),
+            filed["not_compared"].as_i64()
+        ),
+        (Some(3), Some(2)),
+        "{filed}"
+    );
+    assert!(
+        !filed.to_string().contains("456-789"),
+        "a box Books doesn't hand over is not repeated"
     );
 }

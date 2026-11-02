@@ -51,6 +51,38 @@ pub fn parse(text: &str) -> Result<i64, MoneyError> {
         .ok_or_else(|| MoneyError(format!("\"{text}\" is outside the i64 range")))
 }
 
+/// An amount as a BIR form shows it: [`parse`]'s text, with thousands
+/// separators in groups of three (`"1,200,000.00"`) and whole pesos
+/// (`"1,200,000"`) allowed. eBIRForms shows amounts this way.
+pub fn parse_shown(text: &str) -> Result<i64, MoneyError> {
+    let bad = || MoneyError(format!("\"{text}\" is not an amount"));
+    let text = text.trim();
+    let (sign, body) = match text.strip_prefix('-') {
+        Some(rest) => ("-", rest),
+        None => ("", text),
+    };
+    let (whole, cents) = match body.split_once('.') {
+        Some((whole, cents)) => (whole, cents),
+        None => (body, "00"),
+    };
+    let mut groups = whole.split(',');
+    let first = groups.next().unwrap_or_default();
+    let digits = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
+    let mut plain = String::from(first);
+    let mut grouped = false;
+    for group in groups {
+        if group.len() != 3 || !digits(group) {
+            return Err(bad());
+        }
+        grouped = true;
+        plain.push_str(group);
+    }
+    if !digits(first) || (grouped && (first.len() > 3 || first.starts_with('0'))) {
+        return Err(bad());
+    }
+    parse(&format!("{sign}{plain}.{cents}")).map_err(|_| bad())
+}
+
 /// Two-place decimal text: `-5` is `"-0.05"`.
 pub fn format(centavos: i64) -> String {
     let magnitude = i128::from(centavos).unsigned_abs();
@@ -84,6 +116,40 @@ pub fn sum<I: IntoIterator<Item = i64>>(values: I) -> Option<i64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_amount_as_a_form_shows_it() {
+        for (shown, centavos) in [
+            ("290000.00", 29_000_000),
+            ("290,000.00", 29_000_000),
+            ("1,200,000", 120_000_000),
+            ("0", 0),
+            ("0.00", 0),
+            ("-2,808.40", -280_840),
+            (" 10,000 ", 1_000_000),
+        ] {
+            assert_eq!(parse_shown(shown), Ok(centavos), "{shown}");
+        }
+        for bad in [
+            "1",
+            "true",
+            "01/15/2026",
+            "1,20,000",
+            "12,0000.00",
+            "0,100",
+            "1.5",
+            "",
+            "-0",
+            ",100",
+        ] {
+            if bad == "1" {
+                // a whole peso is an amount; a radio's "1" is told apart by the box, not here
+                assert_eq!(parse_shown(bad), Ok(100));
+                continue;
+            }
+            assert!(parse_shown(bad).is_err(), "{bad}");
+        }
+    }
 
     #[test]
     fn parses_two_place_text_only() {

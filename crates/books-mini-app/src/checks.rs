@@ -51,6 +51,47 @@ fn row(check: &str, left: (&str, i64), right: (&str, i64)) -> Value {
     })
 }
 
+/// A refusal about the form as the caller asked for it, not a fault in Books.
+fn form_level(refusal: &Refusal) -> bool {
+    refusal.code == forms::FORM_PERIOD || refusal.code == "invalid_args"
+}
+
+/// A filed box this check cannot compare; it is no difference, and the
+/// value is not repeated.
+fn not_compared(check: &str, why: &str) -> Value {
+    json!({
+        "check": check,
+        "left_label": "filed", "left_shown": "—",
+        "right_label": "Books now", "right_shown": "—",
+        "ok": true, "compared": false,
+        "note": format!("not compared · {why}"),
+    })
+}
+
+/// A blank or non-amount value filed on a box Books fills with an amount: a
+/// difference (the value is not repeated).
+fn not_an_amount(check: &str, books: i64) -> Value {
+    json!({
+        "check": check,
+        "left_label": "filed", "left_shown": "not an amount",
+        "right_label": "Books now", "right_shown": money::display(books),
+        "ok": false,
+        "note": "the filed value is not an amount · open the form",
+    })
+}
+
+/// A filed choice (a radio's option) against Books' own.
+fn choice_row(check: &str, filed: &str, books: &str) -> Value {
+    let same = filed == books;
+    json!({
+        "check": check,
+        "left_label": "filed", "left_shown": filed,
+        "right_label": "Books now", "right_shown": books,
+        "ok": same,
+        "note": if same { "ok".to_string() } else { "different choice · open the form".to_string() },
+    })
+}
+
 /// Sales by account: credit less debit on accounts of the gross-sales kinds.
 fn sales_by_account(input: &NormInput, year: &Period) -> i64 {
     let data = rules::shared().ok();
@@ -198,7 +239,16 @@ pub fn cross_checks(store: &Store, book: Book, args: &Map<String, Value>) -> Ans
         ),
     ));
 
-    // filed returns the assistant read from BIR: [{form, period, key, value}]
+    // filed returns the assistant read from BIR: [{form, period, key, value,
+    // form_context?}]. Books' own value decides how a box compares: an
+    // amount as an amount (eBIRForms shows thousands separators and, on some
+    // forms, whole pesos), a choice such as 1601-C's "Taxes withheld" as
+    // text. A 1701-MS box needs the form context (the tax option): the item's
+    // own, else the one its latest hand-off read. A box Books can't compare
+    // (one it doesn't hand over, a period the form doesn't have, a form
+    // still blocked) is a "not compared" row, and its value is not repeated;
+    // a blank or non-amount value on an amount box is a difference.
+    let handoffs = books_store::handoffs::list(c, book.id)?;
     for f in args
         .get("filed")
         .and_then(Value::as_array)
@@ -215,23 +265,79 @@ pub fn cross_checks(store: &Store, book: Book, args: &Map<String, Value>) -> Ans
                 "Each filed value is {form, period, key, value}.",
             ));
         };
-        let filed =
-            money::parse(value).map_err(|e| Refusal::invalid(format!("filed value: {e}")))?;
-        let built = forms::build(c, &book, form, period, &json!({}))?;
-        let now = built
+        let label = Period::parse(period).map_or_else(|| period.to_string(), |p| p.label());
+        let check = format!("filed {} {label} {key} vs Books", form.as_str());
+        // the item's own context when it gives one (an empty one or null is
+        // none), else the latest hand-off's; anything but an object is refused
+        let context = match f.get("form_context") {
+            Some(Value::Object(context)) if !context.is_empty() => Value::Object(context.clone()),
+            None | Some(Value::Null) | Some(Value::Object(_)) => handoffs
+                .iter()
+                .find(|h| h.form == form.as_str() && h.period_key == period)
+                .and_then(|h| serde_json::from_str(&h.form_context).ok())
+                .unwrap_or_else(|| json!({})),
+            Some(_) => {
+                return Err(Refusal::invalid(
+                    "A filed value's `form_context` is an object, as books_form_proposal takes it.",
+                ));
+            }
+        };
+        // the caller's mistakes about the form (a period it doesn't have, a
+        // form context it can't read) are rows; a fault in Books refuses
+        let built = match forms::build(c, &book, form, period, &context) {
+            Ok(built) => built,
+            Err(refusal) if form_level(&refusal) => {
+                rows.push(not_compared(
+                    &check,
+                    &format!("Books can't build it: {}", refusal.message),
+                ));
+                continue;
+            }
+            Err(refusal) => return Err(refusal),
+        };
+        let books = built
             .proposal
             .fill_args
             .get(key)
-            .and_then(|v| money::parse(v).ok())
-            .or_else(|| built.preview.get(key).copied())
-            .unwrap_or(0);
-        let label = Period::parse(period).map_or_else(|| period.to_string(), |p| p.label());
-        rows.push(row(
-            &format!("filed {} {label} vs Books", form.as_str()),
-            ("filed", filed),
-            ("Books now", now),
-        ));
+            .cloned()
+            .or_else(|| built.preview.get(key).map(|c| money::format(*c)));
+        rows.push(match books {
+            None => match built.proposal.blocking.first() {
+                Some(block) if built.proposal.fill_args.is_empty() => not_compared(
+                    &check,
+                    &format!("Books can't compare it yet: {}", block.detail),
+                ),
+                _ => not_compared(&check, "Books doesn't hand this box over"),
+            },
+            Some(books) => match (money::parse(&books), money::parse_shown(value)) {
+                (Ok(now), Ok(filed)) => row(&check, ("filed", filed), ("Books now", now)),
+                (Ok(now), Err(_)) => not_an_amount(&check, now),
+                (Err(_), _) => choice_row(&check, value.trim(), &books),
+            },
+        });
     }
+    let not_compared_count = rows.iter().filter(|r| r["compared"] == false).count();
     let differences = rows.iter().filter(|r| r["ok"] == false).count();
-    Ok(json!({ "year": y, "rows": rows, "differences": differences }))
+    Ok(
+        json!({ "year": y, "rows": rows, "differences": differences, "not_compared": not_compared_count }),
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn only_the_callers_form_mistakes_become_rows() {
+        assert!(form_level(&Refusal::new(forms::FORM_PERIOD, "period_kind")));
+        assert!(form_level(&Refusal::invalid(
+            "a form context Books can't read"
+        )));
+        for code in ["store", "engine", "bridge", "bridge_input", "internal"] {
+            assert!(
+                !form_level(&Refusal::new(code, "Books' own fault")),
+                "{code}"
+            );
+        }
+    }
 }

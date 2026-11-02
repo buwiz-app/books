@@ -3,9 +3,12 @@
 //! 1. The owner clicks "Hand to BIR draft": `books_app_handoff_create`
 //!    records the ready proposal's input boxes and the app attaches the
 //!    hand-off to the chat (`buwiz.attach("proposal", ticket)`).
-//! 2. The assistant reads it with `books_handoff_get` and fills the BIR
-//!    draft once with source `document`, reads it back, validates and
-//!    saves a draft. Books never calls BIR, and nothing is ever sent.
+//! 2. The assistant reads it with `books_handoff_get`, which answers the
+//!    exact arguments of eBIRForms' `ebirforms_form_open` (all but the
+//!    taxpayer) and `ebirforms_form_fill` (source `document`, and a
+//!    `source_ref` naming this hand-off and its inputs hash). The assistant
+//!    fills the eBIRForms draft once, reads it back, validates and saves it.
+//!    Books never calls eBIRForms, and nothing is ever sent.
 //! 3. The owner clicks "BIR shows these values":
 //!    `books_app_handoff_confirm` records `fill_args_sha256`.
 //!
@@ -32,6 +35,9 @@ use crate::writes;
 
 /// The source label the BIR fill takes (never `user`, never `from_card`).
 pub const SOURCE: &str = "document";
+
+/// What the assistant does with a hand-off.
+pub const HOW: &str = "Ask the person which eBIRForms taxpayer this is if you don't know. Call ebirforms_form_open with `form_open` plus that taxpayer's ticket as `tin`, then ebirforms_form_fill once with `form_fill` exactly as given. Nothing may come back in `rejected` or `not_kept`. Read the boxes back with ebirforms_form_fields and compare each value with `fill_args` as amounts (eBIRForms adds thousands separators, and some forms show whole pesos); each box's `sources` shows this hand-off. Then validate and save the draft; if it answers `sources_kept: false`, tell the owner the draft is saved without its link to this hand-off. Never queue, send or file. Then the owner confirms in Books.";
 
 fn form_arg(args: &Map<String, Value>) -> Result<FormCode, Refusal> {
     FormCode::parse(required(args, "form")?)
@@ -280,6 +286,19 @@ pub fn get(store: &Store, book: Book, args: &Map<String, Value>, _origin: Origin
         books_core::date::PeriodKind::Month => json!(period.start.month),
         books_core::date::PeriodKind::Year => Value::Null,
     };
+    let mut form_open = json!({ "code": h.form, "year": period.start.year });
+    if !bir_period.is_null() {
+        form_open["period"] = bir_period.clone();
+    }
+    let form_fill = json!({
+        "fields": fill_args,
+        "source": SOURCE,
+        "source_ref": {
+            "plugin": crate::manifest::PLUGIN_ID,
+            "handoff": h.id.to_string(),
+            "inputs_hash": h.inputs_hash,
+        },
+    });
     Ok(json!({
         "form": h.form,
         "year": period.start.year,
@@ -289,7 +308,9 @@ pub fn get(store: &Store, book: Book, args: &Map<String, Value>, _origin: Origin
         "fill_args": fill_args,
         "source": SOURCE,
         "form_context": serde_json::from_str::<Value>(&h.form_context).unwrap_or(Value::Null),
-        "how": "Open the BIR draft for this form and period, fill these boxes once with source \"document\", read them back and compare each value exactly, then validate and save the draft. Never send or file. Then the owner confirms in Books.",
+        "form_open": form_open,
+        "form_fill": form_fill,
+        "how": HOW,
     }))
 }
 

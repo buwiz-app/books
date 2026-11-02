@@ -68,6 +68,10 @@ name = "handoff_slice_b"
 path = "../../tests/handoff_slice_b.rs"
 
 [[test]]
+name = "handoff_contract"
+path = "../../tests/handoff_contract.rs"
+
+[[test]]
 name = "forms_bridge"
 path = "../../tests/forms_bridge.rs"
 
