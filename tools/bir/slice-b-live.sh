@@ -7,7 +7,7 @@
 #     itself), with server/node_modules symlinked;
 #   - release builds of books-mini-app (here) and of ebirforms-mini-app and its host-seed example (in EBIRFORMS_DIR),
 #     under the Bot's scripts/wait-build lock;
-#   - eBIRForms' data folder in this run's temp dir, seeded with eBIRForms' own synthetic taxpayer (host-seed), with
+#   - eBIRForms' data folder in this run's temp dir, seeded with a synthetic taxpayer (eBIRForms' host-seed), with
 #     BUWIZ_NO_KEYCHAIN=1 and its Buwiz account URL on a closed loopback port, so nothing reaches the owner's data,
 #     the Keychain or the network;
 #   - one throwaway test key (books-test-01, never gc-2026-01) and a trust file of this run only.
@@ -55,8 +55,12 @@ git -C "$BOT_DIR" worktree add --detach --quiet "$WT" "$BOT_COMMIT"
 ln -s "$BOT_DIR/server/node_modules" "$WT/server/node_modules"
 mkdir -m 700 "$TMP/run" "$TMP/run/ebirforms"
 
-# eBIRForms' synthetic taxpayer in the scratch data folder
+# eBIRForms' synthetic taxpayer in the scratch data folder, with a root made here so the test can check it never
+# leaks (never printed; a random synthetic number, not a real TIN)
 touch "$TMP/run/ebirforms/host-test-scratch"
-EBIRFORMS_DATA_DIR="$TMP/run/ebirforms" BUWIZ_NO_KEYCHAIN=1 "$EBIR_TARGET/release/examples/host-seed"
+ROOT="$(od -An -N4 -tu4 /dev/urandom | tr -d ' ')"
+ROOT="$(printf '%09d' $(( ROOT % 999999999 + 1 )))"
+EBIRFORMS_DATA_DIR="$TMP/run/ebirforms" BUWIZ_NO_KEYCHAIN=1 EBIRFORMS_SEED_TIN_ROOT="$ROOT" \
+  "$EBIR_TARGET/release/examples/host-seed"
 
-node --disable-warning=ExperimentalWarning "$REPO/tests/host/slice-b-live.mjs" "$WT" "$TMP/run" "$BIN" "$EBIR_BIN"
+SLICE_B_TIN_ROOT="$ROOT" node --disable-warning=ExperimentalWarning "$REPO/tests/host/slice-b-live.mjs" "$WT" "$TMP/run" "$BIN" "$EBIR_BIN"

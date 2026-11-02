@@ -130,6 +130,26 @@ fn handed(books: &mut Books, form: &str, period: &str, context: &str) -> Value {
         "books_handoff_get",
         json!({ "handoff": ticket }),
     );
+    // the hand-off's inputs hash is the engine's, over the books as they are now
+    let store = books.store().unwrap();
+    let c = store.conn();
+    let book = books_store::books::all(c).unwrap().remove(0);
+    let (fx, _) = books_mini_app::forms::fixture(c, &book).unwrap();
+    let data = books_core::rules::shared().unwrap();
+    let input = books_core::input::normalize_fixture(&fx, &data.vocab).unwrap();
+    let expected = books_core::proposal::compute_inputs_hash(
+        data,
+        &input,
+        books_core::input::FormCode::parse(form).unwrap(),
+        period,
+        &books_core::input::form_context_from_value(&context).unwrap(),
+        None,
+    )
+    .unwrap();
+    assert_eq!(
+        got["form_fill"]["source_ref"]["inputs_hash"], expected,
+        "{form}: the hand-off's inputs hash"
+    );
     json!({ "form_open": got["form_open"], "form_fill": got["form_fill"] })
 }
 
@@ -253,17 +273,7 @@ fn each_hand_off_is_exactly_what_ebirforms_takes() {
         let kept =
             std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
         // the inputs hash covers the store's own id, so each store's differs:
-        // compare the rest exactly
-        let hash = got["form_fill"]["source_ref"]["inputs_hash"]
-            .as_str()
-            .unwrap();
-        assert!(
-            hash.len() == 64
-                && hash
-                    .bytes()
-                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)),
-            "{form}: {hash}"
-        );
+        // `handed` proved the live one is the engine's; the rest compares exactly
         let kept_value: Value = serde_json::from_str(&kept).unwrap();
         let mut same = got.clone();
         same["form_fill"]["source_ref"]["inputs_hash"] =

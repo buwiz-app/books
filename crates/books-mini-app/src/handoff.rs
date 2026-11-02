@@ -37,7 +37,7 @@ use crate::writes;
 pub const SOURCE: &str = "document";
 
 /// What the assistant does with a hand-off.
-pub const HOW: &str = "Ask the person which eBIRForms taxpayer this is if you don't know. Call ebirforms_form_open with `form_open` plus that taxpayer's ticket as `tin`, then ebirforms_form_fill once with `form_fill` exactly as given. Nothing may come back in `rejected` or `not_kept`. Read the boxes back with ebirforms_form_fields and compare each value with `fill_args` as amounts (eBIRForms adds thousands separators, and some forms show whole pesos); each box's `sources` shows this hand-off. Then validate and save the draft. Never queue, send or file. Then the owner confirms in Books.";
+pub const HOW: &str = "Ask the person which eBIRForms taxpayer this is if you don't know. Call ebirforms_form_open with `form_open` plus that taxpayer's ticket as `tin`, then ebirforms_form_fill once with `form_fill` exactly as given. Nothing may come back in `rejected` or `not_kept`. Read the boxes back with ebirforms_form_fields and compare each value with `fill_args` as amounts (eBIRForms adds thousands separators, and some forms show whole pesos); each box's `sources` shows this hand-off. Then validate and save the draft; if it answers `sources_kept: false`, tell the owner the draft is saved without its link to this hand-off. Never queue, send or file. Then the owner confirms in Books.";
 
 fn form_arg(args: &Map<String, Value>) -> Result<FormCode, Refusal> {
     FormCode::parse(required(args, "form")?)

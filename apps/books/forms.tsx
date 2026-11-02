@@ -275,7 +275,7 @@ function CrossChecks() {
                 {r().left_shown === r().right_shown ? r().left_shown : `${String(r().left_shown)} / ${String(r().right_shown)}`}
               </Text>
               <View class="w-[190px] items-end">
-                <Pill tone={r().ok ? "ok" : "rev"} label={r().note} />
+                <Pill tone={r().compared === false ? "mute" : r().ok ? "ok" : "rev"} label={r().note} />
               </View>
             </View>
           )}

@@ -51,6 +51,30 @@ fn row(check: &str, left: (&str, i64), right: (&str, i64)) -> Value {
     })
 }
 
+/// A filed box this check cannot compare; it is no difference, and the
+/// value is not repeated.
+fn not_compared(check: &str, why: &str) -> Value {
+    json!({
+        "check": check,
+        "left_label": "filed", "left_shown": "—",
+        "right_label": "Books now", "right_shown": "—",
+        "ok": true, "compared": false,
+        "note": format!("not compared · {why}"),
+    })
+}
+
+/// A filed choice (a radio's option) against Books' own.
+fn choice_row(check: &str, filed: &str, books: &str) -> Value {
+    let same = filed == books;
+    json!({
+        "check": check,
+        "left_label": "filed", "left_shown": filed,
+        "right_label": "Books now", "right_shown": books,
+        "ok": same,
+        "note": if same { "ok".to_string() } else { "different choice · open the form".to_string() },
+    })
+}
+
 /// Sales by account: credit less debit on accounts of the gross-sales kinds.
 fn sales_by_account(input: &NormInput, year: &Period) -> i64 {
     let data = rules::shared().ok();
@@ -198,7 +222,11 @@ pub fn cross_checks(store: &Store, book: Book, args: &Map<String, Value>) -> Ans
         ),
     ));
 
-    // filed returns the assistant read from BIR: [{form, period, key, value}]
+    // filed returns the assistant read from BIR: [{form, period, key, value}].
+    // Books' own value decides how a box compares: an amount as an amount
+    // (eBIRForms shows thousands separators and, on some forms, whole pesos),
+    // a choice such as 1601-C's "Taxes withheld" as text. A box Books does not
+    // hand over is listed as not compared, and its value is not repeated.
     for f in args
         .get("filed")
         .and_then(Value::as_array)
@@ -215,33 +243,23 @@ pub fn cross_checks(store: &Store, book: Book, args: &Map<String, Value>) -> Ans
                 "Each filed value is {form, period, key, value}.",
             ));
         };
-        // eBIRForms shows amounts with thousands separators, some forms in
-        // whole pesos
-        let mut plain = value.trim().replace(',', "");
-        if !plain.contains('.') {
-            plain.push_str(".00");
-        }
-        let filed =
-            money::parse(&plain).map_err(|e| Refusal::invalid(format!("filed value: {e}")))?;
         let built = forms::build(c, &book, form, period, &json!({}))?;
-        let Some(now) = built
+        let label = Period::parse(period).map_or_else(|| period.to_string(), |p| p.label());
+        let check = format!("filed {} {label} {key} vs Books", form.as_str());
+        let books = built
             .proposal
             .fill_args
             .get(key)
-            .and_then(|v| money::parse(v).ok())
-            .or_else(|| built.preview.get(key).copied())
-        else {
-            return Err(Refusal::invalid(format!(
-                "Books has no value for {key} on {} {period}: compare only the boxes Books hands over.",
-                form.as_str()
-            )));
-        };
-        let label = Period::parse(period).map_or_else(|| period.to_string(), |p| p.label());
-        rows.push(row(
-            &format!("filed {} {label} vs Books", form.as_str()),
-            ("filed", filed),
-            ("Books now", now),
-        ));
+            .cloned()
+            .or_else(|| built.preview.get(key).map(|c| money::format(*c)));
+        rows.push(match books {
+            None => not_compared(&check, "Books doesn't hand this box over"),
+            Some(books) => match (money::parse(&books), money::parse_shown(value)) {
+                (Ok(now), Ok(filed)) => row(&check, ("filed", filed), ("Books now", now)),
+                (Ok(_), Err(_)) => not_compared(&check, "the filed value is not an amount"),
+                (Err(_), _) => choice_row(&check, value.trim(), &books),
+            },
+        });
     }
     let differences = rows.iter().filter(|r| r["ok"] == false).count();
     Ok(json!({ "year": y, "rows": rows, "differences": differences }))

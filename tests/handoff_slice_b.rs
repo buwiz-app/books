@@ -382,7 +382,7 @@ fn m7_06_cross_checks_agree_on_the_demo_and_flag_a_filed_difference() {
         json!({ "year": "2026", "filed": [{ "form": "2551Q", "period": "2026-Q1", "key": "txtATCAmt1", "value": "295000.00" }] }),
     );
     let last = filed["rows"].as_array().unwrap().last().unwrap().clone();
-    assert_eq!(last["check"], "filed 2551Q Q1 2026 vs Books");
+    assert_eq!(last["check"], "filed 2551Q Q1 2026 txtATCAmt1 vs Books");
     assert_eq!(
         (last["ok"].as_bool(), filed["differences"].as_i64()),
         (Some(false), Some(1)),
@@ -399,14 +399,64 @@ fn m7_06_cross_checks_agree_on_the_demo_and_flag_a_filed_difference() {
         let last = filed["rows"].as_array().unwrap().last().unwrap().clone();
         assert_eq!(last["left_shown"], "290,000.00", "{shown}: {last}");
     }
-    // a box Books never hands over is refused, not compared against zero
-    assert_eq!(
-        refused(
+
+    // one call, every kind of box: none aborts it
+    for m in ["2026-07", "2026-08", "2026-09"] {
+        ok(
             b,
-            Origin::Agent,
-            "books_cross_checks",
-            json!({ "year": "2026", "filed": [{ "form": "2551Q", "period": "2026-Q1", "key": "frm2551Qv2018:txt20A", "value": "100.00" }] }),
-        ),
-        "invalid_args"
+            Origin::App,
+            "books_app_month_close",
+            json!({ "client_request_id": format!("close-{m}"), "month": m }),
+        );
+    }
+    let filed = ok(
+        b,
+        Origin::Agent,
+        "books_cross_checks",
+        json!({ "year": "2026", "filed": [
+            // 1601-C "Taxes withheld" is a choice: eBIRForms reads it back as its option
+            { "form": "1601C", "period": "2026-09", "key": "frm1601c:TaxWithheld", "value": "1" },
+            { "form": "1601C", "period": "2026-09", "key": "frm1601c:TaxWithheld", "value": "2" },
+            { "form": "1601C", "period": "2026-09", "key": "frm1601c:txtTax14", "value": "42,000" },
+            // a box Books never hands over, and a value that is not an amount
+            { "form": "2551Q", "period": "2026-Q1", "key": "frm2551Qv2018:txtTIN1", "value": "123-456-789" },
+            { "form": "2551Q", "period": "2026-Q1", "key": "txtATCAmt1", "value": "01/15/2026" },
+        ] }),
+    );
+    let rows: Vec<Value> = filed["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .rev()
+        .take(5)
+        .rev()
+        .cloned()
+        .collect();
+    let shown: Vec<(&str, &str, bool)> = rows
+        .iter()
+        .map(|r| {
+            (
+                r["left_shown"].as_str().unwrap(),
+                r["note"].as_str().unwrap(),
+                r["ok"].as_bool().unwrap(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        shown,
+        [
+            ("1", "ok", true),
+            ("2", "different choice · open the form", false),
+            ("42,000.00", "ok", true),
+            ("—", "not compared · Books doesn't hand this box over", true),
+            ("—", "not compared · the filed value is not an amount", true),
+        ],
+        "{filed}"
+    );
+    assert_eq!(rows[3]["compared"], false);
+    assert_eq!(filed["differences"], 1, "only the different choice");
+    assert!(
+        !filed.to_string().contains("456-789"),
+        "a box Books doesn't hand over is not repeated"
     );
 }

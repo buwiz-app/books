@@ -2,7 +2,8 @@
 // folder, and a later Books change marks the hand-off out of date until the owner refreshes it.
 // Run it through tools/bir/slice-b-live.sh. Direct use:
 //   node slice-b-live.mjs <bot worktree> <run dir> <books binary> <ebirforms binary>
-// The run dir must hold an `ebirforms` data folder seeded by eBIRForms' host-seed.
+// The run dir must hold an `ebirforms` data folder seeded by eBIRForms' host-seed, and SLICE_B_TIN_ROOT name the
+// synthetic nine-digit root it was seeded with, so the run can check it never leaks.
 //
 // Both plugins run under the Bot's own v1 broker modules in this process (no port). One throwaway key,
 // books-test-01, signs both manifests, and a trust file of this run only trusts it. eBIRForms keeps its data in the
@@ -35,10 +36,17 @@ const KEY_ID = "books-test-01";
 const DEMO = join(import.meta.dirname, "..", "..", "fixtures", "demo", "buwiz-trading-2026.json");
 const TODAY = "2026-10-29";
 
+// the synthetic taxpayer's root, as nine digits and as a TIN is written; never printed
+const ROOT = process.env.SLICE_B_TIN_ROOT || "";
+assert.match(ROOT, /^\d{9}$/, "SLICE_B_TIN_ROOT names the seeded synthetic root");
+const DASHED = `${ROOT.slice(0, 3)}-${ROOT.slice(3, 6)}-${ROOT.slice(6)}`;
+const tinIn = (s) => s.includes(ROOT) || s.includes(DASHED);
+const scrub = (s) => s.replaceAll(ROOT, "<tin>").replaceAll(DASHED, "<tin>");
+
 const results = [];
 const check = (name, ok, detail) => {
   results.push({ name, ok: !!ok });
-  console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail === undefined ? "" : `  ${JSON.stringify(detail)}`}`);
+  console.log(scrub(`${ok ? "PASS" : "FAIL"}  ${name}${detail === undefined ? "" : `  ${JSON.stringify(detail)}`}`));
 };
 
 // ── 0. the scratch eBIRForms data folder ───────────────────────────────
@@ -140,8 +148,12 @@ try {
   check("eBIRForms: the synthetic taxpayer is listed as a ticket", !listed.error && typeof taxpayer === "string" && taxpayer.startsWith("tkt_"));
 
   // ── 6. the assistant fills the draft once, as given, and saves it ──────
-  // eBIRForms shows amounts with thousands separators (some forms in whole pesos): compare as amounts
-  const amount = (v) => { const t = String(v ?? "").replaceAll(",", ""); return t.includes(".") ? t : `${t}.00`; };
+  // eBIRForms shows amounts with thousands separators (some forms in whole pesos): compare as amounts, by the
+  // rule of books-core money::parse_shown (and eBIRForms' shown_amount): groups of three, two places or none
+  const amount = (v) => {
+    const m = /^(-?)(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d{2}))?$/.exec(String(v ?? "").trim());
+    return m ? `${m[1]}${m[2].replaceAll(",", "")}.${m[3] ?? "00"}` : null;
+  };
   const fillDraft = async (label, h, previous) => {
     const opened = await agent("ebirforms_form_open", { ...h.form_open, tin: taxpayer });
     check(`${label}: ebirforms_form_open with form_open`, !opened.error, opened.error ? opened.text.slice(0, 200) : undefined);
@@ -198,16 +210,18 @@ try {
   view = await appCall(books, "books_form_proposal", Q3);
   check("Books: the refreshed hand-off is In BIR draft", view.handoff?.status === "confirmed", { detail: view.handoff?.detail });
 
-  // ── 10. privacy: Books never sees eBIRForms' taxpayer, and no key reaches a log ──
+  // ── 10. privacy: no TIN anywhere it must not be, and no key in a log ──
+  check("no TIN in any Books result, to the owner's app or the assistant", !seen.some((r) => r.plugin === BOOKS && tinIn(r.text)));
   check("no eBIRForms ticket in any Books result", !seen.some((r) => r.plugin === BOOKS && r.text.includes(taxpayer)));
+  check("no TIN in eBIRForms' answers to the assistant (it names taxpayers by ticket)", !seen.some((r) => r.plugin === EBIR && tinIn(r.text)));
   const logs = readdirSync(join(RUN, "logs")).map((f) => readFileSync(join(RUN, "logs", f), "utf8"));
   const secrets = readdirSync(join(RUN, "keys")).map((f) => readFileSync(join(RUN, "keys", f), "utf8").trim());
   const dbKey = existsSync(join(EBIR_DATA, "ebirforms.key")) ? readFileSync(join(EBIR_DATA, "ebirforms.key"), "utf8").trim() : "";
-  check("no plugin key or eBIRForms database key in the broker's logs", logs.length > 0 && !logs.some((t) => [...secrets, dbKey].some((k) => k && t.includes(k))));
+  check("no TIN, plugin key or eBIRForms database key in the broker's logs", logs.length > 0 && !logs.some((t) => tinIn(t) || [...secrets, dbKey].some((k) => k && t.includes(k))));
 
   status = results.every((r) => r.ok) ? 0 : 1;
 } catch (e) {
-  check("run", false, `${e?.code || ""} ${String(e?.message || e).slice(0, 400)}`);
+  check("run", false, `${e?.code || ""} ${scrub(String(e?.message || e)).slice(0, 400)}`);
 } finally {
   await plugins.stopAll().catch(() => {});
 }
