@@ -1,6 +1,6 @@
 -- Schema 0001: a book, its chart, entries and lines, idempotency, audit
 -- and tickets. The whole file is SQLCipher-encrypted; there is no TIN
--- column anywhere (invariant 4). Money is INTEGER centavos.
+-- column anywhere (invariant 3). Money is INTEGER centavos.
 
 CREATE TABLE meta (
   key   TEXT PRIMARY KEY,

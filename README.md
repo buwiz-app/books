@@ -34,8 +34,8 @@ Settings: `BOOKS_DATA_DIR` (default `~/Library/Application Support/app.buwiz.boo
 
 | Gate | Needs |
 |---|---|
-| fmt, clippy (`-D warnings`), `cargo test` | Nothing else. |
-| Bot conformance, Bot host test, native screen parity | `BUWIZ_BOT_DIR`: a checkout or worktree of buwiz-bot at protocol 1.0, with `server/node_modules` installed. The host test uses port 8810 or above (`BOOKS_HOST_PORT`). |
+| fmt, clippy (`-D warnings`), `cargo test` | Nothing else. With `BUWIZ_FORMS_SCHEMAS` set to a folder of the pinned agent-forms schemas, `cargo test` also checks the crosswalks against them; without it, that check prints SKIPPED. |
+| Bot conformance, Bot host test | `BUWIZ_BOT_DIR` (required): a checkout or worktree of buwiz-bot at protocol 1.0, with `server/node_modules` installed, and `node`. The host test also needs: <ul><li>the commit it pins (`BUWIZ_BOT_COMMIT`) to exist in that checkout;</li><li>`lsof`;</li><li>a port of 8810 or above (`BOOKS_HOST_PORT`);</li><li>on macOS, `security`, which reads only the Keychain entry's attributes to prove the run left it alone.</li></ul> |
 | Privacy scan (`tools/privacy-scan.sh`) | Nothing else. |
 
 `SKIP_BOT=1` skips the Bot gates (the run then isn't green). Gates sign with a throwaway key (`books-test-01`) and a

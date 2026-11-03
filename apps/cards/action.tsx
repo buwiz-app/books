@@ -16,7 +16,7 @@ function firstDraft() {
   );
 }
 
-// an action card carries no amounts and no payee name (AGENTS.md invariant 13): books_show forwards
+// an action card carries no amounts and no payee name (AGENTS.md invariant 3): books_show forwards
 // tickets and keys only, so these stay hidden here and show in Books
 const GATED = ["amount", "person"];
 const FIELD_LABEL: Record<string, string> = { date: "Date", amount: "Amount", category: "Category", person: "Paid to", reference: "Reference" };

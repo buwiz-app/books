@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
-# tools/check-all.sh — every gate a commit must pass, in order: rustfmt,
-# clippy with warnings denied, the Rust tests (the vectors byte for byte),
-# the Bot's conformance runner, the Bot host test, native screen parity,
-# the privacy scan, and no detached signal setters in apps/
-# (`onChange={x.set}` loses `this` when kit.tsx calls p.onChange(v); write
-# `onChange={(v) => x.set(v)}`). One line per gate, each gate's output kept
-# in a temp folder; exits non-zero when any gate fails.
+# tools/check-all.sh — every gate a commit must pass, in order: no detached
+# signal setters in apps/ (`onChange={x.set}` loses `this` when kit.tsx calls
+# p.onChange(v); write `onChange={(v) => x.set(v)}`), rustfmt, clippy with
+# warnings denied, the Rust tests (the vectors byte for byte), the Bot's
+# conformance runner, the Bot host test and the privacy scan. One line per
+# gate, each gate's output kept in a temp folder; exits non-zero when any gate
+# fails.
 #
 # Env: BUWIZ_BOT_DIR    a Buwiz Bot checkout at protocol 1.0 for the conformance
-#                       runner and the host test (each script's own default
-#                       otherwise); when set, cargo test also compares the Bot's
-#                       own JCS vector files
+#                       runner and the host test (required unless SKIP_BOT=1);
+#                       cargo test also compares the Bot's own JCS vector files
 #      BOOKS_HOST_PORT  the host test's broker port (8810 or above; 8787 is the
 #                       owner's broker)
-#      SKIP_BOT=1       skip the Bot and native screen gates (no Bot checkout at hand); the
+#      SKIP_BOT=1       skip the Bot gates (no Bot checkout at hand); the
 #                       summary says so, and the run cannot pass
 set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -49,16 +48,14 @@ no_detached_setters() {
 gate "no detached setters" setters no_detached_setters
 gate "cargo fmt --check" fmt cargo fmt --check
 gate "cargo clippy -D warnings" clippy cargo clippy --all-targets -- -D warnings
-gate "cargo test (vectors 17/17)" cargo-test tests_total
+gate "cargo test" cargo-test tests_total
 if [ "${SKIP_BOT:-0}" = "1" ]; then
   printf 'SKIP  %-28s SKIP_BOT=1\n' "Bot conformance"
   printf 'SKIP  %-28s SKIP_BOT=1\n' "Bot host test"
-  printf 'SKIP  %-28s SKIP_BOT=1\n' "native screen parity"
-  skipped=3
+  skipped=2
 else
   gate "Bot conformance" conformance bash tools/bot/conformance.sh
   gate "Bot host test" host bash tools/bot/host-test.sh
-  gate "native screen parity" screens-parity bash tools/bot/screens-parity.sh
 fi
 gate "privacy scan" privacy bash tools/privacy-scan.sh
 

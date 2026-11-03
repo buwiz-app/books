@@ -16,5 +16,5 @@ serde_json = "1"
 books-mini-app = { path = "../books-mini-app" }
 nsh-engine = { git = "https://github.com/hexuria/nsh", rev = "f1461478d3768fb5da872cb697f0b0a48564ee91" }
 
-[lints.rust]
-unsafe_code = "forbid"
+[lints]
+workspace = true

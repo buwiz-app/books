@@ -20,8 +20,8 @@
 # Keychain, the Bot's or the broker's data folder, or the Bot's trust.json.
 #
 # Usage: tools/bot/conformance.sh [extra buwiz-plugin-test args, e.g. --json]
-# Env:   BUWIZ_BOT_DIR (default /Volumes/goldcoders/Projects/rox): a Buwiz Bot
-#          checkout at protocol 1.0 (buwiz-bot #102 or later)
+# Env:   BUWIZ_BOT_DIR (required): a Buwiz Bot checkout at protocol 1.0
+#          (buwiz-bot #102 or later)
 #        BUWIZ_BROKER_BIN (a buwiz-broker binary from buwiz-bot main; signs in place
 #          of server/src/v1/sign-manifest.mjs)
 #        BOOKS_TEST_KEY_ID (default books-test-01)
@@ -29,7 +29,8 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-BOT_DIR="${BUWIZ_BOT_DIR:-/Volumes/goldcoders/Projects/rox}"
+BOT_DIR="${BUWIZ_BOT_DIR:-}"
+[ -n "$BOT_DIR" ] || { echo "conformance: set BUWIZ_BOT_DIR to a Bot checkout at protocol 1.0" >&2; exit 2; }
 KEY_ID="${BOOKS_TEST_KEY_ID:-books-test-01}"
 PLUGIN_ID="app.buwiz.books"
 RUNNER="$BOT_DIR/server/sdk/mini-app/bin/buwiz-plugin-test.mjs"

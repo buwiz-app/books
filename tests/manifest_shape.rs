@@ -24,7 +24,7 @@ fn tsx_source(app: &apps::App) -> &'static str {
     }
 }
 
-/// A neutral title (invariant 13): no digits (amounts, TINs),
+/// A neutral title (invariant 3): no digits (amounts, TINs),
 /// no currency sign, and short.
 fn neutral(title: &str) {
     assert!(
@@ -199,7 +199,7 @@ fn every_books_tool_starts_with_books_and_every_named_tool_exists() {
                 "the assistant may only draft: {name}"
             );
         }
-        // forbidden verbs (invariant 7)
+        // forbidden verbs (invariant 5)
         for verb in ["submit", "queue", "pay", "paid", "file", "send"] {
             assert!(!name.contains(verb), "{name} contains {verb}");
         }
@@ -482,4 +482,26 @@ fn the_package_template_leaves_the_manifest_fields_to_packaging() {
             .is_string()
     );
     let _ = std::fs::remove_dir_all(&out);
+}
+
+/// Every tool `tools/list` names reaches its own handler: a name with no arm
+/// in `tools::call` would answer "Books has no handler for that tool." Each
+/// tool is called once, from the app, with no arguments, on a fresh book
+/// with no cloud transport, so nothing leaves the temp folder.
+#[test]
+fn every_listed_tool_has_a_handler() {
+    use books_mini_app::service::{Books, Origin};
+    use books_store::{Paths, TempDir};
+    let dir = TempDir::new("handlers");
+    let mut books = Books::new(Paths::in_dir(dir.0.join("store")));
+    let empty = serde_json::Map::new();
+    for name in tools::names() {
+        let out = tools::call(name, &empty, Origin::App, &mut books)
+            .unwrap_or_else(|| panic!("{name}: tools::call says there is no such tool"));
+        let code = out["structuredContent"]["code"].as_str().unwrap_or("");
+        assert!(
+            !(code == "internal" && out.to_string().contains("no handler")),
+            "{name} has no handler: {out}"
+        );
+    }
 }

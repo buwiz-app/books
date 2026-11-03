@@ -614,9 +614,9 @@ fn assemble(
             .iter()
             .any(|r| ELECTION_RULES.contains(&r.as_str()))
         {
-            "Forms-owned election input: the bridge may read it as form_context, never fills or decides it (B7: not locked against the profile election)".to_string()
+            "Forms-owned election input: the bridge may read it as form_context, but never fills or decides it".to_string()
         } else if field.books_policy == "refuse_mvp_spouse" {
-            "spouse (B-side) key; refused in MVP (phase P7)".to_string()
+            "spouse key: Books doesn't hand over the spouse's values yet".to_string()
         } else if let Some(lock) = field.fill_class.strip_prefix("locked_") {
             format!("Forms {lock} lock; Books never fills it")
         } else if field.books_source == "forms" {

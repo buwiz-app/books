@@ -199,7 +199,7 @@ mod tests {
     use super::*;
     use crate::MIGRATIONS;
 
-    /// A store at schema 18 with a bill marked paid the old way (one full
+    /// A store at schema 13 (before 0014) with a bill marked paid the old way (one full
     /// entry, `status = 'paid'`) gains one payment row from 0014's backfill.
     #[test]
     fn migration_backfills_a_document_paid_before_payments() {

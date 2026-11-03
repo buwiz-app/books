@@ -1,6 +1,6 @@
 //! Pages: People (one page, seven kinds), Tags (departments and
 //! locations) and Unpaid (to collect and to pay). Tool names avoid the
-//! words Books never uses for a tool (invariant 7: pay, paid, file, send,
+//! words Books never uses for a tool (invariant 5: pay, paid, file, send,
 //! submit, queue), so the Unpaid tools are `books_owed_*` and marking a
 //! document paid is "settle".
 

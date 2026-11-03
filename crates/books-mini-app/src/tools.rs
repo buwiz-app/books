@@ -1,12 +1,13 @@
-//! Books' own tools. Every name starts with `books_` (a tool that does not
-//! is skipped silently by the Bot's agent surface).
+//! Books' own tools. Every name starts with `books_`: the Bot refuses a
+//! `tools/list` holding any other name, and with it the whole plugin.
 //!
 //! Who may call what:
 //! - reads: the app and the assistant (the assistant gets totals and
 //!   tickets, never memos or lines);
 //! - `books_entry_draft`: the app and the assistant, and a routine
 //!   that declares it;
-//! - `books_app_*`: the app only, behind a person's click. They carry
+//! - `Reach::App` tools (`books_app_*`, and `books_owed_document`): the app
+//!   only, behind a person's click. They carry
 //!   `_meta["buwiz/audience"] = ["app"]`, so the model never sees them.
 
 use serde_json::{Map, Value, json};

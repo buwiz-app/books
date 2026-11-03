@@ -324,7 +324,7 @@
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "36adbc57a4ba1f71814643be5ab6aa21fcf2641c9fb8d900446f89bd5f496834",
+    "output_sha256": "f985c133ea56c7af30f9711346894e3c9bf8f40a98516184782d4e6851fd9b68",
     "period_end": "2026-12-31",
     "period_key": "2026",
     "period_start": "2026-01-01",
@@ -337,167 +337,167 @@
     "refused_keys": [
       {
         "key": "frm1701MS:txtAllowableItemizedDeductionsNo10aSpouse",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtCompromise28b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtCostofSalesNo8b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtCreditableForm2316No5b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtCreditableFourthQuarterNo4b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtCreditableTaxNo3b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtEmailb",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtForeignTaxCreditsNo7b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtGrossb",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtInterestNo28b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtLessNonTaxableb",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtNetOperatingLossNo10b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtNonOperatingIncomeNo13b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtOtherCreditsPaymentsNo9b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtOtherNonOperatingIncomeNo20b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtPriorYearsNo1b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtRDOCodeb",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtSalesReturnsNo6b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtSalesRevenueNo5b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtSalesRevenuesFeesANo19b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtShareOfOtherNo20b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtSpecialAllowableNo10b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtSpecialTaxCreditsNo8b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtSpouseNo17",
-        "reason": "Forms-owned election input: the bridge may read it as form_context, never fills or decides it (B7: not locked against the profile election)"
+        "reason": "Forms-owned election input: the bridge may read it as form_context, but never fills or decides it"
       },
       {
         "key": "frm1701MS:txtSurchangeNo28b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtTaxDueAllowedNo26b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtTaxPaidPreviouslyFiledNo6b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtTaxPaymentsNo2b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtTaxpayerNo11",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtTaxpayerNo12",
-        "reason": "Forms-owned election input: the bridge may read it as form_context, never fills or decides it (B7: not locked against the profile election)"
+        "reason": "Forms-owned election input: the bridge may read it as form_context, but never fills or decides it"
       },
       {
         "key": "frm1701MS:txtTaxpayerNo12b",
-        "reason": "Forms-owned election input: the bridge may read it as form_context, never fills or decides it (B7: not locked against the profile election)"
+        "reason": "Forms-owned election input: the bridge may read it as form_context, but never fills or decides it"
       },
       {
         "key": "frm1701MS:txtTaxpayerNo13b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtTaxpayerNo14b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtTaxpayerNo15b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtTaxpayerNo16b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtTaxpayerNo16b1",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtTaxpayerNo17",
-        "reason": "Forms-owned election input: the bridge may read it as form_context, never fills or decides it (B7: not locked against the profile election)"
+        "reason": "Forms-owned election input: the bridge may read it as form_context, but never fills or decides it"
       },
       {
         "key": "frm1701MS:txtTaxpayerNo8b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "frm1701MS:txtTelNum10b",
-        "reason": "spouse (B-side) key; refused in MVP (phase P7)"
+        "reason": "spouse key: Books doesn't hand over the spouse's values yet"
       },
       {
         "key": "taxCodeDropdown",
-        "reason": "Forms-owned election input: the bridge may read it as form_context, never fills or decides it (B7: not locked against the profile election)"
+        "reason": "Forms-owned election input: the bridge may read it as form_context, but never fills or decides it"
       },
       {
         "key": "taxCodeDropdownSpouse",
-        "reason": "Forms-owned election input: the bridge may read it as form_context, never fills or decides it (B7: not locked against the profile election)"
+        "reason": "Forms-owned election input: the bridge may read it as form_context, but never fills or decides it"
       }
     ],
     "rule_set": {

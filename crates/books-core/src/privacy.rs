@@ -1,10 +1,10 @@
 //! Text a person types into Books (a book label, a payee, a memo, a
-//! reference) must not carry a TIN (invariants 3 and 4). Books refuses it
+//! reference) must not carry a TIN (invariant 3). Books refuses it
 //! with an explanation.
 //!
 //! A TIN is nine digits, optionally followed by a three- or five-digit
 //! branch, written with or without dashes or spaces. Amounts are not text a
-//! person types here, so the money caution of invariant 14 does not arise:
+//! person types here, so the money caution of invariant 3 does not arise:
 //! a number with a decimal point is not a TIN.
 
 /// Whether `text` holds a TIN shape: nine or more digits in a row, or
