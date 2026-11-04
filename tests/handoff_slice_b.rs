@@ -44,6 +44,41 @@ fn refused(books: &mut Books, origin: Origin, name: &str, args: Value) -> String
         .to_string()
 }
 
+/// Every key and string value in `value`.
+fn strings(value: &Value) -> Box<dyn Iterator<Item = &str> + '_> {
+    match value {
+        Value::String(text) => Box::new(std::iter::once(text.as_str())),
+        Value::Array(items) => Box::new(items.iter().flat_map(strings)),
+        Value::Object(fields) => Box::new(
+            fields
+                .iter()
+                .flat_map(|(key, field)| std::iter::once(key.as_str()).chain(strings(field))),
+        ),
+        _ => Box::new(std::iter::empty()),
+    }
+}
+
+/// A Books entry id (`e12`) or entry line id (`e12.3`).
+fn is_entry_id(text: &str) -> bool {
+    let number = |part: &str| !part.is_empty() && part.bytes().all(|byte| byte.is_ascii_digit());
+    text.strip_prefix('e')
+        .is_some_and(|rest| match rest.split_once('.') {
+            Some((entry, line)) => number(entry) && number(line),
+            None => number(rest),
+        })
+}
+
+#[test]
+fn the_entry_id_check_matches_ids_and_not_hashes() {
+    assert!(is_entry_id("e12") && is_entry_id("e12.3"));
+    for text in ["e2c60cc7", "e", "e12.", "entry", "290000.00", "12"] {
+        assert!(!is_entry_id(text), "{text}");
+    }
+    let value = json!({"a": ["x", {"e7": 1}], "b": "e7.2"});
+    let found = strings(&value).collect::<Vec<_>>();
+    assert_eq!(found, ["a", "x", "e7", "b", "e7.2"]);
+}
+
 /// A BIR draft as far as the hand-off needs it.
 #[derive(Default)]
 struct FakeBir {
@@ -212,7 +247,7 @@ fn slice_b_q3_2551q_reaches_a_bir_draft_and_a_later_change_marks_it_out_of_date(
     );
     let text = got.to_string();
     assert!(
-        !text.contains("\"e") && !text.contains("tkt_"),
+        !strings(&got).any(is_entry_id) && !text.contains("tkt_"),
         "no Books ids or tickets in what BIR gets: {text}"
     );
     let mut bir = FakeBir::default();
