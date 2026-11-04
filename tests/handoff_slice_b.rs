@@ -45,16 +45,15 @@ fn refused(books: &mut Books, origin: Origin, name: &str, args: Value) -> String
 }
 
 /// Every key and string value in `value`.
-fn strings(value: &Value) -> Box<dyn Iterator<Item = &str> + '_> {
+fn strings(value: &Value) -> Vec<&str> {
     match value {
-        Value::String(text) => Box::new(std::iter::once(text.as_str())),
-        Value::Array(items) => Box::new(items.iter().flat_map(strings)),
-        Value::Object(fields) => Box::new(
-            fields
-                .iter()
-                .flat_map(|(key, field)| std::iter::once(key.as_str()).chain(strings(field))),
-        ),
-        _ => Box::new(std::iter::empty()),
+        Value::String(text) => vec![text.as_str()],
+        Value::Array(items) => items.iter().flat_map(strings).collect(),
+        Value::Object(fields) => fields
+            .iter()
+            .flat_map(|(key, field)| std::iter::once(key.as_str()).chain(strings(field)))
+            .collect(),
+        _ => Vec::new(),
     }
 }
 
@@ -68,6 +67,29 @@ fn is_entry_id(text: &str) -> bool {
         })
 }
 
+/// Whether `text` holds a Books id, alone or among other words.
+fn has_entry_id(text: &str) -> bool {
+    text.split(|c: char| !c.is_ascii_alphanumeric())
+        .any(is_entry_id)
+}
+
+#[test]
+fn the_entry_id_check_finds_ids_among_other_words() {
+    for text in [
+        "e12 rent",
+        "e12.3 - salary",
+        "paid (e7)",
+        "see e12.",
+        "memo.e12",
+        "a_e12",
+    ] {
+        assert!(has_entry_id(text), "{text}");
+    }
+    for text in ["e2c60cc7 rent", "entry 12", "2551Q", "290000.00"] {
+        assert!(!has_entry_id(text), "{text}");
+    }
+}
+
 #[test]
 fn the_entry_id_check_matches_ids_and_not_hashes() {
     assert!(is_entry_id("e12") && is_entry_id("e12.3"));
@@ -75,7 +97,7 @@ fn the_entry_id_check_matches_ids_and_not_hashes() {
         assert!(!is_entry_id(text), "{text}");
     }
     let value = json!({"a": ["x", {"e7": 1}], "b": "e7.2"});
-    let found = strings(&value).collect::<Vec<_>>();
+    let found = strings(&value);
     assert_eq!(found, ["a", "x", "e7", "b", "e7.2"]);
 }
 
@@ -247,7 +269,7 @@ fn slice_b_q3_2551q_reaches_a_bir_draft_and_a_later_change_marks_it_out_of_date(
     );
     let text = got.to_string();
     assert!(
-        !strings(&got).any(is_entry_id) && !text.contains("tkt_"),
+        !strings(&got).into_iter().any(has_entry_id) && !text.contains("tkt_"),
         "no Books ids or tickets in what BIR gets: {text}"
     );
     let mut bir = FakeBir::default();

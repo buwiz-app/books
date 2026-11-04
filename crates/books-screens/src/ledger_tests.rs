@@ -7,13 +7,14 @@ use std::{
 };
 
 use buwiz_app::{Bridge, BuwizError, Done, Host, Listener};
-use nsh_core::{
-    ApproxTextEngine, EventKind, EventMask, EventPayload, MountBatch, MountItem, NodeId,
-};
+use nsh_core::{ApproxTextEngine, EventKind, EventPayload, MountBatch, MountItem, NodeId};
 use nsh_engine::{App, Engine, EngineConfig, EngineControl, MountSink};
 use serde_json::{Map, Value, json};
 
-use super::{screens, settle::settle};
+use super::{
+    screens,
+    settle::{self, Mounted, settle},
+};
 
 struct FixtureHost {
     props: Value,
@@ -121,12 +122,8 @@ impl MountSink for Sink {
 
 #[derive(Default)]
 struct ScreenState {
-    parents: HashMap<NodeId, NodeId>,
-    events: HashMap<NodeId, EventMask>,
-    labels: HashMap<NodeId, String>,
-    label_order: Vec<NodeId>,
+    mounted: Mounted,
     inputs: HashMap<NodeId, String>,
-    shown: Vec<String>,
 }
 
 fn fixture_path() -> PathBuf {
@@ -147,26 +144,10 @@ fn fixture_answers(defaults: &Value, case: &Value) -> Value {
 
 fn apply_batch(state: &mut ScreenState, batch: MountBatch) {
     for item in batch.items {
+        state.mounted.apply(&item);
         match item {
-            MountItem::Insert { parent, child, .. } => {
-                state.parents.insert(child, parent);
-            }
-            MountItem::Events { id, events } => {
-                state.events.insert(id, events);
-            }
-            MountItem::Remove { id } | MountItem::Delete { id } => {
-                state.parents.remove(&id);
-                state.events.remove(&id);
-                state.labels.remove(&id);
+            MountItem::Delete { id } => {
                 state.inputs.remove(&id);
-            }
-            MountItem::Text { id, text, .. } => {
-                let value = text.text.to_string();
-                if !state.labels.contains_key(&id) {
-                    state.label_order.push(id);
-                }
-                state.labels.insert(id, value.clone());
-                state.shown.push(value);
             }
             MountItem::Input { id, config } => {
                 state.inputs.insert(id, config.placeholder.clone());
@@ -180,9 +161,17 @@ fn press_id(label: &str, occurrence: usize, state: &ScreenState, contains: bool)
     let normalized = label.trim_end_matches('⌄');
     let text_ids = |matches: &dyn Fn(&str) -> bool| {
         state
+            .mounted
             .label_order
             .iter()
-            .filter(|id| state.labels.get(id).is_some_and(|text| matches(text)))
+            .filter(|id| {
+                state.mounted.attached(**id)
+                    && state
+                        .mounted
+                        .labels
+                        .get(id)
+                        .is_some_and(|text| matches(text))
+            })
             .copied()
             .collect::<Vec<_>>()
     };
@@ -202,6 +191,7 @@ fn press_id(label: &str, occurrence: usize, state: &ScreenState, contains: bool)
         let mut current = id;
         loop {
             if state
+                .mounted
                 .events
                 .get(&current)
                 .is_some_and(|mask| mask.contains(EventKind::Press))
@@ -211,7 +201,7 @@ fn press_id(label: &str, occurrence: usize, state: &ScreenState, contains: bool)
                 }
                 break;
             }
-            let Some(parent) = state.parents.get(&current) else {
+            let Some(parent) = state.mounted.parents.get(&current) else {
                 break;
             };
             current = *parent;
@@ -226,10 +216,7 @@ fn catch_up(
     receiver: &mpsc::Receiver<MountBatch>,
     state: &mut ScreenState,
 ) {
-    settle(control);
-    while let Ok(batch) = receiver.try_recv() {
-        apply_batch(state, batch);
-    }
+    settle::catch_up(control, receiver, |batch| apply_batch(state, batch));
 }
 
 fn drive_case(defaults: &Value, case: &Value) {
@@ -259,7 +246,7 @@ fn drive_case(defaults: &Value, case: &Value) {
             let id = press_id(label, occurrence, &state, contains.is_some()).unwrap_or_else(|| {
                 panic!(
                     "{} cannot press {label:?}; text {:?}",
-                    case["name"], state.shown
+                    case["name"], state.mounted.shown
                 )
             });
             control.dispatch_event(id, EventKind::Press, EventPayload::None);
@@ -269,7 +256,7 @@ fn drive_case(defaults: &Value, case: &Value) {
             let id = state
                 .inputs
                 .iter()
-                .find(|(_, actual)| actual == &placeholder)
+                .find(|(id, actual)| actual == &placeholder && state.mounted.attached(**id))
                 .map(|(id, _)| *id)
                 .unwrap_or_else(|| panic!("{} missing input {placeholder:?}", case["name"]));
             control.dispatch_event(
@@ -283,17 +270,21 @@ fn drive_case(defaults: &Value, case: &Value) {
             catch_up(&control, &receiver, &mut state);
         }
         assert!(
-            !state.labels.values().any(|text| text == "Loading…"),
+            !state.mounted.live_labels().any(|text| text == "Loading…"),
             "{} remained in a loading state; calls {:?}",
             case["name"],
             normalize_calls(&host.sent())
         );
         if let Some(expected) = step.get("expect").and_then(Value::as_str) {
             assert!(
-                state.shown.iter().any(|text| text.contains(expected)),
+                state
+                    .mounted
+                    .shown
+                    .iter()
+                    .any(|text| text.contains(expected)),
                 "{} missing validation {expected:?}: {:?}",
                 case["name"],
-                state.shown
+                state.mounted.shown
             );
         }
     }
@@ -309,18 +300,19 @@ fn drive_case(defaults: &Value, case: &Value) {
     assert_eq!(
         actual_calls, expected_calls,
         "{} call transcript differs; shown {:?}",
-        case["name"], state.shown
+        case["name"], state.mounted.shown
     );
     for expected in case["transcript"]["text"].as_array().unwrap() {
         let expected = expected.as_str().unwrap();
         assert!(
             state
+                .mounted
                 .shown
                 .iter()
                 .any(|actual| actual.eq_ignore_ascii_case(expected)),
             "{} missing text {expected:?}; shown {:?}",
             case["name"],
-            state.shown
+            state.mounted.shown
         );
     }
     let expected_served = expected_served(&expected_calls, &answers);
@@ -381,7 +373,7 @@ fn expected_served(calls: &[Value], answers: &Value) -> Vec<Value> {
     clippy::float_arithmetic,
     reason = "a render time in milliseconds, not money"
 )]
-fn first_row_ms(defaults: &Value, case: &Value) -> f64 {
+fn settled_ms(defaults: &Value, case: &Value) -> f64 {
     let answers = fixture_answers(&defaults["answers"], case);
     let host = Arc::new(FixtureHost::new(
         case.get("props").unwrap_or(&defaults["props"]).clone(),
@@ -408,6 +400,7 @@ fn first_row_ms(defaults: &Value, case: &Value) -> f64 {
     let target = defaults["timing_text"].as_str().unwrap();
     assert!(
         state
+            .mounted
             .shown
             .iter()
             .any(|text| text.eq_ignore_ascii_case(target)),
@@ -465,7 +458,7 @@ fn native_ledger_timing_50() {
             continue;
         }
         let mut values = (0..50)
-            .map(|_| first_row_ms(&fixture["defaults"], case))
+            .map(|_| settled_ms(&fixture["defaults"], case))
             .collect::<Vec<_>>();
         values.sort_by(f64::total_cmp);
         println!(
