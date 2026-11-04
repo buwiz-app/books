@@ -1992,7 +1992,6 @@ mod dates {
     use super::*;
 
     #[test]
-    #[ignore = "Date::manila_from_iso_instant reads only a UTC instant (Z): it ignores a +08:00 offset, so 2026-09-30T23:30:00+08:00 reads as 1 Oct; the TypeScript proof of concept honoured the offset"]
     fn an_instant_with_a_manila_offset_is_taken_on_its_manila_day() {
         assert_eq!(
             Date::manila_from_iso_instant("2026-09-30T23:30:00+08:00"),

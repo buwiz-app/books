@@ -15,8 +15,7 @@
 # source run on tests/host/nsh-standin.mjs: type into a TextBox, change a picker. Everything is removed
 # on exit (KEEP_TMP=1 keeps the temp dir; it holds test keys).
 #
-# Env: BUWIZ_BOT_DIR (default /Volumes/goldcoders/Projects/rox): a Buwiz Bot
-#        checkout holding BUWIZ_BOT_COMMIT
+# Env: BUWIZ_BOT_DIR (required): a Buwiz Bot checkout holding BUWIZ_BOT_COMMIT
 #      BUWIZ_BOT_COMMIT (default 5196cb720806bcaf5b52e28bd624797a15876756)
 #      BOOKS_HOST_PORT (default 8810)
 #      BOOKS_TEST_KEY_ID (default books-test-01)
@@ -25,13 +24,15 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-BOT_DIR="${BUWIZ_BOT_DIR:-/Volumes/goldcoders/Projects/rox}"
+BOT_DIR="${BUWIZ_BOT_DIR:-}"
 BOT_COMMIT="${BUWIZ_BOT_COMMIT:-5196cb720806bcaf5b52e28bd624797a15876756}"
 PORT="${BOOKS_HOST_PORT:-8810}"
 KEY_ID="${BOOKS_TEST_KEY_ID:-books-test-01}"
 PLUGIN_ID="app.buwiz.books"
 
 die() { echo "host-test: $*" >&2; exit 2; }
+[ -n "$BOT_DIR" ] || die "set BUWIZ_BOT_DIR to a Bot checkout holding $BOT_COMMIT"
+git -C "$BOT_DIR" cat-file -e "$BOT_COMMIT^{commit}" 2>/dev/null || die "$BOT_DIR does not hold commit $BOT_COMMIT; fetch it there or set BUWIZ_BOT_COMMIT"
 [ "$KEY_ID" != "gc-2026-01" ] || die "the test key id must not be gc-2026-01"
 [ "$PORT" -ge 8810 ] 2>/dev/null || die "use a port of 8810 or above (8787 is the owner's broker)"
 ! lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1 || die "port $PORT is in use"

@@ -277,7 +277,7 @@ pub fn compute_measure(
     let spec = spec(id).ok_or_else(|| {
         EngineError::ledger(
             "measure_not_implemented",
-            format!("{id} is not implemented in the PoC"),
+            format!("{id} is not a measure Books computes"),
         )
     })?;
     let date_of = |l: &PostedLine| -> Option<String> {

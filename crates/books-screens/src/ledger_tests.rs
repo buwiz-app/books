@@ -449,6 +449,10 @@ fn expected_served(calls: &[Value], answers: &Value) -> Vec<Value> {
         .collect()
 }
 
+#[expect(
+    clippy::float_arithmetic,
+    reason = "a render time in milliseconds, not money"
+)]
 fn first_row_ms(defaults: &Value, case: &Value) -> f64 {
     let answers = fixture_answers(&defaults["answers"], case);
     let host = Arc::new(FixtureHost::new(

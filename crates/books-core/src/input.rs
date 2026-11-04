@@ -557,7 +557,7 @@ pub fn normalize_line(raw: &Value, vocab: &Vocab) -> Result<NormLine, EngineErro
     for banned in BANNED_LINE {
         if raw.contains_key(banned) {
             return Err(EngineError::input(format!(
-                "{id}.{banned} is a compliance attribute; Books lines carry accounting facts only (ADR-0007)"
+                "{id}.{banned} is a compliance attribute; Books lines carry accounting facts only, and Forms owns compliance choices"
             )));
         }
     }
@@ -678,7 +678,7 @@ pub fn normalize_profile(raw: &Value) -> Result<NormProfile, EngineError> {
     for banned in BANNED_PROFILE {
         if o.contains_key(banned) {
             return Err(EngineError::input(format!(
-                "profile.{banned}: elections, tax facts and prior filings are Forms' (ADR-0007)"
+                "profile.{banned}: elections, tax facts and prior filings belong to Forms"
             )));
         }
     }

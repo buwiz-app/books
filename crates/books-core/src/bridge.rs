@@ -21,6 +21,22 @@ use crate::money;
 use crate::posting::{Ledger, in_range, money_text, to_centavos};
 use crate::rules::{Aggregation, LoadedData, Mapping, RuleSet};
 
+/// Wording in the rule sets' notes that only makes sense inside the project:
+/// planning phase tags and pointers to research files that never shipped.
+/// The rule sets in `data/` are immutable (AGENTS invariant 7), so the bridge
+/// drops these when it shows a note.
+const NOTE_INTERNALS: [(&str, &str); 2] = [
+    (" is planned (P6).", " is planned."),
+    (" See research/handoff-to-forms/compliance-notes.md.", ""),
+];
+
+/// A rule-set note as the person and the assistant see it.
+fn shown_note(note: &str) -> String {
+    NOTE_INTERNALS
+        .iter()
+        .fold(note.to_string(), |text, (from, to)| text.replace(from, to))
+}
+
 /// A blocking item or warning. `ids` may be empty.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Item {
@@ -370,8 +386,8 @@ pub fn run_bridge(ctx: &BridgeCtx<'_>) -> Result<Outcome, EngineError> {
         .filter(|l| in_range(Some(&l.entry_date), &start, &end))
         .collect();
 
-    // EXC.SPOUSE_MVP: spouse lines are measured but the bridge refuses to
-    // map them in MVP.
+    // EXC.SPOUSE_MVP: spouse lines are measured, but the bridge doesn't map
+    // them yet.
     if active.iter().any(|m| m.person_scope == "taxpayer") {
         let spouse: Vec<String> = in_period
             .iter()
@@ -382,7 +398,7 @@ pub fn run_bridge(ctx: &BridgeCtx<'_>) -> Result<Outcome, EngineError> {
             push(
                 &mut o.blocking,
                 "EXC.SPOUSE_MVP",
-                "spouse-scoped lines are refused in MVP (phase P7)".to_string(),
+                "Books doesn't hand over spouse-scoped lines yet".to_string(),
                 spouse,
             );
         }
@@ -479,7 +495,7 @@ pub fn run_bridge(ctx: &BridgeCtx<'_>) -> Result<Outcome, EngineError> {
             push(
                 &mut o.warnings,
                 "MAPPING_REVIEW_OPEN",
-                format!("{}: {}", m.id, m.review_note),
+                format!("{}: {}", m.id, shown_note(&m.review_note)),
                 Vec::new(),
             );
         }
@@ -487,7 +503,7 @@ pub fn run_bridge(ctx: &BridgeCtx<'_>) -> Result<Outcome, EngineError> {
             push(
                 &mut o.warnings,
                 "INPUT_LEVEL_TAX_RULE",
-                format!("{}: {rule}", m.id),
+                format!("{}: {}", m.id, shown_note(rule)),
                 Vec::new(),
             );
         }
@@ -507,7 +523,7 @@ pub fn run_bridge(ctx: &BridgeCtx<'_>) -> Result<Outcome, EngineError> {
                 push(
                     &mut o.blocking,
                     code,
-                    format!("{}: {}", m.id, m.review_note),
+                    format!("{}: {}", m.id, shown_note(&m.review_note)),
                     rows.iter().map(|r| r.line.line.line_id.clone()).collect(),
                 );
             }

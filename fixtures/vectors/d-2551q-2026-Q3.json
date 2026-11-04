@@ -6,7 +6,7 @@
     "blocking": [
       {
         "code": "EXC.SPOUSE_MVP",
-        "detail": "spouse-scoped lines are refused in MVP (phase P7)",
+        "detail": "Books doesn't hand over spouse-scoped lines yet",
         "ids": [
           "D-002.2"
         ]
@@ -33,7 +33,7 @@
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "1567fa56291f67de04abb2a0fcb52a223fde7ff39e21fed030b723dc0a65d8ca",
+    "output_sha256": "1080f61c9f6f48a5626684dd8227376a558be1051b543602cb02ee5e9b1b18a1",
     "period_end": "2026-09-30",
     "period_key": "2026-Q3",
     "period_start": "2026-07-01",

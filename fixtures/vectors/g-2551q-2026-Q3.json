@@ -1,5 +1,5 @@
 {
-  "description": "Journey worked example (DS-H): net sales 300000.00; received WB082 2307 of 3000.00 to item 15; a pending WB082 and a WB084 2306 are excluded. Ready.",
+  "description": "Journey worked example: net sales 300000.00; received WB082 2307 of 3000.00 to item 15; a pending WB082 and a WB084 2306 are excluded. Ready.",
   "expected": {
     "accounting_basis": "accrual",
     "as_of": "2026-10-29",

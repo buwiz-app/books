@@ -242,7 +242,7 @@
       "catalog_id": "measures-v1",
       "version": 1
     },
-    "output_sha256": "21f4d949e91c6b4d33106ef06908dada222692014461656b940b9831fd873cf4",
+    "output_sha256": "7dc6927aeecdc3ecb604750921fd4eef08c2c7fb1f12e7af6501b92a83ac2f27",
     "period_end": "2026-09-30",
     "period_key": "2026-09",
     "period_start": "2026-09-01",
@@ -278,11 +278,11 @@
       },
       {
         "code": "INPUT_LEVEL_TAX_RULE",
-        "detail": "1601C.II.17: THE ONE INPUT-LEVEL TAX RULE IN THE BRIDGE. Item 17 asks for the NON-TAXABLE part of 13th month pay and other benefits (annual cap 90,000.00 per employee). Only Books has the year-to-date payroll it needs. Open for the Forms owner: either Forms applies the cap (and the bridge sends the gross paid amount through a new input), or the bridge keeps it here. See research/handoff-to-forms/compliance-notes.md."
+        "detail": "1601C.II.17: THE ONE INPUT-LEVEL TAX RULE IN THE BRIDGE. Item 17 asks for the NON-TAXABLE part of 13th month pay and other benefits (annual cap 90,000.00 per employee). Only Books has the year-to-date payroll it needs. Open for the Forms owner: either Forms applies the cap (and the bridge sends the gross paid amount through a new input), or the bridge keeps it here."
       },
       {
         "code": "MAPPING_REVIEW_OPEN",
-        "detail": "1601C.II.16: Item 16 takes this pay for minimum-wage earners only. The per-employee MWE split of the measure is planned (P6)."
+        "detail": "1601C.II.16: Item 16 takes this pay for minimum-wage earners only. The per-employee MWE split of the measure is planned."
       },
       {
         "code": "MAPPING_REVIEW_OPEN",

@@ -3,7 +3,7 @@
 //! (`data/tax-attributes.v1.json`) and the chart presets (`data/presets/`).
 //! All three are compiled in.
 //!
-//! A kind is accounting meaning, never form meaning (invariant 8): the
+//! A kind is accounting meaning, never form meaning (invariant 6): the
 //! bridge reads line facts, not account numbers.
 
 use std::collections::{BTreeMap, BTreeSet};

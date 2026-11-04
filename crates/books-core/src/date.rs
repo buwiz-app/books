@@ -131,13 +131,52 @@ impl Date {
         Self::from_days((ms.div_euclid(1000) + 8 * 3600).div_euclid(86_400))
     }
 
-    /// The calendar day in Manila at a stored UTC instant
-    /// (`2026-10-29T23:30:00Z`): its first ten characters are the UTC day,
-    /// which is a day early from 16:00 UTC on.
+    /// The calendar day in Manila at an ISO 8601 instant: `YYYY-MM-DDTHH:MM:SS`,
+    /// optional fractional seconds, then `Z`, a `±HH:MM` offset or nothing
+    /// (read as UTC, as the store writes it). A stored UTC instant's first ten
+    /// characters are the UTC day, which is a day early from 16:00 UTC on.
     pub fn manila_from_iso_instant(iso: &str) -> Option<Self> {
         let day = Self::parse(iso.get(0..10)?)?;
-        let num = |range: std::ops::Range<usize>| iso.get(range)?.parse::<i64>().ok();
-        let secs = num(11..13)? * 3600 + num(14..16)? * 60 + num(17..19)?;
+        if iso.get(10..11)? != "T" || iso.get(13..14)? != ":" || iso.get(16..17)? != ":" {
+            return None;
+        }
+        let num = |text: &str, range: std::ops::Range<usize>| -> Option<i64> {
+            let part = text.get(range)?;
+            part.bytes()
+                .all(|b| b.is_ascii_digit())
+                .then(|| part.parse().ok())?
+        };
+        let (hh, mm, ss) = (num(iso, 11..13)?, num(iso, 14..16)?, num(iso, 17..19)?);
+        if hh > 23 || mm > 59 || ss > 60 {
+            return None;
+        }
+        let mut rest = &iso[19..];
+        if let Some(fraction) = rest.strip_prefix('.') {
+            let digits = fraction.bytes().take_while(u8::is_ascii_digit).count();
+            if digits == 0 {
+                return None;
+            }
+            rest = &fraction[digits..];
+        }
+        let offset = match rest {
+            "" | "Z" => 0,
+            _ => {
+                let sign = match rest.get(0..1)? {
+                    "+" => 1,
+                    "-" => -1,
+                    _ => return None,
+                };
+                if rest.len() != 6 || rest.get(3..4)? != ":" {
+                    return None;
+                }
+                let (oh, om) = (num(rest, 1..3)?, num(rest, 4..6)?);
+                if oh > 14 || om > 59 {
+                    return None;
+                }
+                sign * (oh * 3600 + om * 60)
+            }
+        };
+        let secs = hh * 3600 + mm * 60 + ss - offset;
         Some(Self::manila_from_unix_ms(
             (day.to_days() * 86_400 + secs) * 1000,
         ))
@@ -293,6 +332,33 @@ mod tests {
         );
         assert!(Date::manila_from_iso_instant("2026-10-29").is_none());
         assert!(Date::manila_from_iso_instant("").is_none());
+    }
+
+    #[test]
+    fn an_instant_is_read_under_its_own_offset() {
+        let day = |iso| Date::manila_from_iso_instant(iso);
+        // the same instant, written three ways
+        assert_eq!(day("2026-09-30T15:30:00Z"), Date::new(2026, 9, 30));
+        assert_eq!(day("2026-09-30T23:30:00+08:00"), Date::new(2026, 9, 30));
+        assert_eq!(day("2026-09-30T10:30:00-05:00"), Date::new(2026, 9, 30));
+        // an offset that crosses Manila's midnight
+        assert_eq!(day("2026-09-30T20:00:00-05:00"), Date::new(2026, 10, 1));
+        assert_eq!(day("2026-10-01T07:59:59+08:00"), Date::new(2026, 10, 1));
+        // fractional seconds, and no zone read as UTC
+        assert_eq!(day("2026-10-29T16:00:00.250Z"), Date::new(2026, 10, 30));
+        assert_eq!(day("2026-10-29T16:00:00"), Date::new(2026, 10, 30));
+        for bad in [
+            "2026-10-29T16:00:00+8",
+            "2026-10-29T16:00:00+0800",
+            "2026-10-29T16:00:00 Z",
+            "2026-10-29T16:00:00.Z",
+            "2026-10-29T24:00:00Z",
+            "2026-10-29 16:00:00Z",
+            "2026-10-29T16:+0:00Z",
+            "2026-10-29T16:00:00+15:00",
+        ] {
+            assert!(day(bad).is_none(), "{bad}");
+        }
     }
 
     #[test]

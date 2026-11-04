@@ -4,7 +4,7 @@
 //! A line's amount is money into the account (positive) or out of it
 //! (negative), in centavos. Descriptions keep no digit run of nine or more
 //! (a TIN or an account number): they are masked before anything stores
-//! them (invariants 3 and 4).
+//! them (invariant 3).
 
 use crate::date::{Date, MONTHS};
 

@@ -168,6 +168,7 @@ fn normalize_calls(sent: &[(String, Value)]) -> Vec<Value> {
         .collect()
 }
 
+#[expect(clippy::float_arithmetic, reason = "layout points, not money")]
 fn trigger_final_layout(control: &EngineControl, node: NodeId, height: f64) {
     let frame = Bounds::new(
         Point::default(),
@@ -176,6 +177,10 @@ fn trigger_final_layout(control: &EngineControl, node: NodeId, height: f64) {
     control.dispatch_event(node, EventKind::Layout, EventPayload::Layout(frame));
 }
 
+#[expect(
+    clippy::float_arithmetic,
+    reason = "a render time in milliseconds, not money"
+)]
 fn drive_fixture(fixture: &Value) -> f64 {
     let answers = fixture["answers"]
         .as_array()
@@ -441,7 +446,7 @@ fn native_quiet_timing_50() {
 }
 
 #[test]
-#[ignore = "W9 quiet screen timing sample"]
+#[ignore = "a timing sample for the quiet screen; run it by name to print the timings"]
 fn quiet_timing_samples() {
     let expected_names = fixture_names();
     for name in expected_names {
@@ -467,4 +472,27 @@ fn quiet_manifest_permission_grants_only_its_read_tool_and_open() {
         .unwrap();
     assert_eq!(quiet["permissions"]["tools"], json!(["books_nudge"]));
     assert_eq!(quiet["permissions"]["open"], json!({"apps":["books"]}));
+}
+
+#[test]
+fn every_native_app_the_manifest_lists_is_a_screen_this_crate_builds() {
+    use books_mini_app::apps::{APPS, AppSource};
+    use std::collections::BTreeSet;
+    let declared: BTreeSet<(&str, u32)> = APPS
+        .iter()
+        .filter_map(|app| match app.source {
+            AppSource::Native { screen, abi, .. } => Some((screen, abi)),
+            AppSource::Tsx(_) => None,
+        })
+        .collect();
+    let built: BTreeSet<(&str, u32)> = crate::screens().iter().map(|s| (s.id, s.abi)).collect();
+    assert_eq!(
+        declared, built,
+        "apps.rs native entries vs books_screens::screens()"
+    );
+    assert_eq!(
+        built.len(),
+        crate::screens().len(),
+        "a screen id is listed twice"
+    );
 }

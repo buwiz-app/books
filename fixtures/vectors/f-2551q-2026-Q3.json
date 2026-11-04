@@ -1,5 +1,5 @@
 {
-  "description": "Design Slice A numbers (DS-A): sales 120000.00 and 100000.00, the 100000.00 sale voided by a reversal dated 2026-07-15, sale 80000.00. Net sales 200000.00. Ready.",
+  "description": "Slice A numbers: sales 120000.00 and 100000.00, the 100000.00 sale voided by a reversal dated 2026-07-15, sale 80000.00. Net sales 200000.00. Ready.",
   "expected": {
     "accounting_basis": "cash",
     "as_of": "2026-10-29",

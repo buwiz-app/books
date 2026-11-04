@@ -9,6 +9,13 @@
 //! `money-and-mapping.json`: every money text round trip goes through
 //! `money::parse` and `money::format`, every item-17 case through the Rust
 //! split, and the file re-emitted from the Rust results equals its bytes.
+//!
+//! No text in a proposal carries a project-internal id (a planning phase,
+//! "MVP", "PoC", an ADR number or a research path): the person and the
+//! assistant read these texts.
+//!
+//! `BOOKS_BLESS=1` rewrites a case vector's `expected` from the engine, for
+//! a deliberate wording change; review the diff before committing it.
 
 use std::path::PathBuf;
 
@@ -73,6 +80,13 @@ fn check_case(name: &str) {
     let ctx = form_context_from_value(&vector["form_context"]).unwrap();
     let proposal = build_proposal(data, &input, form, text(&vector, "period"), &ctx, None).unwrap();
     let rust = proposal.to_value();
+    if std::env::var("BOOKS_BLESS").is_ok_and(|v| v == "1") {
+        let mut blessed = vector.clone();
+        blessed["expected"] = rust.clone();
+        let path = vectors_dir().join(format!("{name}.json"));
+        std::fs::write(&path, pretty(&blessed).unwrap()).unwrap();
+        return;
+    }
 
     // (a) the proposal, canonical form, byte for byte.
     assert_eq!(
@@ -91,6 +105,80 @@ fn check_case(name: &str) {
     let mut emitted = vector.clone();
     emitted["expected"] = rust;
     assert_eq!(pretty(&emitted).unwrap(), bytes, "{name}: file bytes");
+}
+
+/// Every string in `v`, with its JSON path.
+fn strings(v: &Value, path: &str, out: &mut Vec<(String, String)>) {
+    match v {
+        Value::String(s) => out.push((path.to_string(), s.clone())),
+        Value::Array(a) => a
+            .iter()
+            .enumerate()
+            .for_each(|(i, x)| strings(x, &format!("{path}/{i}"), out)),
+        Value::Object(o) => o
+            .iter()
+            .for_each(|(k, x)| strings(x, &format!("{path}/{k}"), out)),
+        _ => {}
+    }
+}
+
+/// A project-internal id in shown text: a planning phase such as "(P6)" or
+/// "phase P7", "MVP", "PoC", an ADR number or a research path. Codes such as
+/// `EXC.SPOUSE_MVP` are identifiers, not text, so whole words only.
+fn internal_id(text: &str) -> Option<&'static str> {
+    let words: Vec<&str> = text
+        .split(|c: char| !(c.is_ascii_alphanumeric() || "-/_.".contains(c)))
+        .map(|w| w.trim_end_matches('.'))
+        .collect();
+    let phase =
+        |w: &str| w.len() >= 2 && w.starts_with('P') && w[1..].bytes().all(|b| b.is_ascii_digit());
+    if text.contains("research/") {
+        Some("a research path")
+    } else if words.iter().any(|w| ["MVP", "PoC"].contains(w)) {
+        Some("MVP or PoC")
+    } else if words.iter().any(|w| w.starts_with("ADR-")) {
+        Some("an ADR number")
+    } else if words.iter().any(|w| phase(w)) {
+        Some("a planning phase")
+    } else {
+        None
+    }
+}
+
+#[test]
+fn the_internal_id_check_catches_what_it_should() {
+    for (text, found) in [
+        ("refused in MVP (phase P7)", true),
+        ("the split is planned (P6).", true),
+        ("See research/handoff-to-forms/notes.md.", true),
+        ("not implemented in the PoC.", true),
+        ("Forms owns it (ADR-0007)", true),
+        ("EXC.SPOUSE_MVP", false),
+        ("1601C.II.16: Item 16", false),
+        ("PHP 1,000.00", false),
+    ] {
+        assert_eq!(internal_id(text).is_some(), found, "{text}");
+    }
+}
+
+#[test]
+fn no_proposal_text_carries_an_internal_id() {
+    let data = shared().unwrap();
+    for name in CASES {
+        let (_, vector) = read(name);
+        let input = NormInput::from_value(&vector["input"]).unwrap();
+        let form = FormCode::parse(text(&vector, "form")).unwrap();
+        let ctx = form_context_from_value(&vector["form_context"]).unwrap();
+        let proposal =
+            build_proposal(data, &input, form, text(&vector, "period"), &ctx, None).unwrap();
+        let mut all = Vec::new();
+        strings(&proposal.to_value(), "", &mut all);
+        for (path, s) in all {
+            if let Some(what) = internal_id(&s) {
+                panic!("{name}{path} shows {what}: {s}");
+            }
+        }
+    }
 }
 
 macro_rules! case_tests {
