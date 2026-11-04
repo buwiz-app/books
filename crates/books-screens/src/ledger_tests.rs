@@ -146,7 +146,7 @@ fn apply_batch(state: &mut ScreenState, batch: MountBatch) {
     for item in batch.items {
         state.mounted.apply(&item);
         match item {
-            MountItem::Remove { id } | MountItem::Delete { id } => {
+            MountItem::Delete { id } => {
                 state.inputs.remove(&id);
             }
             MountItem::Input { id, config } => {
@@ -165,11 +165,12 @@ fn press_id(label: &str, occurrence: usize, state: &ScreenState, contains: bool)
             .label_order
             .iter()
             .filter(|id| {
-                state
-                    .mounted
-                    .labels
-                    .get(id)
-                    .is_some_and(|text| matches(text))
+                state.mounted.attached(**id)
+                    && state
+                        .mounted
+                        .labels
+                        .get(id)
+                        .is_some_and(|text| matches(text))
             })
             .copied()
             .collect::<Vec<_>>()
@@ -255,7 +256,7 @@ fn drive_case(defaults: &Value, case: &Value) {
             let id = state
                 .inputs
                 .iter()
-                .find(|(_, actual)| actual == &placeholder)
+                .find(|(id, actual)| actual == &placeholder && state.mounted.attached(**id))
                 .map(|(id, _)| *id)
                 .unwrap_or_else(|| panic!("{} missing input {placeholder:?}", case["name"]));
             control.dispatch_event(
@@ -269,7 +270,7 @@ fn drive_case(defaults: &Value, case: &Value) {
             catch_up(&control, &receiver, &mut state);
         }
         assert!(
-            !state.mounted.labels.values().any(|text| text == "Loading…"),
+            !state.mounted.live_labels().any(|text| text == "Loading…"),
             "{} remained in a loading state; calls {:?}",
             case["name"],
             normalize_calls(&host.sent())

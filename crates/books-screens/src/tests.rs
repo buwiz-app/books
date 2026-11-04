@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::VecDeque,
     fs,
     path::PathBuf,
     sync::{
@@ -12,7 +12,7 @@ use std::{
 
 use buwiz_app::{Bridge, BuwizError, Done, Host, Listener};
 use nsh_core::{
-    ApproxTextEngine, EventKind, EventMask, EventPayload, MountBatch, MountItem, NodeId,
+    ApproxTextEngine, EventKind, EventPayload, MountBatch, MountItem, NodeId,
     geometry::{Bounds, Point, Points, Size},
 };
 use nsh_engine::{App, Engine, EngineConfig, EngineControl, MountSink};
@@ -268,13 +268,7 @@ fn drive_fixture(fixture: &Value) -> f64 {
     let presses = fixture["press"].as_array().unwrap();
     for (index, label) in presses.iter().enumerate() {
         let label = label.as_str().unwrap();
-        let id = press_node(
-            label,
-            &seen.mounted.labels,
-            &seen.mounted.parents,
-            &seen.mounted.events,
-        )
-        .unwrap_or_else(|| {
+        let id = press_node(label, &seen.mounted).unwrap_or_else(|| {
             panic!(
                 "{} cannot press {label:?} ({index}/{}); visible {:?}",
                 fixture["props"],
@@ -368,30 +362,25 @@ fn drive_fixture(fixture: &Value) -> f64 {
     host.ready_at.lock().unwrap().unwrap().as_secs_f64() * 1000.0
 }
 
-fn press_node(
-    label: &str,
-    labels: &HashMap<NodeId, String>,
-    parents: &HashMap<NodeId, NodeId>,
-    events: &HashMap<NodeId, EventMask>,
-) -> Option<NodeId> {
-    for (id, text) in labels {
-        if !text.eq_ignore_ascii_case(label) {
+fn press_node(label: &str, mounted: &Mounted) -> Option<NodeId> {
+    let pressable = |id: &NodeId| {
+        mounted
+            .events
+            .get(id)
+            .is_some_and(|mask| mask.contains(EventKind::Press))
+    };
+    for (id, text) in &mounted.labels {
+        if !text.eq_ignore_ascii_case(label) || !mounted.attached(*id) {
             continue;
         }
         let mut current = *id;
-        while let Some(parent) = parents.get(&current) {
-            if events
-                .get(&current)
-                .is_some_and(|mask| mask.contains(EventKind::Press))
-            {
+        while let Some(parent) = mounted.parents.get(&current) {
+            if pressable(&current) {
                 return Some(current);
             }
             current = *parent;
         }
-        if events
-            .get(&current)
-            .is_some_and(|mask| mask.contains(EventKind::Press))
-        {
+        if pressable(&current) {
             return Some(current);
         }
     }

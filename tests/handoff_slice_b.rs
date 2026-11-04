@@ -69,14 +69,20 @@ fn is_entry_id(text: &str) -> bool {
 
 /// Whether `text` holds a Books id, alone or among other words.
 fn has_entry_id(text: &str) -> bool {
-    text.split(|c: char| !c.is_ascii_alphanumeric() && c != '.')
-        .map(|word| word.trim_end_matches('.'))
+    text.split(|c: char| !c.is_ascii_alphanumeric())
         .any(is_entry_id)
 }
 
 #[test]
 fn the_entry_id_check_finds_ids_among_other_words() {
-    for text in ["e12 rent", "e12.3 - salary", "paid (e7)", "see e12."] {
+    for text in [
+        "e12 rent",
+        "e12.3 - salary",
+        "paid (e7)",
+        "see e12.",
+        "memo.e12",
+        "a_e12",
+    ] {
         assert!(has_entry_id(text), "{text}");
     }
     for text in ["e2c60cc7 rent", "entry 12", "2551Q", "290000.00"] {
