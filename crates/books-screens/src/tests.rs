@@ -18,7 +18,7 @@ use nsh_core::{
 use nsh_engine::{App, Engine, EngineConfig, EngineControl, MountSink};
 use serde_json::{Map, Value, json};
 
-use super::*;
+use super::{settle::settle, *};
 
 struct FakeHost {
     props: Value,
@@ -127,6 +127,55 @@ impl MountSink for Sink {
     }
 }
 
+/// What the quiet screen's batches have shown so far.
+#[derive(Default)]
+struct Seen {
+    shown: Vec<String>,
+    parents: HashMap<NodeId, NodeId>,
+    events: HashMap<NodeId, EventMask>,
+    labels: HashMap<NodeId, String>,
+    layout_node: Option<NodeId>,
+}
+
+impl Seen {
+    /// Waits for the screen to settle, then applies every batch it sent.
+    fn catch_up(&mut self, control: &EngineControl, batches: &mpsc::Receiver<MountBatch>) {
+        settle(control);
+        while let Ok(batch) = batches.try_recv() {
+            self.apply(batch);
+        }
+    }
+
+    fn apply(&mut self, batch: MountBatch) {
+        for item in batch.items {
+            match item {
+                MountItem::Insert { parent, child, .. } => {
+                    self.parents.insert(child, parent);
+                }
+                MountItem::Events { id, events: mask } => {
+                    self.events.insert(id, mask);
+                    if mask.contains(EventKind::Layout) {
+                        self.layout_node = Some(id);
+                    } else if self.layout_node == Some(id) {
+                        self.layout_node = None;
+                    }
+                }
+                MountItem::Remove { id } | MountItem::Delete { id }
+                    if self.layout_node == Some(id) =>
+                {
+                    self.layout_node = None;
+                }
+                MountItem::Text { id, text, .. } => {
+                    let value = text.text.to_string();
+                    self.labels.insert(id, value.clone());
+                    self.shown.push(value);
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
 fn fixture_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/screens/quiet")
 }
@@ -216,81 +265,35 @@ fn drive_fixture(fixture: &Value) -> f64 {
     )
     .expect("engine starts");
     let control = engine.control();
-    let deadline = Instant::now() + Duration::from_secs(10);
-    let mut shown = Vec::new();
-    let mut parents = HashMap::<NodeId, NodeId>::new();
-    let mut events = HashMap::<NodeId, EventMask>::new();
-    let mut labels = HashMap::<NodeId, String>::new();
-    let mut layout_node = None;
-    let presses = fixture["press"].as_array().unwrap();
-    let mut press_index = 0;
-    let expected_calls = fixture["transcript"]["calls"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|call| call["method"] != "fit")
-        .count();
-    let expected_fit = fixture["transcript"]["calls"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|call| call["method"] == "fit");
+    let mut seen = Seen::default();
+    seen.catch_up(&control, &rx);
     assert!(
-        expected_fit,
+        fixture["transcript"]["calls"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|call| call["method"] == "fit"),
         "{} fixture has no fit golden",
         fixture["props"]
     );
-    while Instant::now() < deadline {
-        if let Ok(batch) = rx.recv_timeout(Duration::from_millis(20)) {
-            for item in batch.items {
-                match item {
-                    MountItem::Insert { parent, child, .. } => {
-                        parents.insert(child, parent);
-                    }
-                    MountItem::Events { id, events: mask } => {
-                        events.insert(id, mask);
-                        if mask.contains(EventKind::Layout) {
-                            layout_node = Some(id);
-                        } else if layout_node == Some(id) {
-                            layout_node = None;
-                        }
-                    }
-                    MountItem::Remove { id } | MountItem::Delete { id }
-                        if layout_node == Some(id) =>
-                    {
-                        layout_node = None;
-                    }
-                    MountItem::Text { id, text, .. } => {
-                        let value = text.text.to_string();
-                        labels.insert(id, value.clone());
-                        shown.push(value);
-                    }
-                    _ => {}
-                }
-            }
-        }
-        if let Some(label) = presses.get(press_index).and_then(Value::as_str)
-            && let Some(id) = press_node(label, &labels, &parents, &events)
-        {
-            control.dispatch_event(id, EventKind::Press, EventPayload::None);
-            press_index += 1;
-        }
-        let sent = host.sent.lock().unwrap();
-        let calls = normalize_calls(&sent);
-        let has_fit = sent.iter().any(|(method, _)| method == "buwiz.fit");
-        let expected_text = fixture["transcript"]["text"].as_array().unwrap();
-        let all_text = expected_text.iter().all(|expected| {
-            expected.as_str().is_some_and(|expected| {
-                shown
-                    .iter()
-                    .any(|actual| actual.eq_ignore_ascii_case(expected))
-            })
-        });
-        if press_index == presses.len() && calls.len() == expected_calls && has_fit && all_text {
-            break;
-        }
+    let presses = fixture["press"].as_array().unwrap();
+    for (index, label) in presses.iter().enumerate() {
+        let label = label.as_str().unwrap();
+        let id =
+            press_node(label, &seen.labels, &seen.parents, &seen.events).unwrap_or_else(|| {
+                panic!(
+                    "{} cannot press {label:?} ({index}/{}); visible {:?}",
+                    fixture["props"],
+                    presses.len(),
+                    seen.shown
+                )
+            });
+        control.dispatch_event(id, EventKind::Press, EventPayload::None);
+        seen.catch_up(&control, &rx);
     }
-    let layout_node = layout_node.expect("quiet screen has a layout callback");
+    let layout_node = seen
+        .layout_node
+        .expect("quiet screen has a layout callback");
     let last_height = host
         .sent
         .lock()
@@ -302,15 +305,12 @@ fn drive_fixture(fixture: &Value) -> f64 {
         .expect("quiet screen has a fit height");
     let previous_fits = timeline.fit_events.lock().unwrap().len();
     trigger_final_layout(&control, layout_node, last_height);
-    let fit_deadline = Instant::now() + Duration::from_secs(1);
-    while timeline.fit_events.lock().unwrap().len() <= previous_fits {
-        assert!(
-            Instant::now() < fit_deadline,
-            "{} final layout did not emit fit",
-            fixture["props"]
-        );
-        std::thread::sleep(Duration::from_millis(1));
-    }
+    seen.catch_up(&control, &rx);
+    assert!(
+        timeline.fit_events.lock().unwrap().len() > previous_fits,
+        "{} final layout did not emit fit",
+        fixture["props"]
+    );
     drop(engine);
     let sent = host.sent.lock().unwrap();
     let calls = normalize_calls(&sent);
@@ -321,11 +321,9 @@ fn drive_fixture(fixture: &Value) -> f64 {
         .cloned()
         .collect::<Vec<_>>();
     assert_eq!(
-        calls,
-        expected_calls,
-        "{} presses {press_index}/{}; visible {shown:?}; labels {labels:?}",
-        fixture["props"],
-        presses.len()
+        calls, expected_calls,
+        "{} visible {:?}; labels {:?}",
+        fixture["props"], seen.shown, seen.labels
     );
     let fit_data = sent
         .iter()
@@ -344,11 +342,12 @@ fn drive_fixture(fixture: &Value) -> f64 {
     for expected in fixture["transcript"]["text"].as_array().unwrap() {
         let expected = expected.as_str().unwrap();
         assert!(
-            shown
+            seen.shown
                 .iter()
                 .any(|actual| actual.eq_ignore_ascii_case(expected)),
-            "{} missing {expected:?} from {shown:?}",
-            fixture["props"]
+            "{} missing {expected:?} from {:?}",
+            fixture["props"],
+            seen.shown
         );
     }
     assert_eq!(

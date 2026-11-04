@@ -29,3 +29,6 @@ mod tests;
 
 #[cfg(test)]
 mod ledger_tests;
+
+#[cfg(test)]
+mod settle;
