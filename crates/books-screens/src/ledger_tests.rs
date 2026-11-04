@@ -3,18 +3,17 @@ use std::{
     fs,
     path::PathBuf,
     sync::{Arc, Mutex, mpsc},
-    thread,
-    time::{Duration, Instant},
+    time::Instant,
 };
 
 use buwiz_app::{Bridge, BuwizError, Done, Host, Listener};
 use nsh_core::{
     ApproxTextEngine, EventKind, EventMask, EventPayload, MountBatch, MountItem, NodeId,
 };
-use nsh_engine::{App, Engine, EngineConfig, MountSink};
+use nsh_engine::{App, Engine, EngineConfig, EngineControl, MountSink};
 use serde_json::{Map, Value, json};
 
-use super::screens;
+use super::{screens, settle::settle};
 
 struct FixtureHost {
     props: Value,
@@ -221,13 +220,16 @@ fn press_id(label: &str, occurrence: usize, state: &ScreenState, contains: bool)
     candidates.get(occurrence).copied()
 }
 
-fn expected_call_count(case: &Value) -> usize {
-    case["transcript"]["calls"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|call| call["method"] != "fit")
-        .count()
+/// Waits for the screen to settle, then applies every batch it sent.
+fn catch_up(
+    control: &EngineControl,
+    receiver: &mpsc::Receiver<MountBatch>,
+    state: &mut ScreenState,
+) {
+    settle(control);
+    while let Ok(batch) = receiver.try_recv() {
+        apply_batch(state, batch);
+    }
 }
 
 fn drive_case(defaults: &Value, case: &Value) {
@@ -246,76 +248,39 @@ fn drive_case(defaults: &Value, case: &Value) {
     )
     .expect("ledger engine starts");
     let control = engine.control();
-    let deadline = Instant::now() + Duration::from_secs(8);
     let mut state = ScreenState::default();
-    let steps = case["steps"].as_array().unwrap();
+    catch_up(&control, &receiver, &mut state);
 
-    for step in steps {
+    for step in case["steps"].as_array().unwrap() {
         let occurrence = step["occurrence"].as_u64().unwrap_or(0) as usize;
         let contains = step.get("contains").and_then(Value::as_str);
         let label = contains.or_else(|| step.get("press").and_then(Value::as_str));
         if let Some(label) = label {
-            let mut found = None;
-            while Instant::now() < deadline && found.is_none() {
-                while let Ok(batch) = receiver.try_recv() {
-                    apply_batch(&mut state, batch);
-                }
-                found = press_id(label, occurrence, &state, contains.is_some());
-                if found.is_none() {
-                    thread::sleep(Duration::from_millis(5));
-                }
-            }
-            let id = found.unwrap_or_else(|| {
+            let id = press_id(label, occurrence, &state, contains.is_some()).unwrap_or_else(|| {
                 panic!(
                     "{} cannot press {label:?}; text {:?}",
                     case["name"], state.shown
                 )
             });
             control.dispatch_event(id, EventKind::Press, EventPayload::None);
+            catch_up(&control, &receiver, &mut state);
         }
         if let Some(placeholder) = step.get("type").and_then(Value::as_str) {
-            let value = step["value"].as_str().unwrap().to_owned();
-            let mut id = None;
-            let input_deadline = Instant::now() + Duration::from_secs(2);
-            while Instant::now() < input_deadline && id.is_none() {
-                while let Ok(batch) = receiver.try_recv() {
-                    apply_batch(&mut state, batch);
-                }
-                id = state
-                    .inputs
-                    .iter()
-                    .find(|(_, actual)| actual == &placeholder)
-                    .map(|(id, _)| *id);
-                if id.is_none() {
-                    thread::sleep(Duration::from_millis(5));
-                }
-            }
+            let id = state
+                .inputs
+                .iter()
+                .find(|(_, actual)| actual == &placeholder)
+                .map(|(id, _)| *id)
+                .unwrap_or_else(|| panic!("{} missing input {placeholder:?}", case["name"]));
             control.dispatch_event(
-                id.unwrap_or_else(|| panic!("{} missing input {placeholder:?}", case["name"])),
+                id,
                 EventKind::ChangeText,
                 EventPayload::Text {
-                    text: value,
+                    text: step["value"].as_str().unwrap().to_owned(),
                     count: 1,
                 },
             );
-        }
-
-        let settle_deadline = Instant::now() + Duration::from_millis(250);
-        while Instant::now() < settle_deadline {
-            match receiver.recv_timeout(Duration::from_millis(10)) {
-                Ok(batch) => apply_batch(&mut state, batch),
-                Err(mpsc::RecvTimeoutError::Timeout) => {}
-                Err(mpsc::RecvTimeoutError::Disconnected) => break,
-            }
-        }
-        let load_deadline = Instant::now() + Duration::from_secs(2);
-        while state.labels.values().any(|text| text == "Loading…") && Instant::now() < load_deadline
-        {
-            match receiver.recv_timeout(Duration::from_millis(10)) {
-                Ok(batch) => apply_batch(&mut state, batch),
-                Err(mpsc::RecvTimeoutError::Timeout) => {}
-                Err(mpsc::RecvTimeoutError::Disconnected) => break,
-            }
+            catch_up(&control, &receiver, &mut state);
         }
         assert!(
             !state.labels.values().any(|text| text == "Loading…"),
@@ -331,45 +296,6 @@ fn drive_case(defaults: &Value, case: &Value) {
                 state.shown
             );
         }
-    }
-
-    let expected_count = expected_call_count(case);
-    while Instant::now() < deadline
-        && host
-            .sent()
-            .iter()
-            .filter(|(method, _)| method == "buwiz.call")
-            .count()
-            < expected_count
-    {
-        match receiver.recv_timeout(Duration::from_millis(10)) {
-            Ok(batch) => apply_batch(&mut state, batch),
-            Err(mpsc::RecvTimeoutError::Timeout) => {}
-            Err(mpsc::RecvTimeoutError::Disconnected) => break,
-        }
-    }
-    let expected_texts = case["transcript"]["text"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter_map(|text| text.as_str().map(str::to_owned))
-        .collect::<Vec<_>>();
-    while Instant::now() < deadline
-        && !expected_texts.iter().all(|expected| {
-            state
-                .shown
-                .iter()
-                .any(|actual| actual.eq_ignore_ascii_case(expected))
-        })
-    {
-        match receiver.recv_timeout(Duration::from_millis(10)) {
-            Ok(batch) => apply_batch(&mut state, batch),
-            Err(mpsc::RecvTimeoutError::Timeout) => {}
-            Err(mpsc::RecvTimeoutError::Disconnected) => break,
-        }
-    }
-    while let Ok(batch) = receiver.try_recv() {
-        apply_batch(&mut state, batch);
     }
 
     let actual_calls = normalize_calls(&host.sent());
@@ -449,6 +375,8 @@ fn expected_served(calls: &[Value], answers: &Value) -> Vec<Value> {
         .collect()
 }
 
+/// Milliseconds from the engine's start until the ledger has settled with its
+/// first row shown.
 #[expect(
     clippy::float_arithmetic,
     reason = "a render time in milliseconds, not money"
@@ -471,24 +399,23 @@ fn first_row_ms(defaults: &Value, case: &Value) -> f64 {
         Sink(sender),
     )
     .expect("ledger engine starts");
-    let target = defaults["timing_text"].as_str().unwrap();
-    let deadline = Instant::now() + Duration::from_secs(5);
+    settle(&engine.control());
+    let elapsed = started.elapsed();
     let mut state = ScreenState::default();
-    while Instant::now() < deadline {
-        while let Ok(batch) = receiver.try_recv() {
-            apply_batch(&mut state, batch);
-        }
-        if state
+    while let Ok(batch) = receiver.try_recv() {
+        apply_batch(&mut state, batch);
+    }
+    let target = defaults["timing_text"].as_str().unwrap();
+    assert!(
+        state
             .shown
             .iter()
-            .any(|text| text.eq_ignore_ascii_case(target))
-        {
-            drop(engine);
-            return started.elapsed().as_secs_f64() * 1000.0;
-        }
-        thread::sleep(Duration::from_millis(1));
-    }
-    panic!("{} did not render the first ledger row", case["name"]);
+            .any(|text| text.eq_ignore_ascii_case(target)),
+        "{} did not render the first ledger row",
+        case["name"]
+    );
+    drop(engine);
+    elapsed.as_secs_f64() * 1000.0
 }
 
 #[test]
