@@ -18,7 +18,10 @@ use nsh_core::{
 use nsh_engine::{App, Engine, EngineConfig, EngineControl, MountSink};
 use serde_json::{Map, Value, json};
 
-use super::{settle::settle, *};
+use super::{
+    settle::{Mounted, catch_up},
+    *,
+};
 
 struct FakeHost {
     props: Value,
@@ -130,30 +133,21 @@ impl MountSink for Sink {
 /// What the quiet screen's batches have shown so far.
 #[derive(Default)]
 struct Seen {
-    shown: Vec<String>,
-    parents: HashMap<NodeId, NodeId>,
-    events: HashMap<NodeId, EventMask>,
-    labels: HashMap<NodeId, String>,
+    mounted: Mounted,
     layout_node: Option<NodeId>,
 }
 
 impl Seen {
     /// Waits for the screen to settle, then applies every batch it sent.
     fn catch_up(&mut self, control: &EngineControl, batches: &mpsc::Receiver<MountBatch>) {
-        settle(control);
-        while let Ok(batch) = batches.try_recv() {
-            self.apply(batch);
-        }
+        catch_up(control, batches, |batch| self.apply(batch));
     }
 
     fn apply(&mut self, batch: MountBatch) {
         for item in batch.items {
+            self.mounted.apply(&item);
             match item {
-                MountItem::Insert { parent, child, .. } => {
-                    self.parents.insert(child, parent);
-                }
                 MountItem::Events { id, events: mask } => {
-                    self.events.insert(id, mask);
                     if mask.contains(EventKind::Layout) {
                         self.layout_node = Some(id);
                     } else if self.layout_node == Some(id) {
@@ -164,11 +158,6 @@ impl Seen {
                     if self.layout_node == Some(id) =>
                 {
                     self.layout_node = None;
-                }
-                MountItem::Text { id, text, .. } => {
-                    let value = text.text.to_string();
-                    self.labels.insert(id, value.clone());
-                    self.shown.push(value);
                 }
                 _ => {}
             }
@@ -279,15 +268,20 @@ fn drive_fixture(fixture: &Value) -> f64 {
     let presses = fixture["press"].as_array().unwrap();
     for (index, label) in presses.iter().enumerate() {
         let label = label.as_str().unwrap();
-        let id =
-            press_node(label, &seen.labels, &seen.parents, &seen.events).unwrap_or_else(|| {
-                panic!(
-                    "{} cannot press {label:?} ({index}/{}); visible {:?}",
-                    fixture["props"],
-                    presses.len(),
-                    seen.shown
-                )
-            });
+        let id = press_node(
+            label,
+            &seen.mounted.labels,
+            &seen.mounted.parents,
+            &seen.mounted.events,
+        )
+        .unwrap_or_else(|| {
+            panic!(
+                "{} cannot press {label:?} ({index}/{}); visible {:?}",
+                fixture["props"],
+                presses.len(),
+                seen.mounted.shown
+            )
+        });
         control.dispatch_event(id, EventKind::Press, EventPayload::None);
         seen.catch_up(&control, &rx);
     }
@@ -323,7 +317,7 @@ fn drive_fixture(fixture: &Value) -> f64 {
     assert_eq!(
         calls, expected_calls,
         "{} visible {:?}; labels {:?}",
-        fixture["props"], seen.shown, seen.labels
+        fixture["props"], seen.mounted.shown, seen.mounted.labels
     );
     let fit_data = sent
         .iter()
@@ -342,12 +336,13 @@ fn drive_fixture(fixture: &Value) -> f64 {
     for expected in fixture["transcript"]["text"].as_array().unwrap() {
         let expected = expected.as_str().unwrap();
         assert!(
-            seen.shown
+            seen.mounted
+                .shown
                 .iter()
                 .any(|actual| actual.eq_ignore_ascii_case(expected)),
             "{} missing {expected:?} from {:?}",
             fixture["props"],
-            seen.shown
+            seen.mounted.shown
         );
     }
     assert_eq!(
