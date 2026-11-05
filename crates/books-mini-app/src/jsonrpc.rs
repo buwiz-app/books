@@ -15,7 +15,7 @@ use serde_json::{Map, Value, json};
 use crate::manifest::{self, Source};
 use crate::reserved::{self, Host};
 use crate::service::{Books, Origin};
-use crate::{apps, tools};
+use crate::{apps, press, tools};
 
 pub const SERVER_NAME: &str = "books-mini-app";
 
@@ -29,7 +29,8 @@ const SUPPORTED_PROTOCOLS: [&str; 4] = ["2025-11-25", "2025-06-18", "2025-03-26"
 
 const INSTRUCTIONS: &str = "Buwiz Books keeps a small business's books on this computer, on \
 cash basis by default. The assistant can read totals and draft entries (books_entry_draft); only \
-the user posts, voids or closes, in the Books app. Books never computes tax, never stores a TIN, \
+the user voids or reopens, and the user posts and closes months, in the Books app or by allowing \
+the assistant's press of that one Post or Close on a card. Books never computes tax, never stores a TIN, \
 and never sends, files or pays anything.";
 
 // Result shapes are the SDK's: `structuredContent` for `ok`, a
@@ -49,6 +50,8 @@ struct Caller {
     /// Whose press this was, for the assistant's on a screen: the Bot's
     /// record of it, under its signature.
     press: Option<String>,
+    /// That record, whole.
+    record: Option<Value>,
 }
 
 impl Caller {
@@ -79,7 +82,16 @@ impl Caller {
                 .and_then(|p| p.get("by"))
                 .and_then(Value::as_str)
                 .map(str::to_string),
+            record: caller.and_then(|c| c.get("press")).cloned(),
         }
+    }
+
+    /// The person's yes this call runs under: the assistant's press on a
+    /// screen, of a tool that takes one, with these arguments.
+    fn approved(&self, name: &str, args: &Map<String, Value>) -> Option<press::Approved> {
+        (self.origin == Origin::Agent && self.app.is_some())
+            .then(|| press::Approved::of(self.record.as_ref(), args, now_ms()))?
+            .filter(|yes| yes.covers(name, args))
     }
 }
 
@@ -179,19 +191,31 @@ impl Server {
             return Err((INVALID_PARAMS, "no such tool".into()));
         }
         let caller = Caller::of(params);
-        if let Err(message) = self.authorize(name, &caller) {
+        let approved = caller.approved(name, arguments);
+        if let Err(message) = self.authorize(name, arguments, &caller, approved.is_some()) {
             return Ok(fail("permission_denied", &message));
         }
-        Ok(tools::call(name, arguments, caller.origin, &mut self.books).expect("a listed tool"))
+        self.books.approved = approved;
+        let answer = tools::call(name, arguments, caller.origin, &mut self.books);
+        self.books.approved = None;
+        Ok(answer.expect("a listed tool"))
     }
 
     /// The origin checks Books owns, as BIR makes them.
-    fn authorize(&self, name: &str, caller: &Caller) -> Result<(), String> {
+    fn authorize(
+        &self,
+        name: &str,
+        args: &Map<String, Value>,
+        caller: &Caller,
+        approved: bool,
+    ) -> Result<(), String> {
         let tool = tools::find(name).ok_or("no such tool")?;
         // post, void, close, reopen, confirm and hand-off are the
         // user's clicks in the Books app
         // an app-only write needs the person's own click: a press record says the AI's
+        // or, for a tool that takes one, a person's yes to this very call
         if tool.reach == tools::Reach::App
+            && !approved
             && (caller.origin != Origin::App || (tool.write && caller.press.is_some()))
         {
             return Err(format!(
@@ -217,10 +241,17 @@ impl Server {
         // the assistant's press on a screen: an open's call, so an open's
         // checks, and the Bot's record of the press
         let on_screen = caller.origin == Origin::Agent && caller.app.is_some();
-        if on_screen && caller.press.as_deref() != Some("ai") {
+        if on_screen && !approved && caller.press.as_deref() != Some("ai") {
             return Err(format!(
                 "{name} came from a screen with no record of the press"
             ));
+        }
+        // at any switch: a press saves a new draft and nothing else
+        if on_screen && name == tools::ENTRY_DRAFT && !press::draft_pressable(args) {
+            return Err(
+                "A press on a screen saves a new draft only: changing or copying an entry is the user's"
+                    .to_string(),
+            );
         }
         if caller.origin != Origin::App && !on_screen {
             return Ok(());

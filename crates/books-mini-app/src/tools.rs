@@ -13,6 +13,11 @@
 //! The writes open to the assistant, the drafts, say so too:
 //! `["app", "agent"]`. The Bot sends a write the assistant's press on a
 //! screen leads to only if its tool names `agent` there.
+//!
+//! `_meta["buwiz/press"]` is the Bot's other way in: `approved` says the
+//! AI may press this tool once a person allows that one press, which Books
+//! says of [`crate::press::APPROVED`] alone, and `describe` names the read
+//! that shows the person what the call will do.
 
 use serde_json::{Map, Value, json};
 
@@ -29,8 +34,8 @@ use crate::jsonrpc::{fail, ok};
 use crate::manifest;
 use crate::service::{self, Books, Origin, Refusal, answer, write};
 use crate::{
-    batch, cards, checks, forms, handoff, month_pack, oldbooks, owed_repeats, payroll, reconcile,
-    reconcile_document, records, reports, statement_read, views, writes,
+    batch, cards, checks, forms, handoff, month_pack, oldbooks, owed_repeats, payroll, press,
+    reconcile, reconcile_document, records, reports, statement_read, views, writes,
 };
 
 pub const STATUS: &str = "books_status";
@@ -110,6 +115,7 @@ pub const OWED_DOCUMENT: &str = "books_owed_document";
 pub const OWED_REPEAT: &str = "books_app_owed_repeat";
 pub const MONTH_PACK: &str = "books_app_month_pack";
 pub const BATCH: &str = "books_app_batch";
+pub const PRESS_CARD: &str = "books_app_press_card";
 
 /// Who a tool is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -213,6 +219,13 @@ fn post_schema() -> Value {
     let mut schema = draft_schema();
     schema["properties"]["keep_both"] = json!({ "type": "boolean", "description": "Post although the draft looks like another entry; records that the user keeps both." });
     schema
+}
+
+fn press_card_schema() -> Value {
+    json!({ "type": "object", "required": ["tool", "args"], "properties": {
+        "tool": { "type": "string", "description": "The held call's tool." },
+        "args": { "type": "object", "description": "The held call's arguments." },
+        "book": { "type": "string" } } })
 }
 
 fn people_schema() -> Value {
@@ -628,11 +641,18 @@ pub const TOOLS: &[Tool] = &[
         description: "Save a DRAFT entry: money in, money out, a transfer or a journal. A draft is in no total until the user posts it in the Books app; the assistant cannot post. Takes a client_request_id; a repeat returns the stored result.",
     },
     Tool {
+        name: PRESS_CARD,
+        reach: Reach::App,
+        write: false,
+        schema: press_card_schema,
+        description: "What a call the Bot is holding will do, in plain words with its real values, for the person's eyes on the Bot's card.",
+    },
+    Tool {
         name: POST_ENTRY,
         reach: Reach::App,
         write: true,
         schema: post_schema,
-        description: "Post a draft (or save and post a new entry) after the user's click. Refuses an unbalanced entry, and receivable or payable lines on a cash book.",
+        description: "Post a draft (or save and post a new entry) after the user's click, or after the user allowed the assistant's press of it. Refuses an unbalanced entry, and receivable or payable lines on a cash book.",
     },
     Tool {
         name: VOID_ENTRY,
@@ -807,7 +827,7 @@ pub const TOOLS: &[Tool] = &[
         reach: Reach::App,
         write: true,
         schema: month_write,
-        description: "Close a month after the user's click. A closed month refuses every post and void dated in it.",
+        description: "Close a month after the user's click, or after the user allowed the assistant's press of it. A closed month refuses every post and void dated in it.",
     },
     Tool {
         name: MONTH_REOPEN,
@@ -1164,6 +1184,17 @@ pub fn list() -> Vec<Value> {
             } else if t.write {
                 entry["_meta"] = json!({ "buwiz/audience": ["app", "agent"] });
             }
+            if press::APPROVED.contains(&t.name) {
+                let effect = if t.name == MONTH_CLOSE {
+                    "close"
+                } else {
+                    "post"
+                };
+                entry["_meta"]["buwiz/press"] =
+                    json!({ "approved": true, "effect": effect, "describe": PRESS_CARD });
+            } else if t.name == ENTRY_DRAFT {
+                entry["_meta"]["buwiz/press"] = json!({ "describe": PRESS_CARD });
+            }
             entry
         })
         .collect()
@@ -1246,8 +1277,9 @@ pub fn call(
         ENTRY_DRAFT => write(books, name, origin, arguments, |tx| {
             receipt_evidence::draft(tx, arguments, origin)
         }),
+        PRESS_CARD => read(books, &press::scoped(arguments), press::card),
         POST_ENTRY => write(books, name, origin, arguments, |tx| {
-            writes::post(tx, arguments)
+            writes::post(tx, arguments, origin)
         }),
         VOID_ENTRY => write(books, name, origin, arguments, |tx| {
             writes::void(tx, arguments)
@@ -1551,9 +1583,12 @@ pub fn call(
             }
             out
         }
-        BATCH => write(books, name, origin, arguments, |tx| {
-            batch::run(tx, arguments, origin)
-        }),
+        BATCH => {
+            let approved = books.approved.is_some();
+            write(books, name, origin, arguments, |tx| {
+                batch::run(tx, arguments, origin, approved)
+            })
+        }
         _ => fail("internal", "Books has no handler for that tool."),
     })
 }

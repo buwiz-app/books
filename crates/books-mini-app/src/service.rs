@@ -108,6 +108,8 @@ pub struct Books {
     pub cloud: crate::cloud::Session,
     /// How Books reaches buwiz-cloud; `None` when no cloud is set.
     pub transport: Option<Box<dyn crate::cloud::Transport>>,
+    /// The person's yes this one call runs under, if it does.
+    pub approved: Option<crate::press::Approved>,
 }
 
 pub const HOME_TITLE: &str = "Books";
@@ -121,6 +123,7 @@ impl Books {
             uploads: crate::oldbooks::Uploads::default(),
             cloud: crate::cloud::Session::default(),
             transport: None,
+            approved: None,
         }
     }
 
@@ -310,6 +313,22 @@ pub fn required<'a>(args: &'a Map<String, Value>, key: &str) -> Result<&'a str, 
         .ok_or_else(|| Refusal::invalid(format!("`{key}` is required.")))
 }
 
+/// What spending a `once` came to: a second use, and a store that couldn't
+/// say, are different things to be told.
+fn spent_or_refused(spent: Result<bool, StoreError>) -> Result<(), Refusal> {
+    match spent {
+        Ok(true) => Ok(()),
+        Ok(false) => Err(Refusal::new(
+            "press_reused",
+            "That approval was used already, so nothing changed.",
+        )),
+        Err(_) => Err(Refusal::new(
+            "press_unchecked",
+            "Books couldn't check that approval, so nothing changed.",
+        )),
+    }
+}
+
 /// A Books write: the `client_request_id` replays the stored result; else
 /// `f` runs in one transaction, its result is stored, and an audit row is
 /// written either way (with the refusal code on failure).
@@ -320,6 +339,7 @@ pub fn write(
     args: &Map<String, Value>,
     f: impl FnOnce(&Transaction<'_>) -> Answer,
 ) -> Value {
+    let books_approved = books.approved.clone();
     let store = match books.store() {
         Ok(s) => s,
         Err(r) => return r.into_result(),
@@ -335,6 +355,28 @@ pub fn write(
     }
     let canonical = jcs::canonical(&Value::Object(args.clone())).unwrap_or_default();
     let digest = plumbing::request_digest(tool, &canonical);
+    let approved = books_approved.as_ref().map(|a| plumbing::AuditPress {
+        who: &a.who,
+        approved_by: &a.approved_by,
+        at: a.at,
+        once: &a.once,
+        args_hash: &a.args_hash,
+        shown_hash: &a.shown_hash,
+    });
+    let audit = |tx: &books_store::rusqlite::Connection,
+                 subject: Option<(&str, i64)>,
+                 outcome: &str| match &approved {
+        Some(press) => plumbing::audit_pressed(tx, origin.as_str(), tool, subject, outcome, press),
+        None => plumbing::audit(tx, origin.as_str(), tool, subject, outcome),
+    };
+    // spent before anything runs, and for good: a yes works once, go or no go
+    if let Some(a) = &books_approved {
+        let spent = store.tx(|tx| plumbing::spend_once(tx, &a.once, tool, a.at));
+        if let Err(refusal) = spent_or_refused(spent) {
+            let _ = store.tx(|tx| audit(tx, None, &refusal.code));
+            return refusal.into_result();
+        }
+    }
     let outcome: Result<Value, Refusal> = (|| {
         let tx = store.transaction()?;
         if let Some(stored) = plumbing::replay(&tx, &crid, tool, &digest)? {
@@ -344,13 +386,7 @@ pub fn write(
         let result = f(&tx)?;
         plumbing::remember(&tx, &crid, tool, &digest, &result)?;
         let subject = subject_of(&result);
-        plumbing::audit(
-            &tx,
-            origin.as_str(),
-            tool,
-            subject.as_ref().map(|(k, i)| (k.as_str(), *i)),
-            "ok",
-        )?;
+        audit(&tx, subject.as_ref().map(|(k, i)| (k.as_str(), *i)), "ok")?;
         tx.commit().map_err(books_store::StoreError::from)?;
         Ok(result)
     })();
@@ -359,7 +395,7 @@ pub fn write(
         Err(refusal) => {
             // nothing of the work stays; the refusal is still audited
             let code = refusal.code.clone();
-            let _ = store.tx(|tx| plumbing::audit(tx, origin.as_str(), tool, None, &code));
+            let _ = store.tx(|tx| audit(tx, None, &code));
             refusal.into_result()
         }
     }
@@ -384,4 +420,25 @@ fn strip_subject(mut result: Value) -> Value {
         map.remove("_subject");
     }
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_store_error_on_a_once_isnt_called_a_used_approval() {
+        assert!(spent_or_refused(Ok(true)).is_ok());
+        assert_eq!(
+            spent_or_refused(Ok(false)).unwrap_err().code,
+            "press_reused"
+        );
+        let e = spent_or_refused(Err(StoreError {
+            code: "store",
+            message: "disk".into(),
+        }))
+        .unwrap_err();
+        assert_eq!(e.code, "press_unchecked");
+        assert!(!e.message.contains("used"));
+    }
 }

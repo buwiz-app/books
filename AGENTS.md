@@ -24,19 +24,29 @@ These cannot be inferred from the code.
    - Books stores no TIN. The cloud link is the opaque tax-profile `id`. Read the tax-profile response as `id`,
      `tin_masked`, `registered_name` and `permissions`, and refuse a response that carries a `tin` or other
      TIN-shaped field.
-   - Titles and cards carry no amounts, TINs or legal names by default.
+   - Titles and cards carry no amounts, TINs or legal names by default. The Bot's approval card is the exception: it
+     is the person's to read, stays out of logs and the model, and has to show the real amount and accounts.
    - ₱3,000,000.00 is `300000000` centavos, a nine-digit run that looks like a TIN. The privacy scan matches by field
      context, not by digit count alone.
-4. **Nothing that changes anything runs without a person.** `Reach::App` tools that write (post, void, close and
-   reopen a month, confirm, hand off, import, sign in, and the other changes a person makes) run only from the
-   person's own click in the Books app: `origin: app` with no `press`. The assistant saves drafts, and nothing else:
-   directly, or by pressing a button on a Books screen, which reaches Books as `origin: agent` with the Bot's `press`
-   record, on a tool whose `_meta["buwiz/audience"]` names `agent`. Only the draft tools do, and a draft counts in no
-   total until a person posts it. While the assistant drives a screen its reads still run for that screen, as
-   `origin: app` with the `press` record, and their answers stay in the app. So `write: false` must be strictly true:
-   a tool that writes a file, reaches the cloud or changes any state is a write. The one thing a read may add is a
-   ticket for something that already exists: a handle, not a record. Resolves and routines only read; a
-   routine writes only the drafts it declares.
+4. **Nothing posts or closes unless a person decided.** `Reach::App` tools that write (post, void, close and reopen
+   a month, confirm, hand off, import, sign in, and the other changes a person makes) run from the person's own click
+   in the Books app: `origin: app` with no `press`. The assistant saves drafts: directly, or by pressing a button on a
+   Books screen, which reaches Books as `origin: agent` with the Bot's `press` record, on a tool whose
+   `_meta["buwiz/audience"]` names `agent`. Only the draft tools do, and a draft counts in no total until a person
+   posts it. A press saves a new draft only, at any switch: `entry`, `copy_of`, `extracted` and `extraction` are
+   refused (`press::DRAFT_REFUSED`). The one other way is the owner's D1: the assistant may press **Post** (`books_app_post_entry`, or
+   `books_app_batch` with `action: post`) and **Close month** (`books_app_month_close`) only after a person allows
+   that one press. The Bot holds the call unsent, shows the person what it will do from `books_app_press_card`, and
+   only their own press of Allow lets it go. It arrives as `origin: agent` with a `press` record of `by: ai_approved`
+   whose `args_hash` is this call's arguments (`press.rs`), and the audit row names the AI and the person. A record is
+   good for a minute and its `once` for one use. A card accounts for every argument its call uses, and refuses one it
+   can't show, so a new argument on these tools has to go on the card. A tool opts in through `press::APPROVED`, with
+   the `effect` the broker checks (`post` or `close`), and nowhere else. D1 names no other tool, so void, reopen, return confirm, hand-off and
+   discard stay the person's own click, and a held press is never a filing (invariant 5). While the assistant drives a
+   screen its reads still run for that screen, as `origin: app` with the `press` record, and their answers stay in the
+   app. So `write: false` must be strictly true: a tool that writes a file, reaches the cloud or changes any state is
+   a write. The one thing a read may add is a ticket for something that already exists: a handle, not a record.
+   Resolves and routines only read; a routine writes only the drafts it declares.
 5. **Books never sends, submits, files, queues or pays.** Never call an eBIRForms queue or send tool, or any tool
    whose name contains submit, queue, pay, paid, file or send. Values Books gives to BIR use fill source `document`.
 6. **The chart of accounts is not form meaning** ([ADR 0006](docs/adr/0006-tax-meaning-on-lines-not-accounts.md)).

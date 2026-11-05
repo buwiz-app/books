@@ -285,7 +285,7 @@ pub fn nudge(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
 pub fn scopes() -> Value {
     let hint = |what: &str| {
         format!(
-            "The user points at {what} in Books. Read it with Books' read tools (pass the ticket as given). You may draft an entry with books_entry_draft; you never post, void, close or hand over: those are the user's clicks in Books. Show amounts only when the user asked."
+            "The user points at {what} in Books. Read it with Books' read tools (pass the ticket as given). You may draft an entry with books_entry_draft; you never void or hand over, and a Post or Close you press waits for the user's OK on a card: the rest are the user's clicks in Books. Show amounts only when the user asked."
         )
     };
     let scope = |name: &str, description: &str, what: &str| json!({ "name": name, "description": description, "resolve": crate::tools::RESOLVE, "attach": true, "hint": hint(what) });

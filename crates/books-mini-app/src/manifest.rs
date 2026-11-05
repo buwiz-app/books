@@ -33,7 +33,8 @@ pub const MANIFEST_ENV: &str = "BOOKS_V1_MANIFEST";
 pub const TICKET_PROP: &str = "ticket";
 
 /// What each app may reach (protocol 1.0 §12). `tools` is exactly the Books tools
-/// its source names or native definition declares (checked in `tests/manifest_shape.rs`).
+/// its source names or native definition declares, and the card read of any
+/// that can be held (checked in `tests/manifest_shape.rs`).
 fn permissions(app: &apps::App) -> Value {
     let (source, tools, open_apps) = match app.source {
         apps::AppSource::Tsx(source) => (Some(source), apps::named_tools(source), &[][..]),
@@ -45,6 +46,12 @@ fn permissions(app: &apps::App) -> Value {
             open_apps,
         ),
     };
+    let mut tools = tools;
+    // the Bot reads a held call's card as the app the call came from
+    if crate::press::needs_card(&tools) {
+        tools.push(crate::tools::PRESS_CARD.to_string());
+        tools.sort();
+    }
     let mut p = json!({ "tools": tools });
     // the window copies a report's CSV to the clipboard
     if let Some(source) = source {
@@ -116,7 +123,7 @@ fn app_entry(app: &apps::App) -> Value {
             "id": "books",
             // neutral: no business name, amount or TIN
             "title": "Books",
-            "description": "Your books: today, the ledger, unpaid invoices and bills, reports, people, accounts and tags. Only you post, void or close here.",
+            "description": "Your books: today, the ledger, unpaid invoices and bills, reports, people, accounts and tags. Nothing posts or closes here unless you decide it.",
             "props": {
                 "type": "object",
                 "properties": {

@@ -140,6 +140,9 @@ fn every_app_called_tool_is_granted_and_nothing_more() {
                 tools.iter().map(|tool| (*tool).to_string()).collect()
             }
         };
+        if books_mini_app::press::needs_card(&expected) {
+            expected.push(tools::PRESS_CARD.to_string());
+        }
         expected.sort();
         assert_eq!(granted, expected, "{}: permissions.tools", app.id);
         for tool in &granted {
@@ -372,7 +375,8 @@ fn evidence_grants_stay_on_the_evidence_apps() {
     }
     assert_eq!(
         books["permissions"]["tools"].as_array().unwrap().len(),
-        window.len()
+        window.len() + 1,
+        "what it names, and the card read"
     );
     // the inline card: no file picking, no attach, opens only Books
     let card = entry("document");

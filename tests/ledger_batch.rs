@@ -267,6 +267,7 @@ fn the_window_grants_batch_and_ledger_list_within_the_cap() {
     let added: BTreeSet<&String> = granted.difference(&before).collect();
     let expected = [
         "books_app_batch".to_string(),
+        "books_app_press_card".to_string(),
         "books_ledger_list".to_string(),
     ];
     assert_eq!(
