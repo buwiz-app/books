@@ -46,6 +46,9 @@ struct Caller {
     open_id: Option<String>,
     /// The routine whose turn this is, if any.
     routine: Option<String>,
+    /// Whose press this was, for the assistant's on a screen: the Bot's
+    /// record of it, under its signature.
+    press: Option<String>,
 }
 
 impl Caller {
@@ -71,6 +74,11 @@ impl Caller {
             app: text("app"),
             open_id: text("open_id"),
             routine: text("routine"),
+            press: caller
+                .and_then(|c| c.get("press"))
+                .and_then(|p| p.get("by"))
+                .and_then(Value::as_str)
+                .map(str::to_string),
         }
     }
 }
@@ -182,7 +190,10 @@ impl Server {
         let tool = tools::find(name).ok_or("no such tool")?;
         // post, void, close, reopen, confirm and hand-off are the
         // user's clicks in the Books app
-        if tool.reach == tools::Reach::App && caller.origin != Origin::App {
+        // an app-only write needs the person's own click: a press record says the AI's
+        if tool.reach == tools::Reach::App
+            && (caller.origin != Origin::App || (tool.write && caller.press.is_some()))
+        {
             return Err(format!(
                 "{name} needs the user's click in the Books app; the assistant can save a draft instead"
             ));
@@ -203,7 +214,15 @@ impl Server {
         {
             return Err(format!("{name} is not a write this routine declares"));
         }
-        if caller.origin != Origin::App {
+        // the assistant's press on a screen: an open's call, so an open's
+        // checks, and the Bot's record of the press
+        let on_screen = caller.origin == Origin::Agent && caller.app.is_some();
+        if on_screen && caller.press.as_deref() != Some("ai") {
+            return Err(format!(
+                "{name} came from a screen with no record of the press"
+            ));
+        }
+        if caller.origin != Origin::App && !on_screen {
             return Ok(());
         }
         let app = caller.app.as_deref().ok_or("an app call names no app")?;

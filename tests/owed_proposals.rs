@@ -526,7 +526,7 @@ fn the_assistant_sees_the_draft_tool_but_not_app_acceptance() {
     let list = tools::list();
     let find = |n: &str| list.iter().find(|t| t["name"] == n).unwrap().clone();
     let draft = find(DRAFT);
-    assert!(draft.get("_meta").is_none());
+    assert_eq!(draft["_meta"]["buwiz/audience"], json!(["app", "agent"]));
     assert_eq!(draft["annotations"]["readOnlyHint"], false);
     assert_eq!(find(CREATE)["_meta"]["buwiz/audience"], json!(["app"]));
     assert!(find(CREATE)["inputSchema"]["properties"]["decision"].is_object());

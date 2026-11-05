@@ -99,10 +99,27 @@ pub fn is_ticket(text: &str) -> bool {
         .is_some_and(|rest| rest.len() == 26 && rest.bytes().all(|b| CROCKFORD.contains(&b)))
 }
 
-/// A fresh ticket: 130 random bits, 5 per character.
+/// A fresh ticket: 130 random bits, 5 per character. One that reads like a
+/// TIN is drawn again: about 1 in 2,600 holds a run of nine digits, and a
+/// ticket goes where `tin_like` looks.
 pub fn new_ticket() -> Result<String> {
+    drawn(|bytes| {
+        getrandom::fill(bytes).map_err(|_| error("internal", "No randomness for a ticket."))
+    })
+}
+
+fn drawn(mut fill: impl FnMut(&mut [u8; 17]) -> Result<()>) -> Result<String> {
     let mut bytes = [0u8; 17];
-    getrandom::fill(&mut bytes).map_err(|_| error("internal", "No randomness for a ticket."))?;
+    loop {
+        fill(&mut bytes)?;
+        let ticket = encoded(&bytes);
+        if !books_core::privacy::tin_like(&ticket) {
+            return Ok(ticket);
+        }
+    }
+}
+
+fn encoded(bytes: &[u8; 17]) -> String {
     let mut out = String::from("tkt_");
     for i in 0..26 {
         let bit = i * 5;
@@ -110,7 +127,7 @@ pub fn new_ticket() -> Result<String> {
         let symbol = (pair >> (11 - bit % 8)) & 31;
         out.push(char::from(CROCKFORD[usize::from(symbol)]));
     }
-    Ok(out)
+    out
 }
 
 /// The subject's ticket: the one it has, else a new one.
@@ -161,6 +178,28 @@ pub fn revoke_all(conn: &Connection) -> Result<()> {
 mod tests {
     use super::*;
     use crate::{Paths, Store, TempDir};
+
+    #[test]
+    fn a_ticket_that_reads_like_a_tin_is_drawn_again() {
+        // all zeros is 26 zeros: nine digits in a row and more
+        assert!(books_core::privacy::tin_like(&encoded(&[0; 17])));
+        let mut draws = 0;
+        let ticket = drawn(|bytes| {
+            draws += 1;
+            *bytes = if draws < 3 { [0; 17] } else { [0xff; 17] };
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(draws, 3);
+        assert!(is_ticket(&ticket) && !books_core::privacy::tin_like(&ticket));
+    }
+
+    #[test]
+    fn no_fresh_ticket_reads_like_a_tin() {
+        for _ in 0..50_000 {
+            assert!(!books_core::privacy::tin_like(&new_ticket().unwrap()));
+        }
+    }
 
     #[test]
     fn a_repeat_returns_the_stored_result_and_a_reused_id_is_refused() {

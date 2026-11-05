@@ -9,6 +9,10 @@
 //! - `Reach::App` tools (`books_app_*`, and `books_owed_document`): the app
 //!   only, behind a person's click. They carry
 //!   `_meta["buwiz/audience"] = ["app"]`, so the model never sees them.
+//!
+//! The writes open to the assistant, the drafts, say so too:
+//! `["app", "agent"]`. The Bot sends a write the assistant's press on a
+//! screen leads to only if its tool names `agent` there.
 
 use serde_json::{Map, Value, json};
 
@@ -836,7 +840,8 @@ pub const TOOLS: &[Tool] = &[
     Tool {
         name: TAX_PROFILES,
         reach: Reach::App,
-        write: false,
+        // it calls the cloud, and a refresh on the way saves a new token or ends the sign-in
+        write: true,
         schema: book_only,
         description: "The approved Buwiz tax profiles you own: id, masked TIN and registered name only.",
     },
@@ -1156,6 +1161,8 @@ pub fn list() -> Vec<Value> {
             });
             if t.reach == Reach::App {
                 entry["_meta"] = json!({ "buwiz/audience": ["app"] });
+            } else if t.write {
+                entry["_meta"] = json!({ "buwiz/audience": ["app", "agent"] });
             }
             entry
         })

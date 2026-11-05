@@ -192,7 +192,7 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
       <If when={adding()}>
         <Panel pad class="flex-row gap-2 items-end">
           <Field label="Name" grow>
-            <TextBox value={name()} onChange={(v) => name.set(v)} placeholder="Name, never a TIN" />
+            <TextBox label="Name" value={name()} onChange={(v) => name.set(v)} placeholder="Name, never a TIN" />
           </Field>
           <Btn label="Add" tone="go" onPress={add} />
         </Panel>
