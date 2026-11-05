@@ -207,9 +207,10 @@ function Field(p: { label: string; children?: Any; grow?: boolean }) {
   );
 }
 
-function TextBox(p: { value: string; onChange: (v: string) => void; placeholder?: string; big?: boolean }) {
+function TextBox(p: { value: string; onChange: (v: string) => void; placeholder?: string; big?: boolean; label?: string }) {
   return (
     <Input
+      accessibilityLabel={p.label}
       value={p.value}
       placeholder={p.placeholder || ""}
       onChange={(e: Any) => p.onChange(typeof e === "string" ? e : e.value)}
@@ -219,16 +220,18 @@ function TextBox(p: { value: string; onChange: (v: string) => void; placeholder?
 }
 
 /** A picker: the current choice; a press opens the list under it. */
-function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; placeholder?: string }) {
+function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; placeholder?: string; label?: string }) {
   const open = signal(false);
   const current = computed(() => (p.options || []).find((o: Any) => o.ticket === p.value));
   return (
     <View class="gap-1">
-      <View class={`flex-row items-center rounded-lg border px-2.5 h-8 ${C.bg} ${C.line}`} onPress={() => open.set(!open())}>
-        <Text class={`flex-1 text-[13px] ${current() ? C.ink : C.dim}`} numberOfLines={1}>
+      <View accessibilityLabel={p.label} class={`flex-row items-center rounded-lg border px-2.5 h-8 ${C.bg} ${C.line}`} onPress={() => open.set(!open())}>
+        <Text accessibilityElementsHidden={Boolean(p.label)} class={`flex-1 text-[13px] ${current() ? C.ink : C.dim}`} numberOfLines={1}>
           {current() ? current().label || current().name : p.placeholder || "Pick one"}
         </Text>
-        <Text class={C.dim}>⌄</Text>
+        <Text accessibilityElementsHidden={Boolean(p.label)} class={C.dim}>
+          ⌄
+        </Text>
       </View>
       <If when={open()}>
         <View class={`rounded-lg border max-h-[180px] ${C.panel} ${C.line}`}>

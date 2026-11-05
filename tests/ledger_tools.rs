@@ -97,6 +97,13 @@ impl Bot {
         self.raw(name, args, caller)
     }
 
+    /// The assistant's press on a screen, as the Bot sends it.
+    fn press(&mut self, app: &str, name: &str, args: Value) -> Value {
+        let open_id = self.open_session(app).to_string();
+        let caller = json!({ "origin": "agent", "plugin": manifest::PLUGIN_ID, "app": app, "open_id": open_id, "ts": now_ms(), "press": { "by": "ai", "who": "agent.broker" } });
+        self.raw(name, args, caller)
+    }
+
     fn agent(&mut self, name: &str, args: Value) -> Value {
         let caller = json!({ "origin": "agent", "plugin": manifest::PLUGIN_ID, "ts": now_ms() });
         self.raw(name, args, caller)
@@ -345,4 +352,147 @@ fn m1_book_draft_post_void_through_the_server() {
         );
     }
     let _ = jcs::sha256_hex(&bytes);
+}
+
+#[test]
+fn the_assistants_press_on_a_screen_saves_a_draft_and_nothing_else() {
+    let dir = TempDir::new("press");
+    let mut bot = Bot::new(&dir);
+    data(&bot.app(
+        "books_app_book_create",
+        json!({ "client_request_id": "create-book-0001", "label": "Buwiz Trading" }),
+    ));
+    let draft = json!({
+        "client_request_id": "press-draft-001", "form": "money_out", "date": "2026-10-18",
+        "amount": "1350.00", "account": "11000", "category": "67200", "payee": PAYEE, "memo": MEMO,
+    });
+    let d = bot.press("books", "books_entry_draft", draft);
+    assert_eq!(data(&d)["status"], "draft");
+    let entry = data(&d)["entry"].as_str().unwrap().to_string();
+
+    // a posted entry to try the rest on, by the person
+    let posted = bot.app("books_app_post_entry", json!({ "client_request_id": "post-0002", "form": "money_out", "date": "2026-10-19", "amount": "100.00", "account": "11000", "category": "67200" }));
+    let posted = data(&posted)["entry"].as_str().unwrap().to_string();
+
+    let person_only = [
+        (
+            "books_app_post_entry",
+            json!({ "client_request_id": "press-post-001", "entry": entry }),
+        ),
+        (
+            "books_app_void_entry",
+            json!({ "client_request_id": "press-void-001", "entry": posted, "reason": "x" }),
+        ),
+        (
+            "books_app_discard_entry",
+            json!({ "client_request_id": "press-gone-001", "entry": entry }),
+        ),
+        (
+            "books_app_month_close",
+            json!({ "client_request_id": "press-close-01", "month": "2026-10" }),
+        ),
+        (
+            "books_app_month_reopen",
+            json!({ "client_request_id": "press-open-001", "month": "2026-10", "reason": "x" }),
+        ),
+        (
+            "books_app_return_ok",
+            json!({ "client_request_id": "press-rtrn-001" }),
+        ),
+        (
+            "books_app_handoff_create",
+            json!({ "client_request_id": "press-hand-001" }),
+        ),
+        (
+            "books_app_handoff_confirm",
+            json!({ "client_request_id": "press-conf-001" }),
+        ),
+    ];
+    for (tool, args) in person_only {
+        let refused = bot.press("books", tool, args);
+        assert_eq!(code(&refused), "permission_denied", "{tool}");
+    }
+    assert_eq!(
+        data(&bot.app("books_entry_get", json!({ "entry": entry })))["status"],
+        "draft",
+        "still a draft"
+    );
+    assert_eq!(
+        data(&bot.app("books_entry_get", json!({ "entry": posted })))["status"],
+        "posted",
+        "still posted"
+    );
+
+    drop(bot);
+    let store = books_store::Store::open(&Paths::in_dir(dir.0.join("store"))).unwrap();
+    let origin: String = store
+        .conn()
+        .query_row(
+            "SELECT origin FROM audit_event WHERE tool = 'books_entry_draft' ORDER BY event_id DESC LIMIT 1",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(origin, "agent");
+}
+
+#[test]
+fn a_press_on_a_screen_needs_the_bots_record_and_a_real_open() {
+    let dir = TempDir::new("press-record");
+    let mut bot = Bot::new(&dir);
+    data(&bot.app(
+        "books_app_book_create",
+        json!({ "client_request_id": "create-book-0001", "label": "Buwiz Trading" }),
+    ));
+    let draft = |id: &str| json!({ "client_request_id": id, "form": "money_out", "date": "2026-10-18", "amount": "10.00", "account": "11000", "category": "67200" });
+    let open_id = bot.open_session("books").to_string();
+    let no_record = json!({ "origin": "agent", "plugin": manifest::PLUGIN_ID, "app": "books", "open_id": open_id, "ts": now_ms() });
+    assert_eq!(
+        code(&bot.raw("books_entry_draft", draft("no-record-0001"), no_record)),
+        "permission_denied"
+    );
+    let other = json!({ "origin": "agent", "plugin": manifest::PLUGIN_ID, "app": "books", "open_id": open_id, "ts": now_ms(), "press": { "by": "person", "who": "person.owner" } });
+    assert_eq!(
+        code(&bot.raw("books_entry_draft", draft("wrong-record-01"), other)),
+        "permission_denied"
+    );
+    let forged = json!({ "origin": "agent", "plugin": manifest::PLUGIN_ID, "app": "books", "open_id": "not-an-open", "ts": now_ms(), "press": { "by": "ai", "who": "agent.broker" } });
+    assert_eq!(
+        code(&bot.raw("books_entry_draft", draft("no-open-000001"), forged)),
+        "permission_denied"
+    );
+    // the assistant's own call, with no screen, is as it was
+    assert_eq!(
+        data(&bot.agent("books_entry_draft", draft("direct-000001")))["status"],
+        "draft"
+    );
+}
+
+#[test]
+fn only_the_draft_tools_are_open_to_the_assistants_press() {
+    use books_mini_app::tools;
+    let mut open = Vec::new();
+    for t in tools::list() {
+        let name = t["name"].as_str().unwrap();
+        let audience = &t["_meta"]["buwiz/audience"];
+        let tool = tools::find(name).unwrap();
+        match (tool.reach, tool.write) {
+            (tools::Reach::App, _) => assert_eq!(audience, &json!(["app"]), "{name}"),
+            (tools::Reach::Everyone, false) => assert!(audience.is_null(), "{name}"),
+            (tools::Reach::Everyone, true) => {
+                assert_eq!(audience, &json!(["app", "agent"]), "{name}");
+                open.push(name.to_string());
+            }
+        }
+    }
+    open.sort();
+    assert_eq!(
+        open,
+        [
+            "books_entry_draft",
+            "books_evidence_classify",
+            "books_owed_draft",
+            "books_statement_draft_lines"
+        ]
+    );
 }

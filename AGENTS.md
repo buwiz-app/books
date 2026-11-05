@@ -27,9 +27,12 @@ These cannot be inferred from the code.
    - Titles and cards carry no amounts, TINs or legal names by default.
    - ₱3,000,000.00 is `300000000` centavos, a nine-digit run that looks like a TIN. The privacy scan matches by field
      context, not by digit count alone.
-4. **The user's click does the work.** Tools with `Reach::App` (post, void, close and reopen a month, confirm, hand
-   off, import, sign in, and the other changes a person makes) run only from the user's click in the Books app. The
-   assistant saves drafts. Resolves and routines only read; a routine writes only the drafts it declares.
+4. **Nothing posts unless a person decided.** Tools with `Reach::App` (post, void, close and reopen a month, confirm,
+   hand off, import, sign in, and the other changes a person makes) run only with `origin: app`: the person's own
+   click in the Books app. The assistant saves drafts, and nothing else: directly, or by pressing a button on a Books
+   screen, which reaches Books as `origin: agent` with the Bot's `press` record, on a tool whose
+   `_meta["buwiz/audience"]` names `agent`. Only the draft tools do, and a draft counts in no total until a person
+   posts it. Resolves and routines only read; a routine writes only the drafts it declares.
 5. **Books never sends, submits, files, queues or pays.** Never call an eBIRForms queue or send tool, or any tool
    whose name contains submit, queue, pay, paid, file or send. Values Books gives to BIR use fill source `document`.
 6. **The chart of accounts is not form meaning** ([ADR 0006](docs/adr/0006-tax-meaning-on-lines-not-accounts.md)).
