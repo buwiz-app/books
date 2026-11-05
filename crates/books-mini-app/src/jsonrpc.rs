@@ -190,7 +190,10 @@ impl Server {
         let tool = tools::find(name).ok_or("no such tool")?;
         // post, void, close, reopen, confirm and hand-off are the
         // user's clicks in the Books app
-        if tool.reach == tools::Reach::App && caller.origin != Origin::App {
+        // an app-only write needs the person's own click: a press record says the AI's
+        if tool.reach == tools::Reach::App
+            && (caller.origin != Origin::App || (tool.write && caller.press.is_some()))
+        {
             return Err(format!(
                 "{name} needs the user's click in the Books app; the assistant can save a draft instead"
             ));

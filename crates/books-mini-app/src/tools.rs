@@ -840,7 +840,8 @@ pub const TOOLS: &[Tool] = &[
     Tool {
         name: TAX_PROFILES,
         reach: Reach::App,
-        write: false,
+        // it calls the cloud, and a refresh on the way saves a new token or ends the sign-in
+        write: true,
         schema: book_only,
         description: "The approved Buwiz tax profiles you own: id, masked TIN and registered name only.",
     },

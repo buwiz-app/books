@@ -496,3 +496,141 @@ fn only_the_draft_tools_are_open_to_the_assistants_press() {
         ]
     );
 }
+
+/// Every table's rows, for comparing a store before and after.
+fn dump(dir: &TempDir) -> String {
+    let store = books_store::Store::open(&Paths::in_dir(dir.0.join("store"))).unwrap();
+    let c = store.conn();
+    let mut names = c
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+        .unwrap();
+    let names: Vec<String> = names
+        .query_map([], |r| r.get(0))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    let mut out = String::new();
+    for name in names {
+        let mut q = c.prepare(&format!("SELECT * FROM \"{name}\"")).unwrap();
+        let columns = q.column_count();
+        let rows: Vec<String> = q
+            .query_map([], |r| {
+                let mut row = String::new();
+                for i in 0..columns {
+                    row.push_str(&format!("{:?}|", r.get_ref(i).unwrap()));
+                }
+                Ok(row)
+            })
+            .unwrap()
+            .map(Result::unwrap)
+            .collect();
+        out.push_str(&format!("{name}: {}\n", rows.join("\n")));
+    }
+    out
+}
+
+/// The path the draft-tools check doesn't cover: the AI's press reaching an app-only read, which
+/// goes out as `origin: app` with the press record.
+#[test]
+fn a_press_reaches_the_app_only_reads_and_they_change_nothing() {
+    use books_mini_app::tools;
+    let dir = TempDir::new("press-reads");
+    let mut bot = Bot::new(&dir);
+    data(&bot.app(
+        "books_app_book_create",
+        json!({ "client_request_id": "create-book-0001", "label": "Buwiz Trading" }),
+    ));
+    let owed = bot.app(
+        "books_app_owed_create",
+        json!({ "client_request_id": "owed-create-01", "side": "collect", "person_name": "Sample Customer", "amount": "45000.00", "category": "41000", "issued": "2026-09-01", "due": "2026-09-20", "reference": "Invoice 9001" }),
+    );
+    let owed = owed["structuredContent"]["owed"]
+        .as_str()
+        .map(str::to_string);
+    let before = dump(&dir);
+
+    let apps = manifest::unsigned(manifest::RELEASE_KEY_ID)["apps"]
+        .as_array()
+        .unwrap()
+        .clone();
+    let reads: Vec<(&str, Value, bool)> = vec![
+        ("books_app_month_pack", json!({ "month": "2026-10" }), true),
+        ("books_app_evidence_review", json!({}), true),
+        (
+            "books_app_reconcile_document",
+            json!({ "month": "2026-10" }),
+            false,
+        ),
+        (
+            "books_app_form_lineage",
+            json!({ "form": "2550Q", "key": "1" }),
+            false,
+        ),
+        (
+            "books_app_evidence_preview",
+            json!({ "evidence": "tkt_00000000000000000000000000" }),
+            false,
+        ),
+        ("books_owed_document", json!({ "owed": owed }), true),
+    ];
+    for (tool, args, runs) in reads {
+        assert!(!tools::find(tool).unwrap().write, "{tool}");
+        // the open of an app that lists it, as a screen's call has
+        let app = apps
+            .iter()
+            .find(|a| {
+                a["permissions"]["tools"]
+                    .as_array()
+                    .is_some_and(|t| t.iter().any(|n| n == tool))
+            })
+            .unwrap_or_else(|| panic!("no app lists {tool}"));
+        let app = app["id"].as_str().unwrap();
+        let open_id = bot.open_session(app).to_string();
+        let press = json!({ "origin": "app", "plugin": manifest::PLUGIN_ID, "app": app, "open_id": open_id, "ts": now_ms(), "press": { "by": "ai", "who": "agent.broker" } });
+        let got = bot.raw(tool, args, press);
+        assert_ne!(
+            got["structuredContent"]["code"], "permission_denied",
+            "{tool}: {got}"
+        );
+        if runs {
+            assert_eq!(got["isError"], false, "{tool}: {got}");
+        }
+    }
+    assert_eq!(dump(&dir), before, "a read under a press changes nothing");
+}
+
+#[test]
+fn a_tool_that_reaches_the_cloud_is_a_write() {
+    use books_mini_app::tools;
+    let t = tools::find("books_app_tax_list").unwrap();
+    assert!(t.write);
+    let listed = tools::list()
+        .into_iter()
+        .find(|t| t["name"] == "books_app_tax_list")
+        .unwrap();
+    assert_eq!(listed["annotations"]["readOnlyHint"], false);
+    assert_eq!(listed["_meta"]["buwiz/audience"], json!(["app"]));
+}
+
+/// However the Bot came to send it: `origin: app` with a press record is the AI's.
+#[test]
+fn an_app_only_write_with_a_press_record_is_refused_even_as_origin_app() {
+    let dir = TempDir::new("press-write");
+    let mut bot = Bot::new(&dir);
+    data(&bot.app(
+        "books_app_book_create",
+        json!({ "client_request_id": "create-book-0001", "label": "Buwiz Trading" }),
+    ));
+    let open_id = bot.open_session("books").to_string();
+    let press = json!({ "origin": "app", "plugin": manifest::PLUGIN_ID, "app": "books", "open_id": open_id, "ts": now_ms(), "press": { "by": "ai", "who": "agent.broker" } });
+    let post = json!({ "client_request_id": "press-post-0001", "form": "money_out", "date": "2026-10-19", "amount": "100.00", "account": "11000", "category": "67200" });
+    assert_eq!(
+        code(&bot.raw("books_app_post_entry", post.clone(), press)),
+        "permission_denied"
+    );
+    assert_eq!(
+        data(&bot.app("books_app_post_entry", post))["status"],
+        "posted",
+        "the person's own click still runs"
+    );
+}
