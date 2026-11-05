@@ -140,7 +140,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
           <View class="flex-1" />
           <If when={canTag()}>
             <View class="w-[200px]">
-              <Pick value={repTag()} options={(tags() as Any) || []} onPick={(o: Any) => repTag.set(o.ticket)} placeholder="All tags" />
+              <Pick optionSaid="Choose this tag" value={repTag()} options={(tags() as Any) || []} onPick={(o: Any) => repTag.set(o.ticket)} placeholder="All tags" />
             </View>
           </If>
         </View>

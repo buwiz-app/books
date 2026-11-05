@@ -20,6 +20,10 @@ name = "jcs_vectors"
 path = "../../tests/jcs_vectors.rs"
 
 [[test]]
+name = "labels_hide_data"
+path = "../../tests/labels_hide_data.rs"
+
+[[test]]
 name = "manifest_shape"
 path = "../../tests/manifest_shape.rs"
 

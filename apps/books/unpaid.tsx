@@ -89,7 +89,13 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
             {(r: Any) => (
               <View class={`border-b ${C.line}`}>
                 <View class="flex-row items-center gap-3 px-3 py-2.5">
-                  <View class="flex-1 flex-row items-center gap-2" onPress={() => history.set(history() === r().ticket ? "" : r().ticket)} activeStyle={{ opacity: 0.75 }}>
+                  <View
+                    accessibilityLabel="Show payments"
+                    accessibilityValue={{ text: r().who }}
+                    class="flex-1 flex-row items-center gap-2"
+                    onPress={() => history.set(history() === r().ticket ? "" : r().ticket)}
+                    activeStyle={{ opacity: 0.75 }}
+                  >
                     <Text class={`text-[13px] font-semibold ${C.ink}`} numberOfLines={1}>
                       {r().who}
                     </Text>
@@ -175,7 +181,7 @@ function ProposalRow(p: { p: Any; side: string; opts: Any }) {
       </View>
       <View class="flex-row gap-3">
         <Field label={p.side === "collect" ? "Customer" : "Vendor"} grow>
-          <Pick value={who()} options={people()} onPick={(x: Any) => who.set(x.ticket)} placeholder="Pick an existing person" />
+          <Pick optionSaid="Choose this person" value={who()} options={people()} onPick={(x: Any) => who.set(x.ticket)} placeholder="Pick an existing person" />
         </Field>
         <Field label="Category" grow>
           <Pick value={category()} options={(p.side === "collect" ? o()?.income : o()?.expense) || []} onPick={(x: Any) => category.set(x.ticket)} placeholder="Pick a category" />
@@ -237,7 +243,7 @@ function OwedSheet(p: { side: string; opts: Any; close: () => void }) {
       </View>
       <View class="flex-row gap-3">
         <Field label={p.side === "collect" ? "Customer" : "Vendor"} grow>
-          <Pick value={who()} options={people()} onPick={(x: Any) => who.set(x.ticket)} placeholder="Pick, or type a new name below" />
+          <Pick optionSaid="Choose this person" value={who()} options={people()} onPick={(x: Any) => who.set(x.ticket)} placeholder="Pick, or type a new name below" />
           <TextBox value={whoName()} onChange={(v) => whoName.set(v)} placeholder="New name" />
         </Field>
         <Field label="Category" grow>

@@ -140,7 +140,7 @@ function PayRunSheet(p: { employees: Any[]; money: Any[]; close: () => void; go:
         {(l: Any, i: Any) => (
           <View class={`rounded-[10px] border p-2.5 gap-2 ${C.line}`}>
             <View class="w-[260px]">
-              <Pick value={l().person || ""} options={p.employees} onPick={(o: Any) => set(i(), "person", o.ticket)} placeholder="Employee" />
+              <Pick optionSaid="Choose this employee" value={l().person || ""} options={p.employees} onPick={(o: Any) => set(i(), "person", o.ticket)} placeholder="Employee" />
             </View>
             <View class="flex-row flex-wrap gap-2">
               <Each of={PAY_FIELDS}>

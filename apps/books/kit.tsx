@@ -131,9 +131,12 @@ function Pill(p: { tone: string; label: string }) {
   );
 }
 
-function Chip(p: { label: string; count?: Any; on: boolean; onPress: () => void }) {
+/** `said`: for a chip whose label is someone's data. See `Pick`'s `optionSaid`. */
+function Chip(p: { label: string; count?: Any; on: boolean; onPress: () => void; said?: string }) {
   return (
     <View
+      accessibilityLabel={p.said}
+      accessibilityValue={p.said ? { text: p.label } : undefined}
       class={`rounded-full px-2.5 py-1 border flex-row gap-1 ${p.on ? "bg-[#1c1c1c] dark:bg-[#f0f0f0] border-transparent" : `${C.panel} ${C.line}`}`}
       onPress={p.onPress}
       activeStyle={{ opacity: 0.7 }}
@@ -219,8 +222,14 @@ function TextBox(p: { value: string; onChange: (v: string) => void; placeholder?
   );
 }
 
-/** A picker: the current choice; a press opens the list under it. */
-function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; placeholder?: string; label?: string }) {
+/** A picker: the current choice; a press opens the list under it.
+ *
+ *  `optionSaid`: for a list of people, or of words a person typed. Each option then has these fixed words as its
+ *  accessibility label and its text as its accessibility value. A button whose label differs from its text reaches
+ *  the Bot's assistant unnamed (app/src/agent_hub/filter.rs), so the names stay out of what it reads, and it can't
+ *  press those options; a screen reader still says the name. Lists of accounts and categories leave it out: the
+ *  assistant picks those to fill a draft. */
+function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; placeholder?: string; label?: string; optionSaid?: string }) {
   const open = signal(false);
   const current = computed(() => (p.options || []).find((o: Any) => o.ticket === p.value));
   return (
@@ -239,6 +248,8 @@ function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; plac
             <Each of={p.options || []} key={rowKey}>
               {(o: Any) => (
                 <View
+                  accessibilityLabel={p.optionSaid}
+                  accessibilityValue={p.optionSaid ? { text: o().label || o().name } : undefined}
                   class={`px-2.5 py-1.5 ${o().ticket === p.value ? C.raise : ""}`}
                   onPress={() => {
                     p.onPick(o());
