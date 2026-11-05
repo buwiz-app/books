@@ -34,7 +34,8 @@ These cannot be inferred from the code.
    record, on a tool whose `_meta["buwiz/audience"]` names `agent`. Only the draft tools do, and a draft counts in no
    total until a person posts it. While the assistant drives a screen its reads still run for that screen, as
    `origin: app` with the `press` record, and their answers stay in the app. So `write: false` must be strictly true:
-   a tool that writes a file, reaches the cloud or changes any state is a write. Resolves and routines only read; a
+   a tool that writes a file, reaches the cloud or changes any state is a write. The one thing a read may add is a
+   ticket for something that already exists: a handle, not a record. Resolves and routines only read; a
    routine writes only the drafts it declares.
 5. **Books never sends, submits, files, queues or pays.** Never call an eBIRForms queue or send tool, or any tool
    whose name contains submit, queue, pay, paid, file or send. Values Books gives to BIR use fill source `document`.

@@ -53,6 +53,14 @@ fn fresh(tag: &str) -> (TempDir, Books) {
     (dir, books)
 }
 
+fn schema_version(books: &mut Books) -> i64 {
+    let store = books.store().unwrap();
+    store
+        .conn()
+        .query_row("PRAGMA schema_version", [], |r| r.get(0))
+        .unwrap()
+}
+
 fn row<'a>(view: &'a Value, key: &str) -> &'a Value {
     view["rows"]
         .as_array()
@@ -109,7 +117,7 @@ fn import(books: &mut Books, which: &str) -> Value {
 #[test]
 fn m5_06_three_sample_charts_give_the_same_2551q_box() {
     for which in ["web", "quickbooks", "spreadsheet"] {
-        let (_dir, mut books) = fresh(&format!("m5-{which}"));
+        let (dir, mut books) = fresh(&format!("m5-{which}"));
         let b = &mut books;
         let summary = import(b, which);
         assert!(
@@ -184,12 +192,19 @@ fn m5_06_three_sample_charts_give_the_same_2551q_box() {
             "Sales 300,000.00 − returns 10,000.00"
         );
 
-        // lineage is the app's: four lines, the return negative
+        // lineage is the app's: four lines, the return negative, and a read changes no byte
+        let db = dir.0.join("store/books.db");
+        let (bytes, version) = (std::fs::read(&db).unwrap(), schema_version(b));
         let lin = ok(
             b,
             "books_app_form_lineage",
             json!({ "form": "2551Q", "period": "2026-Q3", "key": "txtATCAmt1" }),
         );
+        assert!(
+            std::fs::read(&db).unwrap() == bytes,
+            "{which}: lineage wrote"
+        );
+        assert_eq!(schema_version(b), version);
         assert_eq!(lin["rows"].as_array().unwrap().len(), 4, "{which}: {lin}");
         assert_eq!(lin["total_shown"], "290,000.00");
         // the assistant never sees lines: the broker hides the tool from it

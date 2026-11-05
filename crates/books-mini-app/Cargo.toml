@@ -32,6 +32,10 @@ name = "ledger_tools"
 path = "../../tests/ledger_tools.rs"
 
 [[test]]
+name = "reads_change_nothing"
+path = "../../tests/reads_change_nothing.rs"
+
+[[test]]
 name = "ledger_amend"
 path = "../../tests/ledger_amend.rs"
 
