@@ -33,7 +33,8 @@ These cannot be inferred from the code.
    in the Books app: `origin: app` with no `press`. The assistant saves drafts: directly, or by pressing a button on a
    Books screen, which reaches Books as `origin: agent` with the Bot's `press` record, on a tool whose
    `_meta["buwiz/audience"]` names `agent`. Only the draft tools do, and a draft counts in no total until a person
-   posts it. The one other way is the owner's D1: the assistant may press **Post** (`books_app_post_entry`, or
+   posts it. A press saves a new draft only, at any switch: `entry`, `copy_of`, `extracted` and `extraction` are
+   refused (`press::DRAFT_REFUSED`). The one other way is the owner's D1: the assistant may press **Post** (`books_app_post_entry`, or
    `books_app_batch` with `action: post`) and **Close month** (`books_app_month_close`) only after a person allows
    that one press. The Bot holds the call unsent, shows the person what it will do from `books_app_press_card`, and
    only their own press of Allow lets it go. It arrives as `origin: agent` with a `press` record of `by: ai_approved`

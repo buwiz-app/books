@@ -192,7 +192,7 @@ impl Server {
         }
         let caller = Caller::of(params);
         let approved = caller.approved(name, arguments);
-        if let Err(message) = self.authorize(name, &caller, approved.is_some()) {
+        if let Err(message) = self.authorize(name, arguments, &caller, approved.is_some()) {
             return Ok(fail("permission_denied", &message));
         }
         self.books.approved = approved;
@@ -202,7 +202,13 @@ impl Server {
     }
 
     /// The origin checks Books owns, as BIR makes them.
-    fn authorize(&self, name: &str, caller: &Caller, approved: bool) -> Result<(), String> {
+    fn authorize(
+        &self,
+        name: &str,
+        args: &Map<String, Value>,
+        caller: &Caller,
+        approved: bool,
+    ) -> Result<(), String> {
         let tool = tools::find(name).ok_or("no such tool")?;
         // post, void, close, reopen, confirm and hand-off are the
         // user's clicks in the Books app
@@ -239,6 +245,13 @@ impl Server {
             return Err(format!(
                 "{name} came from a screen with no record of the press"
             ));
+        }
+        // at any switch: a press saves a new draft and nothing else
+        if on_screen && name == tools::ENTRY_DRAFT && !press::draft_pressable(args) {
+            return Err(
+                "A press on a screen saves a new draft only: changing or copying an entry is the user's"
+                    .to_string(),
+            );
         }
         if caller.origin != Origin::App && !on_screen {
             return Ok(());

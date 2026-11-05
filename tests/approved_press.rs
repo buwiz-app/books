@@ -749,6 +749,110 @@ fn a_batch_card_names_every_entry_up_to_what_a_batch_takes() {
     );
 }
 
+/// The assistant's press on a screen, of a tool that needs no yes.
+fn pressed_ai(bot: &mut Bot, name: &str, args: Value) -> Value {
+    bot.pressed(name, args, json!({ "by": "ai", "who": "agent.broker" }))
+}
+
+fn new_draft(crid: &str) -> Value {
+    json!({ "client_request_id": crid, "form": "money_out", "date": "2026-10-21", "amount": "1.00", "account": "11000", "category": "67200" })
+}
+
+/// With the switch on there is no card, and the rule stands all the same.
+#[test]
+fn a_press_on_a_screen_cant_overwrite_or_copy_at_any_switch() {
+    let dir = TempDir::new("press-draft-on");
+    let (mut bot, entry) = with_draft(&dir);
+    assert_eq!(
+        data(&pressed_ai(
+            &mut bot,
+            "books_entry_draft",
+            new_draft("press-draft-0001")
+        ))["status"],
+        "draft"
+    );
+    for (crid, arg, value) in [
+        ("press-draft-0002", "entry", json!(entry)),
+        ("press-draft-0003", "copy_of", json!(entry)),
+        ("press-draft-0004", "extracted", json!({ "fields": {} })),
+        ("press-draft-0005", "extraction", json!({})),
+    ] {
+        let mut call = new_draft(crid);
+        call[arg] = value;
+        assert_eq!(
+            code(&pressed_ai(&mut bot, "books_entry_draft", call.clone())),
+            "permission_denied",
+            "{arg}"
+        );
+        assert_eq!(
+            code(&bot.approved("books_entry_draft", call)),
+            "permission_denied",
+            "{arg}, with a yes"
+        );
+    }
+    let mut own = new_draft("press-draft-0006");
+    own["entry"] = json!(entry);
+    assert_eq!(
+        data(&bot.app("books_entry_draft", own))["status"],
+        "draft",
+        "the person's own edit still runs"
+    );
+}
+
+#[test]
+fn a_draft_allowed_on_a_card_saves_and_its_once_is_spent() {
+    let dir = TempDir::new("press-draft-yes");
+    let (mut bot, _) = with_draft(&dir);
+    let call = new_draft("press-draft-0001");
+    assert_eq!(
+        data(&bot.approved("books_entry_draft", call.clone()))["status"],
+        "draft"
+    );
+    assert_eq!(
+        code(&bot.approved("books_entry_draft", call)),
+        "press_reused"
+    );
+}
+
+#[test]
+fn a_draft_saved_on_a_yes_isnt_called_posted_by_the_ai() {
+    let dir = TempDir::new("press-draft-word");
+    let (mut bot, _) = with_draft(&dir);
+    let saved = bot.approved("books_entry_draft", new_draft("press-draft-0001"));
+    let entry = data(&saved)["entry"].as_str().unwrap().to_string();
+    assert_eq!(
+        data(&bot.app("books_entry_get", json!({ "entry": entry })))["pressed"],
+        Value::Null
+    );
+}
+
+#[test]
+fn the_audit_row_keeps_the_hash_of_what_the_card_showed() {
+    let dir = TempDir::new("press-shown-row");
+    let (mut bot, entry) = with_draft(&dir);
+    let press = record(&post(&entry));
+    data(&bot.pressed("books_app_post_entry", post(&entry), press.clone()));
+    drop(bot);
+    let store = books_store::Store::open(&Paths::in_dir(dir.0.join("store"))).unwrap();
+    let kept: String = store
+        .conn()
+        .query_row(
+            "SELECT press_shown_hash FROM audit_event WHERE tool = 'books_app_post_entry'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(kept, press["shown_hash"].as_str().unwrap());
+}
+
+#[test]
+fn a_batch_card_refuses_an_entry_twice() {
+    let dir = TempDir::new("press-card-twice");
+    let (mut bot, entry) = with_draft(&dir);
+    let twice = json!({ "action": "post", "entries": [entry, entry] });
+    assert_eq!(code(&bot.card("books_app_batch", twice)), "invalid_args");
+}
+
 #[test]
 fn a_card_is_no_tool_of_the_assistants() {
     let dir = TempDir::new("press-card-agent");

@@ -361,6 +361,7 @@ pub fn write(
         at: a.at,
         once: &a.once,
         args_hash: &a.args_hash,
+        shown_hash: &a.shown_hash,
     });
     let audit = |tx: &books_store::rusqlite::Connection,
                  subject: Option<(&str, i64)>,

@@ -92,6 +92,7 @@ pub struct AuditPress<'a> {
     pub at: i64,
     pub once: &'a str,
     pub args_hash: &'a str,
+    pub shown_hash: &'a str,
 }
 
 /// [`audit`] with the press record on the row just written.
@@ -105,8 +106,8 @@ pub fn audit_pressed(
 ) -> Result<()> {
     audit(conn, origin, tool, subject, outcome)?;
     conn.execute(
-        "UPDATE audit_event SET press_who = ?1, press_approved_by = ?2, press_at = ?3, press_once = ?4, press_args_hash = ?5 WHERE event_id = last_insert_rowid()",
-        params![press.who, press.approved_by, press.at, press.once, press.args_hash],
+        "UPDATE audit_event SET press_who = ?1, press_approved_by = ?2, press_at = ?3, press_once = ?4, press_args_hash = ?5, press_shown_hash = ?6 WHERE event_id = last_insert_rowid()",
+        params![press.who, press.approved_by, press.at, press.once, press.args_hash, press.shown_hash],
     )?;
     Ok(())
 }
@@ -127,7 +128,7 @@ pub fn pressed_at(conn: &Connection, id: i64) -> Result<Option<String>> {
     use rusqlite::OptionalExtension;
     Ok(conn
         .query_row(
-            "SELECT at FROM audit_event WHERE subject_kind = 'entry' AND subject_id = ?1 AND outcome = 'ok' AND press_approved_by IS NOT NULL ORDER BY event_id DESC LIMIT 1",
+            "SELECT at FROM audit_event WHERE subject_kind = 'entry' AND subject_id = ?1 AND tool = 'books_app_post_entry' AND outcome = 'ok' AND press_approved_by IS NOT NULL ORDER BY event_id DESC LIMIT 1",
             params![id],
             |r| r.get(0),
         )

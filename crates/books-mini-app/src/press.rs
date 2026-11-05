@@ -11,6 +11,8 @@
 //! person's eyes, so unlike a reply to the model it carries amounts and
 //! account names; the Bot keeps it out of logs and away from the model.
 
+use std::collections::HashSet;
+
 use books_core::date::{Period, PeriodKind};
 use books_core::ledger::Status;
 use books_core::money;
@@ -37,6 +39,17 @@ pub fn needs_card(tools: &[String]) -> bool {
     tools
         .iter()
         .any(|t| APPROVED.contains(&t.as_str()) || t == ENTRY_DRAFT)
+}
+
+/// What a press on a screen can't put in a draft, at any switch: overwriting
+/// a draft (`entry`), copying an entry (`copy_of`) and what a reading of a
+/// receipt adds (`extracted`, `extraction`) change what is saved in ways a card
+/// can't show in a line. They are a person's, or the assistant's direct call.
+pub const DRAFT_REFUSED: [&str; 4] = ["entry", "copy_of", "extracted", "extraction"];
+
+/// Whether a press on a screen may save this draft.
+pub fn draft_pressable(args: &Map<String, Value>) -> bool {
+    !DRAFT_REFUSED.iter().any(|k| args.contains_key(*k))
 }
 
 /// What a batch may do under an approved press.
@@ -93,6 +106,7 @@ pub struct Approved {
     pub approved_by: String,
     pub once: String,
     pub args_hash: String,
+    pub shown_hash: String,
     pub at: i64,
 }
 
@@ -116,17 +130,17 @@ impl Approved {
             approved_by: field("approved_by").filter(|p| p.starts_with("person."))?,
             once: field("once")?,
             args_hash: field("args_hash")?,
+            shown_hash: field("shown_hash").filter(|h| is_hash(h))?,
             at: press.get("at").and_then(Value::as_i64)?,
         };
         let fresh = (now_ms - MAX_AGE_MS..=now_ms + MAX_AHEAD_MS).contains(&record.at);
-        let shown = field("shown_hash").is_some_and(|h| is_hash(&h));
-        (fresh && shown && !record.once.is_empty() && record.args_hash == args_hash(args)?)
-            .then_some(record)
+        (fresh && !record.once.is_empty() && record.args_hash == args_hash(args)?).then_some(record)
     }
 
     /// Whether this yes may run `tool` with `args`.
     pub fn covers(&self, tool: &str, args: &Map<String, Value>) -> bool {
-        APPROVED.contains(&tool) && (tool != BATCH || text(args, "action") == Some(BATCH_POST))
+        (APPROVED.contains(&tool) || tool == ENTRY_DRAFT)
+            && (tool != BATCH || text(args, "action") == Some(BATCH_POST))
     }
 }
 
@@ -396,10 +410,7 @@ fn post_card(store: &Store, chart: &Chart, call: &Map<String, Value>) -> Answer 
     Ok(json!({ "title": title, "lines": lines }))
 }
 
-/// A draft under an AI press is a new one, with [`POST_NEW_ARGS`]. Overwriting
-/// a draft (`entry`), copying an entry (`copy_of`) and what a reading of a
-/// receipt adds (`extracted`, `extraction`) change what is saved in ways a card
-/// can't show in a line, so the card refuses them: a person does those.
+/// A held draft is a new one, with [`POST_NEW_ARGS`]: see [`DRAFT_REFUSED`].
 fn draft_card(store: &Store, chart: &Chart, call: &Map<String, Value>) -> Answer {
     accounted(call, &POST_NEW_ARGS)?;
     let (total, mut lines) = new_entry(store, chart, call)?;
@@ -456,10 +467,14 @@ fn batch_card(store: &Store, chart: &Chart, call: &Map<String, Value>) -> Answer
         )));
     }
     let (mut total, mut named) = (0_i64, Vec::new());
+    let mut seen = HashSet::new();
     for ticket in list {
         let ticket = ticket
             .as_str()
             .ok_or_else(|| Refusal::invalid("Each entry is a ticket."))?;
+        if !seen.insert(ticket) {
+            return Err(Refusal::invalid("An entry is in the batch twice."));
+        }
         let e = writes::entry_in(store.conn(), &chart.book, ticket)?;
         let amount: i64 = entries::lines(store.conn(), e.id)?
             .iter()
@@ -543,10 +558,6 @@ mod tests {
             );
         }
     }
-
-    /// A held draft is a new one: `entry`, `copy_of` and the reading of a
-    /// receipt are a person's to do.
-    const DRAFT_REFUSED: [&str; 4] = ["entry", "copy_of", "extracted", "extraction"];
 
     #[test]
     fn every_argument_of_a_draft_is_on_its_card_or_refused() {
