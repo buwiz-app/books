@@ -68,8 +68,8 @@ fn label(conn: &Connection, ticket: &str) -> String {
 }
 
 /// Run the batch inside the write's transaction.
-pub fn run(conn: &Connection, args: &Map<String, Value>, origin: Origin) -> Answer {
-    if !origin.is_app() {
+pub fn run(conn: &Connection, args: &Map<String, Value>, origin: Origin, approved: bool) -> Answer {
+    if !origin.is_app() && !approved {
         return Err(Refusal::new(
             "permission_denied",
             "A batch needs the user's click in the Books app.",
@@ -116,7 +116,7 @@ pub fn run(conn: &Connection, args: &Map<String, Value>, origin: Origin) -> Answ
             ));
         }
         let result = match action {
-            Action::Post => writes::post(conn, &one),
+            Action::Post => writes::post(conn, &one, origin),
             Action::Discard => writes::discard(conn, &one),
             Action::Recategorize => reconcile::recategorize(conn, &one),
         };

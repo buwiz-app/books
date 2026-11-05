@@ -104,7 +104,7 @@ fn money_side(a: &Account) -> bool {
 /// The draft a request describes. `money_in`: the money account takes the
 /// debit, the category the credit; `money_out` the other way; `transfer`
 /// moves between two money accounts; `journal` takes its lines as given.
-fn draft_input(
+pub(crate) fn draft_input(
     conn: &Connection,
     book: &Book,
     args: &Map<String, Value>,
@@ -353,7 +353,7 @@ pub fn draft(conn: &Connection, args: &Map<String, Value>, origin: Origin) -> An
 
 /// `books_app_post_entry`: post a draft (`entry`), or save and post a new
 /// one in the same transaction.
-pub fn post(conn: &Connection, args: &Map<String, Value>) -> Answer {
+pub fn post(conn: &Connection, args: &Map<String, Value>, origin: Origin) -> Answer {
     let book = book_in(conn, args)?;
     let id = match text(args, "entry") {
         Some(t) => {
@@ -364,7 +364,7 @@ pub fn post(conn: &Connection, args: &Map<String, Value>) -> Answer {
         }
         None => {
             let input = draft_input(conn, &book, args)?;
-            let id = entries::save_draft(conn, &book, None, &input, "app")?;
+            let id = entries::save_draft(conn, &book, None, &input, origin.as_str())?;
             apply_links(conn, &book, id, args)?;
             id
         }

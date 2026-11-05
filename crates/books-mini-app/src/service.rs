@@ -108,6 +108,8 @@ pub struct Books {
     pub cloud: crate::cloud::Session,
     /// How Books reaches buwiz-cloud; `None` when no cloud is set.
     pub transport: Option<Box<dyn crate::cloud::Transport>>,
+    /// The person's yes this one call runs under, if it does.
+    pub approved: Option<crate::press::Approved>,
 }
 
 pub const HOME_TITLE: &str = "Books";
@@ -121,6 +123,7 @@ impl Books {
             uploads: crate::oldbooks::Uploads::default(),
             cloud: crate::cloud::Session::default(),
             transport: None,
+            approved: None,
         }
     }
 
@@ -320,6 +323,7 @@ pub fn write(
     args: &Map<String, Value>,
     f: impl FnOnce(&Transaction<'_>) -> Answer,
 ) -> Value {
+    let books_approved = books.approved.clone();
     let store = match books.store() {
         Ok(s) => s,
         Err(r) => return r.into_result(),
@@ -335,6 +339,19 @@ pub fn write(
     }
     let canonical = jcs::canonical(&Value::Object(args.clone())).unwrap_or_default();
     let digest = plumbing::request_digest(tool, &canonical);
+    let approved = books_approved.as_ref().map(|a| plumbing::AuditPress {
+        who: &a.who,
+        approved_by: &a.approved_by,
+        at: a.at,
+        once: &a.once,
+        args_hash: &a.args_hash,
+    });
+    let audit = |tx: &books_store::rusqlite::Connection,
+                 subject: Option<(&str, i64)>,
+                 outcome: &str| match &approved {
+        Some(press) => plumbing::audit_pressed(tx, origin.as_str(), tool, subject, outcome, press),
+        None => plumbing::audit(tx, origin.as_str(), tool, subject, outcome),
+    };
     let outcome: Result<Value, Refusal> = (|| {
         let tx = store.transaction()?;
         if let Some(stored) = plumbing::replay(&tx, &crid, tool, &digest)? {
@@ -344,13 +361,7 @@ pub fn write(
         let result = f(&tx)?;
         plumbing::remember(&tx, &crid, tool, &digest, &result)?;
         let subject = subject_of(&result);
-        plumbing::audit(
-            &tx,
-            origin.as_str(),
-            tool,
-            subject.as_ref().map(|(k, i)| (k.as_str(), *i)),
-            "ok",
-        )?;
+        audit(&tx, subject.as_ref().map(|(k, i)| (k.as_str(), *i)), "ok")?;
         tx.commit().map_err(books_store::StoreError::from)?;
         Ok(result)
     })();
@@ -359,7 +370,7 @@ pub fn write(
         Err(refusal) => {
             // nothing of the work stays; the refusal is still audited
             let code = refusal.code.clone();
-            let _ = store.tx(|tx| plumbing::audit(tx, origin.as_str(), tool, None, &code));
+            let _ = store.tx(|tx| audit(tx, None, &code));
             refusal.into_result()
         }
     }

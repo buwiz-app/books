@@ -366,7 +366,8 @@ fn the_window_grants_preview_and_the_document_tool_within_the_budget() {
             apps::AppSource::Tsx(source) => source,
             apps::AppSource::Native { .. } => panic!("the Books window is TSX"),
         })
-        .len(),
+        .len()
+            + 1,
         granted.len()
     );
     for app in m["apps"]

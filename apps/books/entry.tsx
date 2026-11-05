@@ -60,6 +60,9 @@ function EntryDrawer() {
                 <Kv k="Category" v={e()?.category || "—"} />
                 <Kv k="Reference" v={e()?.reference || "—"} />
                 <Kv k="Entry" v={e()?.no} />
+                <If when={Boolean(e()?.pressed)}>
+                  <Kv k="Record" v={e()?.pressed} />
+                </If>
                 <If when={Boolean(e()?.related)}>
                   <Kv k="Linked" v={e()?.related} />
                 </If>

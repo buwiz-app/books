@@ -83,6 +83,47 @@ pub fn audit(
     Ok(())
 }
 
+/// Who pressed, on a write the AI pressed and a person allowed: handles and
+/// a hash, never what the person read.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuditPress<'a> {
+    pub who: &'a str,
+    pub approved_by: &'a str,
+    pub at: i64,
+    pub once: &'a str,
+    pub args_hash: &'a str,
+}
+
+/// [`audit`] with the press record on the row just written.
+pub fn audit_pressed(
+    conn: &Connection,
+    origin: &str,
+    tool: &str,
+    subject: Option<(&str, i64)>,
+    outcome: &str,
+    press: &AuditPress<'_>,
+) -> Result<()> {
+    audit(conn, origin, tool, subject, outcome)?;
+    conn.execute(
+        "UPDATE audit_event SET press_who = ?1, press_approved_by = ?2, press_at = ?3, press_once = ?4, press_args_hash = ?5 WHERE event_id = last_insert_rowid()",
+        params![press.who, press.approved_by, press.at, press.once, press.args_hash],
+    )?;
+    Ok(())
+}
+
+/// When the AI's approved press on entry `id` went through, if it did: the
+/// audit row's time.
+pub fn pressed_at(conn: &Connection, id: i64) -> Result<Option<String>> {
+    use rusqlite::OptionalExtension;
+    Ok(conn
+        .query_row(
+            "SELECT at FROM audit_event WHERE subject_kind = 'entry' AND subject_id = ?1 AND outcome = 'ok' AND press_approved_by IS NOT NULL ORDER BY event_id DESC LIMIT 1",
+            params![id],
+            |r| r.get(0),
+        )
+        .optional()?)
+}
+
 pub fn audit_count(conn: &Connection, tool: &str) -> Result<i64> {
     Ok(conn.query_row(
         "SELECT count(*) FROM audit_event WHERE tool = ?1",

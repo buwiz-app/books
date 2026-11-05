@@ -213,6 +213,7 @@ mod tests {
                      ALTER TABLE statement_line DROP COLUMN confidence;",
                 )
                 .unwrap();
+            store.conn().execute_batch("ALTER TABLE audit_event DROP COLUMN press_who; ALTER TABLE audit_event DROP COLUMN press_approved_by; ALTER TABLE audit_event DROP COLUMN press_at; ALTER TABLE audit_event DROP COLUMN press_once; ALTER TABLE audit_event DROP COLUMN press_args_hash;").unwrap();
             store.conn().execute_batch("DROP TABLE entry_extraction_correction; DROP TABLE entry_extraction; DROP TABLE evidence_classification; DROP TABLE owed_proposal; DROP TABLE evidence_link; DROP TABLE evidence; UPDATE meta SET value='6' WHERE key='schema_version';").unwrap();
         }
         let store = Store::open(&paths).unwrap();

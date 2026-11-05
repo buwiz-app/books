@@ -1318,6 +1318,11 @@ fn drawer_data(
                 .child(kv("Reference", text_value_or(data.get("reference"), "—")))
                 .child(kv("Entry", text_value(data.get("no"), "—"))),
         );
+    if let Some(pressed) = data.get("pressed").and_then(Value::as_str)
+        && !pressed.is_empty()
+    {
+        detail = detail.child(kv("Record", pressed));
+    }
     if let Some(related) = data.get("related").and_then(Value::as_str)
         && !related.is_empty()
     {

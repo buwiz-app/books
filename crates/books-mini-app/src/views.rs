@@ -660,6 +660,12 @@ pub fn entry(
     };
     let (links, link_labels, replaces) = crate::amend::links(store, e)?;
     let related = related.or(replaces);
+    if origin.is_app()
+        && let Some(at) = books_store::plumbing::pressed_at(store.conn(), e.id)?
+    {
+        let day = at.get(..10).unwrap_or(&at);
+        out["pressed"] = json!(format!("Posted by the AI, allowed by you, {day}"));
+    }
     // for a line that needs review: the categories this payee used before,
     // then what the bank's words name (books_app_recategorize)
     let mut suggest: Vec<Value> = Vec::new();
