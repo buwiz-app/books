@@ -81,8 +81,14 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
             <Text class={`text-[13.5px] font-bold ${C.ink}`}>CSV or Excel files</Text>
             <Text class={`text-[12.5px] ${C.mute}`}>A chart of accounts and a journal, from QuickBooks, Xero or a spreadsheet (.csv, .xlsx or .xls; a workbook reads its sheet named Chart or Journal, else its first).</Text>
             <View class="flex-row gap-2 flex-wrap items-center">
-              <Btn label={csvChart() ? `Chart: ${String(csvChart().name)}` : "Pick the chart…"} onPress={() => pickOne([".csv", ".xlsx", ".xls"], (f: Any) => csvChart.set(f))} />
-              <Btn label={csvJournal() ? `Journal: ${String(csvJournal().name)}` : "Pick the journal…"} onPress={() => pickOne([".csv", ".xlsx", ".xls"], (f: Any) => csvJournal.set(f))} />
+              <Btn label={csvChart() ? "Change the chart…" : "Pick the chart…"} onPress={() => pickOne([".csv", ".xlsx", ".xls"], (f: Any) => csvChart.set(f))} />
+              <If when={Boolean(csvChart())}>
+                <Text class={`text-[12px] ${C.mute}`} numberOfLines={1}>{`Chart: ${String(csvChart()?.name)}`}</Text>
+              </If>
+              <Btn label={csvJournal() ? "Change the journal…" : "Pick the journal…"} onPress={() => pickOne([".csv", ".xlsx", ".xls"], (f: Any) => csvJournal.set(f))} />
+              <If when={Boolean(csvJournal())}>
+                <Text class={`text-[12px] ${C.mute}`} numberOfLines={1}>{`Journal: ${String(csvJournal()?.name)}`}</Text>
+              </If>
               <Btn label="Bring them in" tone="go" disabled={!csvChart() || !csvJournal()} onPress={() => importCsv().catch(() => null)} />
             </View>
           </Panel>

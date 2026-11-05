@@ -118,6 +118,7 @@ function BankLinesCard() {
             <Foot>
               <Act
                 label={chosen() ? `Post as ${String(chosen().name)}` : "Pick a category"}
+                said={chosen() ? "Post with this category" : undefined}
                 primary
                 disabled={!chosen()}
                 onPress={() =>
@@ -134,7 +135,7 @@ function BankLinesCard() {
           <Row label={`${String(d()?.first.date_short)} · ${String(d()?.first.title || "")}`} sub="From the bank statement" value={d()?.first.amount_shown} />
           <View class="flex-row gap-1.5 flex-wrap">
             <Each of={options()} key={rowKey}>
-              {(s: Any) => <Chip label={`${String(s().name)}${s().best ? " · likely" : ""}`} on={chosen()?.ticket === s().ticket} onPress={() => pick.set(s().ticket)} />}
+              {(s: Any) => <Chip said="Choose this category" label={`${String(s().name)}${s().best ? " · likely" : ""}`} on={chosen()?.ticket === s().ticket} onPress={() => pick.set(s().ticket)} />}
             </Each>
           </View>
         </Body>
@@ -188,7 +189,7 @@ function OwedCard() {
           <Text class={`text-[12px] ${C.mute}`}>{pay ? "Paid from" : "Paid into"}</Text>
           <View class="flex-row gap-1.5 flex-wrap">
             <Each of={(d()?.money || []).slice(0, 6)} key={rowKey}>
-              {(m: Any) => <Chip label={m().name || m().label} on={into() === m().ticket} onPress={() => into.set(m().ticket)} />}
+              {(m: Any) => <Chip said="Choose this account" label={m().name || m().label} on={into() === m().ticket} onPress={() => into.set(m().ticket)} />}
             </Each>
           </View>
         </Body>

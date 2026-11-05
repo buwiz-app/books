@@ -134,7 +134,7 @@ function CertSheet(p: { opts: Any; close: () => void }) {
       <View class="flex-row gap-2 items-end flex-wrap">
         <View class="w-[220px]">
           <Field label="From">
-            <Pick value={person()} options={p.opts?.customers || []} onPick={(o: Any) => person.set(o.ticket)} placeholder="Customer" />
+            <Pick optionSaid="Choose this customer" value={person()} options={p.opts?.customers || []} onPick={(o: Any) => person.set(o.ticket)} placeholder="Customer" />
           </Field>
         </View>
         <Field label="Form">

@@ -156,7 +156,12 @@ function FormsPage(p: { go: (page: string, filter?: string) => void }) {
                     <Pill tone="mute" label="Not sent" />
                   </If>
                   <If when={r().value_shown !== null && r().value_shown !== undefined}>
-                    <View class={`rounded-md px-1.5 py-0.5 ${lineageKey() === r().key ? C.raise : ""}`} onPress={() => lineageKey.set(lineageKey() === r().key ? "" : r().key)}>
+                    <View
+                      accessibilityLabel="Show where this comes from"
+                      accessibilityValue={{ text: r().value_shown || "" }}
+                      class={`rounded-md px-1.5 py-0.5 ${lineageKey() === r().key ? C.raise : ""}`}
+                      onPress={() => lineageKey.set(lineageKey() === r().key ? "" : r().key)}
+                    >
                       <Text class={`text-[13px] font-mono font-semibold underline ${C.ink}`}>{r().value_shown || ""}</Text>
                     </View>
                   </If>

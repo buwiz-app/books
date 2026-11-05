@@ -148,10 +148,13 @@ function Foot(p: { status?: string; children?: Any }) {
   );
 }
 
-/** A card button, as the Bot draws them: a 28-point pill; the primary is ink on the surface, the rest sit in a well. */
-function Act(p: { label: string; onPress: () => void; primary?: boolean; disabled?: boolean }) {
+/** A card button, as the Bot draws them: a 28-point pill; the primary is ink on the surface, the rest sit in a well.
+ *  `said`: for a button whose label holds someone's data. See `Pick`'s `optionSaid`. */
+function Act(p: { label: string; onPress: () => void; primary?: boolean; disabled?: boolean; said?: string }) {
   return (
     <View
+      accessibilityLabel={p.said}
+      accessibilityValue={p.said ? { text: p.label } : undefined}
       class={`h-[28px] px-3 rounded-full items-center justify-center ${p.primary ? "bg-[#1c1c1c] dark:bg-[#f5f5f5]" : K.well} ${p.disabled ? "opacity-40" : ""}`}
       activeStyle={{ opacity: 0.7 }}
       onPress={() => (p.disabled ? null : p.onPress())}
