@@ -20,6 +20,7 @@ use books_store::entries::{self, LineInput};
 use books_store::{people, plumbing};
 use serde_json::{Map, Value, json};
 
+use crate::batch::MAX_ENTRIES;
 use crate::jcs;
 use crate::service::{self, Answer, Refusal, text};
 use crate::tools::{BATCH, ENTRY_DRAFT, MONTH_CLOSE, POST_ENTRY};
@@ -84,8 +85,6 @@ pub const BATCH_ARGS: [&str; 5] = [
 ];
 /// What a journal line may hold.
 const LINE_ARGS: [&str; 4] = ["account", "debit", "credit", "facts"];
-/// How many entries of a batch a card names; it counts them all.
-const MAX_NAMED: usize = 6;
 
 /// A person's yes to the AI's press, as the Bot recorded it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -397,7 +396,12 @@ fn post_card(store: &Store, chart: &Chart, call: &Map<String, Value>) -> Answer 
     Ok(json!({ "title": title, "lines": lines }))
 }
 
+/// A draft under an AI press is a new one, with [`POST_NEW_ARGS`]. Overwriting
+/// a draft (`entry`), copying an entry (`copy_of`) and what a reading of a
+/// receipt adds (`extracted`, `extraction`) change what is saved in ways a card
+/// can't show in a line, so the card refuses them: a person does those.
 fn draft_card(store: &Store, chart: &Chart, call: &Map<String, Value>) -> Answer {
+    accounted(call, &POST_NEW_ARGS)?;
     let (total, mut lines) = new_entry(store, chart, call)?;
     lines.push("A draft counts in no total until a person posts it.".to_string());
     let title = format!("Save a draft for {}?", peso(total));
@@ -446,20 +450,34 @@ fn batch_card(store: &Store, chart: &Chart, call: &Map<String, Value>) -> Answer
         .get("entries")
         .and_then(Value::as_array)
         .ok_or_else(|| Refusal::invalid("`entries` is a list of entry tickets."))?;
+    if list.len() > MAX_ENTRIES {
+        return Err(Refusal::invalid(format!(
+            "A batch takes 1 to {MAX_ENTRIES} entries."
+        )));
+    }
     let (mut total, mut named) = (0_i64, Vec::new());
-    for ticket in list.iter().filter_map(Value::as_str) {
+    for ticket in list {
+        let ticket = ticket
+            .as_str()
+            .ok_or_else(|| Refusal::invalid("Each entry is a ticket."))?;
         let e = writes::entry_in(store.conn(), &chart.book, ticket)?;
         let amount: i64 = entries::lines(store.conn(), e.id)?
             .iter()
             .map(|l| l.debit)
             .sum();
         total += amount;
-        if named.len() < MAX_NAMED {
-            named.push(format!("Entry {:04}, {}: {}", e.no, e.date, peso(amount)));
-        }
-    }
-    if list.len() > MAX_NAMED {
-        named.push(format!("and {} more", list.len() - MAX_NAMED));
+        let about: Vec<String> = names_of(store, e.id)?.into_iter().flatten().collect();
+        let about = if about.is_empty() {
+            String::new()
+        } else {
+            format!(" ({})", about.join(", "))
+        };
+        named.push(format!(
+            "Entry {:04}, {}: {}{about}",
+            e.no,
+            e.date,
+            peso(amount)
+        ));
     }
     named.extend(book_line(chart, call));
     if call.get("keep_both").and_then(Value::as_bool) == Some(true) {
@@ -523,6 +541,19 @@ mod tests {
                 accounted(&call(arg), &POST_ENTRY_ARGS).is_err(),
                 "an entry's post takes no `{arg}`: it wouldn't use it"
             );
+        }
+    }
+
+    /// A held draft is a new one: `entry`, `copy_of` and the reading of a
+    /// receipt are a person's to do.
+    const DRAFT_REFUSED: [&str; 4] = ["entry", "copy_of", "extracted", "extraction"];
+
+    #[test]
+    fn every_argument_of_a_draft_is_on_its_card_or_refused() {
+        all_accounted(ENTRY_DRAFT, &[&POST_NEW_ARGS], &DRAFT_REFUSED);
+        for arg in DRAFT_REFUSED {
+            let call = json!({ arg: "x" }).as_object().unwrap().clone();
+            assert!(accounted(&call, &POST_NEW_ARGS).is_err(), "{arg}");
         }
     }
 

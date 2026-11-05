@@ -313,6 +313,22 @@ pub fn required<'a>(args: &'a Map<String, Value>, key: &str) -> Result<&'a str, 
         .ok_or_else(|| Refusal::invalid(format!("`{key}` is required.")))
 }
 
+/// What spending a `once` came to: a second use, and a store that couldn't
+/// say, are different things to be told.
+fn spent_or_refused(spent: Result<bool, StoreError>) -> Result<(), Refusal> {
+    match spent {
+        Ok(true) => Ok(()),
+        Ok(false) => Err(Refusal::new(
+            "press_reused",
+            "That approval was used already, so nothing changed.",
+        )),
+        Err(_) => Err(Refusal::new(
+            "press_unchecked",
+            "Books couldn't check that approval, so nothing changed.",
+        )),
+    }
+}
+
 /// A Books write: the `client_request_id` replays the stored result; else
 /// `f` runs in one transaction, its result is stored, and an audit row is
 /// written either way (with the refusal code on failure).
@@ -355,13 +371,9 @@ pub fn write(
     // spent before anything runs, and for good: a yes works once, go or no go
     if let Some(a) = &books_approved {
         let spent = store.tx(|tx| plumbing::spend_once(tx, &a.once, tool, a.at));
-        if !matches!(spent, Ok(true)) {
-            let _ = store.tx(|tx| audit(tx, None, "press_reused"));
-            return Refusal::new(
-                "press_reused",
-                "That approval was used already, so nothing changed.",
-            )
-            .into_result();
+        if let Err(refusal) = spent_or_refused(spent) {
+            let _ = store.tx(|tx| audit(tx, None, &refusal.code));
+            return refusal.into_result();
         }
     }
     let outcome: Result<Value, Refusal> = (|| {
@@ -407,4 +419,25 @@ fn strip_subject(mut result: Value) -> Value {
         map.remove("_subject");
     }
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_store_error_on_a_once_isnt_called_a_used_approval() {
+        assert!(spent_or_refused(Ok(true)).is_ok());
+        assert_eq!(
+            spent_or_refused(Ok(false)).unwrap_err().code,
+            "press_reused"
+        );
+        let e = spent_or_refused(Err(StoreError {
+            code: "store",
+            message: "disk".into(),
+        }))
+        .unwrap_err();
+        assert_eq!(e.code, "press_unchecked");
+        assert!(!e.message.contains("used"));
+    }
 }

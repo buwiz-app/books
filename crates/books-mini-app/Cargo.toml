@@ -32,6 +32,10 @@ name = "stdio_roundtrip"
 path = "../../tests/stdio_roundtrip.rs"
 
 [[test]]
+name = "approved_press"
+path = "../../tests/approved_press.rs"
+
+[[test]]
 name = "ledger_tools"
 path = "../../tests/ledger_tools.rs"
 

@@ -105,11 +105,20 @@ impl Bot {
         self.raw(name, args, caller)
     }
 
+    fn agent(&mut self, name: &str, args: Value) -> Value {
+        let caller = json!({ "origin": "agent", "plugin": manifest::PLUGIN_ID, "ts": now_ms() });
+        self.raw(name, args, caller)
+    }
+
     /// The Bot reading a card: a read, as the app's, with the AI's record.
     fn card(&mut self, tool: &str, args: Value) -> Value {
         let open_id = self.open_session("books").to_string();
         let caller = json!({ "origin": "app", "plugin": manifest::PLUGIN_ID, "app": "books", "open_id": open_id, "ts": now_ms(), "press": { "by": "ai", "who": "agent.broker" } });
-        self.raw("books_app_press_card", json!({ "tool": tool, "args": args }), caller)
+        self.raw(
+            "books_app_press_card",
+            json!({ "tool": tool, "args": args }),
+            caller,
+        )
     }
 }
 
@@ -170,7 +179,10 @@ fn a_yes_to_this_call_posts_it_and_the_audit_row_names_the_ai_and_the_person() {
     assert_eq!(status(&mut bot, &entry), "posted");
     let shown = data(&bot.app("books_entry_get", json!({ "entry": entry })))["pressed"].clone();
     assert!(
-        shown.as_str().unwrap().starts_with("Posted by the AI, allowed by you, "),
+        shown
+            .as_str()
+            .unwrap()
+            .starts_with("Posted by the AI, allowed by you, "),
         "{shown}"
     );
 }
@@ -195,13 +207,24 @@ fn a_used_once_is_refused_however_it_comes_back() {
     let (mut bot, entry) = with_draft(&dir);
     data(&bot.approved("books_app_post_entry", post(&entry)));
     let again = bot.approved("books_app_post_entry", post(&entry));
-    assert_eq!(code(&again), "press_reused", "even the same call, which a request id would replay");
+    assert_eq!(
+        code(&again),
+        "press_reused",
+        "even the same call, which a request id would replay"
+    );
     // the same id on a call of its own, with a good hash
     let close = json!({ "client_request_id": "press-close-001", "month": "2026-10" });
     let mut press = record(&close);
     press["once"] = record(&post(&entry))["once"].clone();
-    assert_eq!(code(&bot.pressed("books_app_month_close", close, press)), "press_reused");
-    assert_eq!(audit_rows(&dir, "books_app_month_close"), 1, "refused, and on the record");
+    assert_eq!(
+        code(&bot.pressed("books_app_month_close", close, press)),
+        "press_reused"
+    );
+    assert_eq!(
+        audit_rows(&dir, "books_app_month_close"),
+        1,
+        "refused, and on the record"
+    );
 }
 
 #[test]
@@ -209,8 +232,14 @@ fn a_refused_write_still_spends_its_once() {
     let dir = TempDir::new("press-once-refused");
     let (mut bot, _) = with_draft(&dir);
     let close = json!({ "client_request_id": "press-close-001", "month": "2026-10" });
-    assert_eq!(code(&bot.approved("books_app_month_close", close.clone())), "drafts_open");
-    assert_eq!(code(&bot.approved("books_app_month_close", close)), "press_reused");
+    assert_eq!(
+        code(&bot.approved("books_app_month_close", close.clone())),
+        "drafts_open"
+    );
+    assert_eq!(
+        code(&bot.approved("books_app_month_close", close)),
+        "press_reused"
+    );
 }
 
 #[test]
@@ -220,7 +249,11 @@ fn a_stale_or_future_yes_is_refused() {
     for at in [now_ms() - 61_000, now_ms() + 6_000, 0] {
         let mut press = record(&post(&entry));
         press["at"] = json!(at);
-        assert_eq!(code(&bot.pressed("books_app_post_entry", post(&entry), press)), "permission_denied", "{at}");
+        assert_eq!(
+            code(&bot.pressed("books_app_post_entry", post(&entry), press)),
+            "permission_denied",
+            "{at}"
+        );
     }
     assert_eq!(status(&mut bot, &entry), "draft");
 }
@@ -232,7 +265,11 @@ fn a_yes_with_an_empty_card_hash_is_refused() {
     for shown in [json!(""), json!("sha256:"), json!("abc")] {
         let mut press = record(&post(&entry));
         press["shown_hash"] = shown.clone();
-        assert_eq!(code(&bot.pressed("books_app_post_entry", post(&entry), press)), "permission_denied", "{shown}");
+        assert_eq!(
+            code(&bot.pressed("books_app_post_entry", post(&entry), press)),
+            "permission_denied",
+            "{shown}"
+        );
     }
     assert_eq!(status(&mut bot, &entry), "draft");
 }
@@ -287,7 +324,8 @@ fn a_forged_or_partial_record_is_refused_and_nothing_posts() {
         );
     }
     // the model's direct call carries a record of its own making
-    let caller = json!({ "origin": "agent", "plugin": manifest::PLUGIN_ID, "ts": now_ms(), "press": whole });
+    let caller =
+        json!({ "origin": "agent", "plugin": manifest::PLUGIN_ID, "ts": now_ms(), "press": whole });
     assert_eq!(
         code(&bot.raw("books_app_post_entry", post(&entry), caller)),
         "permission_denied"
@@ -318,13 +356,15 @@ fn close_month_takes_a_yes() {
 fn a_batch_takes_a_yes_only_to_post() {
     let dir = TempDir::new("press-batch");
     let (mut bot, entry) = with_draft(&dir);
-    let discard = json!({ "client_request_id": "press-batch-001", "action": "discard", "entries": [entry] });
+    let discard =
+        json!({ "client_request_id": "press-batch-001", "action": "discard", "entries": [entry] });
     assert_eq!(
         code(&bot.approved("books_app_batch", discard)),
         "permission_denied"
     );
     assert_eq!(status(&mut bot, &entry), "draft");
-    let post_all = json!({ "client_request_id": "press-batch-002", "action": "post", "entries": [entry] });
+    let post_all =
+        json!({ "client_request_id": "press-batch-002", "action": "post", "entries": [entry] });
     assert_eq!(data(&bot.approved("books_app_batch", post_all))["done"], 1);
 }
 
@@ -336,14 +376,36 @@ fn what_d1_doesnt_name_stays_the_persons_click_with_a_yes_or_not() {
     let closed = json!({ "client_request_id": "strict-close-001", "month": "2026-09" });
     data(&bot.app("books_app_month_close", closed));
     for (tool, args) in [
-        ("books_app_void_entry", json!({ "client_request_id": "strict-void-0001", "entry": entry })),
-        ("books_app_month_reopen", json!({ "client_request_id": "strict-open-0001", "month": "2026-09", "reason": "x" })),
-        ("books_app_return_ok", json!({ "client_request_id": "strict-rtrn-0001" })),
-        ("books_app_handoff_create", json!({ "client_request_id": "strict-hand-0001" })),
-        ("books_app_handoff_confirm", json!({ "client_request_id": "strict-conf-0001" })),
-        ("books_app_discard_entry", json!({ "client_request_id": "strict-disc-0001", "entry": entry })),
+        (
+            "books_app_void_entry",
+            json!({ "client_request_id": "strict-void-0001", "entry": entry }),
+        ),
+        (
+            "books_app_month_reopen",
+            json!({ "client_request_id": "strict-open-0001", "month": "2026-09", "reason": "x" }),
+        ),
+        (
+            "books_app_return_ok",
+            json!({ "client_request_id": "strict-rtrn-0001" }),
+        ),
+        (
+            "books_app_handoff_create",
+            json!({ "client_request_id": "strict-hand-0001" }),
+        ),
+        (
+            "books_app_handoff_confirm",
+            json!({ "client_request_id": "strict-conf-0001" }),
+        ),
+        (
+            "books_app_discard_entry",
+            json!({ "client_request_id": "strict-disc-0001", "entry": entry }),
+        ),
     ] {
-        assert_eq!(code(&bot.approved(tool, args)), "permission_denied", "{tool}");
+        assert_eq!(
+            code(&bot.approved(tool, args)),
+            "permission_denied",
+            "{tool}"
+        );
     }
     assert_eq!(status(&mut bot, &entry), "posted");
 }
@@ -358,14 +420,35 @@ fn the_tools_say_who_takes_a_yes_and_the_model_still_sees_none_of_them() {
         .unwrap();
     let tools = reply["result"]["tools"].as_array().unwrap();
     let of = |name: &str| tools.iter().find(|t| t["name"] == name).unwrap().clone();
-    for name in ["books_app_post_entry", "books_app_month_close", "books_app_batch"] {
+    for name in [
+        "books_app_post_entry",
+        "books_app_month_close",
+        "books_app_batch",
+    ] {
         let t = of(name);
         assert_eq!(t["_meta"]["buwiz/audience"], json!(["app"]), "{name}");
-        let effect = if name == "books_app_month_close" { "close" } else { "post" };
-        assert_eq!(t["_meta"]["buwiz/press"], json!({ "approved": true, "effect": effect, "describe": "books_app_press_card" }), "{name}");
+        let effect = if name == "books_app_month_close" {
+            "close"
+        } else {
+            "post"
+        };
+        assert_eq!(
+            t["_meta"]["buwiz/press"],
+            json!({ "approved": true, "effect": effect, "describe": "books_app_press_card" }),
+            "{name}"
+        );
     }
-    assert_eq!(of("books_entry_draft")["_meta"]["buwiz/press"], json!({ "describe": "books_app_press_card" }));
-    for name in ["books_app_void_entry", "books_app_month_reopen", "books_app_return_ok", "books_app_handoff_create", "books_app_handoff_confirm"] {
+    assert_eq!(
+        of("books_entry_draft")["_meta"]["buwiz/press"],
+        json!({ "describe": "books_app_press_card" })
+    );
+    for name in [
+        "books_app_void_entry",
+        "books_app_month_reopen",
+        "books_app_return_ok",
+        "books_app_handoff_create",
+        "books_app_handoff_confirm",
+    ] {
         assert_eq!(of(name)["_meta"].get("buwiz/press"), None, "{name}");
     }
     let card = of("books_app_press_card");
@@ -380,9 +463,19 @@ fn a_card_shows_the_real_amount_date_and_accounts_and_changes_nothing() {
     let card = bot.card("books_app_post_entry", post(&entry));
     let card = data(&card);
     let title = card["title"].as_str().unwrap();
-    assert!(title.starts_with("Post entry 0001") && title.contains("1,350.00"), "{title}");
+    assert!(
+        title.starts_with("Post entry 0001") && title.contains("1,350.00"),
+        "{title}"
+    );
     let lines = card["lines"].to_string();
-    for shown in ["2026-10-18", "Pixel Print Shop", "11000", "67200", "debit", "credit"] {
+    for shown in [
+        "2026-10-18",
+        "Pixel Print Shop",
+        "11000",
+        "67200",
+        "debit",
+        "credit",
+    ] {
         assert!(lines.contains(shown), "{shown} in {lines}");
     }
     assert!(!card.to_string().contains("tkt_"), "{card}");
@@ -396,15 +489,44 @@ fn a_card_for_a_new_entry_a_month_a_batch_and_a_draft() {
     let new = json!({ "client_request_id": "press-new-00001", "form": "money_out", "date": "2026-10-20",
                       "amount": "99.50", "account": "11000", "category": "67200" });
     let got = bot.card("books_app_post_entry", new.clone());
-    assert!(data(&got)["title"].as_str().unwrap().contains("99.50"), "{got}");
+    assert!(
+        data(&got)["title"].as_str().unwrap().contains("99.50"),
+        "{got}"
+    );
     let got = bot.card("books_entry_draft", new);
-    assert!(data(&got)["title"].as_str().unwrap().starts_with("Save a draft for"), "{got}");
-    let got = bot.card("books_app_month_close", json!({ "client_request_id": "x", "month": "2026-10" }));
+    assert!(
+        data(&got)["title"]
+            .as_str()
+            .unwrap()
+            .starts_with("Save a draft for"),
+        "{got}"
+    );
+    let got = bot.card(
+        "books_app_month_close",
+        json!({ "client_request_id": "x", "month": "2026-10" }),
+    );
     assert_eq!(data(&got)["title"], "Close October 2026?");
-    assert!(data(&got)["lines"].to_string().contains("Drafts still in it: 1"), "{got}");
-    let got = bot.card("books_app_batch", json!({ "action": "post", "entries": [entry] }));
-    assert!(data(&got)["title"].as_str().unwrap().starts_with("Post 1 entry for"), "{got}");
-    let got = bot.card("books_app_batch", json!({ "action": "discard", "entries": [entry] }));
+    assert!(
+        data(&got)["lines"]
+            .to_string()
+            .contains("Drafts still in it: 1"),
+        "{got}"
+    );
+    let got = bot.card(
+        "books_app_batch",
+        json!({ "action": "post", "entries": [entry] }),
+    );
+    assert!(
+        data(&got)["title"]
+            .as_str()
+            .unwrap()
+            .starts_with("Post 1 entry for"),
+        "{got}"
+    );
+    let got = bot.card(
+        "books_app_batch",
+        json!({ "action": "discard", "entries": [entry] }),
+    );
     assert_eq!(code(&got), "permission_denied");
     let got = bot.card("books_app_void_entry", json!({ "entry": entry }));
     assert_eq!(code(&got), "permission_denied", "no card, so no press");
@@ -434,7 +556,13 @@ fn a_saved_entrys_card_shows_its_person_tags_memo_and_reference() {
     let (mut bot, entry, _) = with_links(&dir);
     let card = bot.card("books_app_post_entry", post(&entry));
     let lines = data(&card)["lines"].to_string();
-    for shown in ["Linked person: Pixel Print Shop", "Department: Sales", "Location: Olongapo", "For: Printing", "Reference: OR-77"] {
+    for shown in [
+        "Linked person: Pixel Print Shop",
+        "Department: Sales",
+        "Location: Olongapo",
+        "For: Printing",
+        "Reference: OR-77",
+    ] {
         assert!(lines.contains(shown), "{shown} in {lines}");
     }
 }
@@ -448,14 +576,26 @@ fn a_new_entrys_card_shows_every_value_the_post_would_write() {
                        "memo": "Ink", "reference": "OR-78", "facts": { "document_kind": "sale_invoice" } });
     let card = bot.card("books_app_post_entry", call);
     let lines = data(&card)["lines"].to_string();
-    for shown in ["Linked person: Pixel Print Shop", "Department: Sales", "Location: Olongapo", "For: Ink", "Reference: OR-78", "sale_invoice"] {
+    for shown in [
+        "Linked person: Pixel Print Shop",
+        "Department: Sales",
+        "Location: Olongapo",
+        "For: Ink",
+        "Reference: OR-78",
+        "sale_invoice",
+    ] {
         assert!(lines.contains(shown), "{shown} in {lines}");
     }
     assert!(!lines.contains("tkt_"), "{lines}");
     let call = json!({ "client_request_id": "press-new-00003", "form": "money_out", "date": "2026-10-21", "amount": "12.00",
                        "account": "11000", "category": "67200", "payee": "New Vendor", "person_kind": "vendors" });
     let card = bot.card("books_app_post_entry", call);
-    assert!(data(&card)["lines"].to_string().contains("Linked person: New Vendor (vendors)"), "{card}");
+    assert!(
+        data(&card)["lines"]
+            .to_string()
+            .contains("Linked person: New Vendor (vendors)"),
+        "{card}"
+    );
 }
 
 #[test]
@@ -465,20 +605,47 @@ fn keep_both_says_posts_duplicates_on_the_card() {
     let mut call = post(&entry);
     call["keep_both"] = json!(true);
     let card = bot.card("books_app_post_entry", call);
-    assert!(data(&card)["lines"].to_string().contains("Posts duplicates"), "{card}");
-    let card = bot.card("books_app_batch", json!({ "action": "post", "entries": [entry], "keep_both": true }));
-    assert!(data(&card)["lines"].to_string().contains("Posts duplicates"), "{card}");
-    let card = bot.card("books_app_batch", json!({ "action": "post", "entries": [entry] }));
-    assert!(!data(&card)["lines"].to_string().contains("Posts duplicates"), "{card}");
+    assert!(
+        data(&card)["lines"]
+            .to_string()
+            .contains("Posts duplicates"),
+        "{card}"
+    );
+    let card = bot.card(
+        "books_app_batch",
+        json!({ "action": "post", "entries": [entry], "keep_both": true }),
+    );
+    assert!(
+        data(&card)["lines"]
+            .to_string()
+            .contains("Posts duplicates"),
+        "{card}"
+    );
+    let card = bot.card(
+        "books_app_batch",
+        json!({ "action": "post", "entries": [entry] }),
+    );
+    assert!(
+        !data(&card)["lines"]
+            .to_string()
+            .contains("Posts duplicates"),
+        "{card}"
+    );
 }
 
 #[test]
 fn a_batch_card_names_each_entrys_person_and_tags() {
     let dir = TempDir::new("press-card-batch");
     let (mut bot, entry, _) = with_links(&dir);
-    let card = bot.card("books_app_batch", json!({ "action": "post", "entries": [entry] }));
+    let card = bot.card(
+        "books_app_batch",
+        json!({ "action": "post", "entries": [entry] }),
+    );
     let lines = data(&card)["lines"].to_string();
-    assert!(lines.contains("Pixel Print Shop") && lines.contains("Sales") && lines.contains("Olongapo"), "{lines}");
+    assert!(
+        lines.contains("Pixel Print Shop") && lines.contains("Sales") && lines.contains("Olongapo"),
+        "{lines}"
+    );
 }
 
 #[test]
@@ -487,17 +654,99 @@ fn an_argument_the_card_doesnt_show_refuses_the_card_so_no_press_can_carry_it() 
     let (mut bot, entry) = with_draft(&dir);
     let mut call = post(&entry);
     call["new_thing"] = json!(1);
-    assert_eq!(code(&bot.card("books_app_post_entry", call)), "permission_denied");
+    assert_eq!(
+        code(&bot.card("books_app_post_entry", call)),
+        "permission_denied"
+    );
     let mut call = post(&entry);
     call["memo"] = json!("not what the entry says");
-    assert_eq!(code(&bot.card("books_app_post_entry", call)), "permission_denied");
+    assert_eq!(
+        code(&bot.card("books_app_post_entry", call)),
+        "permission_denied"
+    );
     let batch = json!({ "action": "post", "entries": [entry], "category": "67200" });
-    assert_eq!(code(&bot.card("books_app_batch", batch)), "permission_denied");
+    assert_eq!(
+        code(&bot.card("books_app_batch", batch)),
+        "permission_denied"
+    );
     let close = json!({ "month": "2026-10", "new_thing": 1 });
-    assert_eq!(code(&bot.card("books_app_month_close", close)), "permission_denied");
+    assert_eq!(
+        code(&bot.card("books_app_month_close", close)),
+        "permission_denied"
+    );
     let line = json!({ "client_request_id": "x", "form": "journal", "date": "2026-10-20", "lines": [
         { "account": "11000", "debit": "1.00", "new_thing": 1 }, { "account": "67200", "credit": "1.00" } ] });
-    assert_eq!(code(&bot.card("books_app_post_entry", line)), "permission_denied");
+    assert_eq!(
+        code(&bot.card("books_app_post_entry", line)),
+        "permission_denied"
+    );
+}
+
+#[test]
+fn a_held_draft_is_a_new_one_and_nothing_else() {
+    let dir = TempDir::new("press-card-draft");
+    let (mut bot, entry) = with_draft(&dir);
+    let base = json!({ "client_request_id": "x", "form": "money_out", "date": "2026-10-21", "amount": "1.00", "account": "11000", "category": "67200" });
+    assert!(
+        data(&bot.card("books_entry_draft", base.clone()))["title"]
+            .as_str()
+            .unwrap()
+            .starts_with("Save a draft")
+    );
+    for (arg, value) in [
+        ("entry", json!(entry)),
+        ("copy_of", json!(entry)),
+        ("extracted", json!({ "fields": {} })),
+        ("extraction", json!({})),
+        ("new_thing", json!(1)),
+    ] {
+        let mut call = base.clone();
+        call[arg] = value;
+        assert_eq!(
+            code(&bot.card("books_entry_draft", call)),
+            "permission_denied",
+            "{arg}"
+        );
+    }
+}
+
+#[test]
+fn a_batch_card_names_every_entry_up_to_what_a_batch_takes() {
+    let dir = TempDir::new("press-card-all");
+    let (mut bot, first) = with_draft(&dir);
+    let mut entries = vec![first];
+    for i in 2..=9 {
+        let d = bot.app(
+            "books_entry_draft",
+            json!({ "client_request_id": format!("draft-many-{i:04}"), "form": "money_out", "date": "2026-10-18",
+                    "amount": format!("{i}.00"), "account": "11000", "category": "67200" }),
+        );
+        entries.push(data(&d)["entry"].as_str().unwrap().to_string());
+    }
+    let card = bot.card(
+        "books_app_batch",
+        json!({ "action": "post", "entries": entries }),
+    );
+    let lines = data(&card)["lines"].as_array().unwrap().clone();
+    assert_eq!(lines.len(), 9, "{lines:?}");
+    assert!(
+        lines[8].as_str().unwrap().contains("9.00"),
+        "the last one too"
+    );
+    let many: Vec<String> = (0..51).map(|_| entries[0].clone()).collect();
+    assert_eq!(
+        code(&bot.card(
+            "books_app_batch",
+            json!({ "action": "post", "entries": many })
+        )),
+        "invalid_args"
+    );
+    let bad = json!({ "action": "post", "entries": [entries[0], 7] });
+    assert_eq!(
+        code(&bot.card("books_app_batch", bad)),
+        "invalid_args",
+        "no entry is skipped"
+    );
 }
 
 #[test]
@@ -505,5 +754,8 @@ fn a_card_is_no_tool_of_the_assistants() {
     let dir = TempDir::new("press-card-agent");
     let (mut bot, entry) = with_draft(&dir);
     let ask = json!({ "tool": "books_app_post_entry", "args": post(&entry) });
-    assert_eq!(code(&bot.agent("books_app_press_card", ask)), "permission_denied");
+    assert_eq!(
+        code(&bot.agent("books_app_press_card", ask)),
+        "permission_denied"
+    );
 }
