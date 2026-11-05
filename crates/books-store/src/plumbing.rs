@@ -111,6 +111,16 @@ pub fn audit_pressed(
     Ok(())
 }
 
+/// Spends the one-time id of a press a person allowed: false when it was
+/// spent before. The table's key decides, so two calls can't both win.
+pub fn spend_once(conn: &Connection, once: &str, tool: &str, at: i64) -> Result<bool> {
+    let n = conn.execute(
+        "INSERT INTO press_once (once, tool, at) VALUES (?1, ?2, ?3) ON CONFLICT (once) DO NOTHING",
+        params![once, tool, at],
+    )?;
+    Ok(n == 1)
+}
+
 /// When the AI's approved press on entry `id` went through, if it did: the
 /// audit row's time.
 pub fn pressed_at(conn: &Connection, id: i64) -> Result<Option<String>> {

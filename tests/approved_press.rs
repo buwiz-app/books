@@ -125,9 +125,10 @@ fn code(result: &Value) -> &str {
 
 fn record(args: &Value) -> Value {
     json!({
-        "by": "ai_approved", "who": "agent.broker", "approved_by": "person.owner", "once": "press-0001",
+        "by": "ai_approved", "who": "agent.broker", "approved_by": "person.owner",
+        "once": format!("press-{}", args["client_request_id"].as_str().unwrap()),
         "args_hash": format!("sha256:{}", jcs::sha256_jcs(args).unwrap()),
-        "shown_hash": format!("sha256:{}", "b2".repeat(32)), "at": 1_793_745_245_000_i64,
+        "shown_hash": format!("sha256:{}", "b2".repeat(32)), "at": now_ms(),
     })
 }
 
@@ -183,12 +184,64 @@ fn a_yes_never_shows_to_the_assistant() {
     assert_eq!(data(&seen).get("pressed"), None);
 }
 
+fn audit_rows(dir: &TempDir, tool: &str) -> i64 {
+    let store = books_store::Store::open(&Paths::in_dir(dir.0.join("store"))).unwrap();
+    books_store::plumbing::audit_count(store.conn(), tool).unwrap()
+}
+
 #[test]
-fn a_replayed_yes_does_nothing_new_and_other_arguments_are_refused() {
+fn a_used_once_is_refused_however_it_comes_back() {
+    let dir = TempDir::new("press-once");
+    let (mut bot, entry) = with_draft(&dir);
+    data(&bot.approved("books_app_post_entry", post(&entry)));
+    let again = bot.approved("books_app_post_entry", post(&entry));
+    assert_eq!(code(&again), "press_reused", "even the same call, which a request id would replay");
+    // the same id on a call of its own, with a good hash
+    let close = json!({ "client_request_id": "press-close-001", "month": "2026-10" });
+    let mut press = record(&close);
+    press["once"] = record(&post(&entry))["once"].clone();
+    assert_eq!(code(&bot.pressed("books_app_month_close", close, press)), "press_reused");
+    assert_eq!(audit_rows(&dir, "books_app_month_close"), 1, "refused, and on the record");
+}
+
+#[test]
+fn a_refused_write_still_spends_its_once() {
+    let dir = TempDir::new("press-once-refused");
+    let (mut bot, _) = with_draft(&dir);
+    let close = json!({ "client_request_id": "press-close-001", "month": "2026-10" });
+    assert_eq!(code(&bot.approved("books_app_month_close", close.clone())), "drafts_open");
+    assert_eq!(code(&bot.approved("books_app_month_close", close)), "press_reused");
+}
+
+#[test]
+fn a_stale_or_future_yes_is_refused() {
+    let dir = TempDir::new("press-stale");
+    let (mut bot, entry) = with_draft(&dir);
+    for at in [now_ms() - 61_000, now_ms() + 6_000, 0] {
+        let mut press = record(&post(&entry));
+        press["at"] = json!(at);
+        assert_eq!(code(&bot.pressed("books_app_post_entry", post(&entry), press)), "permission_denied", "{at}");
+    }
+    assert_eq!(status(&mut bot, &entry), "draft");
+}
+
+#[test]
+fn a_yes_with_an_empty_card_hash_is_refused() {
+    let dir = TempDir::new("press-shown");
+    let (mut bot, entry) = with_draft(&dir);
+    for shown in [json!(""), json!("sha256:"), json!("abc")] {
+        let mut press = record(&post(&entry));
+        press["shown_hash"] = shown.clone();
+        assert_eq!(code(&bot.pressed("books_app_post_entry", post(&entry), press)), "permission_denied", "{shown}");
+    }
+    assert_eq!(status(&mut bot, &entry), "draft");
+}
+
+#[test]
+fn other_arguments_are_refused() {
     let dir = TempDir::new("press-replay");
     let (mut bot, entry) = with_draft(&dir);
-    let first = bot.approved("books_app_post_entry", post(&entry));
-    assert_eq!(bot.approved("books_app_post_entry", post(&entry)), first, "the stored result");
+    data(&bot.approved("books_app_post_entry", post(&entry)));
     // the record of the first call, on another call
     let second = bot.app(
         "books_entry_draft",
@@ -308,7 +361,8 @@ fn the_tools_say_who_takes_a_yes_and_the_model_still_sees_none_of_them() {
     for name in ["books_app_post_entry", "books_app_month_close", "books_app_batch"] {
         let t = of(name);
         assert_eq!(t["_meta"]["buwiz/audience"], json!(["app"]), "{name}");
-        assert_eq!(t["_meta"]["buwiz/press"], json!({ "approved": true, "describe": "books_app_press_card" }), "{name}");
+        let effect = if name == "books_app_month_close" { "close" } else { "post" };
+        assert_eq!(t["_meta"]["buwiz/press"], json!({ "approved": true, "effect": effect, "describe": "books_app_press_card" }), "{name}");
     }
     assert_eq!(of("books_entry_draft")["_meta"]["buwiz/press"], json!({ "describe": "books_app_press_card" }));
     for name in ["books_app_void_entry", "books_app_month_reopen", "books_app_return_ok", "books_app_handoff_create", "books_app_handoff_confirm"] {
@@ -354,6 +408,96 @@ fn a_card_for_a_new_entry_a_month_a_batch_and_a_draft() {
     assert_eq!(code(&got), "permission_denied");
     let got = bot.card("books_app_void_entry", json!({ "entry": entry }));
     assert_eq!(code(&got), "permission_denied", "no card, so no press");
+}
+
+/// A book with a linked person and tags on a draft: `(bot, entry, person ticket)`.
+fn with_links(dir: &TempDir) -> (Bot, String, String) {
+    let (mut bot, _) = with_draft(dir);
+    let made = bot.app(
+        "books_app_person_create",
+        json!({ "client_request_id": "person-pixel-001", "kind": "vendors", "name": "Pixel Print Shop" }),
+    );
+    let person = data(&made)["person"].as_str().unwrap().to_string();
+    let d = bot.app(
+        "books_entry_draft",
+        json!({ "client_request_id": "draft-links-0001", "form": "money_out", "date": "2026-10-20", "amount": "500.00",
+                "account": "11000", "category": "67200", "person": person, "department": "Sales", "location": "Olongapo",
+                "memo": "Printing", "reference": "OR-77" }),
+    );
+    let entry = data(&d)["entry"].as_str().unwrap().to_string();
+    (bot, entry, person)
+}
+
+#[test]
+fn a_saved_entrys_card_shows_its_person_tags_memo_and_reference() {
+    let dir = TempDir::new("press-card-links");
+    let (mut bot, entry, _) = with_links(&dir);
+    let card = bot.card("books_app_post_entry", post(&entry));
+    let lines = data(&card)["lines"].to_string();
+    for shown in ["Linked person: Pixel Print Shop", "Department: Sales", "Location: Olongapo", "For: Printing", "Reference: OR-77"] {
+        assert!(lines.contains(shown), "{shown} in {lines}");
+    }
+}
+
+#[test]
+fn a_new_entrys_card_shows_every_value_the_post_would_write() {
+    let dir = TempDir::new("press-card-new");
+    let (mut bot, _, person) = with_links(&dir);
+    let call = json!({ "client_request_id": "press-new-00002", "form": "money_out", "date": "2026-10-21", "amount": "12.00",
+                       "account": "11000", "category": "67200", "person": person, "department": "Sales", "location": "Olongapo",
+                       "memo": "Ink", "reference": "OR-78", "facts": { "document_kind": "sale_invoice" } });
+    let card = bot.card("books_app_post_entry", call);
+    let lines = data(&card)["lines"].to_string();
+    for shown in ["Linked person: Pixel Print Shop", "Department: Sales", "Location: Olongapo", "For: Ink", "Reference: OR-78", "sale_invoice"] {
+        assert!(lines.contains(shown), "{shown} in {lines}");
+    }
+    assert!(!lines.contains("tkt_"), "{lines}");
+    let call = json!({ "client_request_id": "press-new-00003", "form": "money_out", "date": "2026-10-21", "amount": "12.00",
+                       "account": "11000", "category": "67200", "payee": "New Vendor", "person_kind": "vendors" });
+    let card = bot.card("books_app_post_entry", call);
+    assert!(data(&card)["lines"].to_string().contains("Linked person: New Vendor (vendors)"), "{card}");
+}
+
+#[test]
+fn keep_both_says_posts_duplicates_on_the_card() {
+    let dir = TempDir::new("press-card-dupes");
+    let (mut bot, entry) = with_draft(&dir);
+    let mut call = post(&entry);
+    call["keep_both"] = json!(true);
+    let card = bot.card("books_app_post_entry", call);
+    assert!(data(&card)["lines"].to_string().contains("Posts duplicates"), "{card}");
+    let card = bot.card("books_app_batch", json!({ "action": "post", "entries": [entry], "keep_both": true }));
+    assert!(data(&card)["lines"].to_string().contains("Posts duplicates"), "{card}");
+    let card = bot.card("books_app_batch", json!({ "action": "post", "entries": [entry] }));
+    assert!(!data(&card)["lines"].to_string().contains("Posts duplicates"), "{card}");
+}
+
+#[test]
+fn a_batch_card_names_each_entrys_person_and_tags() {
+    let dir = TempDir::new("press-card-batch");
+    let (mut bot, entry, _) = with_links(&dir);
+    let card = bot.card("books_app_batch", json!({ "action": "post", "entries": [entry] }));
+    let lines = data(&card)["lines"].to_string();
+    assert!(lines.contains("Pixel Print Shop") && lines.contains("Sales") && lines.contains("Olongapo"), "{lines}");
+}
+
+#[test]
+fn an_argument_the_card_doesnt_show_refuses_the_card_so_no_press_can_carry_it() {
+    let dir = TempDir::new("press-card-unknown");
+    let (mut bot, entry) = with_draft(&dir);
+    let mut call = post(&entry);
+    call["new_thing"] = json!(1);
+    assert_eq!(code(&bot.card("books_app_post_entry", call)), "permission_denied");
+    let mut call = post(&entry);
+    call["memo"] = json!("not what the entry says");
+    assert_eq!(code(&bot.card("books_app_post_entry", call)), "permission_denied");
+    let batch = json!({ "action": "post", "entries": [entry], "category": "67200" });
+    assert_eq!(code(&bot.card("books_app_batch", batch)), "permission_denied");
+    let close = json!({ "month": "2026-10", "new_thing": 1 });
+    assert_eq!(code(&bot.card("books_app_month_close", close)), "permission_denied");
+    let line = json!({ "client_request_id": "x", "form": "journal", "date": "2026-10-20", "lines": [
+        { "account": "11000", "debit": "1.00", "new_thing": 1 }, { "account": "67200", "credit": "1.00" } ] });
+    assert_eq!(code(&bot.card("books_app_post_entry", line)), "permission_denied");
 }
 
 #[test]

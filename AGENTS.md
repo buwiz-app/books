@@ -37,8 +37,10 @@ These cannot be inferred from the code.
    `books_app_batch` with `action: post`) and **Close month** (`books_app_month_close`) only after a person allows
    that one press. The Bot holds the call unsent, shows the person what it will do from `books_app_press_card`, and
    only their own press of Allow lets it go. It arrives as `origin: agent` with a `press` record of `by: ai_approved`
-   whose `args_hash` is this call's arguments (`press.rs`), and the audit row names the AI and the person. A tool opts
-   in through `press::APPROVED` and nowhere else. D1 names no other tool, so void, reopen, return confirm, hand-off and
+   whose `args_hash` is this call's arguments (`press.rs`), and the audit row names the AI and the person. A record is
+   good for a minute and its `once` for one use. A card accounts for every argument its call uses, and refuses one it
+   can't show, so a new argument on these tools has to go on the card. A tool opts in through `press::APPROVED`, with
+   the `effect` the broker checks (`post` or `close`), and nowhere else. D1 names no other tool, so void, reopen, return confirm, hand-off and
    discard stay the person's own click, and a held press is never a filing (invariant 5). While the assistant drives a
    screen its reads still run for that screen, as `origin: app` with the `press` record, and their answers stay in the
    app. So `write: false` must be strictly true: a tool that writes a file, reaches the cloud or changes any state is

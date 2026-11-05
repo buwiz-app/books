@@ -352,6 +352,18 @@ pub fn write(
         Some(press) => plumbing::audit_pressed(tx, origin.as_str(), tool, subject, outcome, press),
         None => plumbing::audit(tx, origin.as_str(), tool, subject, outcome),
     };
+    // spent before anything runs, and for good: a yes works once, go or no go
+    if let Some(a) = &books_approved {
+        let spent = store.tx(|tx| plumbing::spend_once(tx, &a.once, tool, a.at));
+        if !matches!(spent, Ok(true)) {
+            let _ = store.tx(|tx| audit(tx, None, "press_reused"));
+            return Refusal::new(
+                "press_reused",
+                "That approval was used already, so nothing changed.",
+            )
+            .into_result();
+        }
+    }
     let outcome: Result<Value, Refusal> = (|| {
         let tx = store.transaction()?;
         if let Some(stored) = plumbing::replay(&tx, &crid, tool, &digest)? {

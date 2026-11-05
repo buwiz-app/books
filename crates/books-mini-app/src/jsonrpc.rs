@@ -90,7 +90,7 @@ impl Caller {
     /// screen, of a tool that takes one, with these arguments.
     fn approved(&self, name: &str, args: &Map<String, Value>) -> Option<press::Approved> {
         (self.origin == Origin::Agent && self.app.is_some())
-            .then(|| press::Approved::of(self.record.as_ref(), args))?
+            .then(|| press::Approved::of(self.record.as_ref(), args, now_ms()))?
             .filter(|yes| yes.covers(name, args))
     }
 }

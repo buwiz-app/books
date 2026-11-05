@@ -1185,7 +1185,13 @@ pub fn list() -> Vec<Value> {
                 entry["_meta"] = json!({ "buwiz/audience": ["app", "agent"] });
             }
             if press::APPROVED.contains(&t.name) {
-                entry["_meta"]["buwiz/press"] = json!({ "approved": true, "describe": PRESS_CARD });
+                let effect = if t.name == MONTH_CLOSE {
+                    "close"
+                } else {
+                    "post"
+                };
+                entry["_meta"]["buwiz/press"] =
+                    json!({ "approved": true, "effect": effect, "describe": PRESS_CARD });
             } else if t.name == ENTRY_DRAFT {
                 entry["_meta"]["buwiz/press"] = json!({ "describe": PRESS_CARD });
             }
