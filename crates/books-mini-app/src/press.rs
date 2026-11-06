@@ -111,6 +111,18 @@ pub struct Approved {
 }
 
 impl Approved {
+    /// This yes as an audit row carries it.
+    pub fn audit(&self) -> plumbing::AuditPress<'_> {
+        plumbing::AuditPress {
+            who: &self.who,
+            approved_by: &self.approved_by,
+            at: self.at,
+            once: &self.once,
+            args_hash: &self.args_hash,
+            shown_hash: &self.shown_hash,
+        }
+    }
+
     /// The record in `press`, if it is whole, names an agent, a person and
     /// `args`, what came with it, and is fresh at `now_ms`.
     ///

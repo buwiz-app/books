@@ -1584,9 +1584,9 @@ pub fn call(
             out
         }
         BATCH => {
-            let approved = books.approved.is_some();
+            let approved = books.approved.clone();
             write(books, name, origin, arguments, |tx| {
-                batch::run(tx, arguments, origin, approved)
+                batch::run(tx, arguments, origin, approved.as_ref())
             })
         }
         _ => fail("internal", "Books has no handler for that tool."),
