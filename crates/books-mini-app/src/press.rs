@@ -520,6 +520,17 @@ mod tests {
     use super::*;
     use crate::tools;
 
+    #[test]
+    fn the_entry_presses_read_back_are_approved_presses() {
+        // `pressed_at` reads the audit rows of these tools as the AI's press.
+        for tool in plumbing::PRESSED_ENTRY_TOOLS {
+            assert!(
+                APPROVED.contains(&tool),
+                "{tool} is read back but not approved"
+            );
+        }
+    }
+
     /// What a tool's schema takes, sorted.
     fn schema_args(tool: &str) -> Vec<String> {
         let listed = tools::list();

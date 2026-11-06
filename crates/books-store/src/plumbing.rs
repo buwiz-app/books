@@ -122,14 +122,18 @@ pub fn spend_once(conn: &Connection, once: &str, tool: &str, at: i64) -> Result<
     Ok(n == 1)
 }
 
+/// The tools whose approved press writes an entry's audit row: a post, and a
+/// batch that only posts. Books' `press::APPROVED` must list each of them.
+pub const PRESSED_ENTRY_TOOLS: [&str; 2] = ["books_app_post_entry", "books_app_batch"];
+
 /// When the AI's approved press on entry `id` went through, if it did: the
 /// audit row's time. An approved batch only posts, and writes a row per entry.
 pub fn pressed_at(conn: &Connection, id: i64) -> Result<Option<String>> {
     use rusqlite::OptionalExtension;
     Ok(conn
         .query_row(
-            "SELECT at FROM audit_event WHERE subject_kind = 'entry' AND subject_id = ?1 AND tool IN ('books_app_post_entry', 'books_app_batch') AND outcome = 'ok' AND press_approved_by IS NOT NULL ORDER BY event_id DESC LIMIT 1",
-            params![id],
+            "SELECT at FROM audit_event WHERE subject_kind = 'entry' AND subject_id = ?1 AND tool IN (?2, ?3) AND outcome = 'ok' AND press_approved_by IS NOT NULL ORDER BY event_id DESC LIMIT 1",
+            params![id, PRESSED_ENTRY_TOOLS[0], PRESSED_ENTRY_TOOLS[1]],
             |r| r.get(0),
         )
         .optional()?)

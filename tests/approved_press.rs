@@ -148,12 +148,7 @@ fn with_draft(dir: &TempDir) -> (Bot, String) {
         "books_app_book_create",
         json!({ "client_request_id": "create-book-0001", "label": "Buwiz Trading" }),
     ));
-    let d = bot.app(
-        "books_entry_draft",
-        json!({ "client_request_id": "draft-rent-0001", "form": "money_out", "date": "2026-10-18",
-                "amount": "1350.00", "account": "11000", "category": "67200", "payee": "Pixel Print Shop" }),
-    );
-    let entry = data(&d)["entry"].as_str().unwrap().to_string();
+    let entry = draft(&mut bot, "draft-rent-0001", "2026-10-18", "1350.00");
     (bot, entry)
 }
 
@@ -368,14 +363,27 @@ fn a_batch_takes_a_yes_only_to_post() {
     assert_eq!(data(&bot.approved("books_app_batch", post_all))["done"], 1);
 }
 
-/// One more draft in `bot`'s book, under its own request id.
-fn draft(bot: &mut Bot, id: &str) -> String {
+/// One more draft in `bot`'s book, under its own request id: its entry ticket.
+fn draft(bot: &mut Bot, id: &str, date: &str, amount: &str) -> String {
     let d = bot.app(
         "books_entry_draft",
-        json!({ "client_request_id": id, "form": "money_out", "date": "2026-10-19",
-                "amount": "250.00", "account": "11000", "category": "67200", "payee": "Pixel Print Shop" }),
+        json!({ "client_request_id": id, "form": "money_out", "date": date,
+                "amount": amount, "account": "11000", "category": "67200", "payee": "Pixel Print Shop" }),
     );
     data(&d)["entry"].as_str().unwrap().to_string()
+}
+
+/// The audit rows that carry one press's one-time id.
+fn rows_on_press(dir: &TempDir, once: &str) -> i64 {
+    let store = books_store::Store::open(&Paths::in_dir(dir.0.join("store"))).unwrap();
+    store
+        .conn()
+        .query_row(
+            "SELECT count(*) FROM audit_event WHERE press_once = ?1",
+            [once],
+            |r| r.get(0),
+        )
+        .unwrap()
 }
 
 fn record_line(bot: &mut Bot, entry: &str) -> Value {
@@ -386,9 +394,15 @@ fn record_line(bot: &mut Bot, entry: &str) -> Value {
 fn every_entry_of_an_approved_batch_says_the_ai_posted_it() {
     let dir = TempDir::new("press-batch-line");
     let (mut bot, first) = with_draft(&dir);
-    let second = draft(&mut bot, "draft-rent-0002");
+    let second = draft(&mut bot, "draft-rent-0002", "2026-10-19", "250.00");
     let both = json!({ "client_request_id": "press-batch-003", "action": "post", "entries": [first, second] });
+    let once = record(&both)["once"].as_str().unwrap().to_string();
     assert_eq!(data(&bot.approved("books_app_batch", both))["done"], 2);
+    assert_eq!(
+        rows_on_press(&dir, &once),
+        3,
+        "one row per entry the batch posted, and one for the batch, all on one press"
+    );
     for entry in [&first, &second] {
         let line = record_line(&mut bot, entry);
         assert!(
@@ -408,7 +422,7 @@ fn a_persons_own_batch_and_a_refused_yes_leave_no_ai_line() {
     assert_eq!(data(&bot.app("books_app_batch", by_hand))["done"], 1);
     assert_eq!(record_line(&mut bot, &own), Value::Null);
     // the draft goes first, then the posted entry refuses the whole batch
-    let kept = draft(&mut bot, "draft-rent-0003");
+    let kept = draft(&mut bot, "draft-rent-0003", "2026-10-19", "250.00");
     let refused =
         json!({ "client_request_id": "press-batch-005", "action": "post", "entries": [kept, own] });
     assert_eq!(
