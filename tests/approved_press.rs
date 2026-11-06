@@ -368,6 +368,59 @@ fn a_batch_takes_a_yes_only_to_post() {
     assert_eq!(data(&bot.approved("books_app_batch", post_all))["done"], 1);
 }
 
+/// One more draft in `bot`'s book, under its own request id.
+fn draft(bot: &mut Bot, id: &str) -> String {
+    let d = bot.app(
+        "books_entry_draft",
+        json!({ "client_request_id": id, "form": "money_out", "date": "2026-10-19",
+                "amount": "250.00", "account": "11000", "category": "67200", "payee": "Pixel Print Shop" }),
+    );
+    data(&d)["entry"].as_str().unwrap().to_string()
+}
+
+fn record_line(bot: &mut Bot, entry: &str) -> Value {
+    data(&bot.app("books_entry_get", json!({ "entry": entry })))["pressed"].clone()
+}
+
+#[test]
+fn every_entry_of_an_approved_batch_says_the_ai_posted_it() {
+    let dir = TempDir::new("press-batch-line");
+    let (mut bot, first) = with_draft(&dir);
+    let second = draft(&mut bot, "draft-rent-0002");
+    let both = json!({ "client_request_id": "press-batch-003", "action": "post", "entries": [first, second] });
+    assert_eq!(data(&bot.approved("books_app_batch", both))["done"], 2);
+    for entry in [&first, &second] {
+        let line = record_line(&mut bot, entry);
+        assert!(
+            line.as_str()
+                .is_some_and(|l| l.starts_with("Posted by the AI, allowed by you, ")),
+            "{line}"
+        );
+    }
+}
+
+#[test]
+fn a_persons_own_batch_and_a_refused_yes_leave_no_ai_line() {
+    let dir = TempDir::new("press-batch-none");
+    let (mut bot, own) = with_draft(&dir);
+    let by_hand =
+        json!({ "client_request_id": "press-batch-004", "action": "post", "entries": [own] });
+    assert_eq!(data(&bot.app("books_app_batch", by_hand))["done"], 1);
+    assert_eq!(record_line(&mut bot, &own), Value::Null);
+    // the draft goes first, then the posted entry refuses the whole batch
+    let kept = draft(&mut bot, "draft-rent-0003");
+    let refused =
+        json!({ "client_request_id": "press-batch-005", "action": "post", "entries": [kept, own] });
+    assert_eq!(
+        code(&bot.approved("books_app_batch", refused)),
+        "wrong_status"
+    );
+    assert_eq!(status(&mut bot, &kept), "draft");
+    let later = json!({ "client_request_id": "press-post-0002", "entry": kept });
+    data(&bot.app("books_app_post_entry", later));
+    assert_eq!(record_line(&mut bot, &kept), Value::Null);
+}
+
 #[test]
 fn what_d1_doesnt_name_stays_the_persons_click_with_a_yes_or_not() {
     let dir = TempDir::new("press-strict");

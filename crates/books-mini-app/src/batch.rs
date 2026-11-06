@@ -3,13 +3,17 @@
 //! function (`writes::post`, `writes::discard`, `reconcile::recategorize`),
 //! so every gate those apply applies here too. The batch is one
 //! transaction: the first refusal rolls it all back and names the entry.
+//! The write's audit row names the book, so a batch a person allowed the AI
+//! to press also leaves a row on each entry it posted.
 
 use books_core::ledger::Status;
 use books_store::plumbing;
 use books_store::rusqlite::Connection;
 use serde_json::{Map, Value, json};
 
+use crate::press::Approved;
 use crate::service::{self, Answer, Origin, Refusal, text, with_subject};
+use crate::tools::BATCH;
 use crate::{reconcile, writes};
 
 pub const MAX_ENTRIES: usize = 50;
@@ -68,8 +72,13 @@ fn label(conn: &Connection, ticket: &str) -> String {
 }
 
 /// Run the batch inside the write's transaction.
-pub fn run(conn: &Connection, args: &Map<String, Value>, origin: Origin, approved: bool) -> Answer {
-    if !origin.is_app() && !approved {
+pub fn run(
+    conn: &Connection,
+    args: &Map<String, Value>,
+    origin: Origin,
+    approved: Option<&Approved>,
+) -> Answer {
+    if !origin.is_app() && approved.is_none() {
         return Err(Refusal::new(
             "permission_denied",
             "A batch needs the user's click in the Books app.",
@@ -95,9 +104,8 @@ pub fn run(conn: &Connection, args: &Map<String, Value>, origin: Origin, approve
         if let Some(k) = args.get("keep_both") {
             one.insert("keep_both".into(), k.clone());
         }
-        let status = writes::entry_in(conn, &book, ticket)
-            .map(|e| e.status)
-            .map_err(|r| refused(conn, ticket, r))?;
+        let entry = writes::entry_in(conn, &book, ticket).map_err(|r| refused(conn, ticket, r))?;
+        let status = entry.status;
         let wrong = match action {
             Action::Post | Action::Discard => status != Status::Draft,
             Action::Recategorize => status != Status::Posted,
@@ -121,6 +129,10 @@ pub fn run(conn: &Connection, args: &Map<String, Value>, origin: Origin, approve
             Action::Recategorize => reconcile::recategorize(conn, &one),
         };
         let r = result.map_err(|r| refused(conn, ticket, r))?;
+        if let (Action::Post, Some(yes)) = (action, approved) {
+            let subject = Some(("entry", entry.id));
+            plumbing::audit_pressed(conn, origin.as_str(), BATCH, subject, "ok", &yes.audit())?;
+        }
         done.push(r.get("entry").cloned().unwrap_or_else(|| json!(ticket)));
     }
     Ok(with_subject(

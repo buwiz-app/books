@@ -355,14 +355,7 @@ pub fn write(
     }
     let canonical = jcs::canonical(&Value::Object(args.clone())).unwrap_or_default();
     let digest = plumbing::request_digest(tool, &canonical);
-    let approved = books_approved.as_ref().map(|a| plumbing::AuditPress {
-        who: &a.who,
-        approved_by: &a.approved_by,
-        at: a.at,
-        once: &a.once,
-        args_hash: &a.args_hash,
-        shown_hash: &a.shown_hash,
-    });
+    let approved = books_approved.as_ref().map(crate::press::Approved::audit);
     let audit = |tx: &books_store::rusqlite::Connection,
                  subject: Option<(&str, i64)>,
                  outcome: &str| match &approved {
