@@ -4,7 +4,7 @@ members = ["crates/books-core", "crates/books-store", "crates/books-mini-app", "
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.97"
 license = "Apache-2.0"
 publish = false
 
