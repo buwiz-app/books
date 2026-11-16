@@ -1,7 +1,9 @@
 //! JCS against the SDK's shared RFC 8785 vectors. The vendored copy
 //! (`tests/fixtures/jcs-vectors.json`, from the pinned SDK's `vectors/jcs.json`)
 //! always runs; the SDK's own file runs too when `BUWIZ_SDK_DIR` names a
-//! checkout, and must equal the vendored copy.
+//! checkout, and must equal the vendored copy. The Bot's own vectors
+//! (`broker/buwiz-protocol/src/jcs-vectors.json`) are compared the same way
+//! when `BUWIZ_BOT_DIR` names a Bot checkout that has the file.
 
 use books_mini_app::jcs::{self, JcsError};
 use serde_json::Value;
@@ -58,4 +60,26 @@ fn the_sdk_vector_file_passes_when_a_checkout_is_named() {
         "the SDK's vectors/jcs.json differs from tests/fixtures/jcs-vectors.json"
     );
     eprintln!("vectors/jcs.json: {n} vectors pass");
+}
+
+#[test]
+fn the_bot_vectors_equal_the_vendored_vectors_when_a_bot_checkout_has_them() {
+    let Ok(root) = std::env::var("BUWIZ_BOT_DIR") else {
+        eprintln!("BUWIZ_BOT_DIR is not set; the Bot's vectors are not compared (not named)");
+        return;
+    };
+    let path = std::path::Path::new(&root).join("broker/buwiz-protocol/src/jcs-vectors.json");
+    let Ok(text) = std::fs::read_to_string(&path) else {
+        eprintln!(
+            "broker/buwiz-protocol/src/jcs-vectors.json: not in the Bot checkout at {root}; not compared"
+        );
+        return;
+    };
+    let bot: Value = serde_json::from_str(&text).expect("the Bot's vectors file is JSON");
+    let ours: Value = serde_json::from_str(VENDORED).unwrap();
+    assert_eq!(
+        bot["vectors"], ours["vectors"],
+        "the Bot's jcs-vectors.json `vectors` differ from tests/fixtures/jcs-vectors.json"
+    );
+    eprintln!("the Bot's vectors equal the vendored ones");
 }

@@ -75,8 +75,9 @@ These cannot be inferred from the code.
 - The hand-off contract with eBIRForms is `tests/fixtures/handoff/`, the same files as eBIRForms'
   `tests/fixtures/books-handoff/`, pinned by one hash in both repos (`tests/handoff_contract.rs`).
 - One protocol version, 1.0, with no shims.
-- The signing and conformance tools are the SDK's (Node): run them from a buwiz-sdk checkout at the pinned revision
-  (`BUWIZ_SDK_DIR`), never copy them here.
+- The conformance runner and its test signer are the SDK's (Node): run them from a buwiz-sdk checkout at the pinned
+  revision (`BUWIZ_SDK_DIR`), never copy them here. A release is signed with the Bot's broker, not the SDK's tools:
+  `buwiz-broker sign-manifest` through `BUWIZ_BROKER_BIN` (`tools/release/publish.sh`).
 
 ## Do not
 

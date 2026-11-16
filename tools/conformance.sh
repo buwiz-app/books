@@ -48,18 +48,16 @@ else
 fi
 [ "$KEY_ID" != "gc-2026-01" ] || die "the test key id must not be gc-2026-01"
 for f in "$RUNNER" "$SIGNER"; do [ -f "$f" ] || die "$f not found: is BUWIZ_SDK_DIR a buwiz-sdk checkout?"; done
-PIN="$(sed -n 's/^buwiz-plugin = .*rev = "\([0-9a-f]\{40\}\)".*/\1/p' "$REPO/crates/books-mini-app/Cargo.toml")"
-[ -n "$PIN" ] || die "no pinned buwiz-sdk revision found in crates/books-mini-app/Cargo.toml"
-HEAD_SHA="$(git -C "$SDK" rev-parse HEAD 2>/dev/null)" || die "$SDK is not a git checkout of buwiz-sdk"
-if [ "$HEAD_SHA" != "$PIN" ]; then
-  # the same files under another commit id (a merge of the pin) also pass
-  [ "$(git -C "$SDK" rev-parse "$PIN^{tree}" 2>/dev/null)" = "$(git -C "$SDK" rev-parse 'HEAD^{tree}')" ] ||
-    die "the SDK checkout is not the pinned revision $PIN: git -C \"\$BUWIZ_SDK_DIR\" fetch && git -C \"\$BUWIZ_SDK_DIR\" checkout $PIN"
-fi
+PIN="$("$REPO/tools/sdk-pin.sh")" || die "the buwiz-sdk pins are not one revision (tools/sdk-pin.sh says why)"
+# the checkout must hold exactly the pinned files (a merge of the pin has another commit id)
+SDK_TREE="$(git -C "$SDK" rev-parse 'HEAD^{tree}' 2>/dev/null)" || die "$SDK is not a git checkout of buwiz-sdk"
+[ "$(git -C "$SDK" rev-parse "$PIN^{tree}" 2>/dev/null)" = "$SDK_TREE" ] ||
+  die "the SDK checkout is not the pinned revision $PIN: git -C \"\$BUWIZ_SDK_DIR\" fetch && git -C \"\$BUWIZ_SDK_DIR\" checkout $PIN"
 git -C "$SDK" diff --quiet HEAD -- packages/conformance || die "the SDK checkout has uncommitted changes under packages/conformance"
+[ -z "$(git -C "$SDK" status --porcelain --untracked-files=all -- packages/conformance)" ] || die "the SDK checkout has untracked files under packages/conformance"
 command -v node >/dev/null || die "node is needed to run the SDK's tools"
-(cd "$SDK/packages/conformance" && node --input-type=module -e 'await import("esbuild"); await import("@modelcontextprotocol/sdk/client/index.js"); await import("@modelcontextprotocol/sdk/client/stdio.js")') >/dev/null 2>&1 ||
-  die "the SDK's runner cannot load its dependencies: run bun install in $SDK"
+(cd "$SDK/packages/conformance" && node --input-type=module -e 'await import("esbuild"); await import("@modelcontextprotocol/sdk/client/index.js"); await import("@modelcontextprotocol/sdk/client/stdio.js"); await import("node:sqlite")') >/dev/null 2>&1 ||
+  die "the SDK's runner cannot load its dependencies or node:sqlite: it needs Node 22.13 or newer (node --version), and bun install run in $SDK"
 
 # 2. a fresh temp dir outside the repo, removed on exit
 TMP_BASE="${TMPDIR:-/tmp}"

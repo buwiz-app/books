@@ -22,6 +22,16 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="$(mktemp -d "${TMPDIR:-/tmp}/books-gates.XXXXXX")"
 cd "$REPO"
 
+# every prerequisite up front, not after minutes of lint and tests
+if [ -z "${BUWIZ_SDK_DIR:-}" ] || [ ! -d "$BUWIZ_SDK_DIR" ]; then
+  echo "check-all: set BUWIZ_SDK_DIR to a buwiz-sdk checkout (git clone https://github.com/buwiz-app/buwiz-sdk; cd buwiz-sdk; bun install)" >&2
+  exit 2
+fi
+if [ "${SKIP_BOT:-0}" != "1" ] && { [ -z "${BUWIZ_BOT_DIR:-}" ] || [ ! -d "$BUWIZ_BOT_DIR" ]; }; then
+  echo "check-all: set BUWIZ_BOT_DIR to a Buwiz Bot checkout (the host test needs it), or SKIP_BOT=1" >&2
+  exit 2
+fi
+
 failed=0
 skipped=0
 gate() {
@@ -50,13 +60,13 @@ no_detached_setters() {
 
 sdk_links_follow_the_pin() {
   local pin stale
-  pin="$(sed -n 's/^buwiz-plugin = .*rev = "\([0-9a-f]\{40\}\)".*/\1/p' crates/books-mini-app/Cargo.toml)"
-  [ -n "$pin" ] || { echo "no pinned buwiz-sdk revision in crates/books-mini-app/Cargo.toml"; return 1; }
+  pin="$(tools/sdk-pin.sh)" || return 1
   stale="$(grep -rhoE 'buwiz-sdk/blob/[^/)]+|checkout [0-9a-f]{40}' README.md AGENTS.md docs | grep -vE "blob/$pin\$|checkout $pin\$" || true)"
   [ -z "$stale" ] || { printf 'SDK links name a revision other than the pinned %s:\n%s\n' "$pin" "$stale"; return 1; }
   echo "0 findings: SDK links name $pin"
 }
 
+gate "SDK pins agree" sdk-pins tools/sdk-pin.sh
 gate "no detached setters" setters no_detached_setters
 gate "cargo fmt --check" fmt cargo fmt --check
 gate "cargo clippy -D warnings" clippy cargo clippy --all-targets -- -D warnings
