@@ -217,7 +217,7 @@
   },
   "forbidden_in_books": [
     "any TIN or branch code",
-    "BIR tickets (tkt_...) or Rox tokens in records",
+    "BIR tickets (tkt_...) or Bot tokens in records",
     "floats for money",
     "account-implied meaning (a measure never selects by account number or subtype)",
     "compliance choices on a line or profile: regime, election, VAT status, ATC selection, deduction method",

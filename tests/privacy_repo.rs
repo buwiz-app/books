@@ -273,6 +273,24 @@ fn files(dir: &Path, ext: &str, out: &mut Vec<PathBuf>) {
     }
 }
 
+/// The one file exempt from the TIN-shaped-value check, by its exact
+/// repo-relative path (a file of the same name elsewhere is still scanned).
+const NUMBER_VECTORS: &str = "tests/fixtures/jcs-vectors.json";
+
+fn is_number_vectors(path: &Path) -> bool {
+    path.strip_prefix(repo())
+        .is_ok_and(|rel| rel == Path::new(NUMBER_VECTORS))
+}
+
+#[test]
+fn the_number_vectors_exemption_is_one_exact_path_not_a_file_name() {
+    let exempt = |rel: &str| is_number_vectors(&repo().join(rel));
+    assert!(exempt("tests/fixtures/jcs-vectors.json"));
+    assert!(!exempt("fixtures/jcs-vectors.json"));
+    assert!(!exempt("tests/fixtures/other/jcs-vectors.json"));
+    assert!(!exempt("tests/fixtures/jcs-vectors.json.bak"));
+}
+
 fn read_json(path: &Path) -> Value {
     let text = std::fs::read_to_string(path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
     serde_json::from_str(&text).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
@@ -291,13 +309,11 @@ fn every_json_file_under_data_fixtures_and_test_fixtures_is_clean() {
         // The prefix alone is allowed (names such as a ticket field); a
         // whole ticket value anywhere in the file is not.
         let real_ticket = has_ticket_value(&value.to_string());
-        // The RFC 8785 vectors shared byte for byte with the Bot are number
+        // The RFC 8785 vectors shared byte for byte with the SDK are number
         // tests (safe-integer bounds, the RFC 3.2.2 sample, a unix-ms
         // timestamp): their digit runs are numbers by design. They are still
         // scanned for tickets and memo markers.
-        let number_vectors = path
-            .file_name()
-            .is_some_and(|n| n == "bot-jcs-vectors.json");
+        let number_vectors = is_number_vectors(path);
         for f in scan(&value, &[]) {
             if f.kind == Kind::TinLike && number_vectors {
                 continue;

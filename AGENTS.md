@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Buwiz Books is a Buwiz Bot mini app: plugin id `app.buwiz.books`, publisher `app.buwiz`, Buwiz mini app protocol
-1.0 ([buwiz-sdk `docs/protocol-1.0.md`](https://github.com/buwiz-app/buwiz-sdk/blob/main/docs/protocol-1.0.md)).
+1.0 ([buwiz-sdk `docs/protocol-1.0.md`](https://github.com/buwiz-app/buwiz-sdk/blob/e1de9c4487de6a9b6509e53ed1e990d699cad454/docs/protocol-1.0.md)).
 README.md covers the build, gates and releases.
 
 ## Invariants
@@ -64,9 +64,9 @@ These cannot be inferred from the code.
 
 ## Tests and tools
 
-- `tools/check-all.sh` must pass before a commit. It runs fmt, clippy with `-D warnings`, `cargo test`, the Bot
-  gates and the privacy scan; README.md says what each needs.
-- **Test keys only.** Conformance and the host test sign with a throwaway key (`books-test-01`), never `gc-2026-01`.
+- `tools/check-all.sh` must pass before a commit. It runs fmt, clippy with `-D warnings`, `cargo test`, the SDK
+  conformance runner, the Bot host test and the privacy scan; README.md says what each needs.
+- **Test keys only.** Conformance and the host test sign with a throwaway key (`books-test-01`), never the release key.
   The publisher key is the owner's, in the login Keychain, and only `tools/release/publish.sh` uses it.
 - Throwaway Bot brokers use port 8810 or above and `BUWIZ_KEYSTORE=file:`, never the login Keychain. Port 8787 is the
   owner's broker. Never touch the owner's Bot data folder. Use a worktree of the Bot repo, and never switch branches
@@ -74,8 +74,10 @@ These cannot be inferred from the code.
 - The live Slice B test (`tools/bir/slice-b-live.sh`) runs only on a scratch eBIRForms data folder.
 - The hand-off contract with eBIRForms is `tests/fixtures/handoff/`, the same files as eBIRForms'
   `tests/fixtures/books-handoff/`, pinned by one hash in both repos (`tests/handoff_contract.rs`).
-- One protocol version, 1.0, with no shims for older names (2.0 and 2.1 were its pre-release numbering).
-- The Bot's signing and conformance tools are Node; run them from a Bot checkout, never copy them here.
+- One protocol version, 1.0, with no shims.
+- The conformance runner and its test signer are the SDK's (Node): run them from a buwiz-sdk checkout at the pinned
+  revision (`BUWIZ_SDK_DIR`), never copy them here. A release is signed with the Bot's broker, not the SDK's tools:
+  `buwiz-broker sign-manifest` through `BUWIZ_BROKER_BIN` (`tools/release/publish.sh`).
 
 ## Do not
 
