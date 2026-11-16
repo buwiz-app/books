@@ -493,8 +493,8 @@ export function lazyJsx(src) {
 // ---- compile, mount, query ----
 
 /**
- * Compile an app's TSX with the Bot's esbuild and mount its default export.
- * `esbuild` is the module (the Bot worktree's); `bridge` is the `buwiz` object.
+ * Compile an app's TSX with esbuild and mount its default export.
+ * `esbuild` is the module; `bridge` is the `buwiz` object.
  */
 export function prepareApp(source, { esbuild }) {
   const stripped = esbuild.transformSync(source, { loader: "tsx", jsx: "preserve", format: "esm", target: "es2022" }).code;

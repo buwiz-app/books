@@ -1,14 +1,51 @@
-// Headless second-instance test of the Books plugin against a real Buwiz Bot broker.
+// Headless second-instance test of the Books plugin against a real Buwiz Bot broker (the Rust broker).
 // Run it through tools/bot/host-test.sh, which starts the throwaway broker. Direct use:
-//   node books-host-test.mjs <buwiz worktree> <run dir> <books binary> <port>
-// It reuses the Bot's own test helpers (openApp, envelope) from the worktree. Step 11 runs the Books window's served
+//   node books-host-test.mjs <run dir> <books binary> <port> <esbuild dir>
+// It uses only Node built-ins and fetch (plus esbuild, loaded from <esbuild dir>, to compile the Books window's source
+// in step 11); the session keys, the JCS bytes and the envelopes are made here. Step 11 runs the Books window's served
 // source on nsh-standin.mjs, types into a TextBox and changes pickers, with buwiz.call answered by this broker. It
 // prints step results only: no host token, ticket values, keys or signatures.
+import { createHash, createPrivateKey, generateKeyPairSync, randomBytes, sign as edSign } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 
-const [WT, RUN, BIN, PORT] = process.argv.slice(2);
-const { openApp, envelope } = await import(pathToFileURL(`${WT}/server/test/v1-helpers.mjs`).href);
+const [RUN, BIN, PORT, ESBUILD_DIR] = process.argv.slice(2);
+
+// ---- session keys, JCS bytes and signed call envelopes (the protocol's 1.0 forms) ----
+const PKCS8 = Buffer.from("302e020100300506032b657004220420", "hex");
+const random128 = () => randomBytes(16).toString("base64url");
+function generate() {
+  const { privateKey } = generateKeyPairSync("ed25519");
+  const jwk = privateKey.export({ format: "jwk" });
+  return { seed: jwk.d, pub: jwk.x };
+}
+const signB64u = (seed, bytes) => edSign(null, bytes, createPrivateKey({ key: Buffer.concat([PKCS8, Buffer.from(seed, "base64url")]), format: "der", type: "pkcs8" })).toString("base64url");
+// RFC 8785 for what is signed: integers only, keys sorted by UTF-16 code units
+function canon(v) {
+  if (v === null || typeof v === "boolean" || typeof v === "string") return JSON.stringify(v);
+  if (typeof v === "number") {
+    if (!Number.isSafeInteger(v)) throw new Error(`signed objects carry safe integers only, not ${v}`);
+    return JSON.stringify(v);
+  }
+  if (Array.isArray(v)) return `[${v.map(canon).join(",")}]`;
+  return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canon(v[k])}`).join(",")}}`;
+}
+const signedBytes = (v) => Buffer.from(canon(v), "utf8");
+const permsDigest = (perms) => createHash("sha256").update(canon(perms ?? {})).digest("hex");
+const envelope = (open, tool, args = {}, signer = open.ks.seed) => {
+  const env = { v: 1, typ: "buwiz-call", plugin: open.plugin, app: open.app, open_id: open.open_id, tool, args, actor: "person", ts: Date.now(), nonce: random128() };
+  return { envelope: env, sig: signB64u(signer, signedBytes(env)) };
+};
+// open an app as the Bot does: a session key, an open_id, the permissions digest of the app in `manifest`
+async function openApp(sessions, manifest, app) {
+  const ks = generate();
+  const a = manifest.apps.find((x) => x.id === app);
+  const req = { plugin: manifest.id, app, open_id: random128(), ks_pub: ks.pub, perms_sha256: permsDigest(a?.permissions), not_after: Date.now() + 3600_000 };
+  const res = await sessions.open(req);
+  return { ...req, ks, res };
+}
+
 const BASE = `http://127.0.0.1:${PORT}`;
 const token = readFileSync(`${RUN}/data/host-token`, "utf8");
 const signed = JSON.parse(readFileSync(`${RUN}/signed.json`, "utf8"));
@@ -72,8 +109,7 @@ const notGranted = homeTools.includes("books_resolve") ? null : await post("/v1/
 check("a tool outside home's permissions.tools is refused", notGranted === null || notGranted.json.ok === false, notGranted ? refusal(notGranted) : "books_resolve is granted to home");
 
 // 9. an envelope signed by another key is refused
-const { generate } = await import(pathToFileURL(`${WT}/server/src/v1/ed.mjs`).href);
-const forged = await post("/v1/host/call", envelope(open, "books_status", {}, {}, generate().seed));
+const forged = await post("/v1/host/call", envelope(open, "books_status", {}, generate().seed));
 check("an envelope signed by another key is refused", forged.json.ok === false, refusal(forged));
 
 // 10. the ledger through the broker: the Books window makes a book, drafts, posts, voids and lists
@@ -106,8 +142,7 @@ check("home cannot reach a tool outside its permissions", fromHome.json.ok === f
 
 // 11. the Books window's controls, driven through the broker as a user would: the app source the broker serves runs on
 // the nsh stand-in (signals' set needs its signal as `this`, as in nsh-js), and its buwiz.call goes to this broker
-const { createRequire } = await import("node:module");
-const esbuild = createRequire(`${WT}/server/package.json`)("esbuild");
+const esbuild = createRequire(`${ESBUILD_DIR}/package.json`)("esbuild");
 const { mountApp } = await import(pathToFileURL(`${import.meta.dirname}/nsh-standin.mjs`).href);
 const ui = await openApp(sessions, signed, "books");
 const bridge = {
