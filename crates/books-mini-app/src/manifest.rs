@@ -6,7 +6,7 @@
 //! the tools each TSX source calls or native screen declares. The
 //! `manifest` subcommand prints it as JCS text; the owner signs it at release
 //! (`sign-manifest.mjs --keychain gc-2026-01`), and a test run signs it with a
-//! throwaway key under a test key id (`tools/bot/conformance.sh`).
+//! throwaway key under a test key id (`tools/conformance.sh`).
 //!
 //! The signed file is what this process serves (`BOOKS_V1_MANIFEST`), byte
 //! for byte, read again on every request. Without it the unsigned manifest

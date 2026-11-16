@@ -291,13 +291,11 @@ fn every_json_file_under_data_fixtures_and_test_fixtures_is_clean() {
         // The prefix alone is allowed (names such as a ticket field); a
         // whole ticket value anywhere in the file is not.
         let real_ticket = has_ticket_value(&value.to_string());
-        // The RFC 8785 vectors shared byte for byte with the Bot are number
+        // The RFC 8785 vectors shared byte for byte with the SDK are number
         // tests (safe-integer bounds, the RFC 3.2.2 sample, a unix-ms
         // timestamp): their digit runs are numbers by design. They are still
         // scanned for tickets and memo markers.
-        let number_vectors = path
-            .file_name()
-            .is_some_and(|n| n == "bot-jcs-vectors.json");
+        let number_vectors = path.file_name().is_some_and(|n| n == "jcs-vectors.json");
         for f in scan(&value, &[]) {
             if f.kind == Kind::TinLike && number_vectors {
                 continue;

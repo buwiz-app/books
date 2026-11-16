@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# tools/bot/conformance.sh — run the Buwiz Bot's plugin conformance tool
-# (buwiz-plugin-test) against the release build of books-mini-app.
+# tools/conformance.sh: the SDK's plugin conformance runner (buwiz-plugin-test)
+# against the release build of books-mini-app, under a throwaway key and a
+# per-run trust file. Nothing here touches the Keychain, a Bot's data or the
+# release key.
 #
 # Steps 1-5, then the runner:
 #   1. build the release binary;
@@ -9,52 +11,55 @@
 #   4. a per-run trust file mapping a TEST key id to that key, marking it
 #      first-party and approving app.buwiz.books under it (never gc-2026-01);
 #   5. the manifest generated under the test key id and signed with the test
-#      key file (--key-file, never --keychain) by `buwiz-broker sign-manifest`
-#      when BUWIZ_BROKER_BIN names a broker build, else by the Bot's
-#      server/src/v1/sign-manifest.mjs (same arguments, byte-identical output);
+#      key file by `buwiz-broker sign-manifest` when BUWIZ_BROKER_BIN names a
+#      broker build, else by the SDK's sign-manifest.mjs (same arguments,
+#      byte-identical output);
 #   then buwiz-plugin-test --manifest <signed> --key-file <test key>, whose
 #   own in-process broker uses a temp trust store of the same shape.
 #
 # The release manifest keeps publisher.key_id gc-2026-01; only the owner
-# signs that one (the Bot's SDK README step 10). Nothing here touches the
-# Keychain, the Bot's or the broker's data folder, or the Bot's trust.json.
+# signs that one, with tools/release/publish.sh.
 #
-# Usage: tools/bot/conformance.sh [extra buwiz-plugin-test args, e.g. --json]
-# Env:   BUWIZ_BOT_DIR (required): a Buwiz Bot checkout at protocol 1.0
-#          (buwiz-bot #102 or later)
-#        BUWIZ_BROKER_BIN (a buwiz-broker binary from buwiz-bot main; signs in place
-#          of server/src/v1/sign-manifest.mjs)
+# Usage: tools/conformance.sh [runner args, e.g. --json]
+# Env:   BUWIZ_SDK_DIR (required): a buwiz-sdk checkout
+#          (https://github.com/buwiz-app/buwiz-sdk) at the revision this repo
+#          pins (crates/books-mini-app/Cargo.toml), with its dependencies
+#          installed (bun install)
+#        BUWIZ_BROKER_BIN (a buwiz-broker binary; signs in place of the SDK's
+#          sign-manifest.mjs)
 #        BOOKS_TEST_KEY_ID (default books-test-01)
 #        KEEP_TMP=1 keeps the temp dir (it holds a test key; delete it after)
 set -euo pipefail
 
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-BOT_DIR="${BUWIZ_BOT_DIR:-}"
-[ -n "$BOT_DIR" ] || { echo "conformance: set BUWIZ_BOT_DIR to a Bot checkout at protocol 1.0" >&2; exit 2; }
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+SDK="${BUWIZ_SDK_DIR:-}"
 KEY_ID="${BOOKS_TEST_KEY_ID:-books-test-01}"
 PLUGIN_ID="app.buwiz.books"
-RUNNER="$BOT_DIR/server/sdk/mini-app/bin/buwiz-plugin-test.mjs"
+RUNNER="$SDK/packages/conformance/bin/buwiz-plugin-test.mjs"
+SIGNER="$SDK/packages/conformance/src/v1/sign-manifest.mjs"
+
+die() { echo "conformance: $*" >&2; exit 2; }
+[ -n "$SDK" ] || die "set BUWIZ_SDK_DIR to a buwiz-sdk checkout (git clone https://github.com/buwiz-app/buwiz-sdk; cd buwiz-sdk; bun install)"
 if [ -n "${BUWIZ_BROKER_BIN:-}" ]; then
-  [ -x "$BUWIZ_BROKER_BIN" ] || { echo "conformance: BUWIZ_BROKER_BIN $BUWIZ_BROKER_BIN is not executable" >&2; exit 2; }
+  [ -x "$BUWIZ_BROKER_BIN" ] || die "BUWIZ_BROKER_BIN $BUWIZ_BROKER_BIN is not executable"
   SIGN=("$BUWIZ_BROKER_BIN" sign-manifest)
-  SIGNER=""
 else
-  SIGNER="$BOT_DIR/server/src/v1/sign-manifest.mjs"
   SIGN=(node "$SIGNER")
 fi
-
-if [ "$KEY_ID" = "gc-2026-01" ]; then
-  echo "conformance: the test key id must not be gc-2026-01" >&2
-  exit 2
+[ "$KEY_ID" != "gc-2026-01" ] || die "the test key id must not be gc-2026-01"
+for f in "$RUNNER" "$SIGNER"; do [ -f "$f" ] || die "$f not found: is BUWIZ_SDK_DIR a buwiz-sdk checkout?"; done
+PIN="$(sed -n 's/^buwiz-plugin = .*rev = "\([0-9a-f]\{40\}\)".*/\1/p' "$REPO/crates/books-mini-app/Cargo.toml")"
+[ -n "$PIN" ] || die "no pinned buwiz-sdk revision found in crates/books-mini-app/Cargo.toml"
+HEAD_SHA="$(git -C "$SDK" rev-parse HEAD 2>/dev/null)" || die "$SDK is not a git checkout of buwiz-sdk"
+if [ "$HEAD_SHA" != "$PIN" ]; then
+  # the same files under another commit id (a merge of the pin) also pass
+  [ "$(git -C "$SDK" rev-parse "$PIN^{tree}" 2>/dev/null)" = "$(git -C "$SDK" rev-parse 'HEAD^{tree}')" ] ||
+    die "the SDK checkout is not the pinned revision $PIN: git -C \"\$BUWIZ_SDK_DIR\" fetch && git -C \"\$BUWIZ_SDK_DIR\" checkout $PIN"
 fi
-for f in "$RUNNER" ${SIGNER:+"$SIGNER"}; do
-  [ -f "$f" ] || { echo "conformance: $f not found (set BUWIZ_BOT_DIR to a Bot checkout at protocol 1.0, or BUWIZ_BROKER_BIN for the signer)" >&2; exit 2; }
-done
-command -v node >/dev/null || { echo "conformance: node is needed to run the Bot's tools" >&2; exit 2; }
-[ -d "$BOT_DIR/server/node_modules/@modelcontextprotocol/sdk" ] && [ -d "$BOT_DIR/server/node_modules/esbuild" ] || {
-  echo "conformance: the Bot's server/node_modules lacks @modelcontextprotocol/sdk or esbuild; install them in the Bot checkout yourself" >&2
-  exit 2
-}
+git -C "$SDK" diff --quiet HEAD -- packages/conformance || die "the SDK checkout has uncommitted changes under packages/conformance"
+command -v node >/dev/null || die "node is needed to run the SDK's tools"
+(cd "$SDK/packages/conformance" && node --input-type=module -e 'await import("esbuild"); await import("@modelcontextprotocol/sdk/client/index.js"); await import("@modelcontextprotocol/sdk/client/stdio.js")') >/dev/null 2>&1 ||
+  die "the SDK's runner cannot load its dependencies: run bun install in $SDK"
 
 # 2. a fresh temp dir outside the repo, removed on exit
 TMP_BASE="${TMPDIR:-/tmp}"
@@ -87,7 +92,7 @@ PUB="$(sed -n 's/.*Public key: \([A-Za-z0-9_-]*\).*/\1/p' "$TMP/keygen.txt")"
 cat >"$TMP/trust.json" <<JSON
 {
   "v": 1,
-  "about": "Per-run trust store for Books conformance (a throwaway test key; never gc-2026-01).",
+  "about": "Per-run trust store for Books conformance (a throwaway test key; never a release key).",
   "publishers": { "$KEY_ID": { "publisher": "app.buwiz", "alg": "ed25519", "public_key": "$PUB", "first_party": true } },
   "approved_plugins": [ { "id": "$PLUGIN_ID", "publisher_key_id": "$KEY_ID" } ]
 }
@@ -103,7 +108,7 @@ for id in $(node -e 'for (const a of JSON.parse(require("fs").readFileSync(proce
   APP_ARGS+=(--app "$id=$TMP/app-$id.tsx")
 done
 "${SIGN[@]}" "$TMP/manifest.json" --key-file "$TMP/test.key" \
-  "${APP_ARGS[@]}" --out "$TMP/signed.json"
+  ${APP_ARGS[@]+"${APP_ARGS[@]}"} --out "$TMP/signed.json"
 
 # the runner: spawn the binary the way the broker does, serving the signed
 # manifest through BOOKS_V1_MANIFEST; print its result verbatim

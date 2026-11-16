@@ -1,17 +1,12 @@
-//! JCS against the Buwiz Bot's shared RFC 8785 vectors. The vendored copy
-//! (`tests/fixtures/bot-jcs-vectors.json`, from Bot main before protocol 1.0)
-//! always runs; the Bot's two originals (`broker/buwiz-protocol/src/jcs-vectors.json`,
-//! `server/test/fixtures/jcs-vectors.json`) run too when `BUWIZ_BOT_DIR` names
-//! a Bot checkout, and must equal the vendored copy.
+//! JCS against the SDK's shared RFC 8785 vectors. The vendored copy
+//! (`tests/fixtures/jcs-vectors.json`, from the pinned SDK's `vectors/jcs.json`)
+//! always runs; the SDK's own file runs too when `BUWIZ_SDK_DIR` names a
+//! checkout, and must equal the vendored copy.
 
 use books_mini_app::jcs::{self, JcsError};
 use serde_json::Value;
 
-const VENDORED: &str = include_str!("fixtures/bot-jcs-vectors.json");
-const BOT_FILES: [&str; 2] = [
-    "broker/buwiz-protocol/src/jcs-vectors.json",
-    "server/test/fixtures/jcs-vectors.json",
-];
+const VENDORED: &str = include_str!("fixtures/jcs-vectors.json");
 
 /// Every vector: signable ones give the exact JCS text, non-signable ones
 /// (fractions, unsafe integers) are refused as such, non-I-JSON is refused.
@@ -44,28 +39,23 @@ fn check(text: &str, label: &str) -> usize {
 }
 
 #[test]
-fn the_vendored_bot_vectors_pass() {
+fn the_vendored_vectors_pass() {
     check(VENDORED, "vendored");
 }
 
 #[test]
-fn both_bot_vector_files_pass_when_a_bot_checkout_is_named() {
-    let Ok(root) = std::env::var("BUWIZ_BOT_DIR") else {
-        eprintln!("BUWIZ_BOT_DIR is not set; the Bot's own vector files are not compared");
+fn the_sdk_vector_file_passes_when_a_checkout_is_named() {
+    let Ok(root) = std::env::var("BUWIZ_SDK_DIR") else {
+        eprintln!("BUWIZ_SDK_DIR is not set; the SDK's own vector file is not compared");
         return;
     };
-    for file in BOT_FILES {
-        let path = std::path::Path::new(&root).join(file);
-        match std::fs::read_to_string(&path) {
-            Ok(text) => {
-                let n = check(&text, file);
-                assert_eq!(
-                    text, VENDORED,
-                    "{file} differs from tests/fixtures/bot-jcs-vectors.json"
-                );
-                eprintln!("{file}: {n} vectors pass");
-            }
-            Err(_) => panic!("{file}: not found in the Bot checkout at {root}"),
-        }
-    }
+    let path = std::path::Path::new(&root).join("vectors/jcs.json");
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|_| panic!("vectors/jcs.json: not found in the SDK checkout at {root}"));
+    let n = check(&text, "vectors/jcs.json");
+    assert_eq!(
+        text, VENDORED,
+        "the SDK's vectors/jcs.json differs from tests/fixtures/jcs-vectors.json"
+    );
+    eprintln!("vectors/jcs.json: {n} vectors pass");
 }
