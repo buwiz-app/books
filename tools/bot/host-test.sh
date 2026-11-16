@@ -21,8 +21,9 @@
 #
 # Env: BUWIZ_BROKER_BIN (required): a buwiz-broker binary (an executable file)
 #      BUWIZ_SDK_DIR (required): a buwiz-sdk checkout at the pinned revision with
-#        its dependencies installed (bun install); its runner makes the test key
-#        and its esbuild compiles the Books window's source
+#        its dependencies installed (bun install); its runner makes the test key,
+#        the test client imports its src/v1/ modules (JCS, ed25519, permissions
+#        digest), and its esbuild compiles the Books window's source
 #      BOOKS_HOST_PORT (default 8811, 8811 or above)
 #      BOOKS_TEST_KEY_ID (default books-test-01)
 set -euo pipefail
@@ -30,6 +31,7 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 BROKER="${BUWIZ_BROKER_BIN:-}"
 SDK="${BUWIZ_SDK_DIR:-}"
+[ -z "$SDK" ] || SDK="$(cd "$SDK" 2>/dev/null && pwd -P)" || { echo "host-test: BUWIZ_SDK_DIR ${BUWIZ_SDK_DIR} is not a directory" >&2; exit 2; }
 PORT="${BOOKS_HOST_PORT:-8811}"
 KEY_ID="${BOOKS_TEST_KEY_ID:-books-test-01}"
 PLUGIN_ID="app.buwiz.books"
@@ -45,6 +47,13 @@ die() { echo "host-test: $*" >&2; exit 2; }
 [ "$PORT" -ge 8811 ] 2>/dev/null || die "use a port of 8811 or above (8787 is the owner's broker)"
 ! lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1 || die "port $PORT is in use"
 ! PATH="$BROKER_PATH" command -v secret >/dev/null 2>&1 || die "the broker's PATH ($BROKER_PATH) holds a command named secret"
+PIN="$("$REPO/tools/sdk-pin.sh")" || die "the buwiz-sdk pins are not one revision (tools/sdk-pin.sh says why)"
+# the checkout must hold exactly the pinned files (a merge of the pin has another commit id)
+SDK_TREE="$(git -C "$SDK" rev-parse 'HEAD^{tree}' 2>/dev/null)" || die "$SDK is not a git checkout of buwiz-sdk"
+[ "$(git -C "$SDK" rev-parse "$PIN^{tree}" 2>/dev/null)" = "$SDK_TREE" ] ||
+  die "the SDK checkout is not the pinned revision $PIN: git -C \"\$BUWIZ_SDK_DIR\" fetch && git -C \"\$BUWIZ_SDK_DIR\" checkout $PIN"
+git -C "$SDK" diff --quiet HEAD -- packages/conformance || die "the SDK checkout has uncommitted changes under packages/conformance"
+[ -z "$(git -C "$SDK" status --porcelain --untracked-files=all -- packages/conformance)" ] || die "the SDK checkout has untracked files under packages/conformance"
 command -v node >/dev/null || die "node is needed to run the test client and the SDK's runner"
 (cd "$SDK/packages/conformance" && node --input-type=module -e 'await import("esbuild")') >/dev/null 2>&1 ||
   die "the SDK's esbuild cannot be loaded: run bun install in $SDK"
@@ -110,10 +119,16 @@ for _ in $(seq 1 150); do
 done
 [ -s "$TMP/data/host-token" ] || { tail -20 "$TMP/broker.log" >&2; die "the broker did not start"; }
 
+# name the broker this run used: what it reports about itself, and the binary's hash (it has no version command)
+META="$(curl -fsS --max-time 5 "http://127.0.0.1:$PORT/meta" 2>/dev/null | tr -d '\n' | cut -c1-200)" || META="(no /meta answer)"
+echo "broker: $META; sha256 $(shasum -a 256 "$BROKER" | cut -d' ' -f1)"
+
 set +e
 node --disable-warning=ExperimentalWarning "$REPO/tests/host/books-host-test.mjs" "$TMP" "$BIN" "$PORT" "$SDK/packages/conformance"
 STATUS=$?
 set -e
+# BUWIZ_KEYSTORE=file:<dir> selects the broker's file keystore; the Keychain is the other choice of that
+# setting (helper/keystore.rs), never used with it. So a plugin key in <dir> proves the run kept its keys there.
 if [ ! -s "$TMP/keys/$PLUGIN_ID.key" ]; then
   echo "FAIL  the file keystore holds no $PLUGIN_ID plugin key" >&2
   STATUS=1
