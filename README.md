@@ -37,11 +37,11 @@ Settings: `BOOKS_DATA_DIR` (default `~/Library/Application Support/app.buwiz.boo
 | fmt, clippy (`-D warnings`), `cargo test` | Nothing else. With `BUWIZ_FORMS_SCHEMAS` set to a folder of the pinned agent-forms schemas, `cargo test` also checks the crosswalks against them; without it, that check prints SKIPPED. |
 | SDK doc links | Nothing else. Links to the SDK in these docs name the pinned revision. |
 | SDK conformance (`tools/conformance.sh`) | `BUWIZ_SDK_DIR` (required): a [buwiz-sdk](https://github.com/buwiz-app/buwiz-sdk) checkout at the revision pinned in `crates/books-mini-app/Cargo.toml`, with `bun install` run, and `node`. With it set, `cargo test` also compares the SDK's JCS vectors with `tests/fixtures/jcs-vectors.json`. |
-| Bot host test (`tools/bot/host-test.sh`) | `BUWIZ_BOT_DIR` (required): a checkout or worktree of buwiz-bot with `server/node_modules` installed, and `node`. It also needs: <ul><li>the commit it pins (`BUWIZ_BOT_COMMIT`) to exist in that checkout;</li><li>`lsof`;</li><li>a port of 8810 or above (`BOOKS_HOST_PORT`);</li><li>on macOS, `security`, which reads only the Keychain entry's attributes to prove the run left it alone.</li></ul> |
+| Bot host test (`tools/bot/host-test.sh`) | `BUWIZ_BROKER_BIN` (required): a `buwiz-broker` binary built from buwiz-bot main, which the test starts on a temporary data directory (it runs no Node). `BUWIZ_SDK_DIR` (required, at the pinned revision, as for conformance): the SDK's runner makes the throwaway key, the test client imports its `src/v1/` modules, and its `esbuild` compiles the Books window's source. The run prints the broker's `/meta` answer and the binary's sha256. It also needs: <ul><li>`node` and `lsof`;</li><li>a port of 8811 or above (`BOOKS_HOST_PORT`).</li></ul> The broker runs with a temporary `HOME` and a `PATH` of `/usr/bin:/bin`, and the test never touches a Keychain. |
 | Privacy scan (`tools/privacy-scan.sh`) | Nothing else. |
 
 `SKIP_BOT=1` skips the Bot host test (the run then isn't green). Gates sign with a throwaway key (`books-test-01`) and a
-file keystore, never the publisher key or the login Keychain. Read [AGENTS.md](AGENTS.md) before changing a rule; the
+file keystore, never the publisher key or a Keychain. Read [AGENTS.md](AGENTS.md) before changing a rule; the
 protocol is [buwiz-sdk `docs/protocol-1.0.md`](https://github.com/buwiz-app/buwiz-sdk/blob/e1de9c4487de6a9b6509e53ed1e990d699cad454/docs/protocol-1.0.md).
 
 ## Releases

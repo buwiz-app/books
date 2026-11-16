@@ -10,12 +10,13 @@
 # Env: BUWIZ_SDK_DIR    a buwiz-sdk checkout at the pinned revision, with
 #                       `bun install` run (required): the conformance runner,
 #                       and cargo test compares the SDK's JCS vectors
-#      BUWIZ_BOT_DIR    a Buwiz Bot checkout holding BUWIZ_BOT_COMMIT, with
-#                       server/node_modules installed: only the Bot host test
-#                       needs it (required unless SKIP_BOT=1)
-#      BOOKS_HOST_PORT  the host test's broker port (8810 or above; 8787 is the
+#      BUWIZ_BROKER_BIN  a buwiz-broker binary (an executable file, built from
+#                       buwiz-bot main): the Bot host test starts it, and the
+#                       conformance run signs with it; required unless
+#                       SKIP_BOT=1
+#      BOOKS_HOST_PORT  the host test's broker port (8811 or above; 8787 is the
 #                       owner's broker)
-#      SKIP_BOT=1       skip the Bot host test (no Bot checkout at hand); the
+#      SKIP_BOT=1       skip the Bot host test (no broker binary at hand); the
 #                       summary says so, and the run cannot pass
 set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -27,8 +28,8 @@ if [ -z "${BUWIZ_SDK_DIR:-}" ] || [ ! -d "$BUWIZ_SDK_DIR" ]; then
   echo "check-all: set BUWIZ_SDK_DIR to a buwiz-sdk checkout (git clone https://github.com/buwiz-app/buwiz-sdk; cd buwiz-sdk; bun install)" >&2
   exit 2
 fi
-if [ "${SKIP_BOT:-0}" != "1" ] && { [ -z "${BUWIZ_BOT_DIR:-}" ] || [ ! -d "$BUWIZ_BOT_DIR" ]; }; then
-  echo "check-all: set BUWIZ_BOT_DIR to a Buwiz Bot checkout (the host test needs it), or SKIP_BOT=1" >&2
+if [ "${SKIP_BOT:-0}" != "1" ] && { [ -z "${BUWIZ_BROKER_BIN:-}" ] || [ ! -f "$BUWIZ_BROKER_BIN" ] || [ ! -x "$BUWIZ_BROKER_BIN" ]; }; then
+  echo "check-all: set BUWIZ_BROKER_BIN to a buwiz-broker binary (an executable file; the host test starts it), or SKIP_BOT=1" >&2
   exit 2
 fi
 
@@ -72,11 +73,11 @@ gate "cargo fmt --check" fmt cargo fmt --check
 gate "cargo clippy -D warnings" clippy cargo clippy --all-targets -- -D warnings
 gate "cargo test" cargo-test tests_total
 gate "SDK links follow the pin" sdk-links sdk_links_follow_the_pin
-# needs BUWIZ_SDK_DIR (a buwiz-sdk checkout), not a Bot
+# needs BUWIZ_SDK_DIR (a buwiz-sdk checkout)
 gate "SDK conformance" conformance bash tools/conformance.sh
-# needs BUWIZ_BOT_DIR (a Bot checkout at the commit the script pins)
+# needs BUWIZ_BROKER_BIN (a buwiz-broker binary) and BUWIZ_SDK_DIR
 if [ "${SKIP_BOT:-0}" = "1" ]; then
-  printf 'SKIP  %-28s SKIP_BOT=1 (needs BUWIZ_BOT_DIR)\n' "Bot host test"
+  printf 'SKIP  %-28s SKIP_BOT=1 (needs BUWIZ_BROKER_BIN)\n' "Bot host test"
   skipped=1
 else
   gate "Bot host test" host bash tools/bot/host-test.sh

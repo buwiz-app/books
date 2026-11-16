@@ -1,14 +1,36 @@
-// Headless second-instance test of the Books plugin against a real Buwiz Bot broker.
+// Headless second-instance test of the Books plugin against a real Buwiz Bot broker (the Rust broker).
 // Run it through tools/bot/host-test.sh, which starts the throwaway broker. Direct use:
-//   node books-host-test.mjs <buwiz worktree> <run dir> <books binary> <port>
-// It reuses the Bot's own test helpers (openApp, envelope) from the worktree. Step 11 runs the Books window's served
-// source on nsh-standin.mjs, types into a TextBox and changes pickers, with buwiz.call answered by this broker. It
-// prints step results only: no host token, ticket values, keys or signatures.
+//   node books-host-test.mjs <run dir> <books binary> <port> <sdk conformance dir>
+// It uses Node built-ins and fetch, plus modules of the buwiz-sdk checkout (<sdk conformance dir> is its
+// packages/conformance): the JCS canonicalizer, ed25519 helpers and permissions digest from src/v1/, and esbuild to
+// compile the Books window's source in step 11. Step 11 runs that served source on nsh-standin.mjs, types into a
+// TextBox and changes pickers, with buwiz.call answered by this broker. It prints step results only: no host token,
+// ticket values, keys or signatures.
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 
-const [WT, RUN, BIN, PORT] = process.argv.slice(2);
-const { openApp, envelope } = await import(pathToFileURL(`${WT}/server/test/v1-helpers.mjs`).href);
+const [RUN, BIN, PORT, SDK_CONF] = process.argv.slice(2);
+const sdk = (file) => import(pathToFileURL(`${SDK_CONF}/src/v1/${file}`).href);
+const { generate, random128, sign } = await sdk("ed.mjs");
+const { signedBytes } = await sdk("jcs.mjs");
+const { permsDigest } = await sdk("manifest.mjs");
+
+// A signed call envelope; `actor` is who asked: "person" for a click or typing in the window, "agent" for a call an
+// agent made (the broker reads it to decide what the call may reach).
+const envelope = (open, tool, args = {}, signer = open.ks.seed) => {
+  const env = { v: 1, typ: "buwiz-call", plugin: open.plugin, app: open.app, open_id: open.open_id, tool, args, actor: "person", ts: Date.now(), nonce: random128() };
+  return { envelope: env, sig: sign(signer, signedBytes(env)) };
+};
+// open an app as the Bot does: a session key, an open_id, the permissions digest of the app in `manifest`
+async function openApp(sessions, manifest, app) {
+  const ks = generate();
+  const a = manifest.apps.find((x) => x.id === app);
+  const req = { plugin: manifest.id, app, open_id: random128(), ks_pub: ks.pub, perms_sha256: permsDigest(a?.permissions), not_after: Date.now() + 3600_000 };
+  const res = await sessions.open(req);
+  return { ...req, ks, res };
+}
+
 const BASE = `http://127.0.0.1:${PORT}`;
 const token = readFileSync(`${RUN}/data/host-token`, "utf8");
 const signed = JSON.parse(readFileSync(`${RUN}/signed.json`, "utf8"));
@@ -43,7 +65,7 @@ check("install the reviewed manifest", inst.json.ok === true, { status: inst.sta
 
 // 3. install with a different hash is refused
 const wrong = await post("/v1/host/plugins/install", { ...spec, manifest_sha256: "0".repeat(64) });
-check("install with a hash other than the reviewed one is refused", wrong.json.ok !== true, refusal(wrong));
+check("install with a hash other than the reviewed one is refused", wrong.json.ok === false && wrong.json.code === "manifest_invalid", refusal(wrong));
 
 // 4. resolve the /books command
 const res = await post("/v1/host/resolve", { plugin: "app.buwiz.books", kind: "command", name: "books", value: "" });
@@ -64,17 +86,18 @@ check("signed books_status call from home is answered", call.status === 200 && c
 
 // 7. the same envelope again is a replay
 const replay = await post("/v1/host/call", env1);
-check("the same envelope sent again is refused or replayed, not re-run", replay.status !== 200 || replay.json.replayed === true || JSON.stringify(replay.json) === JSON.stringify(call.json), refusal(replay));
+check("the same envelope sent again is refused as a replay, not re-run", replay.json.ok === false && replay.json.code === "replayed", refusal(replay));
 
 // 8. a tool the home app's manifest does not grant is refused
 const homeTools = signed.apps.find((a) => a.id === "home").permissions.tools;
-const notGranted = homeTools.includes("books_resolve") ? null : await post("/v1/host/call", envelope(open, "books_resolve", {}));
-check("a tool outside home's permissions.tools is refused", notGranted === null || notGranted.json.ok === false, notGranted ? refusal(notGranted) : "books_resolve is granted to home");
+const ungranted = signed.apps.flatMap((a) => a.permissions?.tools ?? []).find((t) => !homeTools.includes(t));
+check("the manifest has a tool that home's permissions.tools do not grant", !!ungranted, { tool: ungranted });
+const notGranted = ungranted ? await post("/v1/host/call", envelope(open, ungranted, {})) : null;
+check("a tool outside home's permissions.tools is refused", notGranted?.json.ok === false && notGranted.json.code === "permission_denied", notGranted ? refusal(notGranted) : "no ungranted tool");
 
 // 9. an envelope signed by another key is refused
-const { generate } = await import(pathToFileURL(`${WT}/server/src/v1/ed.mjs`).href);
-const forged = await post("/v1/host/call", envelope(open, "books_status", {}, {}, generate().seed));
-check("an envelope signed by another key is refused", forged.json.ok === false, refusal(forged));
+const forged = await post("/v1/host/call", envelope(open, "books_status", {}, generate().seed));
+check("an envelope signed by another key is refused", forged.json.ok === false && forged.json.code === "bad_signature", refusal(forged));
 
 // 10. the ledger through the broker: the Books window makes a book, drafts, posts, voids and lists
 const win = await openApp(sessions, signed, "books");
@@ -102,12 +125,11 @@ const call3 = async (tool, args) => {
 const list = await call3("books_ledger_list", { month: "2026-10" });
 check("the Ledger lists the voided entry and its reversal", list.counts?.all === 2 && list.rows?.some((x) => x.status_label === "Voided") && list.rows?.some((x) => x.status_label === "Reversal"), { counts: list.counts });
 const fromHome = await post("/v1/host/call", envelope(open, "books_app_post_entry", { client_request_id: rid(), entry: draft.entry }));
-check("home cannot reach a tool outside its permissions", fromHome.json.ok === false || fromHome.json.result?.isError === true, refusal(fromHome));
+check("home cannot reach a tool outside its permissions", fromHome.json.ok === false && fromHome.json.code === "permission_denied", refusal(fromHome));
 
 // 11. the Books window's controls, driven through the broker as a user would: the app source the broker serves runs on
 // the nsh stand-in (signals' set needs its signal as `this`, as in nsh-js), and its buwiz.call goes to this broker
-const { createRequire } = await import("node:module");
-const esbuild = createRequire(`${WT}/server/package.json`)("esbuild");
+const esbuild = createRequire(`${SDK_CONF}/package.json`)("esbuild");
 const { mountApp } = await import(pathToFileURL(`${import.meta.dirname}/nsh-standin.mjs`).href);
 const ui = await openApp(sessions, signed, "books");
 const bridge = {
