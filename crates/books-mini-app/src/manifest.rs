@@ -5,7 +5,7 @@
 //! native entries name their screen and ABI, and `permissions.tools` names
 //! the tools each TSX source calls or native screen declares. The
 //! `manifest` subcommand prints it as JCS text; the owner signs it at release
-//! (`sign-manifest.mjs --keychain gc-2026-01`), and a test run signs it with a
+//! (`buwiz-broker sign-manifest`), and a test run signs it with a
 //! throwaway key under a test key id (`tools/conformance.sh`).
 //!
 //! The signed file is what this process serves (`BOOKS_V1_MANIFEST`), byte

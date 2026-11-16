@@ -2,17 +2,20 @@
 # tools/check-all.sh — every gate a commit must pass, in order: no detached
 # signal setters in apps/ (`onChange={x.set}` loses `this` when kit.tsx calls
 # p.onChange(v); write `onChange={(v) => x.set(v)}`), rustfmt, clippy with
-# warnings denied, the Rust tests (the vectors byte for byte), the Bot's
-# conformance runner, the Bot host test and the privacy scan. One line per
-# gate, each gate's output kept in a temp folder; exits non-zero when any gate
-# fails.
+# warnings denied, the Rust tests (the vectors byte for byte), the SDK doc links
+# against the pinned revision, the SDK's conformance runner, the Bot host test
+# and the privacy scan. One line per gate, each gate's output kept in a temp
+# folder; exits non-zero when any gate fails.
 #
-# Env: BUWIZ_BOT_DIR    a Buwiz Bot checkout at protocol 1.0 for the conformance
-#                       runner and the host test (required unless SKIP_BOT=1);
-#                       cargo test also compares the Bot's own JCS vector files
+# Env: BUWIZ_SDK_DIR    a buwiz-sdk checkout at the pinned revision, with
+#                       `bun install` run (required): the conformance runner,
+#                       and cargo test compares the SDK's JCS vectors
+#      BUWIZ_BOT_DIR    a Buwiz Bot checkout holding BUWIZ_BOT_COMMIT, with
+#                       server/node_modules installed: only the Bot host test
+#                       needs it (required unless SKIP_BOT=1)
 #      BOOKS_HOST_PORT  the host test's broker port (8810 or above; 8787 is the
 #                       owner's broker)
-#      SKIP_BOT=1       skip the Bot gates (no Bot checkout at hand); the
+#      SKIP_BOT=1       skip the Bot host test (no Bot checkout at hand); the
 #                       summary says so, and the run cannot pass
 set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -45,16 +48,27 @@ no_detached_setters() {
   echo "0 findings: no detached setters in apps/"
 }
 
+sdk_links_follow_the_pin() {
+  local pin stale
+  pin="$(sed -n 's/^buwiz-plugin = .*rev = "\([0-9a-f]\{40\}\)".*/\1/p' crates/books-mini-app/Cargo.toml)"
+  [ -n "$pin" ] || { echo "no pinned buwiz-sdk revision in crates/books-mini-app/Cargo.toml"; return 1; }
+  stale="$(grep -rhoE 'buwiz-sdk/blob/[^/)]+|checkout [0-9a-f]{40}' README.md AGENTS.md docs | grep -vE "blob/$pin\$|checkout $pin\$" || true)"
+  [ -z "$stale" ] || { printf 'SDK links name a revision other than the pinned %s:\n%s\n' "$pin" "$stale"; return 1; }
+  echo "0 findings: SDK links name $pin"
+}
+
 gate "no detached setters" setters no_detached_setters
 gate "cargo fmt --check" fmt cargo fmt --check
 gate "cargo clippy -D warnings" clippy cargo clippy --all-targets -- -D warnings
 gate "cargo test" cargo-test tests_total
+gate "SDK links follow the pin" sdk-links sdk_links_follow_the_pin
+# needs BUWIZ_SDK_DIR (a buwiz-sdk checkout), not a Bot
+gate "SDK conformance" conformance bash tools/conformance.sh
+# needs BUWIZ_BOT_DIR (a Bot checkout at the commit the script pins)
 if [ "${SKIP_BOT:-0}" = "1" ]; then
-  printf 'SKIP  %-28s SKIP_BOT=1\n' "Bot conformance"
-  printf 'SKIP  %-28s SKIP_BOT=1\n' "Bot host test"
-  skipped=2
+  printf 'SKIP  %-28s SKIP_BOT=1 (needs BUWIZ_BOT_DIR)\n' "Bot host test"
+  skipped=1
 else
-  gate "Bot conformance" conformance bash tools/bot/conformance.sh
   gate "Bot host test" host bash tools/bot/host-test.sh
 fi
 gate "privacy scan" privacy bash tools/privacy-scan.sh

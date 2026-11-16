@@ -3,7 +3,7 @@
 //! JCS text, under publisher key id `gc-2026-01` unless `--key-id` names a
 //! test key id.
 //! `books-mini-app app-source <id>`: print a TSX app's served source, for the
-//! signing step (`sign-manifest.mjs --app <id>=<file>`).
+//! signing step (`sign-manifest --app <id>=<file>`).
 //! `books-mini-app seed <demo.json>`: replay a synthetic demo book into the
 //! store `BOOKS_DATA_DIR` names (a test Bot and the golden tests).
 //! `books-mini-app package <plugin.json> <out> <platform> [--published <plugin.json>]`:
