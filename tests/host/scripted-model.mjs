@@ -12,6 +12,8 @@ export const hasToolResults = (body) => (body.messages?.at(-1)?.content ?? []).s
 export async function scriptedModel(port) {
   const scripts = new Map();
   const requests = [];
+  const issued = new Map(); // script name -> the tool_use ids given to its calls
+  let serial = 0;
   const server = createServer((req, res) => {
     const chunks = [];
     req.on("data", (c) => chunks.push(c));
@@ -23,8 +25,15 @@ export async function scriptedModel(port) {
       const name = texts.reverse().map((t) => /\[\[script:([\w.-]+)\]\]/.exec(t)?.[1]).find(Boolean);
       const calls = scripts.get(name);
       requests.push({ script: name, body });
-      if (!calls) { res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify({ id: "msg_x", type: "message", role: "assistant", model: body.model, content: [{ type: "text", text: "ok" }], stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 } })); return; }
-      const content = hasToolResults(body) ? [{ type: "text", text: "Done." }] : calls.map((b, i) => ({ ...b, id: `toolu_${i}` }));
+      // a request with no script gets a plain "ok", in the mode it asked for (stream or not); a scripted one gets its
+      // tool calls, each with an id no other call of the run has had (all chats share one thread)
+      let content;
+      if (!calls) content = [{ type: "text", text: "ok" }];
+      else if (hasToolResults(body)) content = [{ type: "text", text: "Done." }];
+      else {
+        if (!issued.has(name)) issued.set(name, calls.map(() => `toolu_${String(++serial).padStart(6, "0")}`));
+        content = calls.map((b, i) => ({ ...b, id: issued.get(name)[i] }));
+      }
       const stop_reason = content.some((b) => b.type === "tool_use") ? "tool_use" : "end_turn";
       const message = { id: "msg_x", type: "message", role: "assistant", model: body.model, content, stop_reason, stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 } };
       if (!body.stream) { res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify(message)); return; }
@@ -50,6 +59,7 @@ export async function scriptedModel(port) {
   return {
     requests,
     script: (name, calls) => scripts.set(name, calls),
+    idsFor: (name) => issued.get(name) ?? [],
     close: () => new Promise((r) => { server.closeAllConnections?.(); server.close(r); }),
   };
 }

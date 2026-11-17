@@ -56,6 +56,8 @@ SDK_TREE="$(git -C "$SDK" rev-parse 'HEAD^{tree}' 2>/dev/null)" || die "$SDK is 
   die "the SDK checkout is not the pinned revision $PIN: git -C \"\$BUWIZ_SDK_DIR\" fetch && git -C \"\$BUWIZ_SDK_DIR\" checkout $PIN"
 [ -z "$(git -C "$SDK" status --porcelain --untracked-files=all -- packages/conformance)" ] || die "the SDK checkout has changed or untracked files under packages/conformance"
 
+# (No build lock: the Bot checkout's scripts/wait-build served builds that shared a machine with the Bot's own, and
+# this script no longer needs that checkout.)
 env CARGO_TARGET_DIR="$REPO/target" cargo build --release --quiet -p books-mini-app --manifest-path "$REPO/Cargo.toml"
 BIN="$REPO/target/release/books-mini-app"
 EBIR_TARGET="${EBIRFORMS_TARGET_DIR:-$EBIR_DIR/target}"
@@ -85,6 +87,9 @@ mkdir -m 700 "$TMP/home" "$TMP/data" "$TMP/keys" "$TMP/assets" "$TMP/ebirforms" 
 touch "$TMP/ebirforms/host-test-scratch"
 ROOT="$(od -An -N4 -tu4 /dev/urandom | tr -d ' ')"
 ROOT="$(printf '%09d' $(( ROOT % 999999999 + 1 )))"
+# the plugins' environment, written once: the manifests and the seed here, the plugins' specs in the test client
+# (which reads these from its environment and stops if one is missing)
+BOOKS_ENV=(BOOKS_DATA_DIR="$TMP/books-data" BOOKS_TODAY="2026-10-29")
 EBIR_ENV=(EBIRFORMS_DATA_DIR="$TMP/ebirforms" BUWIZ_NO_KEYCHAIN=1 EBIRFORMS_ACCOUNT_URL="http://127.0.0.1:1")
 env -i PATH="$BROKER_PATH" HOME="$TMP/home" TMPDIR="$TMP" "${EBIR_ENV[@]}" EBIRFORMS_SEED_TIN_ROOT="$ROOT" \
   "$EBIR_TARGET/release/examples/host-seed"
@@ -118,7 +123,7 @@ sign_plugin() { # <name> <binary> <env assignments...>
   "${ISOLATED[@]}" "$BROKER" sign-manifest "$TMP/$name-manifest.json" --key-file "$TMP/test.key" \
     ${app_args[@]+"${app_args[@]}"} --out "$TMP/$name.json"
 }
-sign_plugin books "$BIN" BOOKS_DATA_DIR="$TMP/books-data"
+sign_plugin books "$BIN" "${BOOKS_ENV[@]}"
 sign_plugin ebirforms "$EBIR_BIN" "${EBIR_ENV[@]}"
 
 # the broker: its own home, data folder, keystore and trust file; no Keychain, no update checks; its model is the
@@ -130,7 +135,7 @@ sign_plugin ebirforms "$EBIR_BIN" "${EBIR_ENV[@]}"
 BROKER_PID=$!
 
 set +e
-SLICE_B_TIN_ROOT="$ROOT" node --disable-warning=ExperimentalWarning "$REPO/tests/host/slice-b-live.mjs" \
+env "${BOOKS_ENV[@]}" "${EBIR_ENV[@]}" SLICE_B_TIN_ROOT="$ROOT" node --disable-warning=ExperimentalWarning "$REPO/tests/host/slice-b-live.mjs" \
   "$TMP" "$BIN" "$EBIR_BIN" "$PORT" "$MODEL_PORT" "$BROKER_PID" "$SDK/packages/conformance"
 STATUS=$?
 set -e

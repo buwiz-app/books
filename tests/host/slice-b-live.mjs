@@ -3,8 +3,10 @@
 // Run it through tools/bir/slice-b-live.sh, which starts the broker and makes the manifests and the key. Direct use:
 //   node slice-b-live.mjs <run dir> <books binary> <ebirforms binary> <port> <model port> <broker pid> <sdk conformance dir>
 // The run dir must hold an `ebirforms` data folder seeded by eBIRForms' host-seed, the two signed manifests
-// (books.json, ebirforms.json), the broker's `data` and `keys` folders and its broker.log; SLICE_B_TIN_ROOT names the
-// synthetic nine-digit root it was seeded with, so the run can check it never leaks.
+// (books.json, ebirforms.json), the broker's `data` and `keys` folders, its broker.log and the test key (test.key).
+// SLICE_B_TIN_ROOT names the synthetic nine-digit root it was seeded with, so the run can check it never leaks. The
+// plugins' environment (BOOKS_DATA_DIR, BOOKS_TODAY, EBIRFORMS_DATA_DIR, BUWIZ_NO_KEYCHAIN, EBIRFORMS_ACCOUNT_URL) is
+// set once, by the shell script, and read here; a missing one stops the run.
 //
 // Both plugins run under the Rust buwiz-broker, over its loopback HTTP routes. One throwaway key, books-test-01,
 // signed both manifests, and a trust file of this run only trusts it. eBIRForms keeps its data in the run dir, never
@@ -31,14 +33,14 @@ const BOOKS = "app.buwiz.books";
 const EBIR = "app.buwiz.ebirforms";
 const KEY_ID = "books-test-01";
 const DEMO = join(import.meta.dirname, "..", "..", "fixtures", "demo", "buwiz-trading-2026.json");
-const TODAY = "2026-10-29";
 
 // the synthetic taxpayer's root, as nine digits and as a TIN is written; never printed
 const ROOT = process.env.SLICE_B_TIN_ROOT || "";
 assert.match(ROOT, /^\d{9}$/, "SLICE_B_TIN_ROOT names the seeded synthetic root");
 const DASHED = `${ROOT.slice(0, 3)}-${ROOT.slice(3, 6)}-${ROOT.slice(6)}`;
 const tinIn = (s) => s.includes(ROOT) || s.includes(DASHED);
-const scrub = (s) => s.replaceAll(ROOT, "<tin>").replaceAll(DASHED, "<tin>");
+// everything the script prints goes through this: the synthetic root, and any ticket value
+const scrub = (s) => String(s).replaceAll(ROOT, "<tin>").replaceAll(DASHED, "<tin>").replace(/tkt_[A-Za-z0-9_-]+/g, "<ticket>");
 
 const results = [];
 const check = (name, ok, detail) => {
@@ -50,14 +52,20 @@ const check = (name, ok, detail) => {
 const within = (p) => resolve(p).startsWith(resolve(RUN) + sep);
 const EBIR_DATA = join(RUN, "ebirforms");
 assert.ok(within(EBIR_DATA) && existsSync(join(EBIR_DATA, "host-test-scratch")), "the eBIRForms data folder is this run's scratch folder");
-const ebirEnv = { EBIRFORMS_DATA_DIR: EBIR_DATA, BUWIZ_NO_KEYCHAIN: "1", EBIRFORMS_ACCOUNT_URL: "http://127.0.0.1:1" };
+const need = (name) => {
+  const v = process.env[name];
+  if (!v) throw new Error(`${name} is not set: run this through tools/bir/slice-b-live.sh`);
+  return v;
+};
+const ebirEnv = Object.fromEntries(["EBIRFORMS_DATA_DIR", "BUWIZ_NO_KEYCHAIN", "EBIRFORMS_ACCOUNT_URL"].map((k) => [k, need(k)]));
+const booksEnv = Object.fromEntries(["BOOKS_DATA_DIR", "BOOKS_TODAY"].map((k) => [k, need(k)]));
+assert.equal(resolve(ebirEnv.EBIRFORMS_DATA_DIR), resolve(EBIR_DATA), "the eBIRForms data folder is the run's");
 check("scratch eBIRForms data folder in the run dir", within(ebirEnv.EBIRFORMS_DATA_DIR));
 
 // ── 1. the manifests, signed by the shell script with the run's test key ──
 const booksSigned = JSON.parse(readFileSync(join(RUN, "books.json"), "utf8"));
 const ebirSigned = JSON.parse(readFileSync(join(RUN, "ebirforms.json"), "utf8"));
 const manifests = { [BOOKS]: booksSigned, [EBIR]: ebirSigned };
-const booksEnv = { BOOKS_DATA_DIR: join(RUN, "books-data"), BOOKS_TODAY: TODAY };
 const booksSpec = { command: BOOKS_BIN, args: ["mcp"], env: { ...booksEnv, BOOKS_V1_MANIFEST: join(RUN, "books.json") } };
 const ebirSpec = { command: EBIR_BIN, args: ["mcp"], env: { ...ebirEnv, EBIRFORMS_MANIFEST: join(RUN, "ebirforms.json") } };
 check("both manifests signed with the run's test key", booksSigned.publisher?.key_id === KEY_ID && ebirSigned.publisher?.key_id === KEY_ID);
@@ -72,7 +80,7 @@ let ready = false;
 for (let i = 0; i < 150 && !ready; i++) {
   if (!alive()) {
     const tail = readFileSync(join(RUN, "broker.log"), "utf8").split("\n").filter(Boolean).slice(-5).map((l) => l.slice(0, 200));
-    console.error(`the broker exited before it answered; its log ends:\n${tail.join("\n")}`);
+    console.error(scrub(`the broker exited before it answered; its log ends:\n${tail.join("\n")}`));
     throw new Error("broker exited before startup");
   }
   if (existsSync(join(RUN, "data", "host-token"))) {
@@ -131,14 +139,18 @@ try {
     const t = (r?.content || []).find((c) => c.type === "text")?.text;
     try { return JSON.parse(t); } catch { return null; }
   };
+  // every result is recorded whole (all its content blocks and its structured content) before anything throws, so
+  // the privacy scan sees refusals and errors too
   const appCall = async (o, tool, args = {}) => {
     const env = { v: 1, typ: "buwiz-call", plugin: o.plugin, app: o.app, open_id: o.open_id, tool, args, actor: "person", ts: Date.now(), nonce: random128() };
     const c = await post("/v1/host/call", { envelope: env, sig: sign(o.ks.seed, signedBytes(env)) });
+    keep(o.plugin, c.json.result ?? c.json);
     if (c.json.ok === false) throw Object.assign(new Error(c.json.message || c.json.code), { code: c.json.code });
     if (c.json.result?.isError) throw Object.assign(new Error(dataOf(c.json.result)?.code || "tool_error"), { code: dataOf(c.json.result)?.code || "tool_error" });
-    return keep(o.plugin, dataOf(c.json.result));
+    return dataOf(c.json.result);
   };
-  const appRefused = (o, tool, args) => appCall(o, tool, args).then(() => false, () => true);
+  // refused for this reason: the call fails with this code, and not for any other
+  const appRefused = (o, tool, args, code) => appCall(o, tool, args).then(() => false, (e) => e?.code === code);
   // the assistant: a chat in the broker, whose scripted model makes this one tool call; the broker's own agent path
   // (origin agent, app-only tools refused) answers it, and the answer is read from the model's next request. One
   // thread for the whole run.
@@ -146,7 +158,9 @@ try {
     const allowed = await post("/v1/host/tools/set", { bot: "chats", key: `v1:${plugin}`, state: "on" });
     if (allowed.status !== 200 || allowed.json.ok !== true) throw new Error("could not switch the plugin on for chats");
   }
-  const thread = (await post("/thread/new", {})).json.id;
+  const made_thread = await post("/thread/new", {});
+  const thread = made_thread.json.id;
+  if (thread === undefined || thread === null || thread === "") throw new Error(`POST /thread/new gave no thread id (status ${made_thread.status})`);
   let chats = 0;
   const agent = async (tool, input) => {
     const name = `slice-b-${String(++chats).padStart(4, "0")}`;
@@ -159,10 +173,12 @@ try {
       if (!job.done) await new Promise((r) => setTimeout(r, 100));
     }
     const rounds = model.requests.filter((r) => r.script === name).map((r) => r.body);
-    const answer = (rounds.find((b) => hasToolResults(b))?.messages?.at(-1)?.content ?? []).find((b) => b.type === "tool_result");
+    // the answer to the call this chat made: found by the id the model gave that call, never by type alone
+    const [useId] = model.idsFor(name);
+    const answer = (rounds.find((b) => hasToolResults(b))?.messages?.at(-1)?.content ?? []).find((b) => b.type === "tool_result" && b.tool_use_id === useId);
     if (job.done !== true || !answer) throw new Error(`the chat for ${tool} did not answer`);
     const text = typeof answer.content === "string" ? answer.content : (answer.content ?? []).map((c) => c.text ?? "").join("\n");
-    keep(tool.startsWith("books_") ? BOOKS : EBIR, text);
+    keep(tool.startsWith("books_") ? BOOKS : EBIR, answer);
     let data = null;
     try { data = JSON.parse(text); } catch { /* plain text */ }
     return { error: answer.is_error === true, text, data };
@@ -239,7 +255,7 @@ try {
   await appCall(books, "books_app_month_close", { client_request_id: req(), month: "2026-09" });
   view = await appCall(books, "books_form_proposal", Q3);
   check("Books: the late sale keeps it out of date, and says what changed", view.handoff?.status === "stale", { detail: view.handoff?.detail });
-  check("Books: the old hand-off cannot be confirmed", await appRefused(books, "books_app_handoff_confirm", { client_request_id: req(), handoff: made.ticket }));
+  check("Books: the old hand-off cannot be confirmed", await appRefused(books, "books_app_handoff_confirm", { client_request_id: req(), handoff: made.ticket }, "out_of_date"));
 
   // ── 9. refresh: a new hand-off, filled into the same draft ─────────────
   const fresh = await appCall(books, "books_app_handoff_create", { client_request_id: req(), ...Q3 });
@@ -258,14 +274,26 @@ try {
   check("no TIN in any Books result, to the owner's app or the assistant", !seen.some((r) => r.plugin === BOOKS && tinIn(r.text)));
   check("no eBIRForms ticket in any Books result", !seen.some((r) => r.plugin === BOOKS && r.text.includes(taxpayer)));
   check("no TIN in eBIRForms' answers to the assistant (it names taxpayers by ticket)", !seen.some((r) => r.plugin === EBIR && tinIn(r.text)));
-  // the broker's log and data folder, and eBIRForms' own logs (its BUWIZ_LOG_DIR is <data folder>/logs)
-  const filesIn = (dir) => (existsSync(dir) ? readdirSync(dir, { recursive: true }).map((f) => join(dir, String(f))) : []);
-  const ebirLogs = filesIn(join(EBIR_DATA, "logs")).filter((f) => statSync(f).isFile());
-  const logFiles = [join(RUN, "broker.log"), ...filesIn(join(RUN, "data", "logs")).filter((f) => statSync(f).isFile()), ...ebirLogs];
-  const logs = logFiles.map((f) => readFileSync(f, "utf8"));
-  const secrets = readdirSync(join(RUN, "keys")).map((f) => readFileSync(join(RUN, "keys", f), "utf8").trim());
-  const dbKey = existsSync(join(EBIR_DATA, "ebirforms.key")) ? readFileSync(join(EBIR_DATA, "ebirforms.key"), "utf8").trim() : "";
-  check("no TIN, plugin key or eBIRForms database key in the broker's or eBIRForms' logs", ebirLogs.length > 0 && logs.length > 0 && !logs.some((t) => tinIn(t) || [...secrets, dbKey].some((k) => k && t.includes(k))));
+  // every file under the run's folder, as bytes (the broker's data folder and databases, the logs, the plugins'
+  // folders): none may hold a TIN or a secret. A secret's own file is not a leak of it. eBIRForms' data folder holds
+  // the seeded taxpayer by design, so it is not scanned for the TIN root, only its logs are.
+  const readText = (f) => readFileSync(f, "utf8").trim();
+  const keyFiles = readdirSync(join(RUN, "keys")).map((f) => join(RUN, "keys", f));
+  const secretOf = new Map(); // value → the file that holds it by design
+  for (const f of [...keyFiles, join(EBIR_DATA, "ebirforms.key"), join(RUN, "test.key")]) {
+    if (existsSync(f)) secretOf.set(readText(f), f);
+  }
+  for (const v of [...secretOf.keys()]) if (v.length < 16) secretOf.delete(v);
+  const allFiles = readdirSync(RUN, { recursive: true }).map((f) => join(RUN, String(f))).filter((f) => { try { return statSync(f).isFile(); } catch { return false; } });
+  const ebirLogs = allFiles.filter((f) => f.startsWith(join(EBIR_DATA, "logs") + sep));
+  const leaks = [];
+  for (const f of allFiles) {
+    const bytes = readFileSync(f);
+    const inEbirData = f.startsWith(EBIR_DATA + sep) && !ebirLogs.includes(f);
+    if (!inEbirData && (bytes.includes(ROOT) || bytes.includes(DASHED))) leaks.push(f.slice(RUN.length + 1));
+    for (const [secret, home] of secretOf) if (f !== home && bytes.includes(secret)) leaks.push(f.slice(RUN.length + 1));
+  }
+  check("no TIN, plugin key, eBIRForms database key or publisher test key in any file of the run (the broker's data folder included)", ebirLogs.length > 0 && allFiles.length > 0 && leaks.length === 0, leaks.length ? { files: leaks } : { scanned: allFiles.length });
 
   status = results.every((r) => r.ok) ? 0 : 1;
 } catch (e) {
