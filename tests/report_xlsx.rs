@@ -539,7 +539,7 @@ fn an_amount_a_cell_cannot_hold_exactly_is_refused_not_rounded() {
                 Cell::Text("X".into()),
                 Cell::Amount(v.into()),
             ],
-            total: false,
+            role: report_xlsx::Role::Item,
         }],
     };
     let ok = report_xlsx::workbook(&table("-9999999999999.99")).unwrap();
@@ -879,6 +879,63 @@ fn nothing_private_is_in_the_file() {
             if let Some((CellValue::String(s), ..)) = &back.cells[r][c] {
                 assert!(!s.contains("tkt_"), "{s}");
             }
+        }
+    }
+}
+
+#[test]
+fn the_csv_and_the_workbook_come_from_one_row_builder_and_count_rows_alike() {
+    let (_dir, mut b) = golden();
+    for kind in ["pl", "bs", "cf"] {
+        for compare in ["none", "previous"] {
+            let args = json!({ "kind": kind, "period": "2026-10", "compare_to": compare });
+            let report = call(&mut b, "books_report", args.clone())["structuredContent"].clone();
+            let csv = call(&mut b, "books_report_csv", args.clone())["structuredContent"].clone();
+            let (out, _) = exported(&mut b, args);
+            let table = report_xlsx::table(&report).unwrap();
+            // the CSV is the builder's header and its rows but a section's total
+            let q = |t: &str| {
+                if t.contains([',', '"', '\n']) {
+                    format!("\"{}\"", t.replace('"', "\"\""))
+                } else {
+                    t.to_string()
+                }
+            };
+            let mut want = vec![
+                table
+                    .header
+                    .iter()
+                    .map(|h| q(h))
+                    .collect::<Vec<_>>()
+                    .join(","),
+            ];
+            for r in table
+                .rows
+                .iter()
+                .filter(|r| r.role != report_xlsx::Role::SectionTotal)
+            {
+                want.push(
+                    r.cells
+                        .iter()
+                        .map(|c| match c {
+                            Cell::Text(t) => q(t),
+                            Cell::Amount(t) => t.clone(),
+                            Cell::Blank => String::new(),
+                        })
+                        .collect::<Vec<_>>()
+                        .join(","),
+                );
+            }
+            assert_eq!(
+                csv["csv"].as_str().unwrap(),
+                want.join("\n") + "\n",
+                "{kind} {compare}"
+            );
+            assert_eq!(
+                out["structuredContent"]["rows"], csv["rows"],
+                "{kind} {compare}: rows"
+            );
+            assert_eq!(csv["rows"], want.len());
         }
     }
 }

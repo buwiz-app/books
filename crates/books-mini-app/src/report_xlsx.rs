@@ -19,7 +19,7 @@ use office_oxide::xlsx::write::{CellData, CellStyle, HAlign, XlsxWriter};
 use serde_json::{Map, Value, json};
 
 use crate::reports;
-use crate::service::{Answer, Refusal, text};
+use crate::service::{Answer, Refusal};
 
 /// The money format of an amount cell: thousands separators, two places, a
 /// plain minus.
@@ -27,9 +27,6 @@ pub const MONEY_FORMAT: &str = "#,##0.00;-#,##0.00";
 
 /// The media type of the file.
 pub const MEDIA_TYPE: &str = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-/// Most digits an amount may have: a double keeps 15 exactly.
-const MAX_DIGITS: usize = 15;
 
 /// How long a handed-over file stays in its folder before the next export
 /// sweeps it. The Bot has copied it long before.
@@ -56,11 +53,19 @@ pub struct Table {
     pub rows: Vec<Row>,
 }
 
+/// What a row is: the CSV has the items and the net line; a section's total
+/// is the workbook's own addition.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Role {
+    Item,
+    SectionTotal,
+    Net,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Row {
     pub cells: Vec<Cell>,
-    /// A total or the net line: shown in bold.
-    pub total: bool,
+    pub role: Role,
 }
 
 fn title_of(kind: &str) -> Option<&'static str> {
@@ -103,7 +108,7 @@ pub fn table(r: &Value) -> Result<Table, Refusal> {
     if two {
         header.push(columns[1].clone());
     }
-    let line = |section: &str, number: &str, name: &str, v: &Value, total: bool| {
+    let line = |section: &str, number: &str, name: &str, v: &Value, role: Role| {
         let mut cells = vec![
             Cell::Text(section.into()),
             Cell::Text(number.into()),
@@ -113,7 +118,7 @@ pub fn table(r: &Value) -> Result<Table, Refusal> {
         if two {
             cells.push(amount(&v["prev_shown"]));
         }
-        Row { cells, total }
+        Row { cells, role }
     };
     let mut rows = Vec::new();
     for (i, sec) in r["sections"].as_array().into_iter().flatten().enumerate() {
@@ -124,7 +129,7 @@ pub fn table(r: &Value) -> Result<Table, Refusal> {
                 &s(&row["number"]),
                 &s(&row["name"]),
                 row,
-                false,
+                Role::Item,
             ));
         }
         // the balance sheet's section total, the P&L's revenue and expenses
@@ -134,11 +139,11 @@ pub fn table(r: &Value) -> Result<Table, Refusal> {
             r["totals"].get(i).filter(|t| t.is_object())
         };
         if let Some(t) = total {
-            rows.push(line("", "", &s(&t["label"]), t, true));
+            rows.push(line("", "", &s(&t["label"]), t, Role::SectionTotal));
         }
     }
     let net = &r["net"];
-    rows.push(line("", "", &s(&net["label"]), net, true));
+    rows.push(line("", "", &s(&net["label"]), net, Role::Net));
 
     let mut notes = vec![
         format!("Period: {}", s(&r["period"]["label"])),
@@ -156,29 +161,6 @@ pub fn table(r: &Value) -> Result<Table, Refusal> {
         header,
         rows,
     })
-}
-
-/// An amount's text as the cell's number: parsed, never computed.
-fn number(t: &str) -> Result<f64, Refusal> {
-    let body = t.strip_prefix('-').unwrap_or(t);
-    let shaped = body
-        .split_once('.')
-        .is_some_and(|(w, c)| !w.is_empty() && c.len() == 2)
-        && body.bytes().all(|b| b.is_ascii_digit() || b == b'.');
-    if !shaped {
-        return Err(Refusal::new("internal", "A report amount is not a number."));
-    }
-    if body.len() - 1 > MAX_DIGITS {
-        return Err(Refusal::new(
-            "too_large",
-            "An amount in this report is too large for a spreadsheet cell.",
-        ));
-    }
-    if body == "0.00" {
-        return Ok(0.0);
-    }
-    t.parse::<f64>()
-        .map_err(|_| Refusal::new("internal", "A report amount is not a number."))
 }
 
 /// The workbook's bytes: one sheet named for the report.
@@ -219,15 +201,24 @@ pub fn workbook(t: &Table) -> Result<Vec<u8>, Refusal> {
             for (c, cell) in row.cells.iter().enumerate() {
                 match cell {
                     Cell::Text(x) if x.is_empty() => {}
-                    Cell::Text(x) if row.total => {
+                    Cell::Text(x) if (row.role != Role::Item) => {
                         sheet.set_cell_styled(at, c, CellData::String(x.clone()), bold.clone());
                     }
                     Cell::Text(x) => {
                         sheet.set_cell(at, c, CellData::String(x.clone()));
                     }
                     Cell::Amount(x) => {
-                        let style = if row.total { &money_bold } else { &money };
-                        sheet.set_cell_styled(at, c, CellData::Number(number(x)?), style.clone());
+                        let style = if row.role != Role::Item {
+                            &money_bold
+                        } else {
+                            &money
+                        };
+                        sheet.set_cell_styled(
+                            at,
+                            c,
+                            CellData::Number(crate::cell_amount::number(x)?),
+                            style.clone(),
+                        );
                     }
                     Cell::Blank => {}
                 }
@@ -329,11 +320,6 @@ fn sweep(dir: &Path) {
 /// the file's name and, under `_save`, what `buwiz/save` carries (the
 /// caller moves it to the result's `_meta`).
 pub fn export(store: &Store, book: Book, args: &Map<String, Value>, dir: &Path) -> Answer {
-    if title_of(text(args, "kind").unwrap_or("pl")).is_none() {
-        return Err(Refusal::invalid(
-            "`kind` is pl, bs or cf for an Excel export.",
-        ));
-    }
     let r = reports::report(store, book, args)?;
     let t = table(&r)?;
     let bytes = workbook(&t)?;
@@ -341,7 +327,8 @@ pub fn export(store: &Store, book: Book, args: &Map<String, Value>, dir: &Path) 
     let path = hand_over(dir, &name, &bytes)?;
     Ok(json!({
         "file_name": name,
-        "rows": t.rows.len(),
+        // as the CSV tool counts: the header line and the CSV's own rows
+        "rows": 1 + t.rows.iter().filter(|r| r.role != Role::SectionTotal).count(),
         "_save": { "path": path.to_string_lossy(), "name": name, "mime": MEDIA_TYPE },
     }))
 }

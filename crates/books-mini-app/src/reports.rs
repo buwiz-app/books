@@ -762,44 +762,33 @@ pub fn report_csv(store: &Store, book: Book, args: &Map<String, Value>, origin: 
             ));
         }
         _ => {
-            let two = !r["compare"].is_null() && cols.len() > 1;
-            lines.push(if two {
-                format!(
-                    "Section,Number,Account,{},{}",
-                    csv_cell(&cols[0]),
-                    csv_cell(&cols[1])
-                )
-            } else {
-                format!(
-                    "Section,Number,Account,{}",
-                    csv_cell(cols.first().map_or("", String::as_str))
-                )
-            });
-            for s in r["sections"].as_array().into_iter().flatten() {
-                let section = s["title"].as_str().unwrap_or("");
-                for row in s["rows"].as_array().into_iter().flatten() {
-                    let mut cells = vec![
-                        csv_cell(section),
-                        csv_cell(row["number"].as_str().unwrap_or("")),
-                        csv_cell(row["name"].as_str().unwrap_or("")),
-                        plain(&row["shown"]),
-                    ];
-                    if two {
-                        cells.push(plain(&row["prev_shown"]));
-                    }
-                    lines.push(cells.join(","));
-                }
+            // the rows the Excel export has, but a section's total
+            let t = crate::report_xlsx::table(&r)?;
+            let line = |cells: &[crate::report_xlsx::Cell]| {
+                cells
+                    .iter()
+                    .map(|c| match c {
+                        crate::report_xlsx::Cell::Text(x) => csv_cell(x),
+                        crate::report_xlsx::Cell::Amount(x) => x.clone(),
+                        crate::report_xlsx::Cell::Blank => String::new(),
+                    })
+                    .collect::<Vec<_>>()
+                    .join(",")
+            };
+            lines.push(
+                t.header
+                    .iter()
+                    .map(|h| csv_cell(h))
+                    .collect::<Vec<_>>()
+                    .join(","),
+            );
+            for row in t
+                .rows
+                .iter()
+                .filter(|x| x.role != crate::report_xlsx::Role::SectionTotal)
+            {
+                lines.push(line(&row.cells));
             }
-            let mut net = vec![
-                String::new(),
-                String::new(),
-                csv_cell(r["net"]["label"].as_str().unwrap_or("")),
-                plain(&r["net"]["shown"]),
-            ];
-            if two {
-                net.push(plain(&r["net"]["prev_shown"]));
-            }
-            lines.push(net.join(","));
         }
     }
     let name = export_name(&r, args, "csv");

@@ -88,11 +88,12 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
       (e: Any) => toast(errText(e)),
     );
   };
-  // the Bot saves the file to Downloads and says so
+  // the Bot copies the file to Downloads and says how it went in its own toast;
+  // the call's answer carries no outcome of that, so this line claims none
   const exportXlsx = () => {
     const args = reportArgs(repKind(), repPeriodKind(), repPeriod(), repCompare(), repTag());
     buwiz.call("books_app_report_xlsx", args).then(
-      () => {},
+      (r: Any) => toast(`Sent to Buwiz Bot to save in Downloads · ${String(r.file_name)}`),
       (e: Any) => toast(errText(e)),
     );
   };

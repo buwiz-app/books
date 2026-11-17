@@ -16,6 +16,7 @@ pub mod apps;
 pub mod b64;
 pub mod batch;
 pub mod cards;
+pub mod cell_amount;
 pub mod checks;
 pub mod cloud;
 pub mod demo;

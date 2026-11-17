@@ -299,10 +299,9 @@ fn no_float_type_appears_in_the_crates() {
         for entry in std::fs::read_dir(&dir).unwrap() {
             let path = entry.unwrap().path();
             let text = std::fs::read_to_string(&path).unwrap();
-            // the one exception (AGENTS.md invariant 2): an Excel cell stores a
-            // number as a double, so `report_xlsx.rs` parses a two-place amount
-            // into one and computes nothing with it
-            let xlsx = path.ends_with("report_xlsx.rs");
+            // the one exception (AGENTS.md invariant 2): `cell_amount.rs`, the
+            // function that parses an amount into an Excel cell's double
+            let xlsx = path.ends_with("cell_amount.rs");
             for ty in ["f32", "f64", "as_f64"] {
                 if xlsx && ty != "as_f64" {
                     continue;
@@ -311,6 +310,26 @@ fn no_float_type_appears_in_the_crates() {
             }
         }
     }
+}
+
+/// The exempt file does only what AGENTS.md invariant 2 allows it: parse.
+#[test]
+fn the_one_float_function_parses_and_computes_nothing() {
+    let text = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cell_amount.rs"))
+        .unwrap();
+    for word in [
+        "round", "floor", "ceil", "trunc", "as f64", "as_f64", "powi", "sqrt", "f32",
+    ] {
+        assert!(!text.contains(word), "cell_amount.rs mentions {word}");
+    }
+    assert!(
+        text.lines().filter(|l| l.contains("f64")).count() <= 2,
+        "f64 only in the signature and a doc line"
+    );
+    // and the rest of the Excel export is checked like every other file
+    let rest = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/report_xlsx.rs"))
+        .unwrap();
+    assert!(!rest.contains("f64") && !rest.contains("f32"));
 }
 
 /// The document library's grants stay on its own apps.
