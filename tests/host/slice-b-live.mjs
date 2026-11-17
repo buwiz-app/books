@@ -1,34 +1,31 @@
 // Slice B, live: the demo book's Q3 2551Q goes from Books into a real eBIRForms draft on a scratch eBIRForms data
 // folder, and a later Books change marks the hand-off out of date until the owner refreshes it.
-// Run it through tools/bir/slice-b-live.sh. Direct use:
-//   node slice-b-live.mjs <bot worktree> <run dir> <books binary> <ebirforms binary>
-// The run dir must hold an `ebirforms` data folder seeded by eBIRForms' host-seed, and SLICE_B_TIN_ROOT name the
+// Run it through tools/bir/slice-b-live.sh, which starts the broker and makes the manifests and the key. Direct use:
+//   node slice-b-live.mjs <run dir> <books binary> <ebirforms binary> <port> <model port> <broker pid> <sdk conformance dir>
+// The run dir must hold an `ebirforms` data folder seeded by eBIRForms' host-seed, the two signed manifests
+// (books.json, ebirforms.json), the broker's `data` and `keys` folders and its broker.log; SLICE_B_TIN_ROOT names the
 // synthetic nine-digit root it was seeded with, so the run can check it never leaks.
 //
-// Both plugins run under the Bot's own v1 broker modules in this process (no port). One throwaway key,
-// books-test-01, signs both manifests, and a trust file of this run only trusts it. eBIRForms keeps its data in the
-// run dir, never reads a keychain, and its Buwiz account URL is a closed loopback port. The script plays the owner
-// (Books' app, through signed calls) and the assistant (the agent surface). The assistant passes Books' `form_open`
+// Both plugins run under the Rust buwiz-broker, over its loopback HTTP routes. One throwaway key, books-test-01,
+// signed both manifests, and a trust file of this run only trusts it. eBIRForms keeps its data in the run dir, never
+// reads a keychain, and its Buwiz account URL is a closed loopback port. The script plays the owner (Books' app,
+// through signed calls) and the assistant: a chat whose model is a scripted stand-in on loopback, so each assistant
+// call is the broker's own agent path (origin agent, app-only tools refused). The assistant passes Books' `form_open`
 // and `form_fill` to eBIRForms as given, reads the boxes and their sources back, and saves a draft; nothing is
-// queued or sent. It prints step results only: no TIN, ticket, key or signature.
+// queued or sent. It uses Node built-ins and fetch, plus the SDK's ed25519, JCS and permissions-digest modules
+// (<sdk conformance dir>/src/v1/). It prints step results only: no TIN, ticket, key or signature.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
-import { DatabaseSync } from "node:sqlite";
 import { pathToFileURL } from "node:url";
+import { hasToolResults, scriptedModel } from "./scripted-model.mjs";
 
-const [WT, RUN, BOOKS_BIN, EBIR_BIN] = process.argv.slice(2).map((p) => p && resolve(p));
-const load = (path) => import(pathToFileURL(join(WT, "server", "src", "v1", path)).href);
-const { generate, random128, sign } = await load("ed.mjs");
-const { signedBytes } = await load("jcs.mjs");
-const { keystore } = await load("keystore.mjs");
-const { permsDigest } = await load("manifest.mjs");
-const { createPlugins, resultData } = await load("plugins.mjs");
-const { createSessions } = await load("sessions.mjs");
-const { signManifest } = await load("sign-manifest.mjs");
-const { loadTrust } = await load("trust.mjs");
-const { v1AgentCall } = await load("agent.mjs");
+const [RUN, BOOKS_BIN, EBIR_BIN, PORT, MODEL_PORT, BROKER_PID, SDK_CONF] = process.argv.slice(2);
+const sdk = (file) => import(pathToFileURL(`${SDK_CONF}/src/v1/${file}`).href);
+const { generate, random128, sign } = await sdk("ed.mjs");
+const { signedBytes } = await sdk("jcs.mjs");
+const { permsDigest } = await sdk("manifest.mjs");
 
 const BOOKS = "app.buwiz.books";
 const EBIR = "app.buwiz.ebirforms";
@@ -50,78 +47,125 @@ const check = (name, ok, detail) => {
 };
 
 // ── 0. the scratch eBIRForms data folder ───────────────────────────────
-const within = (p) => resolve(p).startsWith(RUN + sep);
+const within = (p) => resolve(p).startsWith(resolve(RUN) + sep);
 const EBIR_DATA = join(RUN, "ebirforms");
 assert.ok(within(EBIR_DATA) && existsSync(join(EBIR_DATA, "host-test-scratch")), "the eBIRForms data folder is this run's scratch folder");
 const ebirEnv = { EBIRFORMS_DATA_DIR: EBIR_DATA, BUWIZ_NO_KEYCHAIN: "1", EBIRFORMS_ACCOUNT_URL: "http://127.0.0.1:1" };
 check("scratch eBIRForms data folder in the run dir", within(ebirEnv.EBIRFORMS_DATA_DIR));
 
-// ── 1. one throwaway key and a trust file of this run ──────────────────
-const publisher = generate();
-const trustFile = join(RUN, "trust.json");
-writeFileSync(trustFile, JSON.stringify({
-  v: 1,
-  about: "Per-run trust store for Books' live Slice B (a throwaway test key; never gc-2026-01).",
-  publishers: { [KEY_ID]: { publisher: "app.buwiz", alg: "ed25519", public_key: publisher.pub, first_party: true } },
-  approved_plugins: [{ id: BOOKS, publisher_key_id: KEY_ID }, { id: EBIR, publisher_key_id: KEY_ID }],
-}));
-const sources = (bin, manifest) => Object.fromEntries(manifest.apps.filter((a) => !a.native).map((a) => [a.id, execFileSync(bin, ["app-source", a.id])]));
-const signed = (unsigned, appSources, file) => {
-  writeFileSync(file, JSON.stringify(signManifest(unsigned, publisher.seed, appSources), null, 2));
-  return file;
-};
-const booksUnsigned = JSON.parse(execFileSync(BOOKS_BIN, ["manifest", "--key-id", KEY_ID]).toString());
+// ── 1. the manifests, signed by the shell script with the run's test key ──
+const booksSigned = JSON.parse(readFileSync(join(RUN, "books.json"), "utf8"));
+const ebirSigned = JSON.parse(readFileSync(join(RUN, "ebirforms.json"), "utf8"));
+const manifests = { [BOOKS]: booksSigned, [EBIR]: ebirSigned };
 const booksEnv = { BOOKS_DATA_DIR: join(RUN, "books-data"), BOOKS_TODAY: TODAY };
-const booksSpec = { command: BOOKS_BIN, args: ["mcp"], env: { ...booksEnv, BOOKS_V1_MANIFEST: signed(booksUnsigned, sources(BOOKS_BIN, booksUnsigned), join(RUN, "books.json")) } };
-const ebirUnsigned = JSON.parse(execFileSync(EBIR_BIN, ["manifest", "--key-id", KEY_ID], { env: { PATH: process.env.PATH, ...ebirEnv } }).toString());
-const ebirSpec = { command: EBIR_BIN, args: ["mcp"], env: { ...ebirEnv, EBIRFORMS_MANIFEST: signed(ebirUnsigned, sources(EBIR_BIN, ebirUnsigned), join(RUN, "ebirforms.json")) } };
-check("both manifests signed with the run's test key", booksUnsigned.publisher.key_id === KEY_ID && ebirUnsigned.publisher.key_id === KEY_ID);
+const booksSpec = { command: BOOKS_BIN, args: ["mcp"], env: { ...booksEnv, BOOKS_V1_MANIFEST: join(RUN, "books.json") } };
+const ebirSpec = { command: EBIR_BIN, args: ["mcp"], env: { ...ebirEnv, EBIRFORMS_MANIFEST: join(RUN, "ebirforms.json") } };
+check("both manifests signed with the run's test key", booksSigned.publisher?.key_id === KEY_ID && ebirSigned.publisher?.key_id === KEY_ID);
 
 // the synthetic demo book, before Books starts
 execFileSync(BOOKS_BIN, ["seed", DEMO], { env: { PATH: process.env.PATH, ...booksEnv } });
 
 // ── 2. the broker, both plugins installed ──────────────────────────────
-const plugins = createPlugins({
-  db: new DatabaseSync(":memory:"),
-  keys: keystore(`file:${join(RUN, "keys")}`),
-  logDir: join(RUN, "logs"),
-  trust: () => loadTrust(trustFile),
-});
-const sessions = createSessions(plugins);
+const BASE = `http://127.0.0.1:${PORT}`;
+const alive = () => { try { process.kill(Number(BROKER_PID), 0); return true; } catch { return false; } };
+let ready = false;
+for (let i = 0; i < 150 && !ready; i++) {
+  if (!alive()) {
+    const tail = readFileSync(join(RUN, "broker.log"), "utf8").split("\n").filter(Boolean).slice(-5).map((l) => l.slice(0, 200));
+    console.error(`the broker exited before it answered; its log ends:\n${tail.join("\n")}`);
+    throw new Error("broker exited before startup");
+  }
+  if (existsSync(join(RUN, "data", "host-token"))) {
+    try { ready = (await fetch(`${BASE}/health`, { signal: AbortSignal.timeout(1000) })).ok; } catch { /* not yet */ }
+  }
+  if (!ready) await new Promise((r) => setTimeout(r, 200));
+}
+if (!ready) throw new Error("broker startup timed out");
+const token = readFileSync(join(RUN, "data", "host-token"), "utf8").trim();
+const request = async (method, path, body) => {
+  const response = await fetch(BASE + path, {
+    method, signal: AbortSignal.timeout(60_000),
+    headers: { "content-type": "application/json", "x-buwiz-host": token },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  const text = await response.text();
+  let json;
+  try { json = JSON.parse(text); } catch { json = { raw: text.slice(0, 200) }; }
+  return { status: response.status, json };
+};
+const post = (path, body) => request("POST", path, body);
+
+const model = await scriptedModel(MODEL_PORT);
 let status = 1;
 try {
   for (const [id, spec] of [[BOOKS, booksSpec], [EBIR, ebirSpec]]) {
-    const inspected = await plugins.inspect(spec);
-    const installed = await plugins.install({ ...spec, manifest_sha256: inspected.manifest_sha256 });
-    check(`${id} installed and running`, installed.ok && plugins.runtime(id).state === "running");
+    const inspected = await post("/v1/host/plugins/inspect", spec);
+    const installed = inspected.json.ok === true ? await post("/v1/host/plugins/install", { ...spec, manifest_sha256: inspected.json.manifest_sha256 }) : inspected;
+    // the broker starts the plugin at install: wait for it to say so
+    let running = false;
+    for (let i = 0; i < 50 && !running && installed.json.ok === true; i++) {
+      running = ((await request("GET", "/v1/host/plugins")).json.plugins ?? []).some((p) => p.id === id && p.state === "running");
+      if (!running) await new Promise((r) => setTimeout(r, 100));
+    }
+    check(`${id} installed and running`, installed.json.ok === true && running);
   }
 
   // a fake Bot: an app's session and its signed calls; the owner works through these
   async function open(plugin, app) {
-    const manifest = plugins.manifestOf(plugins.rowOf(plugin));
     const ks = generate();
+    const manifest = manifests[plugin];
     const req = {
       plugin, app, open_id: random128(), ks_pub: ks.pub,
       perms_sha256: permsDigest(manifest.apps.find((a) => a.id === app).permissions), not_after: Date.now() + 3600_000,
     };
-    await sessions.open(req);
+    const opened = await post("/v1/host/sessions/open", req);
+    if (opened.json.ok !== true) throw Object.assign(new Error("session open failed"), { code: opened.json.code });
     return { ...req, ks };
   }
   // every result, by the plugin that sent it
   const seen = [];
   const keep = (plugin, v) => (seen.push({ plugin, text: typeof v === "string" ? v : JSON.stringify(v) }), v);
+  // a tool result as data: its structured content, else its first text read as JSON
+  const dataOf = (r) => {
+    if (r?.structuredContent && typeof r.structuredContent === "object") return r.structuredContent;
+    const t = (r?.content || []).find((c) => c.type === "text")?.text;
+    try { return JSON.parse(t); } catch { return null; }
+  };
   const appCall = async (o, tool, args = {}) => {
-    const env = { v: 1, typ: "buwiz-call", plugin: o.plugin, app: o.app, open_id: o.open_id, tool, args, ts: Date.now(), nonce: random128() };
-    return keep(o.plugin, resultData((await sessions.call({ envelope: env, sig: sign(o.ks.seed, signedBytes(env)) })).result));
+    const env = { v: 1, typ: "buwiz-call", plugin: o.plugin, app: o.app, open_id: o.open_id, tool, args, actor: "person", ts: Date.now(), nonce: random128() };
+    const c = await post("/v1/host/call", { envelope: env, sig: sign(o.ks.seed, signedBytes(env)) });
+    if (c.json.ok === false) throw Object.assign(new Error(c.json.message || c.json.code), { code: c.json.code });
+    if (c.json.result?.isError) throw Object.assign(new Error(dataOf(c.json.result)?.code || "tool_error"), { code: dataOf(c.json.result)?.code || "tool_error" });
+    return keep(o.plugin, dataOf(c.json.result));
   };
   const appRefused = (o, tool, args) => appCall(o, tool, args).then(() => false, () => true);
-  // the assistant: the Bot's own agent path (origin agent, app-only tools refused)
+  // the assistant: a chat in the broker, whose scripted model makes this one tool call; the broker's own agent path
+  // (origin agent, app-only tools refused) answers it, and the answer is read from the model's next request. One
+  // thread for the whole run.
+  for (const plugin of [BOOKS, EBIR]) {
+    const allowed = await post("/v1/host/tools/set", { bot: "chats", key: `v1:${plugin}`, state: "on" });
+    if (allowed.status !== 200 || allowed.json.ok !== true) throw new Error("could not switch the plugin on for chats");
+  }
+  const thread = (await post("/thread/new", {})).json.id;
+  let chats = 0;
   const agent = async (tool, input) => {
-    const r = await v1AgentCall(plugins, null, tool, input);
-    keep(tool.startsWith("books_") ? BOOKS : EBIR, r.content);
+    const name = `slice-b-${String(++chats).padStart(4, "0")}`;
+    model.script(name, [{ type: "tool_use", name: tool, input }]);
+    const started = await post("/chat", { prompt: `[[script:${name}]] go`, thread });
+    if (!Number.isInteger(started.json.id)) throw new Error(`the chat for ${tool} gave no job id`);
+    let job = {};
+    for (let i = 0; i < 600 && !job.done; i++) {
+      job = (await request("GET", `/status?id=${started.json.id}`)).json;
+      if (!job.done) await new Promise((r) => setTimeout(r, 100));
+    }
+    const rounds = model.requests.filter((r) => r.script === name).map((r) => r.body);
+    const answer = (rounds.find((b) => hasToolResults(b))?.messages?.at(-1)?.content ?? []).find((b) => b.type === "tool_result");
+    if (job.done !== true || !answer) throw new Error(`the chat for ${tool} did not answer`);
+    const text = typeof answer.content === "string" ? answer.content : (answer.content ?? []).map((c) => c.text ?? "").join("\n");
+    keep(tool.startsWith("books_") ? BOOKS : EBIR, text);
     let data = null;
-    try { data = JSON.parse(r.content); } catch { /* plain text */ }
-    return { error: r.is_error, text: r.content, data };
+    try { data = JSON.parse(text); } catch { /* plain text */ }
+    return { error: answer.is_error === true, text, data };
   };
   let rid = 0;
   const req = () => `slice-b-live-${String(++rid).padStart(4, "0")}`;
@@ -214,19 +258,20 @@ try {
   check("no TIN in any Books result, to the owner's app or the assistant", !seen.some((r) => r.plugin === BOOKS && tinIn(r.text)));
   check("no eBIRForms ticket in any Books result", !seen.some((r) => r.plugin === BOOKS && r.text.includes(taxpayer)));
   check("no TIN in eBIRForms' answers to the assistant (it names taxpayers by ticket)", !seen.some((r) => r.plugin === EBIR && tinIn(r.text)));
-  // the broker's logs, and eBIRForms' own (its BUWIZ_LOG_DIR is <data folder>/logs)
+  // the broker's log and data folder, and eBIRForms' own logs (its BUWIZ_LOG_DIR is <data folder>/logs)
   const filesIn = (dir) => (existsSync(dir) ? readdirSync(dir, { recursive: true }).map((f) => join(dir, String(f))) : []);
-  const logFiles = [...filesIn(join(RUN, "logs")), ...filesIn(join(EBIR_DATA, "logs"))].filter((f) => statSync(f).isFile());
+  const ebirLogs = filesIn(join(EBIR_DATA, "logs")).filter((f) => statSync(f).isFile());
+  const logFiles = [join(RUN, "broker.log"), ...filesIn(join(RUN, "data", "logs")).filter((f) => statSync(f).isFile()), ...ebirLogs];
   const logs = logFiles.map((f) => readFileSync(f, "utf8"));
   const secrets = readdirSync(join(RUN, "keys")).map((f) => readFileSync(join(RUN, "keys", f), "utf8").trim());
   const dbKey = existsSync(join(EBIR_DATA, "ebirforms.key")) ? readFileSync(join(EBIR_DATA, "ebirforms.key"), "utf8").trim() : "";
-  check("no TIN, plugin key or eBIRForms database key in the broker's or eBIRForms' logs", logFiles.some((f) => f.startsWith(join(EBIR_DATA, "logs"))) && logs.length > 0 && !logs.some((t) => tinIn(t) || [...secrets, dbKey].some((k) => k && t.includes(k))));
+  check("no TIN, plugin key or eBIRForms database key in the broker's or eBIRForms' logs", ebirLogs.length > 0 && logs.length > 0 && !logs.some((t) => tinIn(t) || [...secrets, dbKey].some((k) => k && t.includes(k))));
 
   status = results.every((r) => r.ok) ? 0 : 1;
 } catch (e) {
   check("run", false, `${e?.code || ""} ${scrub(String(e?.message || e)).slice(0, 400)}`);
 } finally {
-  await plugins.stopAll().catch(() => {});
+  await model.close().catch(() => {});
 }
 const failed = results.filter((r) => !r.ok).length;
 console.log(`\n${results.length - failed} pass, ${failed} fail`);
