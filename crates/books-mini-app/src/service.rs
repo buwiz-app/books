@@ -18,6 +18,8 @@ pub enum Origin {
     Agent,
     Routine,
     Resolve,
+    /// A generated widget. Books offers no tool to widgets.
+    Widget,
     Unknown,
 }
 
@@ -28,6 +30,7 @@ impl Origin {
             Self::Agent => "agent",
             Self::Routine => "routine",
             Self::Resolve => "resolve",
+            Self::Widget => "widget",
             Self::Unknown => "unknown",
         }
     }

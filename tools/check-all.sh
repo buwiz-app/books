@@ -59,15 +59,25 @@ no_detached_setters() {
   echo "0 findings: no detached setters in apps/"
 }
 
-sdk_links_follow_the_pin() {
-  local pin stale
-  pin="$(tools/sdk-pin.sh)" || return 1
-  stale="$(grep -rhoE 'buwiz-sdk/blob/[^/)]+|checkout [0-9a-f]{40}' README.md AGENTS.md docs | grep -vE "blob/$pin\$|checkout $pin\$" || true)"
-  [ -z "$stale" ] || { printf 'SDK links name a revision other than the pinned %s:\n%s\n' "$pin" "$stale"; return 1; }
-  echo "0 findings: SDK links name $pin"
+sdk_pins_agree() {
+  [ "$PIN_RC" -eq 0 ] || { printf '%s\n' "$PIN_OUT"; return 1; }
 }
 
-gate "SDK pins agree" sdk-pins tools/sdk-pin.sh
+sdk_links_follow_the_pin() {
+  local stale
+  [ "$PIN_RC" -eq 0 ] || { echo "no single pinned revision (see the SDK pins step)"; return 1; }
+  stale="$(grep -rhoE 'buwiz-sdk/blob/[^/)]+|checkout [0-9a-f]{40}' README.md AGENTS.md docs | grep -vE "blob/$PIN\$|checkout $PIN\$" || true)"
+  # any other full commit written after buwiz-sdk (a link path, a #fragment, a git URL, `buwiz-sdk @ <sha>`) must be the pin too
+  stale="$(printf '%s\n%s\n' "$stale" "$(grep -rhE 'buwiz-sdk' README.md AGENTS.md docs | grep -oE '[0-9a-f]{40}' | grep -vx "$PIN" || true)" | sed '/^$/d')"
+  [ -z "$stale" ] || { printf 'SDK links name a revision other than the pinned %s:\n%s\n' "$PIN" "$stale"; return 1; }
+  echo "0 findings: SDK links name $PIN"
+}
+
+# the pin, read once for the pins step and the doc-links step
+PIN_OUT="$(tools/sdk-pin.sh 2>&1)"; PIN_RC=$?
+PIN="$PIN_OUT"
+
+gate "SDK pins agree" sdk-pins sdk_pins_agree
 gate "no detached setters" setters no_detached_setters
 gate "cargo fmt --check" fmt cargo fmt --check
 gate "cargo clippy -D warnings" clippy cargo clippy --all-targets -- -D warnings
