@@ -931,21 +931,28 @@ fn a_card_is_no_tool_of_the_assistants() {
     );
 }
 
-/// Books marks no tool for a generated widget, so a widget's call is refused
-/// whatever it names, carries or presses: nothing posts, nothing is read.
+/// Books runs a tool only for the origins it serves (app, agent, routine, resolve). A generated widget (Books marks no
+/// tool for widgets), a mis-cased word, an origin it does not know and a call with no caller at all are refused for
+/// every tool, whatever they carry, and nothing is written.
 #[test]
-fn a_widget_caller_reaches_no_tool() {
+fn a_caller_books_does_not_serve_reaches_no_tool() {
     let dir = TempDir::new("widget-caller");
     let (mut bot, entry) = with_draft(&dir);
     let open_id = bot.open_session("books").to_string();
-    let callers = [
-        json!({ "origin": "widget", "plugin": manifest::PLUGIN_ID, "widget": "w1", "ts": now_ms() }),
-        json!({ "origin": "widget", "plugin": manifest::PLUGIN_ID, "widget": "w1", "app": "books", "open_id": open_id, "ts": now_ms() }),
-        json!({ "origin": "widget", "plugin": manifest::PLUGIN_ID, "widget": "w1", "ts": now_ms(),
-                "press": { "by": "ai", "who": "agent.broker" } }),
-        json!({ "origin": "widget", "plugin": manifest::PLUGIN_ID, "widget": "w1", "app": "books", "open_id": open_id, "ts": now_ms(),
-                "press": record(&post(&entry)) }),
-    ];
+    let mut callers = Vec::new();
+    for origin in ["widget", "Widget", "somebody", ""] {
+        let base = json!({ "origin": origin, "plugin": manifest::PLUGIN_ID, "widget": "w1", "ts": now_ms() });
+        let mut with_open = base.clone();
+        with_open["app"] = json!("books");
+        with_open["open_id"] = json!(open_id);
+        let mut with_ai = base.clone();
+        with_ai["press"] = json!({ "by": "ai", "who": "agent.broker" });
+        let mut with_yes = with_open.clone();
+        with_yes["press"] = record(&post(&entry));
+        callers.extend([base, with_open, with_ai, with_yes]);
+    }
+    // a call with no `_meta` at all
+    callers.push(Value::Null);
     for name in books_mini_app::tools::names() {
         let args = if name == "books_app_post_entry" {
             post(&entry)
@@ -956,9 +963,136 @@ fn a_widget_caller_reaches_no_tool() {
             assert_eq!(
                 code(&bot.raw(name, args.clone(), caller.clone())),
                 "permission_denied",
-                "{name}"
+                "{name}: {caller}"
             );
         }
     }
     assert_eq!(status(&mut bot, &entry), "draft");
+    let drafts = |bot: &mut Bot| {
+        data(&bot.app("books_ledger_list", json!({ "month": "2026-10" })))["counts"]["all"].clone()
+    };
+    assert_eq!(drafts(&mut bot), json!(1), "nothing was written");
+}
+
+/// A reserved tool is the host's own call and carries no caller, so no known origin is required, but a call that says
+/// it is a widget's is refused, and the open and the tickets are untouched.
+#[test]
+fn a_widget_cannot_call_a_reserved_tool() {
+    let dir = TempDir::new("widget-reserved");
+    let (mut bot, entry) = with_draft(&dir);
+    let open_id = bot.open_session("books").to_string();
+    let widget = json!({ "origin": "widget", "plugin": manifest::PLUGIN_ID, "widget": "w1", "ts": now_ms() });
+    for (name, args) in [
+        ("buwiz.session.close", json!({ "open_id": open_id })),
+        ("buwiz.ticket.resolve", json!({ "ticket": entry })),
+        ("buwiz.uninstall", json!({})),
+    ] {
+        assert_eq!(
+            code(&bot.raw(name, args, widget.clone())),
+            "permission_denied",
+            "{name}"
+        );
+    }
+    // the open still works, and the entry's ticket still resolves (as the host asks, with no caller)
+    assert_eq!(status(&mut bot, &entry), "draft");
+    let valid = bot.raw(
+        "buwiz.ticket.resolve",
+        json!({ "ticket": entry }),
+        Value::Null,
+    );
+    assert_eq!(data(&valid)["valid"], true, "{valid}");
+}
+
+/// A call that names an app or an open, whatever its origin, comes from an open Books certified and names a tool in
+/// that app's permissions: the assistant's press on a screen passes as before; an open Books never certified, another
+/// app's open and a tool outside the app's permissions are refused.
+#[test]
+fn a_call_naming_an_open_is_checked_whatever_its_origin() {
+    let dir = TempDir::new("agent-open");
+    let (mut bot, _entry) = with_draft(&dir);
+    let books_open = bot.open_session("books").to_string();
+    let home_open = bot.open_session("home").to_string();
+    let ai = json!({ "by": "ai", "who": "agent.broker" });
+    let agent = |app: Option<&str>, open: Option<&str>| {
+        let mut c = json!({ "origin": "agent", "plugin": manifest::PLUGIN_ID, "ts": now_ms(), "press": ai });
+        if let Some(a) = app {
+            c["app"] = json!(a);
+        }
+        if let Some(o) = open {
+            c["open_id"] = json!(o);
+        }
+        c
+    };
+    // certified open, granted tool: runs
+    let granted = new_draft("agent-open-0001");
+    data(&bot.raw(
+        "books_entry_draft",
+        granted,
+        agent(Some("books"), Some(&books_open)),
+    ));
+    // an open this process never certified
+    let fake = b64::encode(&[9u8; 16]);
+    assert_eq!(
+        code(&bot.raw(
+            "books_entry_draft",
+            new_draft("agent-open-0002"),
+            agent(Some("books"), Some(&fake))
+        )),
+        "permission_denied"
+    );
+    // another app's open under this app's name
+    assert_eq!(
+        code(&bot.raw(
+            "books_entry_draft",
+            new_draft("agent-open-0003"),
+            agent(Some("books"), Some(&home_open))
+        )),
+        "permission_denied"
+    );
+    // a tool outside the app's permissions: home does not list books_entry_draft
+    let manifest = manifest::unsigned(manifest::RELEASE_KEY_ID);
+    let home = manifest["apps"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|a| a["id"] == "home")
+        .unwrap();
+    assert!(
+        !home["permissions"]["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|t| t == "books_entry_draft")
+    );
+    assert_eq!(
+        code(&bot.raw(
+            "books_entry_draft",
+            new_draft("agent-open-0004"),
+            agent(Some("home"), Some(&home_open))
+        )),
+        "permission_denied"
+    );
+    // an open with no app, and an app with no open
+    assert_eq!(
+        code(&bot.raw(
+            "books_entry_draft",
+            new_draft("agent-open-0005"),
+            agent(None, Some(&books_open))
+        )),
+        "permission_denied"
+    );
+    assert_eq!(
+        code(&bot.raw(
+            "books_entry_draft",
+            new_draft("agent-open-0006"),
+            agent(Some("books"), None)
+        )),
+        "permission_denied"
+    );
+    // a read from a routine that names an open nobody certified
+    let routine = json!({ "origin": "routine", "plugin": manifest::PLUGIN_ID, "ts": now_ms(), "routine": "r", "app": "books", "open_id": fake });
+    assert_eq!(
+        code(&bot.raw("books_status", json!({}), routine)),
+        "permission_denied"
+    );
 }

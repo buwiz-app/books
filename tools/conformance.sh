@@ -23,7 +23,7 @@
 # Usage: tools/conformance.sh [runner args, e.g. --json]
 # Env:   BUWIZ_SDK_DIR (required): a buwiz-sdk checkout
 #          (https://github.com/buwiz-app/buwiz-sdk) at the revision this repo
-#          pins (crates/books-mini-app/Cargo.toml), with its dependencies
+#          pins (the root Cargo.toml), with its dependencies
 #          installed (bun install)
 #        BUWIZ_BROKER_BIN (a buwiz-broker binary; signs in place of the SDK's
 #          sign-manifest.mjs)

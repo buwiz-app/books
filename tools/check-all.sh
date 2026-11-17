@@ -63,6 +63,8 @@ sdk_links_follow_the_pin() {
   local pin stale
   pin="$(tools/sdk-pin.sh)" || return 1
   stale="$(grep -rhoE 'buwiz-sdk/blob/[^/)]+|checkout [0-9a-f]{40}' README.md AGENTS.md docs | grep -vE "blob/$pin\$|checkout $pin\$" || true)"
+  # any other full commit written after buwiz-sdk (a link path, a #fragment, a git URL) must be the pin too
+  stale="$stale$(grep -rhoE 'buwiz-sdk[^ )]*[0-9a-f]{40}' README.md AGENTS.md docs | grep -oE '[0-9a-f]{40}' | grep -vx "$pin" || true)"
   [ -z "$stale" ] || { printf 'SDK links name a revision other than the pinned %s:\n%s\n' "$pin" "$stale"; return 1; }
   echo "0 findings: SDK links name $pin"
 }

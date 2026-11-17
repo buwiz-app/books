@@ -169,8 +169,18 @@ impl Server {
             Some(Value::Object(arguments)) => arguments,
             Some(_) => return Ok(fail("invalid_args", "arguments must be a JSON object")),
         };
-        // reserved tools first; an unknown buwiz.* is method-not-found (7.9)
+        // reserved tools first; an unknown buwiz.* is method-not-found (7.9).
+        // The host calls these itself (never an app or the model) and sends no
+        // `buwiz/caller` on them (protocol 1.0 section 16.1 puts it on plugin
+        // tools), so no known origin can be required here. A call that says it
+        // is a widget's is refused all the same.
         if name.starts_with("buwiz.") {
+            if Caller::of(params).origin == Origin::Widget {
+                return Ok(fail(
+                    "permission_denied",
+                    "a reserved tool is not offered to widgets",
+                ));
+            }
             let now = now_ms();
             return match self
                 .host
@@ -211,9 +221,14 @@ impl Server {
         approved: bool,
     ) -> Result<(), String> {
         let tool = tools::find(name).ok_or("no such tool")?;
-        // Books marks no tool for widgets: a widget's call is refused whole
-        if caller.origin == Origin::Widget {
-            return Err(format!("{name} is not offered to widgets"));
+        // fail closed: only the origins Books serves run a tool. A widget (Books
+        // marks no tool for widgets), an origin this build does not know and a
+        // call with no `buwiz/caller` are refused for every tool
+        if !matches!(
+            caller.origin,
+            Origin::App | Origin::Agent | Origin::Routine | Origin::Resolve
+        ) {
+            return Err(format!("{name} is not offered to this caller"));
         }
         // post, void, close, reopen, confirm and hand-off are the
         // user's clicks in the Books app
@@ -258,7 +273,13 @@ impl Server {
                     .to_string(),
             );
         }
-        if caller.origin != Origin::App && !on_screen {
+        // any call that names an app or an open, whatever its origin, comes from
+        // an open Books certified and names a tool in that app's permissions
+        if caller.origin != Origin::App
+            && !on_screen
+            && caller.app.is_none()
+            && caller.open_id.is_none()
+        {
             return Ok(());
         }
         let app = caller.app.as_deref().ok_or("an app call names no app")?;
