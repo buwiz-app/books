@@ -42,6 +42,8 @@ fn error_response(id: Value, code: i64, message: &str) -> Value {
 }
 
 struct Caller {
+    /// Whether the call carried a `buwiz/caller` at all (anything but absent or null).
+    present: bool,
     origin: Origin,
     app: Option<String>,
     open_id: Option<String>,
@@ -74,6 +76,7 @@ impl Caller {
             _ => Origin::Unknown,
         };
         Self {
+            present: caller.is_some_and(|c| !c.is_null()),
             origin,
             app: text("app"),
             open_id: text("open_id"),
@@ -169,16 +172,16 @@ impl Server {
             Some(Value::Object(arguments)) => arguments,
             Some(_) => return Ok(fail("invalid_args", "arguments must be a JSON object")),
         };
+        // The caller is read once, for the reserved branch and for `authorize`.
+        let caller = Caller::of(params);
         // reserved tools first; an unknown buwiz.* is method-not-found (7.9).
-        // The host calls these itself (never an app or the model) and sends no
-        // `buwiz/caller` on them (protocol 1.0 section 16.1 puts it on plugin
-        // tools), so no known origin can be required here. A call that says it
-        // is a widget's is refused all the same.
+        // The host makes every reserved call itself with no `_meta`, so a reserved call
+        // that carries any `buwiz/caller`, whatever its origin, is not the host's: refused.
         if name.starts_with("buwiz.") {
-            if Caller::of(params).origin == Origin::Widget {
+            if caller.present {
                 return Ok(fail(
                     "permission_denied",
-                    "a reserved tool is not offered to widgets",
+                    "a reserved tool is the host's own call and carries no caller",
                 ));
             }
             let now = now_ms();
@@ -201,7 +204,6 @@ impl Server {
         if tools::find(name).is_none() {
             return Err((INVALID_PARAMS, "no such tool".into()));
         }
-        let caller = Caller::of(params);
         let approved = caller.approved(name, arguments);
         if let Err(message) = self.authorize(name, arguments, &caller, approved.is_some()) {
             return Ok(fail("permission_denied", &message));

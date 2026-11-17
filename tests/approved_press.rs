@@ -974,26 +974,50 @@ fn a_caller_books_does_not_serve_reaches_no_tool() {
     assert_eq!(drafts(&mut bot), json!(1), "nothing was written");
 }
 
-/// A reserved tool is the host's own call and carries no caller, so no known origin is required, but a call that says
-/// it is a widget's is refused, and the open and the tickets are untouched.
+/// A reserved tool is the host's own call and carries no `_meta`. A reserved call that carries any caller, whatever
+/// its origin, is refused, and nothing it asked for happens: no session opens, none closes, no ticket is forgotten.
 #[test]
-fn a_widget_cannot_call_a_reserved_tool() {
-    let dir = TempDir::new("widget-reserved");
+fn a_reserved_call_that_carries_a_caller_is_refused() {
+    let dir = TempDir::new("reserved-caller");
     let (mut bot, entry) = with_draft(&dir);
     let open_id = bot.open_session("books").to_string();
-    let widget = json!({ "origin": "widget", "plugin": manifest::PLUGIN_ID, "widget": "w1", "ts": now_ms() });
-    for (name, args) in [
+    let app = manifest::unsigned(manifest::RELEASE_KEY_ID)["apps"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|a| a["id"] == "books")
+        .unwrap()
+        .clone();
+    let forged_open = b64::encode(&[3u8; 16]);
+    let seed = [11u8; 32];
+    let open_args = json!({ "app": "books", "open_id": forged_open, "ks_pub": b64::encode(&[5u8; 32]),
+        "perms_sha256": manifest::permissions_digest(&app).unwrap(), "not_after": now_ms() + 3_600_000 });
+    let provision = json!({ "protocol": "1.0.0", "plugin": manifest::PLUGIN_ID,
+        "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": b64::encode(SigningKey::from_bytes(&seed).verifying_key().as_bytes()) });
+    let calls = [
+        ("buwiz.provision", provision),
+        ("buwiz.session.open", open_args.clone()),
         ("buwiz.session.close", json!({ "open_id": open_id })),
         ("buwiz.ticket.resolve", json!({ "ticket": entry })),
         ("buwiz.uninstall", json!({})),
+    ];
+    let mut callers = Vec::new();
+    for origin in [
+        "agent", "app", "routine", "resolve", "widget", "Widget", "somebody", "",
     ] {
-        assert_eq!(
-            code(&bot.raw(name, args, widget.clone())),
-            "permission_denied",
-            "{name}"
-        );
+        callers.push(json!({ "origin": origin, "plugin": manifest::PLUGIN_ID, "app": "books", "open_id": open_id, "ts": now_ms() }));
     }
-    // the open still works, and the entry's ticket still resolves (as the host asks, with no caller)
+    callers.push(json!({}));
+    for (name, args) in &calls {
+        for caller in &callers {
+            assert_eq!(
+                code(&bot.raw(name, args.clone(), caller.clone())),
+                "permission_denied",
+                "{name} {caller}"
+            );
+        }
+    }
+    // nothing happened: the open still works, the ticket still resolves, the forged open was never made
     assert_eq!(status(&mut bot, &entry), "draft");
     let valid = bot.raw(
         "buwiz.ticket.resolve",
@@ -1001,6 +1025,15 @@ fn a_widget_cannot_call_a_reserved_tool() {
         Value::Null,
     );
     assert_eq!(data(&valid)["valid"], true, "{valid}");
+    let forged = json!({ "origin": "agent", "plugin": manifest::PLUGIN_ID, "app": "books", "open_id": forged_open,
+        "ts": now_ms(), "press": { "by": "ai", "who": "agent.broker" } });
+    assert_eq!(
+        code(&bot.raw("books_entry_draft", new_draft("forged-open-01"), forged)),
+        "permission_denied"
+    );
+    // the host's own form, with no caller, still works, as does `buwiz/caller: null`
+    let opened = bot.raw("buwiz.session.open", open_args, Value::Null);
+    assert_eq!(opened["isError"], false, "{opened}");
 }
 
 /// A call that names an app or an open, whatever its origin, comes from an open Books certified and names a tool in
