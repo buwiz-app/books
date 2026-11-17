@@ -70,6 +70,7 @@ impl Caller {
             Some("agent") => Origin::Agent,
             Some("routine") => Origin::Routine,
             Some("resolve") => Origin::Resolve,
+            Some("widget") => Origin::Widget,
             _ => Origin::Unknown,
         };
         Self {
@@ -210,6 +211,10 @@ impl Server {
         approved: bool,
     ) -> Result<(), String> {
         let tool = tools::find(name).ok_or("no such tool")?;
+        // Books marks no tool for widgets: a widget's call is refused whole
+        if caller.origin == Origin::Widget {
+            return Err(format!("{name} is not offered to widgets"));
+        }
         // post, void, close, reopen, confirm and hand-off are the
         // user's clicks in the Books app
         // an app-only write needs the person's own click: a press record says the AI's

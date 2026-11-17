@@ -930,3 +930,35 @@ fn a_card_is_no_tool_of_the_assistants() {
         "permission_denied"
     );
 }
+
+/// Books marks no tool for a generated widget, so a widget's call is refused
+/// whatever it names, carries or presses: nothing posts, nothing is read.
+#[test]
+fn a_widget_caller_reaches_no_tool() {
+    let dir = TempDir::new("widget-caller");
+    let (mut bot, entry) = with_draft(&dir);
+    let open_id = bot.open_session("books").to_string();
+    let callers = [
+        json!({ "origin": "widget", "plugin": manifest::PLUGIN_ID, "widget": "w1", "ts": now_ms() }),
+        json!({ "origin": "widget", "plugin": manifest::PLUGIN_ID, "widget": "w1", "app": "books", "open_id": open_id, "ts": now_ms() }),
+        json!({ "origin": "widget", "plugin": manifest::PLUGIN_ID, "widget": "w1", "ts": now_ms(),
+                "press": { "by": "ai", "who": "agent.broker" } }),
+        json!({ "origin": "widget", "plugin": manifest::PLUGIN_ID, "widget": "w1", "app": "books", "open_id": open_id, "ts": now_ms(),
+                "press": record(&post(&entry)) }),
+    ];
+    for name in books_mini_app::tools::names() {
+        let args = if name == "books_app_post_entry" {
+            post(&entry)
+        } else {
+            json!({ "client_request_id": "widget-0001", "entry": entry })
+        };
+        for caller in &callers {
+            assert_eq!(
+                code(&bot.raw(name, args.clone(), caller.clone())),
+                "permission_denied",
+                "{name}"
+            );
+        }
+    }
+    assert_eq!(status(&mut bot, &entry), "draft");
+}
