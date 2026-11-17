@@ -59,6 +59,7 @@ pub const OWED_LIST: &str = "books_owed_list";
 pub const OWED_OPTIONS: &str = "books_owed_options";
 pub const REPORT: &str = "books_report";
 pub const REPORT_CSV: &str = "books_report_csv";
+pub const REPORT_XLSX: &str = "books_app_report_xlsx";
 pub const PERSON_CREATE: &str = "books_app_person_create";
 pub const TAG_CREATE: &str = "books_app_tag_create";
 pub const OWED_CREATE: &str = "books_app_owed_create";
@@ -248,6 +249,17 @@ fn tags_schema() -> Value {
 
 fn owed_schema() -> Value {
     json!({ "type": "object", "properties": { "book": { "type": "string" }, "side": { "type": "string", "enum": ["collect", "pay"] }, "owed": { "type": "string", "description": "A document ticket: adds its payment history as detail." } } })
+}
+
+fn report_xlsx_schema() -> Value {
+    let mut s = report_schema();
+    s["properties"]["kind"] = json!({ "type": "string", "enum": ["pl", "bs", "cf"] });
+    if let Some(p) = s["properties"].as_object_mut() {
+        for k in ["side", "account", "person", "from", "to", "filter"] {
+            p.remove(k);
+        }
+    }
+    s
 }
 
 fn report_schema() -> Value {
@@ -730,6 +742,14 @@ pub const TOOLS: &[Tool] = &[
         write: false,
         schema: report_schema,
         description: "The same report as CSV text, amounts as two-place decimal text; takes the same compare_to and tag.",
+    },
+    Tool {
+        name: REPORT_XLSX,
+        reach: Reach::App,
+        // it writes a file the Bot then saves to Downloads
+        write: true,
+        schema: report_xlsx_schema,
+        description: "Save the P&L, balance sheet or cash flow as an Excel file to Downloads, after the user's click. The same rows as the CSV, amounts as numbers.",
     },
     Tool {
         name: PERSON_CREATE,
@@ -1563,6 +1583,29 @@ pub fn call(
         OWED_REPEAT => write(books, name, origin, arguments, |tx| {
             owed_repeats::repeat(tx, arguments)
         }),
+        REPORT_XLSX => {
+            if !origin.is_app() {
+                return Some(fail(
+                    "forbidden",
+                    "Only the Books app may save a report as an Excel file.",
+                ));
+            }
+            let dir = books.data_dir().to_path_buf();
+            let mut out = read(books, arguments, |store, book, args| {
+                crate::report_xlsx::export(store, book, args, &dir)
+            });
+            // the file rides on the result's _meta, never in the text
+            if out["isError"] == false
+                && let Some(save) = out["structuredContent"]
+                    .as_object_mut()
+                    .and_then(|o| o.remove("_save"))
+            {
+                out["content"] =
+                    json!([{ "type": "text", "text": out["structuredContent"].to_string() }]);
+                out["_meta"] = json!({ "buwiz/save": save });
+            }
+            out
+        }
         MONTH_PACK => {
             let mut out = read(books, arguments, |store, book, args| {
                 month_pack::pack(store, book, args)

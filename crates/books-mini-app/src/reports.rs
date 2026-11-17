@@ -678,6 +678,39 @@ fn csv_cell(text: &str) -> String {
     }
 }
 
+/// An amount as shown ("\u{2212}1,234.50", "+90.00") as plain two-place text
+/// ("-1234.50", "90.00"): what the CSV and the Excel export both carry.
+pub(crate) fn plain_amount(v: &Value) -> String {
+    v.as_str()
+        .unwrap_or("")
+        .replace(',', "")
+        .replace('\u{2212}', "-")
+        .replace('+', "")
+}
+
+/// The file name of a report export, `books-pl-2026-10.<ext>`, with the
+/// compare period and the tag kind when the report has them.
+pub(crate) fn export_name(r: &Value, args: &Map<String, Value>, ext: &str) -> String {
+    let mut name = format!(
+        "books-{}-{}",
+        r["kind"].as_str().unwrap_or("report"),
+        r["period"]["key"].as_str().unwrap_or("")
+    );
+    if text(args, "compare_to").is_some()
+        && let Some(k) = r["compare"]["key"].as_str()
+    {
+        name.push_str(&format!("-vs-{k}"));
+    }
+    match r["tag"]["kind"].as_str() {
+        Some("department") => name.push_str("-dept"),
+        Some("location") => name.push_str("-loc"),
+        _ => {}
+    }
+    name.push('.');
+    name.push_str(ext);
+    name
+}
+
 /// `books_report_csv`: the same report as CSV text, amounts as two-place
 /// decimal text (no thousands separators, a plain minus).
 pub fn report_csv(store: &Store, book: Book, args: &Map<String, Value>, origin: Origin) -> Answer {
@@ -685,13 +718,7 @@ pub fn report_csv(store: &Store, book: Book, args: &Map<String, Value>, origin: 
         return crate::ledger_csv::ledger_csv(store, book, args, origin);
     }
     let r = report(store, book, args)?;
-    let plain = |v: &Value| -> String {
-        v.as_str()
-            .unwrap_or("")
-            .replace(',', "")
-            .replace('\u{2212}', "-")
-            .replace('+', "")
-    };
+    let plain = plain_amount;
     let mut lines: Vec<String> = Vec::new();
     let cols: Vec<String> = r["columns"]
         .as_array()
@@ -775,21 +802,6 @@ pub fn report_csv(store: &Store, book: Book, args: &Map<String, Value>, origin: 
             lines.push(net.join(","));
         }
     }
-    let mut name = format!(
-        "books-{}-{}",
-        r["kind"].as_str().unwrap_or("report"),
-        r["period"]["key"].as_str().unwrap_or("")
-    );
-    if text(args, "compare_to").is_some()
-        && let Some(k) = r["compare"]["key"].as_str()
-    {
-        name.push_str(&format!("-vs-{k}"));
-    }
-    match r["tag"]["kind"].as_str() {
-        Some("department") => name.push_str("-dept"),
-        Some("location") => name.push_str("-loc"),
-        _ => {}
-    }
-    name.push_str(".csv");
+    let name = export_name(&r, args, "csv");
     Ok(json!({ "file_name": name, "csv": lines.join("\n") + "\n", "rows": lines.len() }))
 }

@@ -138,6 +138,12 @@ impl Books {
     }
 
     /// Whether a store file exists (without making one).
+    /// The folder the store lives in: the plugin's own data folder, where a
+    /// file is handed to the Bot.
+    pub fn data_dir(&self) -> &std::path::Path {
+        &self.paths.dir
+    }
+
     pub fn exists(&self) -> bool {
         self.store.is_some() || self.paths.db().exists()
     }

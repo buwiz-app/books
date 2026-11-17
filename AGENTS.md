@@ -17,7 +17,9 @@ These cannot be inferred from the code.
    without an owner decision.
 2. **Money is integer centavos.** Use `i64`, with `i128` for intermediates. JSON carries two-decimal text such as
    `"200000.00"`. No floats anywhere in a money path (the crates deny float lints; no `parseFloat` or JS `number` in
-   the apps). Measures are exact sums and are never rounded.
+   the apps). Measures are exact sums and are never rounded. The one exception is the Excel export
+   (`report_xlsx.rs`): a spreadsheet cell stores a number as a double, so a report's two-place amount text is parsed
+   into one, with nothing added, rounded or computed, and an amount of more than 15 digits is refused.
 3. **Privacy.**
    - Never put a raw TIN, a ticket value (`tkt_...`), a key, a token or a memo into a link, log, title, app prop,
      store file, fixture, test or doc. Use synthetic values only.

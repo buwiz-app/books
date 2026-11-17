@@ -40,6 +40,7 @@ pub mod press;
 pub mod reconcile;
 pub mod reconcile_document;
 pub mod records;
+pub mod report_xlsx;
 pub mod reports;
 pub mod reserved;
 pub mod service;

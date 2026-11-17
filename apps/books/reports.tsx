@@ -88,6 +88,14 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
       (e: Any) => toast(errText(e)),
     );
   };
+  // the Bot saves the file to Downloads and says so
+  const exportXlsx = () => {
+    const args = reportArgs(repKind(), repPeriodKind(), repPeriod(), repCompare(), repTag());
+    buwiz.call("books_app_report_xlsx", args).then(
+      () => {},
+      (e: Any) => toast(errText(e)),
+    );
+  };
   const monthPack = () => {
     if (buwiz.preview)
       buwiz
@@ -112,6 +120,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
             }}
           />
           <Btn label="Export CSV" onPress={exportCsv} />
+          {["pl", "bs", "cf"].includes(repKind()) ? <Btn label="Export Excel" onPress={exportXlsx} /> : null}
           {repPeriodKind() === "month" ? <Btn label="Month pack" onPress={monthPack} /> : null}
         </View>
       </Head>

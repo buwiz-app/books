@@ -47,7 +47,7 @@ fn the_manifest_has_the_books_identity() {
     assert_eq!(m["protocol"], "1.0.0");
     assert_eq!(m["id"], "app.buwiz.books");
     assert_eq!(m["short"], "books");
-    assert_eq!(m["version"], "0.7.0");
+    assert_eq!(m["version"], "0.8.0");
     assert_eq!(m["publisher"]["id"], "app.buwiz");
     assert_eq!(m["publisher"]["key_id"], "gc-2026-01");
     assert!(m.get("signature").is_none() && m.get("needs").is_none());
@@ -299,7 +299,14 @@ fn no_float_type_appears_in_the_crates() {
         for entry in std::fs::read_dir(&dir).unwrap() {
             let path = entry.unwrap().path();
             let text = std::fs::read_to_string(&path).unwrap();
+            // the one exception (AGENTS.md invariant 2): an Excel cell stores a
+            // number as a double, so `report_xlsx.rs` parses a two-place amount
+            // into one and computes nothing with it
+            let xlsx = path.ends_with("report_xlsx.rs");
             for ty in ["f32", "f64", "as_f64"] {
+                if xlsx && ty != "as_f64" {
+                    continue;
+                }
                 assert!(!text.contains(ty), "{} mentions {ty}", path.display());
             }
         }
