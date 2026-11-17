@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Buwiz Books is a Buwiz Bot mini app: plugin id `app.buwiz.books`, publisher `app.buwiz`, Buwiz mini app protocol
-1.0 ([buwiz-sdk `docs/protocol-1.0.md`](https://github.com/buwiz-app/buwiz-sdk/blob/e1de9c4487de6a9b6509e53ed1e990d699cad454/docs/protocol-1.0.md)).
+1.0 ([buwiz-sdk `docs/protocol-1.0.md`](https://github.com/buwiz-app/buwiz-sdk/blob/8f95537270815e75d0a23488ca12d175138c6d91/docs/protocol-1.0.md)).
 README.md covers the build, gates and releases.
 
 ## Invariants
