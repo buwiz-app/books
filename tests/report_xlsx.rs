@@ -5,6 +5,7 @@
 
 use std::collections::HashMap;
 use std::io::Cursor;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use books_mini_app::jsonrpc::Server;
 use books_mini_app::manifest::{self, Source};
@@ -18,8 +19,22 @@ use serde_json::{Map, Value, json};
 
 const XLSX: &str = "books_app_report_xlsx";
 
+/// A client_request_id no other call in this run has used.
+fn fresh_id() -> String {
+    static N: AtomicU64 = AtomicU64::new(0);
+    format!("xlsx-test-{:04}", N.fetch_add(1, Ordering::Relaxed))
+}
+
+/// The call's arguments; an export without an id gets a fresh one.
+fn with_id(name: &str, mut args: Value) -> Value {
+    if name == XLSX && args.get("client_request_id").is_none() {
+        args["client_request_id"] = json!(fresh_id());
+    }
+    args
+}
+
 fn raw(books: &mut Books, name: &str, args: Value, origin: Origin) -> Value {
-    let args: Map<String, Value> = args.as_object().unwrap().clone();
+    let args: Map<String, Value> = with_id(name, args).as_object().unwrap().clone();
     tools::call(name, &args, origin, books).unwrap()
 }
 
@@ -40,6 +55,8 @@ fn golden() -> (TempDir, Books) {
     .unwrap();
     let book: Value = serde_json::from_str(&text).unwrap();
     demo::seed(&mut books, &book).unwrap();
+    // a host that honours buwiz/save
+    books.host_saves = true;
     (dir, books)
 }
 
@@ -359,6 +376,7 @@ fn edge_book() -> (TempDir, Books) {
     books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
     let dir = TempDir::new("xlsx-edge");
     let mut b = Books::new(Paths::in_dir(dir.0.join("store")));
+    b.host_saves = true;
     call(
         &mut b,
         "books_app_book_create",
@@ -605,11 +623,28 @@ impl Bot {
             next: 1,
             sessions: HashMap::new(),
         };
+        bot.initialize(
+            json!({ "buwiz/documents": ["word", "sheet", "image", "pdf", "open_with", "save"] }),
+        );
         let seed = [11u8; 32];
         let public = b64::encode(SigningKey::from_bytes(&seed).verifying_key().as_bytes());
         let p = bot.raw("buwiz.provision", json!({ "protocol": "1.0.0", "plugin": manifest::PLUGIN_ID, "key": { "alg": "ed25519", "seed": b64::encode(&seed) }, "pub": public }), Value::Null);
         assert_eq!(p["isError"], false, "{p}");
         bot
+    }
+
+    /// The host's `initialize`, with these experimental capabilities.
+    fn initialize(&mut self, experimental: Value) {
+        let reply = self
+            .server
+            .handle(
+                &json!({ "jsonrpc": "2.0", "id": 0, "method": "initialize", "params": {
+                "protocolVersion": "2025-11-25",
+                "capabilities": { "experimental": experimental },
+                "clientInfo": { "name": "test", "version": "0" } } }),
+            )
+            .unwrap();
+        assert!(reply.get("result").is_some(), "{reply}");
     }
 
     fn open_session(&mut self, app_id: &str) -> String {
@@ -638,7 +673,7 @@ impl Bot {
     fn raw(&mut self, name: &str, args: Value, caller: Value) -> Value {
         let id = self.next;
         self.next += 1;
-        let mut params = json!({ "name": name, "arguments": args });
+        let mut params = json!({ "name": name, "arguments": with_id(name, args) });
         if !caller.is_null() {
             params["_meta"] = json!({ "buwiz/caller": caller });
         }
@@ -938,4 +973,197 @@ fn the_csv_and_the_workbook_come_from_one_row_builder_and_count_rows_alike() {
             assert_eq!(csv["rows"], want.len());
         }
     }
+}
+
+// ---- a write: one id, one file; and a host that saves --------------------
+
+/// The hand-off folders in the plugin's data folder.
+fn hand_offs(dir: &TempDir) -> usize {
+    std::fs::read_dir(dir.0.join("store"))
+        .unwrap()
+        .flatten()
+        .filter(|e| e.file_name().to_string_lossy().starts_with("open-"))
+        .count()
+}
+
+#[test]
+fn the_same_id_twice_is_one_file_and_one_hand_off_and_two_ids_are_two() {
+    let dir = TempDir::new("xlsx-repeat");
+    let mut bot = Bot::new(&dir);
+    let args = json!({ "client_request_id": "xlsx-same-0001", "kind": "pl", "period": "2026-10" });
+
+    let first = bot.app_on("books", XLSX, args.clone());
+    assert_eq!(first["isError"], false, "{first}");
+    assert!(first["_meta"]["buwiz/save"]["path"].is_string());
+    assert!(first["structuredContent"].get("already_sent").is_none());
+    assert_eq!(hand_offs(&dir), 1);
+
+    // the same id: no second file, nothing for the Bot to save, said so
+    let again = bot.app_on("books", XLSX, args.clone());
+    assert_eq!(again["isError"], false, "{again}");
+    assert!(again.get("_meta").is_none(), "a repeat hands nothing over");
+    assert_eq!(again["structuredContent"]["already_sent"], true);
+    assert_eq!(
+        again["structuredContent"]["file_name"],
+        first["structuredContent"]["file_name"]
+    );
+    assert!(
+        again["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("already_sent")
+    );
+    assert!(!again.to_string().contains("open-"), "no path in a repeat");
+    assert_eq!(hand_offs(&dir), 1, "no second file");
+
+    // the same id for another report is refused, and makes no file
+    let other = bot.app_on(
+        "books",
+        XLSX,
+        json!({ "client_request_id": "xlsx-same-0001", "kind": "bs", "period": "2026-10" }),
+    );
+    assert_eq!(other["isError"], true, "{other}");
+    assert_eq!(other["structuredContent"]["code"], "request_id_reused");
+    assert!(other.get("_meta").is_none());
+    assert_eq!(hand_offs(&dir), 1);
+
+    // a new id is a new file and a new hand-off
+    let mut next = args.clone();
+    next["client_request_id"] = json!("xlsx-same-0002");
+    let second = bot.app_on("books", XLSX, next);
+    assert_eq!(second["isError"], false, "{second}");
+    assert!(second["structuredContent"].get("already_sent").is_none());
+    assert_ne!(
+        second["_meta"]["buwiz/save"]["path"],
+        first["_meta"]["buwiz/save"]["path"]
+    );
+    assert_eq!(hand_offs(&dir), 2);
+
+    // no id: refused, no file
+    let mut bare = Books::new(Paths::in_dir(dir.0.join("store")));
+    bare.host_saves = true;
+    let args: Map<String, Value> = json!({ "kind": "pl", "period": "2026-10" })
+        .as_object()
+        .unwrap()
+        .clone();
+    let r = tools::call(XLSX, &args, Origin::App, &mut bare).unwrap();
+    assert_eq!(r["isError"], true, "{r}");
+    assert_eq!(r["structuredContent"]["code"], "invalid_args");
+    assert!(r.get("_meta").is_none());
+}
+
+#[test]
+fn the_tool_asks_for_a_client_request_id() {
+    let listed = tools::list();
+    let t = listed.iter().find(|t| t["name"] == XLSX).unwrap();
+    assert_eq!(t["inputSchema"]["required"], json!(["client_request_id"]));
+    assert!(t["inputSchema"]["properties"]["client_request_id"].is_object());
+}
+
+#[test]
+fn a_host_that_does_not_save_gets_a_plain_error_and_no_file() {
+    let dir = TempDir::new("xlsx-nosave");
+    let mut bot = Bot::new(&dir);
+    let args = json!({ "kind": "pl", "period": "2026-10" });
+    for said in [
+        json!({}),
+        Value::Null,
+        json!({ "buwiz/documents": [] }),
+        json!({ "buwiz/documents": ["word", "sheet", "image", "pdf", "open_with"] }),
+        json!({ "buwiz/documents": "save" }),
+    ] {
+        bot.initialize(said.clone());
+        let r = bot.app_on("books", XLSX, args.clone());
+        assert_eq!(r["isError"], true, "{said}: {r}");
+        assert_eq!(r["structuredContent"]["code"], "not_supported", "{r}");
+        assert!(r.get("_meta").is_none(), "{r}");
+        assert!(
+            r["content"][0]["text"]
+                .as_str()
+                .unwrap()
+                .contains("cannot save a file")
+        );
+        assert_eq!(hand_offs(&dir), 0, "no file when the host cannot save");
+    }
+    // a host that says "save" gets the file
+    bot.initialize(json!({ "buwiz/documents": ["save"] }));
+    let r = bot.app_on("books", XLSX, args.clone());
+    assert_eq!(r["isError"], false, "{r}");
+    assert!(r["_meta"]["buwiz/save"]["path"].is_string());
+    assert_eq!(hand_offs(&dir), 1);
+    // and one that says nothing at all, as the first test host did not
+    let mut quiet = Books::new(Paths::in_dir(dir.0.join("store")));
+    let a: Map<String, Value> = with_id(XLSX, args).as_object().unwrap().clone();
+    let r = tools::call(XLSX, &a, Origin::App, &mut quiet).unwrap();
+    assert_eq!(r["structuredContent"]["code"], "not_supported", "{r}");
+}
+
+/// Centavos of a two-place amount text, with no float.
+fn centavos(t: &str) -> i64 {
+    let (neg, body) = t.strip_prefix('-').map_or((false, t), |b| (true, b));
+    let n: i64 = body.replace('.', "").parse().unwrap();
+    if neg { -n } else { n }
+}
+
+/// Every section-total row is the sum of the item rows of the section it
+/// sits under, in each amount column, to the centavo.
+fn assert_totals_are_their_sections(t: &Table) -> usize {
+    let cols = t.header.len() - 3;
+    let mut sums = vec![0i64; cols];
+    let mut seen = 0;
+    for row in &t.rows {
+        let amounts: Vec<i64> = (0..cols)
+            .map(|c| match &row.cells[3 + c] {
+                Cell::Amount(x) => centavos(x),
+                _ => 0,
+            })
+            .collect();
+        match row.role {
+            report_xlsx::Role::Item => {
+                for (s, a) in sums.iter_mut().zip(&amounts) {
+                    *s += a;
+                }
+            }
+            report_xlsx::Role::SectionTotal => {
+                assert_eq!(amounts, sums, "{:?} is its own section's sum", row.cells[2]);
+                sums = vec![0; cols];
+                seen += 1;
+            }
+            report_xlsx::Role::Net => {}
+        }
+    }
+    seen
+}
+
+#[test]
+fn each_pl_section_total_is_the_sum_of_its_own_rows() {
+    let (_dir, mut b) = golden();
+    for compare in ["none", "previous", "last_year"] {
+        let args = json!({ "kind": "pl", "period": "2026-10", "compare_to": compare });
+        let report = call(&mut b, "books_report", args)["structuredContent"].clone();
+        let t = report_xlsx::table(&report).unwrap();
+        assert_eq!(t.header.len(), if compare == "none" { 4 } else { 5 });
+        assert_eq!(
+            assert_totals_are_their_sections(&t),
+            2,
+            "revenue and expenses, {compare}"
+        );
+    }
+    // a book where revenue and expenses are not in the same order of size
+    let (_dir, mut e) = edge_book();
+    let args = json!({ "kind": "pl", "period": "2026-10" });
+    let report = call(&mut e, "books_report", args)["structuredContent"].clone();
+    let t = report_xlsx::table(&report).unwrap();
+    assert_eq!(assert_totals_are_their_sections(&t), 2);
+}
+
+#[test]
+fn a_pl_total_is_paired_by_its_label_not_its_place() {
+    let (_dir, mut b) = golden();
+    let args = json!({ "kind": "pl", "period": "2026-10", "compare_to": "none" });
+    let mut report = call(&mut b, "books_report", args)["structuredContent"].clone();
+    let before = report_xlsx::table(&report).unwrap();
+    // the two totals in the other order: each still lands under its section
+    report["totals"].as_array_mut().unwrap().reverse();
+    assert_eq!(report_xlsx::table(&report).unwrap(), before);
 }

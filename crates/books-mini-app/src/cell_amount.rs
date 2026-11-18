@@ -1,7 +1,9 @@
 //! The one place a float exists: an Excel cell stores a number as a double.
 //! [`number`] parses a report's two-place amount text into one. It does
-//! no arithmetic, and refuses what a double cannot hold
-//! exactly (more than 15 digits, or text that is not two-place).
+//! no arithmetic, and refuses an amount of more than 15 significant digits
+//! (the most that survives a decimal trip through a double and back) or text
+//! that is not two-place. A value such as 0.01 is not exact in binary; what
+//! is kept is that its digits read back the same.
 
 use crate::service::Refusal;
 

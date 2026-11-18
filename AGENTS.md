@@ -19,7 +19,7 @@ These cannot be inferred from the code.
    `"200000.00"`. No floats anywhere in a money path (the crates deny float lints; no `parseFloat` or JS `number` in
    the apps). Measures are exact sums and are never rounded. The one exception is `cell_amount::number`, in its own file: an Excel cell stores a number as a double, so
    that function parses a report's two-place amount text into one. It may parse and nothing else: no arithmetic, no
-   rounding, and it refuses what a double cannot hold exactly (more than 15 digits, or text that is not two-place).
+   rounding, and it refuses an amount of more than 15 significant digits (the most that survives a decimal trip through a double and back) and text that is not two-place.
    `no_float_type_appears_in_the_crates` exempts that file alone.
 3. **Privacy.**
    - Never put a raw TIN, a ticket value (`tkt_...`), a key, a token or a memo into a link, log, title, app prop,

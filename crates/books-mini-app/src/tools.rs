@@ -253,6 +253,8 @@ fn owed_schema() -> Value {
 
 fn report_xlsx_schema() -> Value {
     let mut s = report_schema();
+    s["required"] = json!(["client_request_id"]);
+    s["properties"]["client_request_id"] = json!({ "type": "string", "description": "8 to 64 characters; a repeat returns the stored result and hands nothing over again." });
     s["properties"]["kind"] = json!({ "type": "string", "enum": ["pl", "bs", "cf"] });
     if let Some(p) = s["properties"].as_object_mut() {
         for k in ["side", "account", "person", "from", "to", "filter"] {
@@ -1590,19 +1592,42 @@ pub fn call(
                     "Only the Books app may save a report as an Excel file.",
                 ));
             }
+            // a Bot that does not take `buwiz/save` would make a file nobody saves
+            if !books.host_saves {
+                return Some(fail(
+                    "not_supported",
+                    "This Buwiz Bot cannot save a file to Downloads for Books. Update Buwiz Bot, then try again.",
+                ));
+            }
+            if !books.exists() {
+                return Some(fail(
+                    "not_set_up",
+                    "There is no book yet. Open Books to make one.",
+                ));
+            }
             let dir = books.data_dir().to_path_buf();
-            let mut out = read(books, arguments, |store, book, args| {
-                crate::report_xlsx::export(store, book, args, &dir)
+            // the workbook is made first; a repeat of an earlier id never uses it
+            let prepared = (|| {
+                let store = books.store()?;
+                let book = service::book(store, arguments)?;
+                crate::report_xlsx::prepare(store, book, arguments)
+            })();
+            let mut handed = None;
+            let mut out = write(books, name, origin, arguments, |_tx| {
+                let (result, save) = crate::report_xlsx::hand_over_prepared(&dir, &prepared?)?;
+                handed = Some(save);
+                Ok(result)
             });
-            // the file rides on the result's _meta, never in the text
-            if out["isError"] == false
-                && let Some(save) = out["structuredContent"]
-                    .as_object_mut()
-                    .and_then(|o| o.remove("_save"))
-            {
-                out["content"] =
-                    json!([{ "type": "text", "text": out["structuredContent"].to_string() }]);
-                out["_meta"] = json!({ "buwiz/save": save });
+            // the file rides on the result's _meta, never in the text; a repeat
+            // hands nothing over, so the Bot saves no second copy
+            if out["isError"] == false {
+                if let Some(save) = handed {
+                    out["_meta"] = json!({ "buwiz/save": save });
+                } else {
+                    out["structuredContent"]["already_sent"] = json!(true);
+                    out["content"] =
+                        json!([{ "type": "text", "text": out["structuredContent"].to_string() }]);
+                }
             }
             out
         }

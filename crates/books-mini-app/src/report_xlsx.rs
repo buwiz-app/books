@@ -19,7 +19,7 @@ use office_oxide::xlsx::write::{CellData, CellStyle, HAlign, XlsxWriter};
 use serde_json::{Map, Value, json};
 
 use crate::reports;
-use crate::service::{Answer, Refusal};
+use crate::service::Refusal;
 
 /// The money format of an amount cell: thousands separators, two places, a
 /// plain minus.
@@ -121,7 +121,7 @@ pub fn table(r: &Value) -> Result<Table, Refusal> {
         Row { cells, role }
     };
     let mut rows = Vec::new();
-    for (i, sec) in r["sections"].as_array().into_iter().flatten().enumerate() {
+    for sec in r["sections"].as_array().into_iter().flatten() {
         let section = s(&sec["title"]);
         for row in sec["rows"].as_array().into_iter().flatten() {
             rows.push(line(
@@ -132,11 +132,17 @@ pub fn table(r: &Value) -> Result<Table, Refusal> {
                 Role::Item,
             ));
         }
-        // the balance sheet's section total, the P&L's revenue and expenses
+        // the balance sheet's section total; the P&L's are in `totals`, and
+        // the one that belongs to a section is labelled "Total <title>"
         let total = if sec["total"].is_object() {
             Some(&sec["total"])
         } else {
-            r["totals"].get(i).filter(|t| t.is_object())
+            let want = format!("total {}", section.to_lowercase());
+            r["totals"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .find(|t| s(&t["label"]).to_lowercase() == want)
         };
         if let Some(t) = total {
             rows.push(line("", "", &s(&t["label"]), t, Role::SectionTotal));
@@ -248,45 +254,13 @@ pub fn hand_over(dir: &Path, name: &str, bytes: &[u8]) -> Result<PathBuf, Refusa
     getrandom::fill(&mut raw).map_err(|_| failed())?;
     let hex: String = raw.iter().map(|b| format!("{b:02x}")).collect();
     let folder = dir.join(format!("open-{hex}")).join("1");
-    private_dirs(&folder).map_err(|_| failed())?;
+    books_store::private_dirs(&folder).map_err(|_| failed())?;
     let path = folder.join(name);
-    let mut file = private_file(&path).map_err(|_| failed())?;
+    let mut file = books_store::private_file(&path).map_err(|_| failed())?;
     file.write_all(bytes)
         .and_then(|()| file.sync_all())
         .map_err(|_| failed())?;
     Ok(path)
-}
-
-#[cfg(unix)]
-fn private_dirs(path: &Path) -> std::io::Result<()> {
-    use std::os::unix::fs::DirBuilderExt;
-    std::fs::DirBuilder::new()
-        .recursive(true)
-        .mode(0o700)
-        .create(path)
-}
-
-#[cfg(not(unix))]
-fn private_dirs(path: &Path) -> std::io::Result<()> {
-    std::fs::create_dir_all(path)
-}
-
-#[cfg(unix)]
-fn private_file(path: &Path) -> std::io::Result<std::fs::File> {
-    use std::os::unix::fs::OpenOptionsExt;
-    std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .mode(0o600)
-        .open(path)
-}
-
-#[cfg(not(unix))]
-fn private_file(path: &Path) -> std::io::Result<std::fs::File> {
-    std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(path)
 }
 
 /// Removes the `open-<hex>` folders in `dir` that are over [`KEEP_SECS`]
@@ -316,19 +290,35 @@ fn sweep(dir: &Path) {
     }
 }
 
-/// `books_app_report_xlsx`: the report as a workbook in `dir`, answered with
-/// the file's name and, under `_save`, what `buwiz/save` carries (the
-/// caller moves it to the result's `_meta`).
-pub fn export(store: &Store, book: Book, args: &Map<String, Value>, dir: &Path) -> Answer {
+/// A report made into a workbook, not yet handed over.
+pub struct Prepared {
+    pub name: String,
+    bytes: Vec<u8>,
+    rows: usize,
+}
+
+/// `books_app_report_xlsx`, first half: the report as a workbook's bytes.
+pub fn prepare(store: &Store, book: Book, args: &Map<String, Value>) -> Result<Prepared, Refusal> {
     let r = reports::report(store, book, args)?;
     let t = table(&r)?;
-    let bytes = workbook(&t)?;
-    let name = reports::export_name(&r, args, "xlsx");
-    let path = hand_over(dir, &name, &bytes)?;
-    Ok(json!({
-        "file_name": name,
+    Ok(Prepared {
+        bytes: workbook(&t)?,
+        name: reports::export_name(&r, args, "xlsx"),
         // as the CSV tool counts: the header line and the CSV's own rows
-        "rows": 1 + t.rows.iter().filter(|r| r.role != Role::SectionTotal).count(),
-        "_save": { "path": path.to_string_lossy(), "name": name, "mime": MEDIA_TYPE },
-    }))
+        rows: 1 + t
+            .rows
+            .iter()
+            .filter(|r| r.role != Role::SectionTotal)
+            .count(),
+    })
+}
+
+/// Second half: the file in `dir`. Returns the answer to store and show
+/// (the file's name and row count) and what `buwiz/save` carries.
+pub fn hand_over_prepared(dir: &Path, p: &Prepared) -> Result<(Value, Value), Refusal> {
+    let path = hand_over(dir, &p.name, &p.bytes)?;
+    Ok((
+        json!({ "file_name": p.name, "rows": p.rows }),
+        json!({ "path": path.to_string_lossy(), "name": p.name, "mime": MEDIA_TYPE }),
+    ))
 }

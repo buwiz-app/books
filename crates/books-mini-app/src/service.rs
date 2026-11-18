@@ -113,6 +113,8 @@ pub struct Books {
     pub transport: Option<Box<dyn crate::cloud::Transport>>,
     /// The person's yes this one call runs under, if it does.
     pub approved: Option<crate::press::Approved>,
+    /// Whether the host said at `initialize` that it honours `buwiz/save`.
+    pub host_saves: bool,
 }
 
 pub const HOME_TITLE: &str = "Books";
@@ -127,6 +129,7 @@ impl Books {
             cloud: crate::cloud::Session::default(),
             transport: None,
             approved: None,
+            host_saves: false,
         }
     }
 

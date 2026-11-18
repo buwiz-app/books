@@ -143,7 +143,14 @@ impl Server {
         let id = id?;
         let params = object.get("params").cloned().unwrap_or(Value::Null);
         let outcome = match method {
-            "initialize" => Ok(initialize(&params)),
+            "initialize" => {
+                // what the host takes as a hand-off, from its own word
+                self.books.host_saves = params
+                    .pointer("/capabilities/experimental/buwiz~1documents")
+                    .and_then(Value::as_array)
+                    .is_some_and(|list| list.iter().any(|w| w == "save"));
+                Ok(initialize(&params))
+            }
             "ping" => Ok(json!({})),
             "tools/list" => Ok(tool_list()),
             "tools/call" => self.tools_call(&params),
