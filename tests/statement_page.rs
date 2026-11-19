@@ -629,3 +629,38 @@ fn a_later_pages_picture_is_never_drawn_as_page_one() {
     assert!(!one.contains("<img") && !one.contains("Client deposit"));
     assert!(preview(2).contains(&html::base64(&two)));
 }
+
+#[test]
+fn replacing_a_pages_picture_changes_what_the_window_keys_its_pictures_by() {
+    let (_dir, mut b) = setup("sp-stamp");
+    let (one, two, three) = (png(850, 1100, 300), jpeg(640, 480), png(600, 800, 200));
+    let first = document(&mut b, 1, &one, "image/png");
+    let second = document(&mut b, 2, &two, "image/jpeg");
+    let third = document(&mut b, 3, &three, "image/png");
+    let read = |b: &mut Books, n: u8, last: &Value| {
+        let out = read_two_pages(b, n, json!({ "evidence": first, "pages": [first, last] }));
+        assert_eq!(out["isError"], false, "{out}");
+        statement(b, Origin::App)
+    };
+    let before = read(&mut b, 1, &second);
+    // the same pictures read again: the same stamp
+    let again = read(&mut b, 2, &second);
+    // page 2 replaced, the statement's document unchanged
+    let after = read(&mut b, 3, &third);
+    assert_eq!(before["evidence"], after["evidence"]);
+    assert_eq!(before["snapshot_pictures"], after["snapshot_pictures"]);
+    assert_eq!(before["snapshot_stamp"], again["snapshot_stamp"]);
+    assert_ne!(before["snapshot_stamp"], after["snapshot_stamp"]);
+    assert_eq!(before["snapshot_stamp"].as_str().unwrap().len(), 16);
+    assert_eq!(
+        page_no(&mut b, 2)["structuredContent"]["data_base64"],
+        json!(html::base64(&three))
+    );
+    // the window keys each kept picture by that stamp
+    let source = match apps::find("books").unwrap().source {
+        apps::AppSource::Tsx(source) => source,
+        apps::AppSource::Native { .. } => panic!("the Books window is TSX"),
+    };
+    assert!(source.contains("`${p.account}|${p.month}|${p.doc}|${p.stamp}|${String(page())}`"));
+    assert!(source.contains("stamp={String(s()?.snapshot_stamp || \"\")}"));
+}

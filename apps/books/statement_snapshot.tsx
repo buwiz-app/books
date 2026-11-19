@@ -79,6 +79,8 @@ function SnapshotPane(p: {
   /** The pages that have a picture the window can draw. */
   pictures: number[];
   doc: string;
+  /** Which pictures the pages have: it changes when any page's picture does. */
+  stamp: string;
   selected: number | null;
   onSelect: (no: number) => void;
   page: number;
@@ -92,7 +94,7 @@ function SnapshotPane(p: {
   const chosen = () => (p.rows || []).find((r: Any) => r.no === p.selected);
   const page = () => (pages().includes(p.page) ? p.page : pages()[0] || 1);
   const pictured = () => pictures().includes(page());
-  const key = () => `${p.account}|${p.month}|${p.doc}|${String(page())}`;
+  const key = () => `${p.account}|${p.month}|${p.doc}|${p.stamp}|${String(page())}`;
   const image = resource(
     () => ({ key: key(), a: p.account, m: p.month, n: page(), has: pictured() }),
     (k: Any) => (k.has ? snapImage(k.key, k.a, k.m, k.n).catch(() => null) : Promise.resolve(null)),

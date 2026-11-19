@@ -13,6 +13,7 @@ use books_store::books::Book;
 use books_store::months::{self, Statement, StatementLine};
 use books_store::rusqlite::{Connection, OptionalExtension as _};
 use books_store::statement_drafts::{self as drafts, Extra};
+use sha2::{Digest as _, Sha256};
 use std::collections::HashMap;
 
 use serde_json::{Map, Value, json};
@@ -100,14 +101,29 @@ pub fn snapshot_fields(
     wanted.sort_unstable();
     wanted.dedup();
     let mut pictures = Vec::new();
+    let mut stamp = Sha256::new();
     for page in wanted {
         if let Some(id) = page_evidence(conn, s.id, page)?
             && snapshot_kind(conn, s.id, id)? == "image"
         {
             pictures.push(page);
+            let sha: String = conn
+                .query_row("SELECT sha256 FROM evidence WHERE id = ?1", [id], |r| {
+                    r.get(0)
+                })
+                .map_err(books_store::StoreError::from)?;
+            stamp.update(format!("{page}:{sha};"));
         }
     }
     statement["snapshot_pictures"] = json!(pictures);
+    // which pictures those are: it changes when any page's picture does, so
+    // the window never keeps showing one it read for an earlier statement read
+    statement["snapshot_stamp"] = json!(
+        stamp.finalize()[..8]
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>()
+    );
     let Some(rows) = statement["rows"].as_array_mut() else {
         return Ok(());
     };

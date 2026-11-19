@@ -189,6 +189,7 @@ function MatchView() {
                 kind={String(s()?.snapshot_kind || "")}
                 pictures={s()?.snapshot_pictures || []}
                 doc={String(s()?.evidence || "")}
+                stamp={String(s()?.snapshot_stamp || "")}
                 selected={selectedLine()}
                 onSelect={(no: number) => selectedLine.set(no)}
                 page={snapPage()}
