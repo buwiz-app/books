@@ -115,6 +115,34 @@ fn month_arg(args: &Map<String, Value>) -> Result<Period, Refusal> {
         .ok_or_else(|| Refusal::invalid("`month` is YYYY-MM."))
 }
 
+/// The chart, loaded once and only when a row has an entry to show.
+fn chart<'a>(
+    store: &Store,
+    book: &Book,
+    slot: &'a mut Option<Chart>,
+) -> Result<&'a Chart, Refusal> {
+    if slot.is_none() {
+        *slot = Some(Chart::load(store, book.clone())?);
+    }
+    slot.as_ref()
+        .ok_or_else(|| Refusal::new("store", "The chart of accounts did not load."))
+}
+
+/// An entry's journal lines as the drawer shows them: account, debit, credit.
+fn entry_lines(store: &Store, chart: &Chart, entry: i64) -> Result<Value, Refusal> {
+    Ok(books_store::entries::lines(store.conn(), entry)?
+        .iter()
+        .map(|l| {
+            let a = chart.by_id.get(&l.account_id);
+            json!({
+                "account": a.map(|a| format!("{} {}", a.number, a.name)),
+                "debit_shown": if l.debit > 0 { money::display(l.debit) } else { String::new() },
+                "credit_shown": if l.credit > 0 { money::display(l.credit) } else { String::new() },
+            })
+        })
+        .collect())
+}
+
 /// One statement beside the ledger: each line, its match, the difference.
 pub fn statement_view(
     store: &Store,
@@ -137,6 +165,7 @@ pub fn statement_view(
     let mut rows = Vec::new();
     let mut suggested = 0;
     let mut missing = 0;
+    let mut accounts: Option<Chart> = None;
     for (l, m) in lines.iter().zip(&found) {
         let (kind, entry) = match m {
             Match::Exact(e) => ("m", Some(*e)),
@@ -174,6 +203,10 @@ pub fn statement_view(
         });
         if origin == crate::service::Origin::App {
             row["description"] = json!(l.line.description);
+            if let Some(e) = entry {
+                // the matched entry's journal lines, for the app's own screen
+                row["books"]["lines"] = entry_lines(store, chart(store, &book, &mut accounts)?, e)?;
+            }
         }
         rows.push(row);
     }
@@ -283,6 +316,37 @@ fn sline_in(conn: &Connection, args: &Map<String, Value>) -> Result<i64, Refusal
 
 /// `books_app_statement_import`: a CSV statement (`csv_base64`, as the
 /// picked file's bytes, or `csv_text`) for one account and month.
+/// A statement's PDF or picture, kept as a bank statement document. Books
+/// reads no line from it: the assistant does, and its lines come back as a
+/// statement read naming this document.
+pub fn statement_document(conn: &Connection, args: &Map<String, Value>, bytes: &[u8]) -> Answer {
+    const MIMES: [&str; 3] = ["application/pdf", "image/png", "image/jpeg"];
+    let book = writes::book_in(conn, args)?;
+    writes::account_in(conn, &book, service::required(args, "account")?)?;
+    let mime = service::required(args, "document_mime")?;
+    if !MIMES.contains(&mime) || !crate::tools::evidence_tools::valid_mime(mime, bytes) {
+        return Err(Refusal::invalid(
+            "A statement document is a PDF, PNG or JPEG, and its bytes must be one.",
+        ));
+    }
+    let (id, deduplicated) = books_store::evidence::insert(
+        conn,
+        book.id,
+        &books_store::evidence::Input {
+            bytes,
+            mime,
+            page_count: None,
+            source: "user",
+            kind: "statement",
+        },
+    )?;
+    Ok(json!({
+        "document": plumbing::ticket_for(conn, "evidence", id)?,
+        "mime": mime,
+        "deduplicated": deduplicated,
+    }))
+}
+
 pub fn statement_import(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let book = writes::book_in(conn, args)?;
     let account = writes::account_in(conn, &book, service::required(args, "account")?)?;

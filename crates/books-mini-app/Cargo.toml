@@ -108,6 +108,10 @@ name = "reconcile_document"
 path = "../../tests/reconcile_document.rs"
 
 [[test]]
+name = "statement_page"
+path = "../../tests/statement_page.rs"
+
+[[test]]
 name = "owed_document"
 path = "../../tests/owed_document.rs"
 

@@ -1,6 +1,7 @@
 // Reconcile: accounts down, months across (red means to do), then a
 // statement beside Books with matches, suggestions and missing lines, the
-// difference, and Finish.
+// difference, and Finish. A statement with a snapshot shows its page on the
+// left and its lines, each over its entry's journal lines, on the right.
 
 const recAccount = signal("");
 const recMonth = signal("");
@@ -39,12 +40,26 @@ async function sendFile(file: Any): Promise<string> {
   return upload;
 }
 
+/** The statement documents Reconcile keeps as they are, by extension. */
+const STATEMENT_DOC: Record<string, string> = { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg" };
+
+/** A statement's PDF or picture is kept in Books documents as a bank
+ * statement. Books never reads the page: the assistant does, and its lines
+ * come back as a statement read for the user to accept. */
+async function keepStatementDocument(account: string, file: Any, mime: string) {
+  const upload = await sendFile(file);
+  await act("books_app_statement_import", { account, document_upload: upload, document_mime: mime });
+  toast("Kept in Books documents as a bank statement · ask the assistant to read it");
+}
+
 function importStatement(account: string) {
   if (!buwiz.pickFile) return toast("Picking files is not available in this Buwiz Bot.");
   buwiz
-    .pickFile({ extensions: [".csv", ".xlsx", ".xls"] })
+    .pickFile({ extensions: [".csv", ".xlsx", ".xls", ".pdf", ".png", ".jpg", ".jpeg"] })
     .then(async (files: Any[]) => {
       if (!files.length) return;
+      const mime = STATEMENT_DOC[String(files[0].name || "").split(".").pop()?.toLowerCase() || ""];
+      if (mime) return keepStatementDocument(account, files[0], mime);
       const upload = await sendFile(files[0]);
       const r: Any = await act("books_app_statement_import", { account, csv_upload: upload, file_name: String(files[0].name).slice(0, 120) });
       recAccount.set(account);
@@ -133,6 +148,8 @@ function MatchView() {
     act(tool, { account: recAccount(), month: recMonth(), ...extra }).catch(() => null);
   const selectedLine = signal<number | null>(null);
   const snapPage = signal(0);
+  // the snapshot on the left and the lines on the right; with none, the full-width list
+  const side = () => snapShown(s());
   return (
     <View class="gap-3.5">
       <Head title={`Match ${d()?.month?.short || ""} · ${d()?.account?.name || ""}`} sub="statement vs Books">
@@ -152,7 +169,7 @@ function MatchView() {
       </If>
       <If when={Boolean(d()) && !s()}>
         <Panel pad>
-          <Text class={`text-[13px] ${C.mute}`}>No statement for this month yet. Import the bank's CSV to match it.</Text>
+          <Text class={`text-[13px] ${C.mute}`}>No statement for this month yet. Import the bank's CSV to match it, or its PDF or picture for the assistant to read.</Text>
         </Panel>
       </If>
       <If when={Boolean(s())}>
@@ -160,74 +177,107 @@ function MatchView() {
           <If when={(s()?.flags || []).length > 0}>
             <FlagsNote flags={s()?.flags || []} />
           </If>
-          <Panel>
-            <View class={`flex-row border-b ${C.line}`}>
-              <Text class={`flex-1 px-3 py-2.5 text-[11px] uppercase tracking-wider ${C.dim}`}>Bank statement</Text>
-              <View class="w-[28px]" />
-              <Text class={`flex-1 px-3 py-2.5 text-[11px] uppercase tracking-wider ${C.dim}`}>Books</Text>
-            </View>
-            <Each of={s()?.rows || []} key={rowKey}>
-              {(r: Any) => (
-                <View
-                  class={`flex-row items-center border-b ${C.line} ${r().no === selectedLine() ? C.panel : ""}`}
-                  onPress={() => {
-                    selectedLine.set(r().no ?? null);
-                    if (r().page) snapPage.set(Number(r().page));
-                  }}
-                >
-                  <View class="flex-1 flex-row items-center gap-2 px-3 py-2 min-h-[38px]">
-                    <Text class={`w-[52px] text-[12px] font-mono ${C.ink}`}>{r().date_short}</Text>
-                    <If when={Boolean(r().flag)}>
-                      <View class="w-[7px] h-[7px] rounded-full bg-[#f3b64c]" />
-                    </If>
-                    <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>
-                      {r().description}
-                    </Text>
-                    <If when={Boolean(r().low)}>
-                      <Pill tone="draft" label={`read ${String(r().confidence)}%`} />
-                    </If>
-                    <Text class={`text-[12.5px] font-mono ${C.ink}`}>{r().amount_shown}</Text>
-                  </View>
-                  <Text class={`w-[28px] text-center font-bold ${r().match === "m" ? C.green : r().match === "s" ? C.amber : C.red}`}>{MARK[r().match]}</Text>
+          <View class={side() ? "flex-row items-start gap-3.5" : "gap-3.5"}>
+            <If when={side()}>
+              <SnapshotPane
+                rows={s()?.rows || []}
+                evidence={Boolean(s()?.snapshot)}
+                kind={String(s()?.snapshot_kind || "")}
+                doc={String(s()?.evidence || "")}
+                selected={selectedLine()}
+                onSelect={(no: number) => selectedLine.set(no)}
+                page={snapPage()}
+                onPage={(n: number) => snapPage.set(n)}
+                account={recAccount()}
+                month={recMonth()}
+              />
+            </If>
+            <Panel class={side() ? "flex-1" : ""}>
+              <If when={!side()}>
+                <View class={`flex-row border-b ${C.line}`}>
+                  <Text class={`flex-1 px-3 py-2.5 text-[11px] uppercase tracking-wider ${C.dim}`}>Bank statement</Text>
+                  <View class="w-[28px]" />
+                  <Text class={`flex-1 px-3 py-2.5 text-[11px] uppercase tracking-wider ${C.dim}`}>Books</Text>
+                </View>
+              </If>
+              <If when={side()}>
+                <Text class={`px-3 py-2.5 text-[11px] uppercase tracking-wider border-b ${C.line} ${C.dim}`}>Statement lines and Books entries</Text>
+              </If>
+              <Each of={s()?.rows || []} key={rowKey}>
+                {(r: Any) => (
                   <View
-                    class={`flex-1 flex-row items-center gap-2 px-3 py-2 min-h-[38px] ${r().match === "x" ? PILL.rev : r().match === "s" ? PILL.draft : ""}`}
-                    onPress={() => r().books?.ticket && drawerEntry.set(r().books.ticket)}
+                    class={`${side() ? "" : "flex-row items-center"} border-b ${C.line} ${r().no === selectedLine() ? C.panel : ""}`}
+                    onPress={() => {
+                      selectedLine.set(r().no ?? null);
+                      if (r().page) snapPage.set(Number(r().page));
+                    }}
                   >
-                    <Text class={`w-[52px] text-[12px] font-mono ${C.ink}`}>{r().books?.date_short || "—"}</Text>
-                    <View class="flex-1">
-                      <Text class={`text-[12.5px] font-semibold ${C.ink}`}>{r().books?.title || ""}</Text>
-                      <Text class={`text-[11px] ${C.dim}`}>{r().why || r().books?.sub || ""}</Text>
-                      <If when={Boolean(r().hint?.category)}>
-                        <Text class={`text-[11px] ${C.dim}`}>{`Usually ${r().hint?.category || ""}`}</Text>
+                    <View class={`${side() ? "" : "flex-1"} flex-row items-center gap-2 px-3 py-2 min-h-[38px]`}>
+                      <If when={side()}>
+                        <Text class={`w-[18px] text-center font-bold ${r().match === "m" ? C.green : r().match === "s" ? C.amber : C.red}`}>{MARK[r().match]}</Text>
+                      </If>
+                      <Text class={`w-[52px] text-[12px] font-mono ${C.ink}`}>{r().date_short}</Text>
+                      <If when={Boolean(r().flag)}>
+                        <View class="w-[7px] h-[7px] rounded-full bg-[#f3b64c]" />
+                      </If>
+                      <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>
+                        {r().description}
+                      </Text>
+                      <If when={Boolean(r().low)}>
+                        <Pill tone="draft" label={`read ${String(r().confidence)}%`} />
+                      </If>
+                      <Text class={`text-[12.5px] font-mono ${C.ink}`}>{r().amount_shown}</Text>
+                    </View>
+                    <If when={!side()}>
+                      <Text class={`w-[28px] text-center font-bold ${r().match === "m" ? C.green : r().match === "s" ? C.amber : C.red}`}>{MARK[r().match]}</Text>
+                    </If>
+                    <View class={`${side() ? "" : "flex-1"} px-3 py-2 gap-1.5 ${r().match === "x" ? PILL.rev : r().match === "s" ? PILL.draft : ""}`} onPress={() => r().books?.ticket && drawerEntry.set(r().books.ticket)}>
+                      <View class="flex-row items-center gap-2 min-h-[22px]">
+                        <Text class={`w-[52px] text-[12px] font-mono ${C.ink}`}>{r().books?.date_short || "—"}</Text>
+                        <View class="flex-1">
+                          <Text class={`text-[12.5px] font-semibold ${C.ink}`}>{r().books?.title || ""}</Text>
+                          <Text class={`text-[11px] ${C.dim}`}>{r().why || r().books?.sub || ""}</Text>
+                          <If when={Boolean(r().hint?.category)}>
+                            <Text class={`text-[11px] ${C.dim}`}>{`Usually ${r().hint?.category || ""}`}</Text>
+                          </If>
+                        </View>
+                        <If when={r().match === "x"}>
+                          <Btn label="+ Add" small onPress={() => call("books_app_statement_add_line", { line: r().ticket })} />
+                        </If>
+                        <If when={r().match === "s" && s()?.status !== "finished"}>
+                          <Btn label="Match" small onPress={() => call("books_app_statement_accept", { line: r().no })} />
+                        </If>
+                        <If when={r().match !== "x"}>
+                          <Text class={`text-[12.5px] font-mono ${C.ink}`}>{r().books?.amount_shown || ""}</Text>
+                        </If>
+                      </View>
+                      <If when={(r().books?.lines || []).length > 0}>
+                        <View class={`border-t ${C.line} pt-1.5 gap-0.5`}>
+                          <View class="flex-row gap-2">
+                            <Text class={`flex-1 text-[10px] uppercase tracking-wider ${C.dim}`}>Account</Text>
+                            <Text class={`w-[84px] text-right text-[10px] uppercase tracking-wider ${C.dim}`}>Debit</Text>
+                            <Text class={`w-[84px] text-right text-[10px] uppercase tracking-wider ${C.dim}`}>Credit</Text>
+                          </View>
+                          <Each of={r().books?.lines || []}>
+                            {(l: Any) => (
+                              <View class="flex-row gap-2">
+                                <Text class={`flex-1 text-[11.5px] ${C.mute}`} numberOfLines={1}>
+                                  {l().account || "—"}
+                                </Text>
+                                <Text class={`w-[84px] text-right text-[11.5px] font-mono ${C.ink}`}>{l().debit_shown}</Text>
+                                <Text class={`w-[84px] text-right text-[11.5px] font-mono ${C.ink}`}>{l().credit_shown}</Text>
+                              </View>
+                            )}
+                          </Each>
+                        </View>
                       </If>
                     </View>
-                    <If when={r().match === "x"}>
-                      <Btn label="+ Add" small onPress={() => call("books_app_statement_add_line", { line: r().ticket })} />
-                    </If>
-                    <If when={r().match === "s" && s()?.status !== "finished"}>
-                      <Btn label="Match" small onPress={() => call("books_app_statement_accept", { line: r().no })} />
-                    </If>
-                    <If when={r().match !== "x"}>
-                      <Text class={`text-[12.5px] font-mono ${C.ink}`}>{r().books?.amount_shown || ""}</Text>
-                    </If>
                   </View>
-                </View>
-              )}
-            </Each>
-          </Panel>
-          <If when={snapShown(s())}>
-            <SnapshotPane
-              rows={s()?.rows || []}
-              evidence={Boolean(s()?.snapshot)}
-              selected={selectedLine()}
-              onSelect={(no: number) => selectedLine.set(no)}
-              page={snapPage()}
-              onPage={(n: number) => snapPage.set(n)}
-              account={recAccount()}
-              month={recMonth()}
-            />
-          </If>
-          <If when={!snapShown(s())}>
+                )}
+              </Each>
+            </Panel>
+          </View>
+          <If when={!side()}>
             <PrintReconciliation account={recAccount()} month={recMonth()} />
           </If>
           <Panel pad class="flex-row items-center gap-4">

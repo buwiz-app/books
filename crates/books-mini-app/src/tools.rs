@@ -110,6 +110,7 @@ pub const EVIDENCE_PREVIEW: &str = "books_app_evidence_preview";
 pub const EVIDENCE_REVIEW: &str = "books_app_evidence_review";
 pub const STATEMENT_DRAFT_LINES: &str = "books_statement_draft_lines";
 pub const RECONCILE_DOCUMENT: &str = "books_app_reconcile_document";
+pub const STATEMENT_PAGE: &str = "books_app_statement_page";
 pub const CHECKS: &str = "books_checks";
 pub const OWED_DOCUMENT: &str = "books_owed_document";
 pub const OWED_REPEAT: &str = "books_app_owed_repeat";
@@ -333,6 +334,10 @@ fn reconcile_document_schema() -> Value {
     json!({ "type": "object", "required": ["account", "month", "kind"], "properties": { "book": { "type": "string" }, "account": { "type": "string" }, "month": { "type": "string", "description": "YYYY-MM" }, "kind": { "type": "string", "enum": ["report", "page"] }, "page": { "type": "integer", "minimum": 1 }, "line": { "type": "integer", "minimum": 1 } } })
 }
 
+fn statement_page_schema() -> Value {
+    json!({ "type": "object", "required": ["account", "month"], "properties": { "book": { "type": "string" }, "account": { "type": "string" }, "month": { "type": "string", "description": "YYYY-MM" }, "part": { "type": "integer", "minimum": 0, "description": "Which part of the image; 0 when absent." } } })
+}
+
 fn statement_write() -> Value {
     json!({
         "type": "object",
@@ -344,6 +349,8 @@ fn statement_write() -> Value {
             "csv_base64": { "type": "string", "description": "The CSV file's bytes, base64url." },
             "csv_text": { "type": "string" }, "closing": { "type": "string", "description": "The ending balance, two-place text." },
             "file_name": { "type": "string" },
+        "document_upload": { "type": "string", "description": "A statement's PDF, PNG or JPEG sent in parts: kept as a bank statement document for the assistant to read. Books reads no line from it." },
+        "document_mime": { "type": "string", "enum": ["application/pdf", "image/png", "image/jpeg"] },
             "entry": { "type": "string", "description": "With accept and a row `no`: the entry ticket to match that line to." }
         }
     })
@@ -1090,6 +1097,13 @@ pub const TOOLS: &[Tool] = &[
         description: "A static page for the preview: the reconciliation report or one statement page with its lines boxed. App only.",
     },
     Tool {
+        name: STATEMENT_PAGE,
+        reach: Reach::App,
+        write: false,
+        schema: statement_page_schema,
+        description: "One part of a statement's snapshot image (PNG or JPEG), for the Books window to draw beside the match list. App only.",
+    },
+    Tool {
         name: CHECKS,
         reach: Reach::Everyone,
         write: false,
@@ -1351,8 +1365,17 @@ pub fn call(
                     Err(r) => return Some(r.into_result()),
                 }
             }
-            write(books, name, origin, &args, |tx| {
-                reconcile::statement_import(tx, &args)
+            // a PDF or picture is kept as the statement's document, unread
+            let document = match service::text(arguments, "document_upload") {
+                Some(id) => match books.uploads.take(id) {
+                    Ok(bytes) => Some(bytes),
+                    Err(r) => return Some(r.into_result()),
+                },
+                None => None,
+            };
+            write(books, name, origin, &args, |tx| match &document {
+                Some(bytes) => reconcile::statement_document(tx, &args, bytes),
+                None => reconcile::statement_import(tx, &args),
             })
         }
         STATEMENT_ACCEPT => write(books, name, origin, arguments, |tx| {
@@ -1555,6 +1578,12 @@ pub fn call(
                 reconcile_document::document(store, book, arguments)
             })()
             .unwrap_or_else(Refusal::into_result)
+        }
+        STATEMENT_PAGE => {
+            if !origin.is_app() {
+                return Some(fail("forbidden", "Only the app may read this page."));
+            }
+            read(books, arguments, reconcile_document::page_image)
         }
         CHECKS => read(books, arguments, |store, book, args| {
             crate::findings::checks(store, book, args)
