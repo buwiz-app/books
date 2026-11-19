@@ -1606,18 +1606,28 @@ pub fn call(
                 ));
             }
             let dir = books.data_dir().to_path_buf();
-            // the workbook is made first; a repeat of an earlier id never uses it
-            let prepared = (|| {
-                let store = books.store()?;
-                let book = service::book(store, arguments)?;
-                crate::report_xlsx::prepare(store, book, arguments)
-            })();
             let mut handed = None;
-            let mut out = write(books, name, origin, arguments, |_tx| {
-                let (result, save) = crate::report_xlsx::hand_over_prepared(&dir, &prepared?)?;
-                handed = Some(save);
-                Ok(result)
-            });
+            let mut out = service::write_prepared(
+                books,
+                name,
+                origin,
+                arguments,
+                |store| {
+                    let book = service::book(store, arguments)?;
+                    crate::report_xlsx::prepare(store, book, arguments)
+                },
+                |_tx, prepared| {
+                    let (result, save) = crate::report_xlsx::hand_over_prepared(&dir, &prepared)?;
+                    handed = Some(save);
+                    Ok(result)
+                },
+            );
+            if out["isError"] == true
+                && let Some(save) = &handed
+                && let Some(path) = save["path"].as_str()
+            {
+                crate::report_xlsx::remove_hand_over(std::path::Path::new(path));
+            }
             // the file rides on the result's _meta, never in the text; a repeat
             // hands nothing over, so the Bot saves no second copy
             if out["isError"] == false {

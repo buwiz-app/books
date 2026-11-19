@@ -144,6 +144,7 @@ impl Server {
         let params = object.get("params").cloned().unwrap_or(Value::Null);
         let outcome = match method {
             "initialize" => {
+                crate::report_xlsx::sweep(self.books.data_dir());
                 // what the host takes as a hand-off, from its own word
                 self.books.host_saves = params
                     .pointer("/capabilities/experimental/buwiz~1documents")

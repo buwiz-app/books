@@ -1166,4 +1166,89 @@ fn a_pl_total_is_paired_by_its_label_not_its_place() {
     // the two totals in the other order: each still lands under its section
     report["totals"].as_array_mut().unwrap().reverse();
     assert_eq!(report_xlsx::table(&report).unwrap(), before);
+    report["totals"] = json!([]);
+    assert!(report_xlsx::table(&report).is_err());
+}
+
+#[test]
+fn initialize_sweeps_without_another_export() {
+    let dir = TempDir::new("xlsx-initialize-sweep");
+    let mut bot = Bot::new(&dir);
+    let old = dir.0.join("store/open-abc123");
+    std::fs::create_dir_all(old.join("1")).unwrap();
+    std::fs::write(old.join("1/old.xlsx"), b"PK").unwrap();
+    std::fs::File::open(&old)
+        .unwrap()
+        .set_modified(std::time::SystemTime::now() - std::time::Duration::from_secs(7200))
+        .unwrap();
+    bot.initialize(json!({ "buwiz/documents": ["save"] }));
+    assert!(!old.exists());
+}
+
+#[test]
+fn a_failed_remember_leaves_no_workbook() {
+    let (dir, mut books) = golden();
+    books.store().unwrap().conn().execute_batch(
+        "CREATE TRIGGER refuse_export BEFORE INSERT ON idempotency BEGIN SELECT RAISE(ABORT, 'synthetic failure'); END;",
+    ).unwrap();
+    let out = raw(
+        &mut books,
+        XLSX,
+        json!({ "kind": "pl", "period": "2026-10" }),
+        Origin::App,
+    );
+    assert_eq!(out["isError"], true);
+    assert!(out.get("_meta").is_none());
+    assert_eq!(hand_offs(&dir), 0);
+}
+
+#[test]
+fn a_replay_does_not_prepare_a_report() {
+    let (dir, mut books) = golden();
+    let args =
+        json!({ "client_request_id": "xlsx-replay-no-report", "kind": "pl", "period": "2026-10" });
+    call(&mut books, XLSX, args.clone());
+    // Any attempt to read the chart now fails, but a replay needs no chart.
+    books
+        .store()
+        .unwrap()
+        .conn()
+        .execute_batch("ALTER TABLE account RENAME TO hidden_account;")
+        .unwrap();
+    let again = call(&mut books, XLSX, args);
+    assert_eq!(again["structuredContent"]["already_sent"], true);
+    assert_eq!(hand_offs(&dir), 1);
+}
+
+#[test]
+fn a_non_utf8_data_folder_is_refused_without_a_file() {
+    use std::os::unix::ffi::OsStringExt;
+    let dir = TempDir::new("xlsx-path");
+    let path = dir.0.join(std::ffi::OsString::from_vec(vec![b'd', 0xff]));
+    std::fs::create_dir(&path).unwrap();
+    let err = report_xlsx::hand_over(&path, "report.xlsx", b"PK").unwrap_err();
+    assert!(err.message.contains("UTF-8"));
+    assert_eq!(std::fs::read_dir(path).unwrap().count(), 0);
+}
+
+#[test]
+fn an_empty_pl_has_every_section_total() {
+    let dir = TempDir::new("xlsx-empty-totals");
+    let mut books = Books::new(Paths::in_dir(dir.0.join("store")));
+    call(
+        &mut books,
+        "books_app_book_create",
+        json!({ "client_request_id": "empty-totals-book", "label": "Synthetic" }),
+    );
+    let report = call(
+        &mut books,
+        "books_report",
+        json!({ "kind": "pl", "period": "2026-10" }),
+    )["structuredContent"]
+        .clone();
+    let table = report_xlsx::table(&report).unwrap();
+    assert_eq!(
+        assert_totals_are_their_sections(&table),
+        report["sections"].as_array().unwrap().len()
+    );
 }

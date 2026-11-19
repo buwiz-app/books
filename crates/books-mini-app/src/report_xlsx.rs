@@ -28,8 +28,7 @@ pub const MONEY_FORMAT: &str = "#,##0.00;-#,##0.00";
 /// The media type of the file.
 pub const MEDIA_TYPE: &str = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-/// How long a handed-over file stays in its folder before the next export
-/// sweeps it. The Bot has copied it long before.
+/// Hand-offs older than an hour are swept on initialize and export.
 const KEEP_SECS: u64 = 60 * 60;
 
 /// One cell of a report table.
@@ -146,6 +145,11 @@ pub fn table(r: &Value) -> Result<Table, Refusal> {
         };
         if let Some(t) = total {
             rows.push(line("", "", &s(&t["label"]), t, Role::SectionTotal));
+        } else if r["kind"] == "pl" {
+            return Err(Refusal::new(
+                "internal",
+                "A profit and loss section has no total.",
+            ));
         }
     }
     let net = &r["net"];
@@ -248,24 +252,34 @@ pub fn workbook(t: &Table) -> Result<Vec<u8>, Refusal> {
 /// are swept first. Returns the path.
 pub fn hand_over(dir: &Path, name: &str, bytes: &[u8]) -> Result<PathBuf, Refusal> {
     use std::io::Write;
+    if dir.to_str().is_none() {
+        return Err(Refusal::new(
+            "io",
+            "Books needs a UTF-8 data folder path to save an Excel file.",
+        ));
+    }
     let failed = || Refusal::new("io", "The file could not be saved.");
     sweep(dir);
     let mut raw = [0u8; 8];
     getrandom::fill(&mut raw).map_err(|_| failed())?;
     let hex: String = raw.iter().map(|b| format!("{b:02x}")).collect();
     let folder = dir.join(format!("open-{hex}")).join("1");
-    books_store::private_dirs(&folder).map_err(|_| failed())?;
     let path = folder.join(name);
-    let mut file = books_store::private_file(&path).map_err(|_| failed())?;
-    file.write_all(bytes)
-        .and_then(|()| file.sync_all())
-        .map_err(|_| failed())?;
+    let saved = (|| {
+        books_store::private_dirs(&folder)?;
+        let mut file = books_store::private_file(&path)?;
+        file.write_all(bytes).and_then(|()| file.sync_all())
+    })();
+    if saved.is_err() {
+        remove_hand_over(&path);
+        return Err(failed());
+    }
     Ok(path)
 }
 
 /// Removes the `open-<hex>` folders in `dir` that are over [`KEEP_SECS`]
 /// old. A failure leaves them for the next sweep.
-fn sweep(dir: &Path) {
+pub(crate) fn sweep(dir: &Path) {
     let Ok(entries) = std::fs::read_dir(dir) else {
         return;
     };
@@ -287,6 +301,12 @@ fn sweep(dir: &Path) {
         if old {
             let _ = std::fs::remove_dir_all(e.path());
         }
+    }
+}
+
+pub(crate) fn remove_hand_over(path: &Path) {
+    if let Some(folder) = path.parent().and_then(Path::parent) {
+        let _ = std::fs::remove_dir_all(folder);
     }
 }
 
@@ -319,6 +339,6 @@ pub fn hand_over_prepared(dir: &Path, p: &Prepared) -> Result<(Value, Value), Re
     let path = hand_over(dir, &p.name, &p.bytes)?;
     Ok((
         json!({ "file_name": p.name, "rows": p.rows }),
-        json!({ "path": path.to_string_lossy(), "name": p.name, "mime": MEDIA_TYPE }),
+        json!({ "path": path.to_str().ok_or_else(|| Refusal::new("io", "Books needs a UTF-8 data folder path to save an Excel file."))?, "name": p.name, "mime": MEDIA_TYPE }),
     ))
 }

@@ -86,3 +86,5 @@ These cannot be inferred from the code.
 
 - Commit, push, merge or publish unless the owner asks.
 - Print a TIN, a ticket value, a key or a real amount into a log, a file or a reply.
+  Exception: `books_app_report_xlsx` writes the person's report to a 0600 file in Books' own data folder for the Bot
+  to save on the person's own press; hand-offs are swept within an hour on initialize or export.
