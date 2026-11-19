@@ -589,3 +589,43 @@ fn a_page_without_a_picture_of_its_own_is_never_given_another_pages() {
         "not_found"
     );
 }
+
+#[test]
+fn a_later_pages_picture_is_never_drawn_as_page_one() {
+    // page 1 has no picture and no document is named: page 2's is page 2's only
+    let (_dir, mut b) = setup("sp-no-first");
+    let two = jpeg(640, 480);
+    let second = document(&mut b, 2, &two, "image/jpeg");
+    let out = read_two_pages(&mut b, 1, json!({ "pages": [null, second] }));
+    assert_eq!(out["isError"], false, "{out}");
+    assert_eq!(code(&page_no(&mut b, 1)), "no_snapshot");
+    assert_eq!(code(&page(&mut b, None)), "no_snapshot");
+    assert_eq!(
+        page_no(&mut b, 2)["structuredContent"]["data_base64"],
+        json!(html::base64(&two))
+    );
+    let st = statement(&mut b, Origin::App);
+    // page 2's picture is still something See the page can open
+    assert_eq!(st["snapshot"], true);
+    assert_eq!(st["snapshot_kind"], Value::Null);
+    assert_eq!(st["evidence"], Value::Null);
+    assert_eq!(st["snapshot_pictures"], json!([2]));
+    // the preview of page 1 embeds no picture; page 2's embeds its own
+    let mut preview = |page: u64| {
+        let out = call(
+            &mut b,
+            "books_app_reconcile_document",
+            Origin::App,
+            json!({ "account": "11010", "month": "2026-09", "kind": "page", "page": page }),
+        );
+        assert_eq!(out["isError"], false, "{out}");
+        out["content"][0]["resource"]["text"]
+            .as_str()
+            .unwrap()
+            .to_string()
+    };
+    let one = preview(1);
+    assert!(one.contains("No picture was kept for this page") && one.contains("Coffee shop"));
+    assert!(!one.contains("<img") && !one.contains("Client deposit"));
+    assert!(preview(2).contains(&html::base64(&two)));
+}

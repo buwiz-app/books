@@ -79,7 +79,8 @@ pub fn snapshot_fields(
 ) -> Result<(), Refusal> {
     let conn = store.conn();
     let evidence = snapshot_of(conn, s.id)?.0;
-    statement["snapshot"] = json!(evidence.is_some());
+    // a document, or a picture of any page: something See the page can open
+    statement["snapshot"] = json!(evidence.is_some() || !drafts::pages(conn, s.id)?.is_empty());
     // what the Books window can do with it: draw the page itself (`image`),
     // or leave it to the preview (`pdf`, `large`, `other`)
     statement["snapshot_kind"] = match evidence {
@@ -386,15 +387,44 @@ pub fn document(store: &Store, book: Book, args: &Map<String, Value>) -> Result<
     }
     let (document, extras) = snapshot_of(store.conn(), s.id)?;
     // the page's own picture when it has one, else the statement's document
-    let own = drafts::pages(store.conn(), s.id)?
-        .into_iter()
-        .find(|p| p.0 == page_no)
-        .map(|p| p.1);
+    let pages = drafts::pages(store.conn(), s.id)?;
+    let pictured = !pages.is_empty();
+    let own = pages.into_iter().find(|p| p.0 == page_no).map(|p| p.1);
     let Some(evidence) = own.or(document) else {
-        return Err(Refusal::new(
-            "no_snapshot",
-            "This statement has no snapshot",
-        ));
+        if !pictured {
+            return Err(Refusal::new(
+                "no_snapshot",
+                "This statement has no snapshot",
+            ));
+        }
+        // other pages have pictures and this one has none: its lines alone
+        let no = numbers(store.conn(), s.id)?;
+        let mut body = format!(
+            "<h1>Statement page {page_no}</h1><p class=\"sub\">{} · {}</p><p class=\"sub\">No picture was kept for this page. Its lines:</p><ol>",
+            escape(&account.name),
+            escape(&month.label())
+        );
+        for (l, _) in lines
+            .iter()
+            .zip(&extras)
+            .filter(|(_, e)| e.page == Some(page_no))
+        {
+            let hl = if highlight.is_some() && highlight == no.get(&l.id).copied() {
+                " class=\"hl\""
+            } else {
+                ""
+            };
+            body.push_str(&format!(
+                "<li{hl}>{} · {} · {}</li>",
+                l.line.date.short(),
+                escape(&money::display(l.line.amount)),
+                escape(&l.line.description)
+            ));
+        }
+        body.push_str("</ol>");
+        let title = format!("Statement page {page_no} · {}", month_title(&month));
+        let text = html::page(&title, STYLE, &body);
+        return Ok(result("page", title, text));
     };
     let (_owner, mime, len): (i64, String, i64) = store
         .conn()

@@ -228,8 +228,10 @@ pub fn draft_lines(conn: &Connection, args: &Map<String, Value>, origin: Origin)
         .collect::<Result<Vec<_>, _>>()?;
     let closing = money_text(args.get("closing"), "closing")?;
     let pages = pages_arg(conn, &book, args)?;
-    // with no document named, the first page's picture is the statement's
-    let evidence = evidence_arg(conn, &book, args)?.or(pages.first().map(|p| p.1));
+    // with no document named, page 1's picture is the statement's: never a
+    // later page's, which would then be drawn under page 1's boxes
+    let evidence =
+        evidence_arg(conn, &book, args)?.or(pages.iter().find(|p| p.0 == 1).map(|p| p.1));
     let id = drafts::insert(
         conn,
         &NewDraft {
