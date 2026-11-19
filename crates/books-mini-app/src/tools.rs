@@ -1365,17 +1365,20 @@ pub fn call(
                     Err(r) => return Some(r.into_result()),
                 }
             }
-            // a PDF or picture is kept as the statement's document, unread
-            let document = match service::text(arguments, "document_upload") {
-                Some(id) => match books.uploads.take(id) {
-                    Ok(bytes) => Some(bytes),
-                    Err(r) => return Some(r.into_result()),
-                },
-                None => None,
-            };
-            write(books, name, origin, &args, |tx| match &document {
-                Some(bytes) => reconcile::statement_document(tx, &args, bytes),
-                None => reconcile::statement_import(tx, &args),
+            // a PDF or picture is kept as the statement's document, unread.
+            // Its upload is taken inside the write, so a repeat of a request
+            // already answered gets the stored result, not a missing file.
+            if let Some(upload) = service::text(arguments, "document_upload") {
+                let mut uploads = std::mem::take(&mut books.uploads);
+                let out = write(books, name, origin, &args, |tx| {
+                    let bytes = uploads.take(upload)?;
+                    reconcile::statement_document(tx, &args, &bytes)
+                });
+                books.uploads = uploads;
+                return Some(out);
+            }
+            write(books, name, origin, &args, |tx| {
+                reconcile::statement_import(tx, &args)
             })
         }
         STATEMENT_ACCEPT => write(books, name, origin, arguments, |tx| {

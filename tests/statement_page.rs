@@ -352,6 +352,18 @@ fn a_statement_pdf_or_picture_is_kept_as_a_document_and_reads_no_line() {
         .unwrap();
     assert_eq!((kind.as_str(), source.as_str()), ("statement", "user"));
     assert_eq!(lines(&mut b), before, "Books read no line from the page");
+    // the same request again returns the stored result, though the upload is gone
+    let again = call(
+        &mut b,
+        "books_app_statement_import",
+        Origin::App,
+        json!({ "client_request_id": "sp-document-0001", "account": "11010", "document_upload": "up-doc-1", "document_mime": "application/pdf" }),
+    );
+    assert_eq!(again["isError"], false, "{again}");
+    assert_eq!(
+        again["structuredContent"]["document"],
+        out["structuredContent"]["document"]
+    );
     // the bytes must be what the type says, and a type Reconcile keeps
     assert_eq!(
         code(&send(&mut b, 2, b"not a picture", "image/png")),
