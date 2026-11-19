@@ -108,6 +108,10 @@ name = "reconcile_document"
 path = "../../tests/reconcile_document.rs"
 
 [[test]]
+name = "statement_page"
+path = "../../tests/statement_page.rs"
+
+[[test]]
 name = "owed_document"
 path = "../../tests/owed_document.rs"
 
@@ -141,6 +145,10 @@ office_oxide = { version = "0.1.16", default-features = false }
 # (rustls); only when the user signs in or lists tax profiles. A release build
 # uses api.buwiz.com unless BOOKS_CLOUD_URL says otherwise (`cloud.rs`).
 ureq = { version = "2.12", default-features = false, features = ["tls"] }
+# A PDF statement's pages are drawn to PNG once, when the document is kept
+# (`page_pictures.rs`), so the Books window can show them: pure Rust, no
+# native library, the same on Linux, macOS and Windows.
+hayro = "0.9"
 
 [lints]
 workspace = true

@@ -101,6 +101,19 @@ fn line_arg(no: usize, v: &Value) -> Result<DraftLine, Refusal> {
     })
 }
 
+/// This book's evidence behind a ticket, with its type.
+fn evidence_of(conn: &Connection, book: &Book, t: &str) -> Result<(i64, String), Refusal> {
+    let not_ours = || Refusal::new("not_found", "That evidence ticket is not one Books issued.");
+    let id = match plumbing::subject(conn, t)? {
+        Some((k, id)) if k == "evidence" => id,
+        _ => return Err(not_ours()),
+    };
+    books_store::evidence::get(conn, id)?
+        .filter(|e| e.book_id == book.id)
+        .map(|e| (e.id, e.mime))
+        .ok_or_else(not_ours)
+}
+
 fn evidence_arg(
     conn: &Connection,
     book: &Book,
@@ -109,15 +122,37 @@ fn evidence_arg(
     let Some(t) = text(args, "evidence") else {
         return Ok(None);
     };
-    let not_ours = || Refusal::new("not_found", "That evidence ticket is not one Books issued.");
-    let id = match plumbing::subject(conn, t)? {
-        Some((k, id)) if k == "evidence" => id,
-        _ => return Err(not_ours()),
+    evidence_of(conn, book, t).map(|e| Some(e.0))
+}
+
+/// `pages`: each page's own picture, in page order (the first is page 1). A
+/// page with no picture is `null`. PNG and JPEG only: those are what the
+/// Books window draws.
+fn pages_arg(
+    conn: &Connection,
+    book: &Book,
+    args: &Map<String, Value>,
+) -> Result<Vec<(i64, i64)>, Refusal> {
+    let bad = || Refusal::invalid("`pages` lists 1 to 500 evidence tickets, one for each page.");
+    let list = match args.get("pages") {
+        None | Some(Value::Null) => return Ok(Vec::new()),
+        Some(Value::Array(a)) if !a.is_empty() && a.len() <= 500 => a,
+        Some(_) => return Err(bad()),
     };
-    books_store::evidence::get(conn, id)?
-        .filter(|e| e.book_id == book.id)
-        .map(|e| Some(e.id))
-        .ok_or_else(not_ours)
+    let mut pages = Vec::new();
+    for (i, v) in list.iter().enumerate() {
+        let t = match v {
+            Value::Null => continue,
+            Value::String(t) => t,
+            _ => return Err(bad()),
+        };
+        let (id, mime) = evidence_of(conn, book, t)?;
+        if mime != "image/png" && mime != "image/jpeg" {
+            return Err(Refusal::invalid("A page's picture is a PNG or a JPEG."));
+        }
+        pages.push((i64::try_from(i + 1).unwrap_or(0), id));
+    }
+    Ok(pages)
 }
 
 fn draft_arg(conn: &Connection, book: &Book, args: &Map<String, Value>) -> Result<Draft, Refusal> {
@@ -192,7 +227,11 @@ pub fn draft_lines(conn: &Connection, args: &Map<String, Value>, origin: Origin)
         .map(|(i, v)| line_arg(i, v))
         .collect::<Result<Vec<_>, _>>()?;
     let closing = money_text(args.get("closing"), "closing")?;
-    let evidence = evidence_arg(conn, &book, args)?;
+    let pages = pages_arg(conn, &book, args)?;
+    // with no document named, page 1's picture is the statement's: never a
+    // later page's, which would then be drawn under page 1's boxes
+    let evidence =
+        evidence_arg(conn, &book, args)?.or(pages.iter().find(|p| p.0 == 1).map(|p| p.1));
     let id = drafts::insert(
         conn,
         &NewDraft {
@@ -203,6 +242,7 @@ pub fn draft_lines(conn: &Connection, args: &Map<String, Value>, origin: Origin)
             evidence_id: evidence,
             proposed_by,
             lines: &lines,
+            pages: &pages,
         },
     )?;
     let d = drafts::get(conn, id)?.ok_or_else(|| Refusal::new("store", "The draft vanished."))?;
@@ -301,6 +341,11 @@ pub fn accept(conn: &Connection, args: &Map<String, Value>) -> Answer {
         })
         .collect();
     drafts::keep_extras(conn, id, d.evidence_id, &extras)?;
+    drafts::keep_pages(conn, id, &d.pages)?;
+    // a PDF that came by another way than Import statement has no pictures yet
+    if let Some(document) = d.evidence_id {
+        crate::page_pictures::keep(conn, document)?;
+    }
     drafts::decide(conn, d.id, "accepted")?;
     Ok(with_subject(
         json!({ "month": month.key, "lines": parsed.lines.len(), "status": "open" }),

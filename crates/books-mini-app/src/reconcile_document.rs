@@ -2,6 +2,8 @@
 //! statement, the reconciliation report and one page of the statement's
 //! snapshot with its lines boxed. Read-only and app only (the Bot runs a
 //! preview as the app). The title carries no amount, number or name.
+//! `books_app_statement_page` gives the Books window the snapshot image
+//! itself, in parts, to draw beside the match list.
 
 use books_core::date::{Date, MONTHS, Period, PeriodKind};
 use books_core::money;
@@ -11,6 +13,7 @@ use books_store::books::Book;
 use books_store::months::{self, Statement, StatementLine};
 use books_store::rusqlite::{Connection, OptionalExtension as _};
 use books_store::statement_drafts::{self as drafts, Extra};
+use sha2::{Digest as _, Sha256};
 use std::collections::HashMap;
 
 use serde_json::{Map, Value, json};
@@ -30,6 +33,36 @@ pub type Bbox = books_store::statement_drafts::Bbox;
 /// order (the statement read's `statement.evidence_id` and `statement_line` columns).
 fn snapshot_of(conn: &Connection, statement: i64) -> Result<(Option<i64>, Vec<Extra>), Refusal> {
     Ok(drafts::extras(conn, statement)?)
+}
+
+/// The evidence that pictures one page: the page's own picture when the
+/// statement read named one, else, for page 1, the statement's document. No
+/// other page has one: a statement keeps a single document, so a picture is
+/// its first page, and a PDF's pages are inside a file Books does not draw.
+fn page_evidence(conn: &Connection, statement: i64, page: i64) -> Result<Option<i64>, Refusal> {
+    if let Some(own) = drafts::pages(conn, statement)?
+        .into_iter()
+        .find(|p| p.0 == page)
+    {
+        return Ok(Some(own.1));
+    }
+    Ok(if page == 1 {
+        snapshot_of(conn, statement)?.0
+    } else {
+        None
+    })
+}
+
+/// A page of the statement's PDF as the picture drawn when the document was
+/// kept (`page_pictures`), unless the statement read gave the page its own.
+fn drawn_page(conn: &Connection, statement: i64, page: i64) -> Result<Option<Vec<u8>>, Refusal> {
+    if drafts::pages(conn, statement)?.iter().any(|p| p.0 == page) {
+        return Ok(None);
+    }
+    Ok(match snapshot_of(conn, statement)?.0 {
+        Some(document) => books_store::evidence::page(conn, document, page)?,
+        None => None,
+    })
 }
 
 /// Thousandths of the page as CSS percent text: `1234` is `"123.4%"`.
@@ -58,8 +91,64 @@ pub fn snapshot_fields(
     statement: &mut Value,
 ) -> Result<(), Refusal> {
     let conn = store.conn();
-    statement["snapshot"] = json!(snapshot_of(conn, s.id)?.0.is_some());
+    let evidence = snapshot_of(conn, s.id)?.0;
+    // a document, or a picture of any page: something See the page can open
+    statement["snapshot"] = json!(evidence.is_some() || !drafts::pages(conn, s.id)?.is_empty());
+    // what the Books window can do with it: draw the page itself (`image`),
+    // or leave it to the preview (`pdf`, `large`, `other`)
+    statement["snapshot_kind"] = match evidence {
+        Some(id) => json!(snapshot_kind(conn, s.id, id)?),
+        None => Value::Null,
+    };
     let no = numbers(conn, s.id)?;
+    // the pages the Books window can draw: each has a PNG or JPEG of its own
+    // within the bound. A page that is not here shows a note, never bare boxes.
+    // a PDF's pages, drawn when the document was kept: `(page, length)`
+    let drawn = match evidence {
+        Some(id) => books_store::evidence::pages(conn, id)?,
+        None => Vec::new(),
+    };
+    let mut wanted: Vec<i64> = snapshot_of(conn, s.id)?
+        .1
+        .iter()
+        .filter_map(|e| e.page)
+        .chain(drafts::pages(conn, s.id)?.into_iter().map(|p| p.0))
+        .chain(evidence.map(|_| 1))
+        .chain(drawn.iter().map(|p| p.0))
+        .collect();
+    wanted.sort_unstable();
+    wanted.dedup();
+    let mut pictures = Vec::new();
+    let mut stamp = Sha256::new();
+    // a page the statement read gave a picture of its own is not a drawn one
+    let own = drafts::pages(conn, s.id)?;
+    for page in wanted {
+        if let Some(id) = page_evidence(conn, s.id, page)?
+            && snapshot_kind(conn, s.id, id)? == "image"
+        {
+            pictures.push(page);
+            let sha: String = conn
+                .query_row("SELECT sha256 FROM evidence WHERE id = ?1", [id], |r| {
+                    r.get(0)
+                })
+                .map_err(books_store::StoreError::from)?;
+            stamp.update(format!("{page}:{sha};"));
+        } else if let Some(len) = drawn.iter().find(|p| p.0 == page).map(|p| p.1)
+            && !own.iter().any(|p| p.0 == page)
+        {
+            pictures.push(page);
+            stamp.update(format!("{page}:drawn:{len};"));
+        }
+    }
+    statement["snapshot_pictures"] = json!(pictures);
+    // which pictures those are: it changes when any page's picture does, so
+    // the window never keeps showing one it read for an earlier statement read
+    statement["snapshot_stamp"] = json!(
+        stamp.finalize()[..8]
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>()
+    );
     let Some(rows) = statement["rows"].as_array_mut() else {
         return Ok(());
     };
@@ -67,6 +156,182 @@ pub fn snapshot_fields(
         row["no"] = json!(no.get(&l.id));
     }
     Ok(())
+}
+
+/// The largest snapshot image the Books window draws itself. Larger ones
+/// stay on the preview.
+pub const MAX_PAGE_IMAGE: usize = 6_000_000;
+
+/// The bytes one `books_app_statement_page` call carries: 400,000 characters
+/// of base64. An answer holds them twice (its text and its structured
+/// content), which stays under the 1 MiB a `buwiz.call` result may be. A
+/// multiple of 3, so the parts' base64 joins into one.
+pub const PAGE_PART: usize = 300_000;
+
+/// The snapshot's mime and length, when it is this book's.
+fn snapshot_meta(
+    conn: &Connection,
+    book: i64,
+    evidence: i64,
+) -> Result<Option<(String, usize)>, Refusal> {
+    Ok(conn
+        .query_row(
+            "SELECT book_id, mime, byte_length FROM evidence WHERE id = ?1",
+            [evidence],
+            |r| {
+                Ok((
+                    r.get::<_, i64>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, i64>(2)?,
+                ))
+            },
+        )
+        .optional()
+        .map_err(books_store::StoreError::from)?
+        .filter(|e| e.0 == book)
+        .map(|e| (e.1, usize::try_from(e.2).unwrap_or(usize::MAX))))
+}
+
+/// What the Books window can do with a statement's snapshot.
+fn snapshot_kind(
+    conn: &Connection,
+    statement: i64,
+    evidence: i64,
+) -> Result<&'static str, Refusal> {
+    let book: i64 = conn
+        .query_row(
+            "SELECT book_id FROM statement WHERE statement_id = ?1",
+            [statement],
+            |r| r.get(0),
+        )
+        .map_err(books_store::StoreError::from)?;
+    Ok(match snapshot_meta(conn, book, evidence)? {
+        Some((mime, len)) if mime == "image/png" || mime == "image/jpeg" => {
+            if len <= MAX_PAGE_IMAGE {
+                "image"
+            } else {
+                "large"
+            }
+        }
+        Some((mime, _)) if mime == "application/pdf" => "pdf",
+        _ => "other",
+    })
+}
+
+/// `books_app_statement_page`: one part of the statement's snapshot image,
+/// as standard base64, for the Books window to draw beside the match list.
+/// PNG and JPEG only, at most [`MAX_PAGE_IMAGE`] bytes, [`PAGE_PART`] bytes a
+/// call. Read-only and app only; the answer carries no amount, name or ticket.
+pub fn page_image(store: &Store, book: Book, args: &Map<String, Value>) -> Result<Value, Refusal> {
+    let account = service::account(store, &book, service::required(args, "account")?)?;
+    let month = month_arg(args)?;
+    let part = match args.get("part") {
+        None | Some(Value::Null) => 0,
+        Some(v) => v
+            .as_u64()
+            .and_then(|n| usize::try_from(n).ok())
+            .ok_or_else(|| Refusal::invalid("`part` is a whole number from 0."))?,
+    };
+    let page = whole(args, "page")?.unwrap_or(1);
+    let conn = store.conn();
+    let Some((s, _)) = months::statement(conn, book.id, account.id, &month.key)? else {
+        return Err(Refusal::new(
+            "not_found",
+            "There is no statement for that month.",
+        ));
+    };
+    let no_snapshot = || Refusal::new("no_snapshot", "This page has no picture");
+    let (mime, bytes) = if let Some(png) = drawn_page(conn, s.id, page)? {
+        // a page of the statement's PDF, drawn when the document was kept
+        ("image/png".to_string(), png)
+    } else {
+        let evidence = page_evidence(conn, s.id, page)?.ok_or_else(no_snapshot)?;
+        let (mime, len) = snapshot_meta(conn, book.id, evidence)?.ok_or_else(no_snapshot)?;
+        if mime != "image/png" && mime != "image/jpeg" {
+            return Err(Refusal::new(
+                "not_supported",
+                "This snapshot cannot be shown here",
+            ));
+        }
+        if len > MAX_PAGE_IMAGE {
+            return Err(Refusal::new(
+                "too_large",
+                "The snapshot is too large to show here",
+            ));
+        }
+        let bytes: Vec<u8> = conn
+            .query_row(
+                "SELECT bytes FROM evidence WHERE id = ?1",
+                [evidence],
+                |r| r.get(0),
+            )
+            .optional()
+            .map_err(books_store::StoreError::from)?
+            .ok_or_else(no_snapshot)?;
+        (mime, bytes)
+    };
+    let parts = bytes.len().div_ceil(PAGE_PART).max(1);
+    if part >= parts {
+        return Err(Refusal::invalid("`part` is past the last part."));
+    }
+    let from = (part * PAGE_PART).min(bytes.len());
+    let to = (from + PAGE_PART).min(bytes.len());
+    let size = image_size(&mime, &bytes);
+    Ok(json!({
+        "mime": mime,
+        "page": page,
+        "part": part,
+        "parts": parts,
+        "width": size.map(|s| s.0),
+        "height": size.map(|s| s.1),
+        "data_base64": html::base64(&bytes[from..to]),
+    }))
+}
+
+/// A PNG's or JPEG's size in pixels, from its header, so the window can lay
+/// the line boxes over the page at its own proportions.
+fn image_size(mime: &str, b: &[u8]) -> Option<(u32, u32)> {
+    let be16 = |at: usize| {
+        Some(u32::from(u16::from_be_bytes([
+            *b.get(at)?,
+            *b.get(at + 1)?,
+        ])))
+    };
+    let size = match mime {
+        "image/png" => {
+            if !b.starts_with(b"\x89PNG\r\n\x1a\n") || b.get(12..16) != Some(b"IHDR") {
+                return None;
+            }
+            let be32 = |at: usize| Some(u32::from_be_bytes(b.get(at..at + 4)?.try_into().ok()?));
+            (be32(16)?, be32(20)?)
+        }
+        "image/jpeg" => {
+            if !b.starts_with(b"\xff\xd8") {
+                return None;
+            }
+            let mut at = 2;
+            loop {
+                if *b.get(at)? != 0xff {
+                    return None;
+                }
+                let marker = *b.get(at + 1)?;
+                match marker {
+                    // fill bytes and markers that carry no length
+                    0xff => at += 1,
+                    0x01 | 0xd0..=0xd8 => at += 2,
+                    // a frame header: precision, height, width
+                    0xc0..=0xc3 | 0xc5..=0xc7 | 0xc9..=0xcb | 0xcd..=0xcf => {
+                        break (be16(at + 7)?, be16(at + 5)?);
+                    }
+                    // the scan or the end, with no frame before it
+                    0xd9 | 0xda => return None,
+                    _ => at += 2 + usize::try_from(be16(at + 2)?).ok()?,
+                }
+            }
+        }
+        _ => return None,
+    };
+    (size.0 > 0 && size.1 > 0).then_some(size)
 }
 
 /// Each line's `line_no`, by line id.
@@ -167,12 +432,46 @@ pub fn document(store: &Store, book: Book, args: &Map<String, Value>) -> Result<
         let text = html::page(&title, STYLE, &body);
         return Ok(result("report", title, text));
     }
-    let (evidence, extras) = snapshot_of(store.conn(), s.id)?;
-    let Some(evidence) = evidence else {
-        return Err(Refusal::new(
-            "no_snapshot",
-            "This statement has no snapshot",
-        ));
+    let (document, extras) = snapshot_of(store.conn(), s.id)?;
+    // the page's own picture when it has one, else the statement's document
+    let pages = drafts::pages(store.conn(), s.id)?;
+    let pictured = !pages.is_empty();
+    let own = pages.into_iter().find(|p| p.0 == page_no).map(|p| p.1);
+    let Some(evidence) = own.or(document) else {
+        if !pictured {
+            return Err(Refusal::new(
+                "no_snapshot",
+                "This statement has no snapshot",
+            ));
+        }
+        // other pages have pictures and this one has none: its lines alone
+        let no = numbers(store.conn(), s.id)?;
+        let mut body = format!(
+            "<h1>Statement page {page_no}</h1><p class=\"sub\">{} · {}</p><p class=\"sub\">No picture was kept for this page. Its lines:</p><ol>",
+            escape(&account.name),
+            escape(&month.label())
+        );
+        for (l, _) in lines
+            .iter()
+            .zip(&extras)
+            .filter(|(_, e)| e.page == Some(page_no))
+        {
+            let hl = if highlight.is_some() && highlight == no.get(&l.id).copied() {
+                " class=\"hl\""
+            } else {
+                ""
+            };
+            body.push_str(&format!(
+                "<li{hl}>{} · {} · {}</li>",
+                l.line.date.short(),
+                escape(&money::display(l.line.amount)),
+                escape(&l.line.description)
+            ));
+        }
+        body.push_str("</ol>");
+        let title = format!("Statement page {page_no} · {}", month_title(&month));
+        let text = html::page(&title, STYLE, &body);
+        return Ok(result("page", title, text));
     };
     let (_owner, mime, len): (i64, String, i64) = store
         .conn()
@@ -226,6 +525,19 @@ pub fn document(store: &Store, book: Book, args: &Map<String, Value>) -> Result<
         escape(&month.label())
     );
     match mime.as_str() {
+        // a picture is one page: without its own, another page has none to show
+        "image/png" | "image/jpeg" if own.is_none() && page_no != 1 => {
+            body.push_str("<p class=\"sub\">No picture was kept for this page. Its lines:</p><ol>");
+            for (l, _) in &on_page {
+                let hl = if lit(l) { " class=\"hl\"" } else { "" };
+                body.push_str(&format!(
+                    "<li{hl}>{} · {}</li>",
+                    shown(l),
+                    escape(&l.line.description)
+                ));
+            }
+            body.push_str("</ol>");
+        }
         "image/png" | "image/jpeg" => {
             body.push_str(&format!("<div class=\"sheet\" style=\"position:relative\"><img src=\"{data}\" style=\"width:100%\" alt=\"Statement page {page_no}\">"));
             for (l, b) in on_page.iter().filter_map(|(l, b)| b.map(|b| (l, b))) {

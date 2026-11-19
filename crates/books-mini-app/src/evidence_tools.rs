@@ -68,7 +68,7 @@ pub(crate) fn evidence_id(conn: &Connection, book: i64, value: &str) -> Result<i
     Ok(id)
 }
 
-fn valid_mime(mime: &str, b: &[u8]) -> bool {
+pub(crate) fn valid_mime(mime: &str, b: &[u8]) -> bool {
     match mime {
         "application/pdf" => b.starts_with(b"%PDF-"),
         "image/png" => b.starts_with(b"\x89PNG\r\n\x1a\n"),
