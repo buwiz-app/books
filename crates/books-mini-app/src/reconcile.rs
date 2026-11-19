@@ -345,6 +345,8 @@ pub fn statement_document(conn: &Connection, args: &Map<String, Value>, bytes: &
             kind: "statement",
         },
     )?;
+    // a PDF's pages become pictures now, in this write, for the window to draw
+    crate::page_pictures::keep(conn, id)?;
     Ok(json!({
         "document": plumbing::ticket_for(conn, "evidence", id)?,
         "mime": mime,

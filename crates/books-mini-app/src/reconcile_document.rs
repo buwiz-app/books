@@ -53,6 +53,18 @@ fn page_evidence(conn: &Connection, statement: i64, page: i64) -> Result<Option<
     })
 }
 
+/// A page of the statement's PDF as the picture drawn when the document was
+/// kept (`page_pictures`), unless the statement read gave the page its own.
+fn drawn_page(conn: &Connection, statement: i64, page: i64) -> Result<Option<Vec<u8>>, Refusal> {
+    if drafts::pages(conn, statement)?.iter().any(|p| p.0 == page) {
+        return Ok(None);
+    }
+    Ok(match snapshot_of(conn, statement)?.0 {
+        Some(document) => books_store::evidence::page(conn, document, page)?,
+        None => None,
+    })
+}
+
 /// Thousandths of the page as CSS percent text: `1234` is `"123.4%"`.
 pub fn percent(thousandths: i64) -> String {
     let v = thousandths.clamp(0, 1000);
@@ -91,12 +103,18 @@ pub fn snapshot_fields(
     let no = numbers(conn, s.id)?;
     // the pages the Books window can draw: each has a PNG or JPEG of its own
     // within the bound. A page that is not here shows a note, never bare boxes.
+    // a PDF's pages, drawn when the document was kept: `(page, length)`
+    let drawn = match evidence {
+        Some(id) => books_store::evidence::pages(conn, id)?,
+        None => Vec::new(),
+    };
     let mut wanted: Vec<i64> = snapshot_of(conn, s.id)?
         .1
         .iter()
         .filter_map(|e| e.page)
         .chain(drafts::pages(conn, s.id)?.into_iter().map(|p| p.0))
         .chain(evidence.map(|_| 1))
+        .chain(drawn.iter().map(|p| p.0))
         .collect();
     wanted.sort_unstable();
     wanted.dedup();
@@ -113,6 +131,11 @@ pub fn snapshot_fields(
                 })
                 .map_err(books_store::StoreError::from)?;
             stamp.update(format!("{page}:{sha};"));
+        } else if let Some(len) = drawn.iter().find(|p| p.0 == page).map(|p| p.1)
+            && drawn_page(conn, s.id, page)?.is_some()
+        {
+            pictures.push(page);
+            stamp.update(format!("{page}:drawn:{len};"));
         }
     }
     statement["snapshot_pictures"] = json!(pictures);
@@ -216,33 +239,39 @@ pub fn page_image(store: &Store, book: Book, args: &Map<String, Value>) -> Resul
         ));
     };
     let no_snapshot = || Refusal::new("no_snapshot", "This page has no picture");
-    let evidence = page_evidence(conn, s.id, page)?.ok_or_else(no_snapshot)?;
-    let (mime, len) = snapshot_meta(conn, book.id, evidence)?.ok_or_else(no_snapshot)?;
-    if mime != "image/png" && mime != "image/jpeg" {
-        return Err(Refusal::new(
-            "not_supported",
-            "This snapshot cannot be shown here",
-        ));
-    }
-    if len > MAX_PAGE_IMAGE {
-        return Err(Refusal::new(
-            "too_large",
-            "The snapshot is too large to show here",
-        ));
-    }
-    let parts = len.div_ceil(PAGE_PART).max(1);
+    let (mime, bytes) = if let Some(png) = drawn_page(conn, s.id, page)? {
+        // a page of the statement's PDF, drawn when the document was kept
+        ("image/png".to_string(), png)
+    } else {
+        let evidence = page_evidence(conn, s.id, page)?.ok_or_else(no_snapshot)?;
+        let (mime, len) = snapshot_meta(conn, book.id, evidence)?.ok_or_else(no_snapshot)?;
+        if mime != "image/png" && mime != "image/jpeg" {
+            return Err(Refusal::new(
+                "not_supported",
+                "This snapshot cannot be shown here",
+            ));
+        }
+        if len > MAX_PAGE_IMAGE {
+            return Err(Refusal::new(
+                "too_large",
+                "The snapshot is too large to show here",
+            ));
+        }
+        let bytes: Vec<u8> = conn
+            .query_row(
+                "SELECT bytes FROM evidence WHERE id = ?1",
+                [evidence],
+                |r| r.get(0),
+            )
+            .optional()
+            .map_err(books_store::StoreError::from)?
+            .ok_or_else(no_snapshot)?;
+        (mime, bytes)
+    };
+    let parts = bytes.len().div_ceil(PAGE_PART).max(1);
     if part >= parts {
         return Err(Refusal::invalid("`part` is past the last part."));
     }
-    let bytes: Vec<u8> = conn
-        .query_row(
-            "SELECT bytes FROM evidence WHERE id = ?1",
-            [evidence],
-            |r| r.get(0),
-        )
-        .optional()
-        .map_err(books_store::StoreError::from)?
-        .ok_or_else(no_snapshot)?;
     let from = (part * PAGE_PART).min(bytes.len());
     let to = (from + PAGE_PART).min(bytes.len());
     let size = image_size(&mime, &bytes);

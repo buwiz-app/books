@@ -342,6 +342,10 @@ pub fn accept(conn: &Connection, args: &Map<String, Value>) -> Answer {
         .collect();
     drafts::keep_extras(conn, id, d.evidence_id, &extras)?;
     drafts::keep_pages(conn, id, &d.pages)?;
+    // a PDF that came by another way than Import statement has no pictures yet
+    if let Some(document) = d.evidence_id {
+        crate::page_pictures::keep(conn, document)?;
+    }
     drafts::decide(conn, d.id, "accepted")?;
     Ok(with_subject(
         json!({ "month": month.key, "lines": parsed.lines.len(), "status": "open" }),

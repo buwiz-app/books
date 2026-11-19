@@ -5,6 +5,8 @@
 
 const recAccount = signal("");
 const recMonth = signal("");
+/** The account a statement document was just kept for: its note stays up until the screen is left. */
+const keptFor = signal("");
 
 const CELL: Record<string, string> = {
   done: PILL.ok,
@@ -49,6 +51,7 @@ const STATEMENT_DOC: Record<string, string> = { pdf: "application/pdf", png: "im
 async function keepStatementDocument(account: string, file: Any, mime: string) {
   const upload = await sendFile(file);
   await act("books_app_statement_import", { account, document_upload: upload, document_mime: mime });
+  keptFor.set(account);
   toast("Kept in Books documents as a bank statement · ask the assistant to read it");
 }
 
@@ -158,7 +161,13 @@ function MatchView() {
     <View class="gap-3.5">
       <Head title={`Match ${d()?.month?.short || ""} · ${d()?.account?.name || ""}`} sub="statement vs Books">
         <View class="flex-row gap-2">
-          <Btn label="‹ Back" onPress={() => recMonth.set("")} />
+          <Btn
+            label="‹ Back"
+            onPress={() => {
+              keptFor.set("");
+              recMonth.set("");
+            }}
+          />
           <If when={Boolean(s())}>
             <Btn label={`Accept ${String(s()?.suggested || 0)} suggestion${s()?.suggested === 1 ? "" : "s"}`} disabled={!s()?.suggested} onPress={() => call("books_app_statement_accept")} />
           </If>
@@ -170,6 +179,12 @@ function MatchView() {
       <Loading res={data} />
       <If when={Boolean(d()?.draft)}>
         <DraftBanner account={recAccount()} month={recMonth()} draft={d()?.draft} />
+      </If>
+      <If when={Boolean(keptFor()) && keptFor() === recAccount() && !d()?.draft}>
+        <Panel pad>
+          <Text class={`text-[13px] font-semibold ${C.ink}`}>The statement is kept in Books documents.</Text>
+          <Text class={`text-[12.5px] ${C.mute}`}>Books does not read it. Ask the assistant to read the statement for this account; its lines then show here for you to accept.</Text>
+        </Panel>
       </If>
       <If when={Boolean(d()) && !s()}>
         <Panel pad>

@@ -1,11 +1,12 @@
 // Reconcile: the statement snapshot beside the match list.
-// Each page that has a PNG or JPEG picture of its own is drawn here: its
-// bytes come from books_app_statement_page in parts (one answer is at most
-// 1 MiB) and join into one data: source. Boxes come from Rust as percent
-// text and lie over the picture, never over an empty panel: a page without a
-// picture (a PDF's pages, or a page the statement read gave no picture for)
-// shows a note and "See the page". A PDF, and the report, show through
-// buwiz.preview (macOS), which runs books_app_reconcile_document as the app.
+// Each page that has a picture is drawn here: a PNG or JPEG of its own, or
+// a page of the statement's PDF that Books drew to PNG when the document was
+// kept. Its bytes come from books_app_statement_page in parts (one answer is
+// at most 1 MiB) and join into one data: source. Boxes come from Rust as
+// percent text and lie over the picture, never over an empty panel: a page
+// without a picture shows a note and "See the page". The preview and the
+// report show through buwiz.preview (macOS), which runs
+// books_app_reconcile_document as the app.
 
 async function showPreview(args: Record<string, Any>) {
   if (!buwiz.preview) return;
@@ -42,7 +43,7 @@ const SNAP_W = 380;
 const SNAP_H = 492;
 /** Why a page has no picture to draw, by what the statement's document is. */
 const SNAP_NOTE: Record<string, string> = {
-  pdf: "This statement is a PDF, so its pages cannot be drawn here. Open it with See the page.",
+  pdf: "This PDF's pages could not be drawn here. Open it with See the page.",
   large: "This page is too large to show here. Open it with See the page.",
   other: "This document cannot be shown here.",
 };

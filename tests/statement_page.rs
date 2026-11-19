@@ -714,3 +714,129 @@ fn replacing_a_pages_picture_changes_what_the_window_keys_its_pictures_by() {
     assert!(source.contains("`${p.account}|${p.month}|${p.doc}|${p.stamp}|${String(page())}`"));
     assert!(source.contains("stamp={String(s()?.snapshot_stamp || \"\")}"));
 }
+
+/// A small text PDF of letter pages, one line of text on each.
+fn pdf(pages: &[&str]) -> Vec<u8> {
+    let n = pages.len();
+    let kids: String = (0..n).map(|i| format!("{} 0 R ", 4 + 2 * i)).collect();
+    let mut objects = vec![
+        "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
+        format!("<< /Type /Pages /Kids [{kids}] /Count {n} >>"),
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".to_string(),
+    ];
+    for (i, text) in pages.iter().enumerate() {
+        let stream = format!("BT /F1 24 Tf 72 700 Td ({text}) Tj ET");
+        objects.push(format!(
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents {} 0 R >>",
+            5 + 2 * i
+        ));
+        objects.push(format!(
+            "<< /Length {} >>\nstream\n{stream}\nendstream",
+            stream.len()
+        ));
+    }
+    let mut out = b"%PDF-1.4\n".to_vec();
+    let mut offsets = Vec::new();
+    for (i, o) in objects.iter().enumerate() {
+        offsets.push(out.len());
+        out.extend(format!("{} 0 obj\n{o}\nendobj\n", i + 1).bytes());
+    }
+    let xref = out.len();
+    out.extend(format!("xref\n0 {}\n0000000000 65535 f \n", objects.len() + 1).bytes());
+    for o in offsets {
+        out.extend(format!("{o:010} 00000 n \n").bytes());
+    }
+    out.extend(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objects.len() + 1
+        )
+        .bytes(),
+    );
+    out
+}
+
+#[test]
+fn a_pdf_statements_pages_are_drawn_when_it_is_kept_and_each_gives_its_picture() {
+    let (_dir, mut b) = setup("sp-pdf-drawn");
+    let file = pdf(&[
+        "Synthetic page one",
+        "Synthetic page two",
+        "Synthetic page three",
+    ]);
+    let doc = document(&mut b, 1, &file, "application/pdf");
+    // kept with the document, in that write: three pictures, no evidence of their own
+    let (pictures, evidence): (i64, i64) = {
+        let conn = b.store().unwrap().conn();
+        (
+            conn.query_row("SELECT COUNT(*) FROM evidence_page", [], |r| r.get(0))
+                .unwrap(),
+            conn.query_row(
+                "SELECT COUNT(*) FROM evidence WHERE mime = 'image/png'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap(),
+        )
+    };
+    assert_eq!((pictures, evidence), (3, 0));
+    let out = read_two_pages(&mut b, 1, json!({ "evidence": doc }));
+    assert_eq!(out["isError"], false, "{out}");
+    let st = statement(&mut b, Origin::App);
+    assert_eq!(st["snapshot_kind"], "pdf");
+    // every page of the file, the third too though no line is on it
+    assert_eq!(st["snapshot_pictures"], json!([1, 2, 3]));
+    let mut seen = Vec::new();
+    for n in 1..=3 {
+        let out = page_no(&mut b, n);
+        assert_eq!(out["isError"], false, "{out}");
+        let got = &out["structuredContent"];
+        assert_eq!(got["mime"], "image/png");
+        // a letter page at one and a half pixels a point
+        assert_eq!((&got["width"], &got["height"]), (&json!(918), &json!(1188)));
+        assert_eq!(got["parts"], 1);
+        assert!(out.to_string().len() < 1_048_576);
+        let data = got["data_base64"].as_str().unwrap().to_string();
+        assert!(data.starts_with("iVBORw0KGgo"), "a PNG");
+        assert!(!seen.contains(&data), "each page is its own picture");
+        seen.push(data);
+    }
+    assert_eq!(code(&page_no(&mut b, 4)), "no_snapshot");
+    // reading a page draws nothing: the data folder stays byte for byte
+    let dir = _dir.0.join("store");
+    let before = files(&dir);
+    page_no(&mut b, 2);
+    statement(&mut b, Origin::App);
+    assert_eq!(files(&dir), before);
+    // a page the statement read gave its own picture shows that one
+    let own = png(850, 1100, 300);
+    let ticket = document(&mut b, 2, &own, "image/png");
+    let out = read_two_pages(
+        &mut b,
+        2,
+        json!({ "evidence": doc, "pages": [null, ticket] }),
+    );
+    assert_eq!(out["isError"], false, "{out}");
+    assert_eq!(
+        page_no(&mut b, 2)["structuredContent"]["data_base64"],
+        json!(html::base64(&own))
+    );
+    assert_eq!(page_no(&mut b, 1)["structuredContent"]["width"], 918);
+}
+
+#[test]
+fn a_pdf_that_cannot_be_drawn_is_still_kept_and_has_no_picture() {
+    let (_dir, mut b) = setup("sp-pdf-undrawn");
+    // not a real PDF past its header, and one cut off in the middle
+    let whole = pdf(&["Synthetic page"]);
+    for (n, bytes) in [
+        (1u8, b"%PDF-1.7 synthetic".to_vec()),
+        (2, whole[..whole.len() / 2].to_vec()),
+    ] {
+        document(&mut b, n, &bytes, "application/pdf");
+    }
+    assert_eq!(
+        books_mini_app::page_pictures::pdf_pages(b"%PDF-1.7 synthetic").len(),
+        0
+    );
+}

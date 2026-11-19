@@ -34,6 +34,7 @@ pub mod oldbooks;
 pub mod owed_detail;
 pub mod owed_doc;
 pub mod owed_repeats;
+pub mod page_pictures;
 pub mod payroll;
 pub mod person_statement;
 pub mod press;
