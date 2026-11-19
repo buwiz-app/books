@@ -59,6 +59,7 @@ pub const OWED_LIST: &str = "books_owed_list";
 pub const OWED_OPTIONS: &str = "books_owed_options";
 pub const REPORT: &str = "books_report";
 pub const REPORT_CSV: &str = "books_report_csv";
+pub const REPORT_XLSX: &str = "books_app_report_xlsx";
 pub const PERSON_CREATE: &str = "books_app_person_create";
 pub const TAG_CREATE: &str = "books_app_tag_create";
 pub const OWED_CREATE: &str = "books_app_owed_create";
@@ -249,6 +250,19 @@ fn tags_schema() -> Value {
 
 fn owed_schema() -> Value {
     json!({ "type": "object", "properties": { "book": { "type": "string" }, "side": { "type": "string", "enum": ["collect", "pay"] }, "owed": { "type": "string", "description": "A document ticket: adds its payment history as detail." } } })
+}
+
+fn report_xlsx_schema() -> Value {
+    let mut s = report_schema();
+    s["required"] = json!(["client_request_id"]);
+    s["properties"]["client_request_id"] = json!({ "type": "string", "description": "8 to 64 characters; a repeat returns the stored result and hands nothing over again." });
+    s["properties"]["kind"] = json!({ "type": "string", "enum": ["pl", "bs", "cf"] });
+    if let Some(p) = s["properties"].as_object_mut() {
+        for k in ["side", "account", "person", "from", "to", "filter"] {
+            p.remove(k);
+        }
+    }
+    s
 }
 
 fn report_schema() -> Value {
@@ -738,6 +752,14 @@ pub const TOOLS: &[Tool] = &[
         write: false,
         schema: report_schema,
         description: "The same report as CSV text, amounts as two-place decimal text; takes the same compare_to and tag.",
+    },
+    Tool {
+        name: REPORT_XLSX,
+        reach: Reach::App,
+        // it writes a file the Bot then saves to Downloads
+        write: true,
+        schema: report_xlsx_schema,
+        description: "Save the P&L, balance sheet or cash flow as an Excel file to Downloads, after the user's click. The same rows as the CSV, amounts as numbers.",
     },
     Tool {
         name: PERSON_CREATE,
@@ -1596,6 +1618,62 @@ pub fn call(
         OWED_REPEAT => write(books, name, origin, arguments, |tx| {
             owed_repeats::repeat(tx, arguments)
         }),
+        REPORT_XLSX => {
+            if !origin.is_app() {
+                return Some(fail(
+                    "forbidden",
+                    "Only the Books app may save a report as an Excel file.",
+                ));
+            }
+            // a Bot that does not take `buwiz/save` would make a file nobody saves
+            if !books.host_saves {
+                return Some(fail(
+                    "not_supported",
+                    "This Buwiz Bot cannot save a file to Downloads for Books. Update Buwiz Bot, then try again.",
+                ));
+            }
+            if !books.exists() {
+                return Some(fail(
+                    "not_set_up",
+                    "There is no book yet. Open Books to make one.",
+                ));
+            }
+            let dir = books.data_dir().to_path_buf();
+            let mut handed = None;
+            let mut out = service::write_prepared(
+                books,
+                name,
+                origin,
+                arguments,
+                |store| {
+                    let book = service::book(store, arguments)?;
+                    crate::report_xlsx::prepare(store, book, arguments)
+                },
+                |_tx, prepared| {
+                    let (result, save) = crate::report_xlsx::hand_over_prepared(&dir, &prepared)?;
+                    handed = Some(save);
+                    Ok(result)
+                },
+            );
+            if out["isError"] == true
+                && let Some(save) = &handed
+                && let Some(path) = save["path"].as_str()
+            {
+                crate::report_xlsx::remove_hand_over(std::path::Path::new(path));
+            }
+            // the file rides on the result's _meta, never in the text; a repeat
+            // hands nothing over, so the Bot saves no second copy
+            if out["isError"] == false {
+                if let Some(save) = handed {
+                    out["_meta"] = json!({ "buwiz/save": save });
+                } else {
+                    out["structuredContent"]["already_sent"] = json!(true);
+                    out["content"] =
+                        json!([{ "type": "text", "text": out["structuredContent"].to_string() }]);
+                }
+            }
+            out
+        }
         MONTH_PACK => {
             let mut out = read(books, arguments, |store, book, args| {
                 month_pack::pack(store, book, args)

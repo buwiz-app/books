@@ -181,6 +181,24 @@ pub(crate) fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
+/// Makes `path` and any missing parents, each mode 0700.
+pub fn private_dirs(path: &Path) -> std::io::Result<()> {
+    fs::DirBuilder::new()
+        .recursive(true)
+        .mode(0o700)
+        .create(path)
+}
+
+/// Creates a new file at `path`, mode 0600, open for writing. It fails when
+/// the path exists, a link included.
+pub fn private_file(path: &Path) -> std::io::Result<fs::File> {
+    fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(path)
+}
+
 /// Read the key file, or create it (0600, 32 random bytes as hex) when it
 /// does not exist. A key file others can read is refused.
 fn key(path: &Path) -> Result<String> {
@@ -205,21 +223,14 @@ fn key(path: &Path) -> Result<String> {
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
             if let Some(parent) = path.parent() {
-                fs::DirBuilder::new()
-                    .recursive(true)
-                    .mode(0o700)
-                    .create(parent)
+                private_dirs(parent)
                     .map_err(|_| error("key_file", "The Books key folder cannot be made."))?;
             }
             let mut bytes = [0u8; 32];
             getrandom::fill(&mut bytes)
                 .map_err(|_| error("key_file", "No randomness for a new Books key."))?;
             let text = hex(&bytes);
-            let mut file = fs::OpenOptions::new()
-                .write(true)
-                .create_new(true)
-                .mode(0o600)
-                .open(path)
+            let mut file = private_file(path)
                 .map_err(|_| error("key_file", "The Books key file cannot be written."))?;
             file.write_all(text.as_bytes())
                 .and_then(|()| file.sync_all())

@@ -15,6 +15,8 @@ const repPeriodKind = signal("month");
 const repPeriod = signal("");
 const repCompare = signal("previous");
 const repTag = signal("");
+// one Excel export at a time: a press while one is in flight does nothing
+const xlsxSending = signal(false);
 const COMPARE_TABS: [string, string][] = [
   ["previous", "Previous"],
   ["last_year", "Last year"],
@@ -88,6 +90,23 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
       (e: Any) => toast(errText(e)),
     );
   };
+  // the Bot copies the file to Downloads and says how it went in its own toast;
+  // the call's answer carries no outcome of that, so this line claims none
+  const exportXlsx = () => {
+    if (xlsxSending()) return;
+    xlsxSending.set(true);
+    const args = reportArgs(repKind(), repPeriodKind(), repPeriod(), repCompare(), repTag());
+    buwiz.call("books_app_report_xlsx", { client_request_id: rid(), ...args }).then(
+      (r: Any) => {
+        xlsxSending.set(false);
+        toast(`${r.already_sent ? "Already sent to" : "Sent to"} Buwiz Bot to save in Downloads · ${String(r.file_name)}`);
+      },
+      (e: Any) => {
+        xlsxSending.set(false);
+        toast(errText(e));
+      },
+    );
+  };
   const monthPack = () => {
     if (buwiz.preview)
       buwiz
@@ -112,6 +131,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
             }}
           />
           <Btn label="Export CSV" onPress={exportCsv} />
+          {["pl", "bs", "cf"].includes(repKind()) ? <Btn label="Export Excel" onPress={exportXlsx} /> : null}
           {repPeriodKind() === "month" ? <Btn label="Month pack" onPress={monthPack} /> : null}
         </View>
       </Head>

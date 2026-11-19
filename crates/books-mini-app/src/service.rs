@@ -113,6 +113,8 @@ pub struct Books {
     pub transport: Option<Box<dyn crate::cloud::Transport>>,
     /// The person's yes this one call runs under, if it does.
     pub approved: Option<crate::press::Approved>,
+    /// Whether the host said at `initialize` that it honours `buwiz/save`.
+    pub host_saves: bool,
 }
 
 pub const HOME_TITLE: &str = "Books";
@@ -127,6 +129,7 @@ impl Books {
             cloud: crate::cloud::Session::default(),
             transport: None,
             approved: None,
+            host_saves: false,
         }
     }
 
@@ -135,6 +138,12 @@ impl Books {
         books.transport =
             crate::cloud::Http::from_env().map(|t| Box::new(t) as Box<dyn crate::cloud::Transport>);
         books
+    }
+
+    /// The folder the store lives in: the plugin's own data folder, where a
+    /// file is handed to the Bot.
+    pub fn data_dir(&self) -> &std::path::Path {
+        &self.paths.dir
     }
 
     /// Whether a store file exists (without making one).
@@ -342,6 +351,17 @@ pub fn write(
     args: &Map<String, Value>,
     f: impl FnOnce(&Transaction<'_>) -> Answer,
 ) -> Value {
+    write_prepared(books, tool, origin, args, |_| Ok(()), |tx, ()| f(tx))
+}
+
+pub(crate) fn write_prepared<T>(
+    books: &mut Books,
+    tool: &str,
+    origin: Origin,
+    args: &Map<String, Value>,
+    prepare: impl FnOnce(&Store) -> Result<T, Refusal>,
+    f: impl FnOnce(&Transaction<'_>, T) -> Answer,
+) -> Value {
     let books_approved = books.approved.clone();
     let store = match books.store() {
         Ok(s) => s,
@@ -374,12 +394,16 @@ pub fn write(
         }
     }
     let outcome: Result<Value, Refusal> = (|| {
+        if let Some(stored) = plumbing::replay(store.conn(), &crid, tool, &digest)? {
+            return Ok(stored);
+        }
+        let prepared = prepare(store)?;
         let tx = store.transaction()?;
         if let Some(stored) = plumbing::replay(&tx, &crid, tool, &digest)? {
             return Ok(stored);
         }
         // a refusal returns before the commit: the transaction rolls back
-        let result = f(&tx)?;
+        let result = f(&tx, prepared)?;
         plumbing::remember(&tx, &crid, tool, &digest, &result)?;
         let subject = subject_of(&result);
         audit(&tx, subject.as_ref().map(|(k, i)| (k.as_str(), *i)), "ok")?;

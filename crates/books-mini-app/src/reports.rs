@@ -678,6 +678,39 @@ fn csv_cell(text: &str) -> String {
     }
 }
 
+/// An amount as shown ("\u{2212}1,234.50", "+90.00") as plain two-place text
+/// ("-1234.50", "90.00"): what the CSV and the Excel export both carry.
+pub(crate) fn plain_amount(v: &Value) -> String {
+    v.as_str()
+        .unwrap_or("")
+        .replace(',', "")
+        .replace('\u{2212}', "-")
+        .replace('+', "")
+}
+
+/// The file name of a report export, `books-pl-2026-10.<ext>`, with the
+/// compare period and the tag kind when the report has them.
+pub(crate) fn export_name(r: &Value, args: &Map<String, Value>, ext: &str) -> String {
+    let mut name = format!(
+        "books-{}-{}",
+        r["kind"].as_str().unwrap_or("report"),
+        r["period"]["key"].as_str().unwrap_or("")
+    );
+    if text(args, "compare_to").is_some()
+        && let Some(k) = r["compare"]["key"].as_str()
+    {
+        name.push_str(&format!("-vs-{k}"));
+    }
+    match r["tag"]["kind"].as_str() {
+        Some("department") => name.push_str("-dept"),
+        Some("location") => name.push_str("-loc"),
+        _ => {}
+    }
+    name.push('.');
+    name.push_str(ext);
+    name
+}
+
 /// `books_report_csv`: the same report as CSV text, amounts as two-place
 /// decimal text (no thousands separators, a plain minus).
 pub fn report_csv(store: &Store, book: Book, args: &Map<String, Value>, origin: Origin) -> Answer {
@@ -685,13 +718,7 @@ pub fn report_csv(store: &Store, book: Book, args: &Map<String, Value>, origin: 
         return crate::ledger_csv::ledger_csv(store, book, args, origin);
     }
     let r = report(store, book, args)?;
-    let plain = |v: &Value| -> String {
-        v.as_str()
-            .unwrap_or("")
-            .replace(',', "")
-            .replace('\u{2212}', "-")
-            .replace('+', "")
-    };
+    let plain = plain_amount;
     let mut lines: Vec<String> = Vec::new();
     let cols: Vec<String> = r["columns"]
         .as_array()
@@ -735,61 +762,35 @@ pub fn report_csv(store: &Store, book: Book, args: &Map<String, Value>, origin: 
             ));
         }
         _ => {
-            let two = !r["compare"].is_null() && cols.len() > 1;
-            lines.push(if two {
-                format!(
-                    "Section,Number,Account,{},{}",
-                    csv_cell(&cols[0]),
-                    csv_cell(&cols[1])
-                )
-            } else {
-                format!(
-                    "Section,Number,Account,{}",
-                    csv_cell(cols.first().map_or("", String::as_str))
-                )
-            });
-            for s in r["sections"].as_array().into_iter().flatten() {
-                let section = s["title"].as_str().unwrap_or("");
-                for row in s["rows"].as_array().into_iter().flatten() {
-                    let mut cells = vec![
-                        csv_cell(section),
-                        csv_cell(row["number"].as_str().unwrap_or("")),
-                        csv_cell(row["name"].as_str().unwrap_or("")),
-                        plain(&row["shown"]),
-                    ];
-                    if two {
-                        cells.push(plain(&row["prev_shown"]));
-                    }
-                    lines.push(cells.join(","));
-                }
+            // the rows the Excel export has, but a section's total
+            let t = crate::report_xlsx::table(&r)?;
+            let line = |cells: &[crate::report_xlsx::Cell]| {
+                cells
+                    .iter()
+                    .map(|c| match c {
+                        crate::report_xlsx::Cell::Text(x) => csv_cell(x),
+                        crate::report_xlsx::Cell::Amount(x) => x.clone(),
+                        crate::report_xlsx::Cell::Blank => String::new(),
+                    })
+                    .collect::<Vec<_>>()
+                    .join(",")
+            };
+            lines.push(
+                t.header
+                    .iter()
+                    .map(|h| csv_cell(h))
+                    .collect::<Vec<_>>()
+                    .join(","),
+            );
+            for row in t
+                .rows
+                .iter()
+                .filter(|x| x.role != crate::report_xlsx::Role::SectionTotal)
+            {
+                lines.push(line(&row.cells));
             }
-            let mut net = vec![
-                String::new(),
-                String::new(),
-                csv_cell(r["net"]["label"].as_str().unwrap_or("")),
-                plain(&r["net"]["shown"]),
-            ];
-            if two {
-                net.push(plain(&r["net"]["prev_shown"]));
-            }
-            lines.push(net.join(","));
         }
     }
-    let mut name = format!(
-        "books-{}-{}",
-        r["kind"].as_str().unwrap_or("report"),
-        r["period"]["key"].as_str().unwrap_or("")
-    );
-    if text(args, "compare_to").is_some()
-        && let Some(k) = r["compare"]["key"].as_str()
-    {
-        name.push_str(&format!("-vs-{k}"));
-    }
-    match r["tag"]["kind"].as_str() {
-        Some("department") => name.push_str("-dept"),
-        Some("location") => name.push_str("-loc"),
-        _ => {}
-    }
-    name.push_str(".csv");
+    let name = export_name(&r, args, "csv");
     Ok(json!({ "file_name": name, "csv": lines.join("\n") + "\n", "rows": lines.len() }))
 }

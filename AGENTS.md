@@ -17,7 +17,10 @@ These cannot be inferred from the code.
    without an owner decision.
 2. **Money is integer centavos.** Use `i64`, with `i128` for intermediates. JSON carries two-decimal text such as
    `"200000.00"`. No floats anywhere in a money path (the crates deny float lints; no `parseFloat` or JS `number` in
-   the apps). Measures are exact sums and are never rounded.
+   the apps). Measures are exact sums and are never rounded. The one exception is `cell_amount::number`, in its own file: an Excel cell stores a number as a double, so
+   that function parses a report's two-place amount text into one. It may parse and nothing else: no arithmetic, no
+   rounding, and it refuses an amount of more than 15 significant digits (the most that survives a decimal trip through a double and back) and text that is not two-place.
+   `no_float_type_appears_in_the_crates` exempts that file alone.
 3. **Privacy.**
    - Never put a raw TIN, a ticket value (`tkt_...`), a key, a token or a memo into a link, log, title, app prop,
      store file, fixture, test or doc. Use synthetic values only.
@@ -83,3 +86,5 @@ These cannot be inferred from the code.
 
 - Commit, push, merge or publish unless the owner asks.
 - Print a TIN, a ticket value, a key or a real amount into a log, a file or a reply.
+  Exception: `books_app_report_xlsx` writes the person's report to a 0600 file in Books' own data folder for the Bot
+  to save on the person's own press; hand-offs are swept within an hour on initialize or export.
