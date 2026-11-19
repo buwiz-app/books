@@ -310,6 +310,46 @@ fn a_matched_row_carries_its_entrys_journal_lines_for_the_app_only() {
 }
 
 #[test]
+fn a_long_statement_leaves_journal_lines_to_the_drawer() {
+    let dir = TempDir::new("sp-long");
+    books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
+    let mut b = Books::new(Paths::in_dir(dir.0.join("store")));
+    let demo_book: Value = serde_json::from_str(&std::fs::read_to_string(DEMO).unwrap()).unwrap();
+    demo::seed(&mut b, &demo_book).unwrap();
+    let mut csv = String::from("Date,Description,Debit,Credit,Balance\n");
+    for i in 0..301 {
+        csv.push_str(&format!("2026-09-{:02},Line {i},10.00,,\n", i % 28 + 1));
+    }
+    let out = call(
+        &mut b,
+        "books_app_statement_import",
+        Origin::App,
+        json!({ "client_request_id": "sp-long-import-0001", "account": "11010", "csv_text": csv, "closing": "0.00" }),
+    );
+    assert_eq!(out["isError"], false, "{out}");
+    let line = statement(&mut b, Origin::App)["rows"][0]["ticket"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let out = call(
+        &mut b,
+        "books_app_statement_add_line",
+        Origin::App,
+        json!({ "client_request_id": "sp-long-add-0001", "account": "11010", "month": "2026-09", "line": line }),
+    );
+    assert_eq!(out["isError"], false, "{out}");
+    let rows = statement(&mut b, Origin::App)["rows"].clone();
+    assert_eq!(rows.as_array().unwrap().len(), 301);
+    assert!(rows.as_array().unwrap().iter().any(|r| r["match"] != "x"));
+    assert!(
+        rows.as_array()
+            .unwrap()
+            .iter()
+            .all(|r| r["books"]["lines"].is_null())
+    );
+}
+
+#[test]
 fn a_statement_pdf_or_picture_is_kept_as_a_document_and_reads_no_line() {
     let (_dir, mut b) = setup("sp-document");
     let lines = |b: &mut Books| -> i64 {

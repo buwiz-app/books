@@ -115,6 +115,11 @@ fn month_arg(args: &Map<String, Value>) -> Result<Period, Refusal> {
         .ok_or_else(|| Refusal::invalid("`month` is YYYY-MM."))
 }
 
+/// The most statement lines whose rows carry journal lines. A longer
+/// statement leaves them to the entry's drawer, so its answer stays as
+/// small as it was (one `buwiz.call` result is at most 1 MiB).
+const JOURNAL_ROWS: usize = 300;
+
 /// The chart, loaded once and only when a row has an entry to show.
 fn chart<'a>(
     store: &Store,
@@ -203,7 +208,7 @@ pub fn statement_view(
         });
         if origin == crate::service::Origin::App {
             row["description"] = json!(l.line.description);
-            if let Some(e) = entry {
+            if let Some(e) = entry.filter(|_| lines.len() <= JOURNAL_ROWS) {
                 // the matched entry's journal lines, for the app's own screen
                 row["books"]["lines"] = entry_lines(store, chart(store, &book, &mut accounts)?, e)?;
             }
