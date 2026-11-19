@@ -631,6 +631,56 @@ fn a_later_pages_picture_is_never_drawn_as_page_one() {
 }
 
 #[test]
+fn a_line_without_a_box_still_opens_its_own_page() {
+    let (_dir, mut b) = setup("sp-no-box");
+    let two = jpeg(640, 480);
+    let second = document(&mut b, 2, &two, "image/jpeg");
+    let draft = call(
+        &mut b,
+        "books_statement_draft_lines",
+        Origin::App,
+        json!({
+            "client_request_id": "sp-no-box-draft-1", "account": "11010", "month": "2026-09", "closing": "-1250.50",
+            "lines": [{ "date": "2026-09-03", "description": "Coffee shop", "amount": "-1250.50", "page": 1 }],
+            "pages": [null, second],
+        }),
+    );
+    assert_eq!(draft["isError"], false, "{draft}");
+    let out = call(
+        &mut b,
+        "books_app_statement_accept",
+        Origin::App,
+        json!({ "client_request_id": "sp-no-box-accept-1", "account": "11010", "month": "2026-09", "draft": draft["structuredContent"]["draft"] }),
+    );
+    assert_eq!(out["isError"], false, "{out}");
+    // the pane is shown for page 2's picture, and the line is on page 1 with no box
+    let st = statement(&mut b, Origin::App);
+    assert_eq!(st["snapshot"], true);
+    assert_eq!(st["snapshot_pictures"], json!([2]));
+    assert_eq!(st["rows"][0]["page"], 1);
+    assert_eq!(st["rows"][0]["box"], Value::Null);
+    // page 1 opens as its own lines, never page 2's picture
+    let out = call(
+        &mut b,
+        "books_app_reconcile_document",
+        Origin::App,
+        json!({ "account": "11010", "month": "2026-09", "kind": "page", "page": 1, "line": st["rows"][0]["no"] }),
+    );
+    assert_eq!(out["isError"], false, "{out}");
+    let text = out["content"][0]["resource"]["text"].as_str().unwrap();
+    assert!(text.contains("Coffee shop") && !text.contains("<img"));
+    // the pane lists every page a line is on, not only the boxed ones
+    let source = match apps::find("books").unwrap().source {
+        apps::AppSource::Tsx(source) => source,
+        apps::AppSource::Native { .. } => panic!("the Books window is TSX"),
+    };
+    assert!(source.contains(
+        "new Set([...(p.rows || []).filter((r: Any) => r.page).map((r: Any) => Number(r.page)), ...pictures()])"
+    ));
+    assert!(!source.contains("new Set([...paged().map("));
+}
+
+#[test]
 fn replacing_a_pages_picture_changes_what_the_window_keys_its_pictures_by() {
     let (_dir, mut b) = setup("sp-stamp");
     let (one, two, three) = (png(850, 1100, 300), jpeg(640, 480), png(600, 800, 200));

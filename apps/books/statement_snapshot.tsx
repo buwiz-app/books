@@ -90,7 +90,8 @@ function SnapshotPane(p: {
 }) {
   const paged = () => snapPaged(p.rows);
   const pictures = () => (p.pictures || []).map(Number);
-  const pages = () => [...new Set([...paged().map((r: Any) => Number(r.page)), ...pictures()])].sort((a, b) => a - b);
+  // every page a line is on, boxed or not, so picking a line never opens another page
+  const pages = () => [...new Set([...(p.rows || []).filter((r: Any) => r.page).map((r: Any) => Number(r.page)), ...pictures()])].sort((a, b) => a - b);
   const chosen = () => (p.rows || []).find((r: Any) => r.no === p.selected);
   const page = () => (pages().includes(p.page) ? p.page : pages()[0] || 1);
   const pictured = () => pictures().includes(page());
@@ -110,7 +111,7 @@ function SnapshotPane(p: {
   const note = () => {
     if (img()) return "";
     if (pictured()) return image.loading() ? "Loading the page…" : "The page could not be shown here. Open it with See the page.";
-    if (p.kind === "image") return `No picture was kept for page ${String(page())}, so its lines are in the list only.`;
+    if (p.kind === "image" || pictures().length > 0) return `No picture was kept for page ${String(page())}, so its lines are in the list only.`;
     return SNAP_NOTE[p.kind] || "";
   };
   return (
