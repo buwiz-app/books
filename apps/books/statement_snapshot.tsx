@@ -91,17 +91,27 @@ function SnapshotPane(p: {
   // an image is one page: its boxes are page 1's
   const img = () => (p.kind === "image" && page() === 1 ? (image() as Any) : null);
   const height = () => (img()?.width > 0 && img()?.height > 0 ? Math.round((SNAP_W * img().height) / img().width) : SNAP_H);
-  const note = () => (p.kind === "image" ? (image.loading() ? "Loading the page…" : img() ? "" : page() === 1 ? "The page could not be shown here." : "") : SNAP_NOTE[p.kind] || "");
+  const note = () => (p.kind === "image" ? (image.loading() ? "Loading the page…" : img() ? "" : page() === 1 ? "The page could not be shown here." : "Only the first page has a picture here.") : SNAP_NOTE[p.kind] || "");
   return (
     <View class="gap-2" style={{ width: SNAP_W }}>
       <If when={pages().length > 1}>
         <Seg options={pages().map((n: number) => [String(n), `Page ${n}`] as [string, string])} value={String(page())} onPick={(v: string) => p.onPage(Number(v))} />
       </If>
+      {/* above the page, so they show without scrolling */}
+      <View class="flex-row gap-2 flex-wrap">
+        <If when={Boolean(buwiz.preview) && p.evidence}>
+          <Btn label="See the page" onPress={() => showPreview({ account: p.account, month: p.month, kind: "page", page: page(), line: p.selected ?? undefined })} />
+        </If>
+        <PrintReconciliation account={p.account} month={p.month} />
+      </View>
+      <If when={Boolean(note())}>
+        <Text class={`text-[12px] ${C.dim}`}>{note()}</Text>
+      </If>
       <If when={Boolean(img()) || paged().length > 0}>
         <Panel class="relative overflow-hidden">
           <View style={{ width: SNAP_W, height: height() }}>
             <If when={Boolean(img())}>
-              <Image src={img()?.src || ""} accessibilityLabel="Statement page" style={{ width: SNAP_W, height: height() }} />
+              <Avatar src={img()?.src || ""} accessibilityLabel="Statement page" style={{ width: SNAP_W, height: height() }} imageStyle={{ width: SNAP_W, height: height() }} />
             </If>
             <Each of={onPage()} key={(r: Any) => String(r.no)}>
               {(r: Any) => (
@@ -116,18 +126,9 @@ function SnapshotPane(p: {
           </View>
         </Panel>
       </If>
-      <If when={Boolean(note())}>
-        <Text class={`text-[12px] ${C.dim}`}>{note()}</Text>
-      </If>
       <If when={chosen()?.match === "x" && paged().length > 0}>
         <Btn label="Create from this line" onPress={() => act("books_app_statement_add_line", { account: p.account, month: p.month, line: chosen().ticket }).catch(() => null)} />
       </If>
-      <View class="flex-row gap-2 flex-wrap">
-        <If when={Boolean(buwiz.preview) && p.evidence}>
-          <Btn label="See the page" onPress={() => showPreview({ account: p.account, month: p.month, kind: "page", page: page(), line: p.selected ?? undefined })} />
-        </If>
-        <PrintReconciliation account={p.account} month={p.month} />
-      </View>
     </View>
   );
 }

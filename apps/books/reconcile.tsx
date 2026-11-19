@@ -148,6 +148,10 @@ function MatchView() {
     act(tool, { account: recAccount(), month: recMonth(), ...extra }).catch(() => null);
   const selectedLine = signal<number | null>(null);
   const snapPage = signal(0);
+  const pick = (r: Any) => {
+    selectedLine.set(r.no ?? null);
+    if (r.page) snapPage.set(Number(r.page));
+  };
   // the snapshot on the left and the lines on the right; with none, the full-width list
   const side = () => snapShown(s());
   return (
@@ -206,11 +210,8 @@ function MatchView() {
               <Each of={s()?.rows || []} key={rowKey}>
                 {(r: Any) => (
                   <View
-                    class={`${side() ? "" : "flex-row items-center"} border-b ${C.line} ${r().no === selectedLine() ? C.panel : ""}`}
-                    onPress={() => {
-                      selectedLine.set(r().no ?? null);
-                      if (r().page) snapPage.set(Number(r().page));
-                    }}
+                    class={`${side() ? "" : "flex-row items-center"} border-b ${C.line} ${r().no === selectedLine() ? C.hover : ""}`}
+                    onPress={() => pick(r())}
                   >
                     <View class={`${side() ? "" : "flex-1"} flex-row items-center gap-2 px-3 py-2 min-h-[38px]`}>
                       <If when={side()}>
@@ -231,7 +232,11 @@ function MatchView() {
                     <If when={!side()}>
                       <Text class={`w-[28px] text-center font-bold ${r().match === "m" ? C.green : r().match === "s" ? C.amber : C.red}`}>{MARK[r().match]}</Text>
                     </If>
-                    <View class={`${side() ? "" : "flex-1"} px-3 py-2 gap-1.5 ${r().match === "x" ? PILL.rev : r().match === "s" ? PILL.draft : ""}`} onPress={() => r().books?.ticket && drawerEntry.set(r().books.ticket)}>
+                    <View class={`${side() ? "" : "flex-1"} px-3 py-2 gap-1.5 ${r().match === "x" ? PILL.rev : r().match === "s" ? PILL.draft : ""}`} onPress={() => {
+                      // a press here does not reach the row, so it picks the line too
+                      pick(r());
+                      if (r().books?.ticket) drawerEntry.set(r().books.ticket);
+                    }}>
                       <View class="flex-row items-center gap-2 min-h-[22px]">
                         <Text class={`w-[52px] text-[12px] font-mono ${C.ink}`}>{r().books?.date_short || "—"}</Text>
                         <View class="flex-1">

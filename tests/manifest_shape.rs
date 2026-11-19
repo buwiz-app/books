@@ -254,13 +254,15 @@ fn the_apps_import_only_nsh_and_rox_and_cards_call_rox_fit() {
             .filter(|l| l.trim_start().starts_with("import "))
             .collect();
         assert!(
-            imports.len() <= 2,
-            "{}: one import each from nsh and buwiz",
+            imports.len() <= 3,
+            "{}: one import each from nsh, nsh/base and buwiz",
             app.id
         );
         for line in imports {
             assert!(
-                line.ends_with("from \"nsh\";") || line.ends_with("from \"buwiz\";"),
+                line.ends_with("from \"nsh\";")
+                    || line.ends_with("from \"nsh/base\";")
+                    || line.ends_with("from \"buwiz\";"),
                 "{}: {line}",
                 app.id
             );

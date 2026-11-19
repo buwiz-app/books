@@ -442,7 +442,7 @@ fn the_window_names_the_page_tool_and_picks_statement_documents() {
         apps::AppSource::Native { .. } => panic!("the Books window is TSX"),
     };
     // the page is drawn by nsh from a data: source the app holds
-    assert!(source.contains("<Image src={img()?.src"));
+    assert!(source.contains("<Avatar src={img()?.src"));
     assert!(source.contains("`data:${String(first.mime)};base64,${data}`"));
     assert!(!source.contains("http://") && !source.contains("https://"));
 }
