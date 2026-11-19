@@ -120,6 +120,8 @@ pub fn snapshot_fields(
     wanted.dedup();
     let mut pictures = Vec::new();
     let mut stamp = Sha256::new();
+    // a page the statement read gave a picture of its own is not a drawn one
+    let own = drafts::pages(conn, s.id)?;
     for page in wanted {
         if let Some(id) = page_evidence(conn, s.id, page)?
             && snapshot_kind(conn, s.id, id)? == "image"
@@ -132,7 +134,7 @@ pub fn snapshot_fields(
                 .map_err(books_store::StoreError::from)?;
             stamp.update(format!("{page}:{sha};"));
         } else if let Some(len) = drawn.iter().find(|p| p.0 == page).map(|p| p.1)
-            && drawn_page(conn, s.id, page)?.is_some()
+            && !own.iter().any(|p| p.0 == page)
         {
             pictures.push(page);
             stamp.update(format!("{page}:drawn:{len};"));
