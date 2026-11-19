@@ -187,6 +187,7 @@ function MatchView() {
                 rows={s()?.rows || []}
                 evidence={Boolean(s()?.snapshot)}
                 kind={String(s()?.snapshot_kind || "")}
+                pictures={s()?.snapshot_pictures || []}
                 doc={String(s()?.evidence || "")}
                 selected={selectedLine()}
                 onSelect={(no: number) => selectedLine.set(no)}

@@ -205,6 +205,7 @@ mod tests {
                      ALTER TABLE entry DROP COLUMN amended_by_entry_id; ALTER TABLE entry DROP COLUMN amends_entry_id;
                      DROP TABLE entry_copy; DROP TABLE duplicate_ack; DROP TABLE draft_field;
                      DROP TABLE statement_event;
+                     DROP TABLE statement_page; DROP TABLE statement_draft_page;
                      DROP TABLE statement_draft_line; DROP TABLE statement_draft;
                      ALTER TABLE statement DROP COLUMN evidence_id;
                      ALTER TABLE statement_line DROP COLUMN by1; ALTER TABLE statement_line DROP COLUMN bx0;

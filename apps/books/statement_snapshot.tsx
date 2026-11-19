@@ -1,9 +1,11 @@
 // Reconcile: the statement snapshot beside the match list.
-// A PNG or JPEG snapshot is drawn here: its bytes come from
-// books_app_statement_page in parts (one answer is at most 1 MiB) and join
-// into one data: source. Boxes come from Rust as percent text and lie over
-// it. A PDF, and the report, show through buwiz.preview (macOS), which runs
-// books_app_reconcile_document as the app.
+// Each page that has a PNG or JPEG picture of its own is drawn here: its
+// bytes come from books_app_statement_page in parts (one answer is at most
+// 1 MiB) and join into one data: source. Boxes come from Rust as percent
+// text and lie over the picture, never over an empty panel: a page without a
+// picture (a PDF's pages, or a page the statement read gave no picture for)
+// shows a note and "See the page". A PDF, and the report, show through
+// buwiz.preview (macOS), which runs books_app_reconcile_document as the app.
 
 async function showPreview(args: Record<string, Any>) {
   if (!buwiz.preview) return;
@@ -38,31 +40,34 @@ function snapShown(s: Any): boolean {
 const SNAP_W = 380;
 /** The pane's height with no image to measure: a letter page. */
 const SNAP_H = 492;
+/** Why a page has no picture to draw, by what the statement's document is. */
 const SNAP_NOTE: Record<string, string> = {
-  pdf: "This statement is a PDF. Open it with See the page.",
+  pdf: "This statement is a PDF, so its pages cannot be drawn here. Open it with See the page.",
   large: "This page is too large to show here. Open it with See the page.",
   other: "This document cannot be shown here.",
 };
 
-/** The last page image read, so a write elsewhere on the screen does not read it again. */
-let snapKept: { key: string; image: Any } | null = null;
+/** The last page images read, so paging back or a write elsewhere does not read them again. */
+const snapKept: { key: string; image: Any }[] = [];
 
-/** The statement's snapshot image as one data: source, with its size in pixels. */
-async function snapImage(key: string, account: string, month: string): Promise<Any> {
-  if (snapKept && snapKept.key === key) return snapKept.image;
+/** One page's picture as one data: source, with its size in pixels and the key it was read for. */
+async function snapImage(key: string, account: string, month: string, page: number): Promise<Any> {
+  const kept = snapKept.find((k) => k.key === key);
+  if (kept) return kept.image;
   let data = "";
   let first: Any = null;
   let parts = 1;
   for (let i = 0; i < parts; i += 1) {
-    const r: Any = await buwiz.call("books_app_statement_page", { account, month, part: i });
+    const r: Any = await buwiz.call("books_app_statement_page", { account, month, page, part: i });
     if (!first) {
       first = r;
       parts = Math.max(1, Number(r.parts) || 1);
     }
     data += String(r.data_base64 || "");
   }
-  const image = { src: `data:${String(first.mime)};base64,${data}`, width: Number(first.width) || 0, height: Number(first.height) || 0 };
-  snapKept = { key, image };
+  const image = { key, src: `data:${String(first.mime)};base64,${data}`, width: Number(first.width) || 0, height: Number(first.height) || 0 };
+  snapKept.push({ key, image });
+  if (snapKept.length > 3) snapKept.shift();
   return image;
 }
 
@@ -71,6 +76,8 @@ function SnapshotPane(p: {
   rows: Any[];
   evidence: boolean;
   kind: string;
+  /** The pages that have a picture the window can draw. */
+  pictures: number[];
   doc: string;
   selected: number | null;
   onSelect: (no: number) => void;
@@ -80,18 +87,30 @@ function SnapshotPane(p: {
   month: string;
 }) {
   const paged = () => snapPaged(p.rows);
-  const pages = () => [...new Set(paged().map((r: Any) => Number(r.page)))].sort((a, b) => a - b);
+  const pictures = () => (p.pictures || []).map(Number);
+  const pages = () => [...new Set([...paged().map((r: Any) => Number(r.page)), ...pictures()])].sort((a, b) => a - b);
   const chosen = () => (p.rows || []).find((r: Any) => r.no === p.selected);
   const page = () => (pages().includes(p.page) ? p.page : pages()[0] || 1);
-  const onPage = () => paged().filter((r: Any) => Number(r.page) === page());
+  const pictured = () => pictures().includes(page());
+  const key = () => `${p.account}|${p.month}|${p.doc}|${String(page())}`;
   const image = resource(
-    () => ({ k: p.kind, a: p.account, m: p.month, d: p.doc }),
-    (k: Any) => (k.k === "image" ? snapImage(`${k.a}|${k.m}|${k.d}`, k.a, k.m).catch(() => null) : Promise.resolve(null)),
+    () => ({ key: key(), a: p.account, m: p.month, n: page(), has: pictured() }),
+    (k: Any) => (k.has ? snapImage(k.key, k.a, k.m, k.n).catch(() => null) : Promise.resolve(null)),
   );
-  // an image is one page: its boxes are page 1's
-  const img = () => (p.kind === "image" && page() === 1 ? (image() as Any) : null);
+  // only the picture read for this very page: never another page's while this one loads
+  const img = () => {
+    const i = image() as Any;
+    return pictured() && i && i.key === key() ? i : null;
+  };
+  // boxes lie over a picture only; a page without one shows the note instead
+  const onPage = () => (img() ? paged().filter((r: Any) => Number(r.page) === page()) : []);
   const height = () => (img()?.width > 0 && img()?.height > 0 ? Math.round((SNAP_W * img().height) / img().width) : SNAP_H);
-  const note = () => (p.kind === "image" ? (image.loading() ? "Loading the page…" : img() ? "" : page() === 1 ? "The page could not be shown here." : "Only the first page has a picture here.") : SNAP_NOTE[p.kind] || "");
+  const note = () => {
+    if (img()) return "";
+    if (pictured()) return image.loading() ? "Loading the page…" : "The page could not be shown here. Open it with See the page.";
+    if (p.kind === "image") return `No picture was kept for page ${String(page())}, so its lines are in the list only.`;
+    return SNAP_NOTE[p.kind] || "";
+  };
   return (
     <View class="gap-2" style={{ width: SNAP_W }}>
       <If when={pages().length > 1}>
@@ -107,12 +126,10 @@ function SnapshotPane(p: {
       <If when={Boolean(note())}>
         <Text class={`text-[12px] ${C.dim}`}>{note()}</Text>
       </If>
-      <If when={Boolean(img()) || paged().length > 0}>
+      <If when={Boolean(img())}>
         <Panel class="relative overflow-hidden">
           <View style={{ width: SNAP_W, height: height() }}>
-            <If when={Boolean(img())}>
-              <Avatar src={img()?.src || ""} accessibilityLabel="Statement page" style={{ width: SNAP_W, height: height() }} imageStyle={{ width: SNAP_W, height: height() }} />
-            </If>
+            <Avatar src={img()?.src || ""} accessibilityLabel="Statement page" style={{ width: SNAP_W, height: height() }} imageStyle={{ width: SNAP_W, height: height() }} />
             <Each of={onPage()} key={(r: Any) => String(r.no)}>
               {(r: Any) => (
                 <View

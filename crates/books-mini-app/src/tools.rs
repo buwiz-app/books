@@ -335,7 +335,7 @@ fn reconcile_document_schema() -> Value {
 }
 
 fn statement_page_schema() -> Value {
-    json!({ "type": "object", "required": ["account", "month"], "properties": { "book": { "type": "string" }, "account": { "type": "string" }, "month": { "type": "string", "description": "YYYY-MM" }, "part": { "type": "integer", "minimum": 0, "description": "Which part of the image; 0 when absent." } } })
+    json!({ "type": "object", "required": ["account", "month"], "properties": { "book": { "type": "string" }, "account": { "type": "string" }, "month": { "type": "string", "description": "YYYY-MM" }, "page": { "type": "integer", "minimum": 1, "maximum": 500, "description": "Which page's picture; 1 when absent." }, "part": { "type": "integer", "minimum": 0, "description": "Which part of the image; 0 when absent." } } })
 }
 
 fn statement_write() -> Value {
@@ -484,6 +484,7 @@ fn statement_draft_schema() -> Value {
         "account": { "type": "string", "description": "The bank, cash or card account's ticket." },
         "month": { "type": "string", "description": "YYYY-MM" },
         "evidence": { "type": "string", "description": "The attached statement's evidence ticket." },
+        "pages": { "type": "array", "minItems": 1, "maxItems": 500, "items": { "type": ["string", "null"] }, "description": "When the statement came as one picture for each page: each page's evidence ticket (PNG or JPEG), in page order, so the app shows every page behind its lines. `null` for a page with no picture." },
         "closing": { "type": "string", "description": "The ending balance, two-place text." },
         "lines": { "type": "array", "minItems": 1, "maxItems": 2000, "items": { "type": "object", "required": ["date", "amount"], "properties": {
             "date": { "type": "string", "description": "YYYY-MM-DD" },
@@ -1101,7 +1102,7 @@ pub const TOOLS: &[Tool] = &[
         reach: Reach::App,
         write: false,
         schema: statement_page_schema,
-        description: "One part of a statement's snapshot image (PNG or JPEG), for the Books window to draw beside the match list. App only.",
+        description: "One part of one statement page's picture (PNG or JPEG), for the Books window to draw beside the match list. App only.",
     },
     Tool {
         name: CHECKS,

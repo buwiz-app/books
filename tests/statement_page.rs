@@ -446,3 +446,146 @@ fn the_window_names_the_page_tool_and_picks_statement_documents() {
     assert!(source.contains("`data:${String(first.mime)};base64,${data}`"));
     assert!(!source.contains("http://") && !source.contains("https://"));
 }
+
+/// Keep `bytes` as a statement document and return its evidence ticket.
+fn document(b: &mut Books, n: u8, bytes: &[u8], mime: &str) -> Value {
+    let upload = format!("up-page-{n}");
+    let out = call(
+        b,
+        "books_app_upload_part",
+        Origin::App,
+        json!({ "upload": upload, "part": 0, "parts": 1, "data_base64": books_mini_app::b64::encode(bytes) }),
+    );
+    assert_eq!(out["isError"], false, "{out}");
+    let out = call(
+        b,
+        "books_app_statement_import",
+        Origin::App,
+        json!({ "client_request_id": format!("sp-pages-doc-{n}"), "account": "11010", "document_upload": upload, "document_mime": mime }),
+    );
+    assert_eq!(out["isError"], false, "{out}");
+    out["structuredContent"]["document"].clone()
+}
+
+/// Draft two lines, on pages 1 and 2, and accept them as September's statement.
+fn read_two_pages(b: &mut Books, n: u8, extra: Value) -> Value {
+    let mut args = json!({
+        "client_request_id": format!("sp-pages-draft-{n}"), "account": "11010", "month": "2026-09", "closing": "14250.25",
+        "lines": [
+            { "date": "2026-09-03", "description": "Coffee shop", "amount": "-1250.50", "page": 1, "bbox": [10, 100, 990, 140] },
+            { "date": "2026-09-20", "description": "Client deposit", "amount": "15500.75", "page": 2, "bbox": [10, 200, 990, 240] },
+        ],
+    });
+    for (k, v) in extra.as_object().unwrap() {
+        args[k] = v.clone();
+    }
+    let draft = call(b, "books_statement_draft_lines", Origin::App, args);
+    if draft["isError"] == true {
+        return draft;
+    }
+    call(
+        b,
+        "books_app_statement_accept",
+        Origin::App,
+        json!({ "client_request_id": format!("sp-pages-accept-{n}"), "account": "11010", "month": "2026-09", "draft": draft["structuredContent"]["draft"] }),
+    )
+}
+
+fn page_no(books: &mut Books, page: u64) -> Value {
+    call(
+        books,
+        PAGE,
+        Origin::App,
+        json!({ "account": "11010", "month": "2026-09", "page": page }),
+    )
+}
+
+#[test]
+fn each_page_of_a_statement_read_from_pictures_gives_its_own_picture() {
+    let (_dir, mut b) = setup("sp-pages");
+    let (one, two) = (png(850, 1100, 300), jpeg(640, 480));
+    let first = document(&mut b, 1, &one, "image/png");
+    let second = document(&mut b, 2, &two, "image/jpeg");
+    let out = read_two_pages(&mut b, 1, json!({ "pages": [first, second] }));
+    assert_eq!(out["isError"], false, "{out}");
+    let p1 = page_no(&mut b, 1);
+    assert_eq!(p1["structuredContent"]["page"], 1);
+    assert_eq!(
+        p1["structuredContent"]["data_base64"],
+        json!(html::base64(&one))
+    );
+    let p2 = page_no(&mut b, 2);
+    assert_eq!(p2["structuredContent"]["mime"], "image/jpeg");
+    assert_eq!(p2["structuredContent"]["width"], 640);
+    assert_eq!(
+        p2["structuredContent"]["data_base64"],
+        json!(html::base64(&two))
+    );
+    // with no page named, page 1
+    assert_eq!(
+        page(&mut b, None)["structuredContent"]["data_base64"],
+        json!(html::base64(&one))
+    );
+    assert_eq!(code(&page_no(&mut b, 3)), "no_snapshot");
+    let st = statement(&mut b, Origin::App);
+    assert_eq!(st["snapshot_pictures"], json!([1, 2]));
+    // a CSV in its place leaves no page picture behind
+    let out = call(
+        &mut b,
+        "books_app_statement_import",
+        Origin::App,
+        json!({ "client_request_id": "sp-pages-csv-0001", "account": "11010", "csv_base64": books_mini_app::b64::encode(CSV.as_bytes()), "file_name": "synthetic.csv" }),
+    );
+    assert_eq!(out["isError"], false, "{out}");
+    assert_eq!(code(&page_no(&mut b, 2)), "no_snapshot");
+    assert_eq!(
+        statement(&mut b, Origin::App)["snapshot_pictures"],
+        json!([])
+    );
+}
+
+#[test]
+fn a_page_without_a_picture_of_its_own_is_never_given_another_pages() {
+    // one picture, lines on two pages: the picture is page 1 only
+    let (_dir, mut b) = setup("sp-one-picture");
+    let one = png(850, 1100, 300);
+    let first = document(&mut b, 1, &one, "image/png");
+    let out = read_two_pages(&mut b, 1, json!({ "evidence": first }));
+    assert_eq!(out["isError"], false, "{out}");
+    assert_eq!(page_no(&mut b, 1)["isError"], false);
+    assert_eq!(code(&page_no(&mut b, 2)), "no_snapshot");
+    let st = statement(&mut b, Origin::App);
+    assert_eq!(st["snapshot_kind"], "image");
+    assert_eq!(st["snapshot_pictures"], json!([1]));
+    // the preview of page 2 lists its lines and embeds no picture
+    let out = call(
+        &mut b,
+        "books_app_reconcile_document",
+        Origin::App,
+        json!({ "account": "11010", "month": "2026-09", "kind": "page", "page": 2 }),
+    );
+    assert_eq!(out["isError"], false, "{out}");
+    let text = out["content"][0]["resource"]["text"].as_str().unwrap();
+    assert!(text.contains("No picture was kept for this page"));
+    assert!(!text.contains("<img"));
+
+    // a PDF's pages are inside the file: no page has a picture to draw
+    let (_dir, mut b) = setup("sp-pdf-pages");
+    let pdf = document(&mut b, 1, b"%PDF-1.7 synthetic", "application/pdf");
+    let out = read_two_pages(&mut b, 1, json!({ "evidence": pdf }));
+    assert_eq!(out["isError"], false, "{out}");
+    assert_eq!(code(&page_no(&mut b, 1)), "not_supported");
+    assert_eq!(code(&page_no(&mut b, 2)), "no_snapshot");
+    let st = statement(&mut b, Origin::App);
+    assert_eq!(st["snapshot_kind"], "pdf");
+    assert_eq!(st["snapshot_pictures"], json!([]));
+    // and a PDF is not a page's picture
+    assert_eq!(
+        code(&read_two_pages(&mut b, 2, json!({ "pages": [pdf] }))),
+        "invalid_args"
+    );
+    assert_eq!(
+        code(&read_two_pages(&mut b, 3, json!({ "pages": ["tkt_none"] }))),
+        "not_found"
+    );
+}
