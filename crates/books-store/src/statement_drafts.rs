@@ -34,6 +34,8 @@ pub struct Draft {
     pub proposed_by: String,
     pub status: String,
     pub lines: Vec<DraftLine>,
+    /// Each page's own picture: `(page, evidence id)`, in page order.
+    pub pages: Vec<(i64, i64)>,
 }
 
 /// Where a stored statement line sits on its page.
@@ -53,6 +55,8 @@ pub struct NewDraft<'a> {
     pub evidence_id: Option<i64>,
     pub proposed_by: &'a str,
     pub lines: &'a [DraftLine],
+    /// Each page's own picture: `(page, evidence id)`.
+    pub pages: &'a [(i64, i64)],
 }
 
 /// A box is four thousandths with `x0 < x1` and `y0 < y1`.
@@ -132,6 +136,12 @@ pub fn insert(conn: &Connection, d: &NewDraft<'_>) -> Result<i64> {
             l.confidence
         ])?;
     }
+    for (page, evidence) in d.pages {
+        conn.execute(
+            "INSERT INTO statement_draft_page (draft_id, page, evidence_id) VALUES (?1, ?2, ?3)",
+            params![id, page, evidence],
+        )?;
+    }
     Ok(id)
 }
 
@@ -155,6 +165,7 @@ pub fn get(conn: &Connection, id: i64) -> Result<Option<Draft>> {
                     proposed_by: r.get(6)?,
                     status: r.get(7)?,
                     lines: Vec::new(),
+                    pages: Vec::new(),
                 })
             },
         )
@@ -190,6 +201,12 @@ pub fn get(conn: &Connection, id: i64) -> Result<Option<Draft>> {
             .ok_or_else(|| error("store", "A drafted line's date is not a date."))?;
         d.lines.push(line);
     }
+    let mut stmt = conn.prepare(
+        "SELECT page, evidence_id FROM statement_draft_page WHERE draft_id = ?1 ORDER BY page",
+    )?;
+    d.pages = stmt
+        .query_map([id], |r| Ok((r.get(0)?, r.get(1)?)))?
+        .collect::<rusqlite::Result<_>>()?;
     Ok(Some(d))
 }
 
@@ -268,6 +285,30 @@ pub fn keep_extras(
         ])?;
     }
     Ok(())
+}
+
+/// Keep each page's own picture for a statement, in place of any kept before.
+pub fn keep_pages(conn: &Connection, statement_id: i64, pages: &[(i64, i64)]) -> Result<()> {
+    conn.execute(
+        "DELETE FROM statement_page WHERE statement_id = ?1",
+        [statement_id],
+    )?;
+    for (page, evidence) in pages {
+        conn.execute(
+            "INSERT INTO statement_page (statement_id, page, evidence_id) VALUES (?1, ?2, ?3)",
+            params![statement_id, page, evidence],
+        )?;
+    }
+    Ok(())
+}
+
+/// Each page's own picture for a statement: `(page, evidence id)`, in page order.
+pub fn pages(conn: &Connection, statement_id: i64) -> Result<Vec<(i64, i64)>> {
+    let mut stmt = conn.prepare(
+        "SELECT page, evidence_id FROM statement_page WHERE statement_id = ?1 ORDER BY page",
+    )?;
+    let rows = stmt.query_map([statement_id], |r| Ok((r.get(0)?, r.get(1)?)))?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
 }
 
 /// A statement's evidence and each line's extras, in line order.

@@ -226,6 +226,10 @@ pub fn import(
             "DELETE FROM statement_line WHERE statement_id = ?1",
             params![id],
         )?;
+        conn.execute(
+            "DELETE FROM statement_page WHERE statement_id = ?1",
+            params![id],
+        )?;
         // the row stays so its finish/reopen history keeps pointing at it
         conn.execute(
             "UPDATE statement SET closing = ?2, source_name = ?3, imported_at = ?4, evidence_id = NULL WHERE statement_id = ?1",

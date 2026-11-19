@@ -226,6 +226,7 @@ export const View = host("View");
 export const Text = host("Text");
 export const Scroll = host("Scroll");
 export const Input = host("Input");
+export const Image = host("Image");
 const Fragment = Symbol("Fragment");
 
 // ---- what the compiled JSX calls ----
@@ -504,7 +505,7 @@ export function prepareApp(source, { esbuild }) {
 
 export function mountApp(source, { esbuild, bridge, prepared = false }) {
   const cjs = prepared ? source : prepareApp(source, { esbuild });
-  const nsh = { signal, computed, resource, View, Text, Scroll, Input };
+  const nsh = { signal, computed, resource, View, Text, Scroll, Input, Image };
   const modules = { nsh, buwiz: { buwiz: bridge, default: bridge } };
   const require = (id) => {
     if (!(id in modules)) throw new Error(`the app imports ${id}; apps may import only nsh and buwiz`);

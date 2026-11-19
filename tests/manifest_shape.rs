@@ -254,13 +254,15 @@ fn the_apps_import_only_nsh_and_rox_and_cards_call_rox_fit() {
             .filter(|l| l.trim_start().starts_with("import "))
             .collect();
         assert!(
-            imports.len() <= 2,
-            "{}: one import each from nsh and buwiz",
+            imports.len() <= 3,
+            "{}: one import each from nsh, nsh/base and buwiz",
             app.id
         );
         for line in imports {
             assert!(
-                line.ends_with("from \"nsh\";") || line.ends_with("from \"buwiz\";"),
+                line.ends_with("from \"nsh\";")
+                    || line.ends_with("from \"nsh/base\";")
+                    || line.ends_with("from \"buwiz\";"),
                 "{}: {line}",
                 app.id
             );
@@ -337,11 +339,20 @@ fn evidence_grants_stay_on_the_evidence_apps() {
             .as_array()
             .is_some_and(|a| a.iter().any(|s| s == "evidence"));
         assert_eq!(attaches_evidence, id == "evidence", "{id}: attach");
-        // the library's file types only on the library
-        let picks_documents = p["pick_file"]["extensions"]
-            .as_array()
-            .is_some_and(|x| x.iter().any(|s| s == ".pdf"));
-        assert_eq!(picks_documents, id == "evidence", "{id}: pick_file");
+        // document file types only on the library and on the Books window,
+        // whose Reconcile keeps a statement's PDF, PNG or JPEG; WebP stays
+        // the library's
+        let picks = |ext: &str| {
+            p["pick_file"]["extensions"]
+                .as_array()
+                .is_some_and(|x| x.iter().any(|s| s == ext))
+        };
+        assert_eq!(
+            picks(".pdf"),
+            id == "evidence" || id == "books",
+            "{id}: pick_file"
+        );
+        assert_eq!(picks(".webp"), id == "evidence", "{id}: pick_file");
         if id != "evidence" && id != "books" {
             assert!(p.get("pick_file").is_none(), "{id}: pick_file");
         }

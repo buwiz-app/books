@@ -161,6 +161,41 @@ pub fn linked_count(conn: &Connection, id: i64) -> Result<i64> {
     )?)
 }
 
+/// Keep a document's pages as pictures (PNG), in place of any kept before.
+pub fn keep_pages(conn: &Connection, evidence: i64, pages: &[(i64, Vec<u8>)]) -> Result<()> {
+    conn.execute(
+        "DELETE FROM evidence_page WHERE evidence_id = ?1",
+        [evidence],
+    )?;
+    for (page, bytes) in pages {
+        conn.execute(
+            "INSERT INTO evidence_page (evidence_id, page, byte_length, bytes) VALUES (?1, ?2, ?3, ?4)",
+            params![evidence, page, i64::try_from(bytes.len()).unwrap_or(i64::MAX), bytes],
+        )?;
+    }
+    Ok(())
+}
+
+/// The pages of a document that have a picture, with each picture's length.
+pub fn pages(conn: &Connection, evidence: i64) -> Result<Vec<(i64, i64)>> {
+    let mut stmt = conn.prepare(
+        "SELECT page, byte_length FROM evidence_page WHERE evidence_id = ?1 ORDER BY page",
+    )?;
+    let rows = stmt.query_map([evidence], |r| Ok((r.get(0)?, r.get(1)?)))?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
+
+/// One page's picture (PNG) of a document.
+pub fn page(conn: &Connection, evidence: i64, page: i64) -> Result<Option<Vec<u8>>> {
+    Ok(conn
+        .query_row(
+            "SELECT bytes FROM evidence_page WHERE evidence_id = ?1 AND page = ?2",
+            [evidence, page],
+            |r| r.get(0),
+        )
+        .optional()?)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -205,6 +240,7 @@ mod tests {
                      ALTER TABLE entry DROP COLUMN amended_by_entry_id; ALTER TABLE entry DROP COLUMN amends_entry_id;
                      DROP TABLE entry_copy; DROP TABLE duplicate_ack; DROP TABLE draft_field;
                      DROP TABLE statement_event;
+                     DROP TABLE statement_page; DROP TABLE statement_draft_page;
                      DROP TABLE statement_draft_line; DROP TABLE statement_draft;
                      ALTER TABLE statement DROP COLUMN evidence_id;
                      ALTER TABLE statement_line DROP COLUMN by1; ALTER TABLE statement_line DROP COLUMN bx0;
@@ -214,7 +250,7 @@ mod tests {
                 )
                 .unwrap();
             store.conn().execute_batch("DROP INDEX audit_by_subject; DROP TABLE press_once; ALTER TABLE audit_event DROP COLUMN press_shown_hash; ALTER TABLE audit_event DROP COLUMN press_who; ALTER TABLE audit_event DROP COLUMN press_approved_by; ALTER TABLE audit_event DROP COLUMN press_at; ALTER TABLE audit_event DROP COLUMN press_once; ALTER TABLE audit_event DROP COLUMN press_args_hash;").unwrap();
-            store.conn().execute_batch("DROP TABLE entry_extraction_correction; DROP TABLE entry_extraction; DROP TABLE evidence_classification; DROP TABLE owed_proposal; DROP TABLE evidence_link; DROP TABLE evidence; UPDATE meta SET value='6' WHERE key='schema_version';").unwrap();
+            store.conn().execute_batch("DROP TABLE entry_extraction_correction; DROP TABLE entry_extraction; DROP TABLE evidence_classification; DROP TABLE owed_proposal; DROP TABLE evidence_page; DROP TABLE evidence_link; DROP TABLE evidence; UPDATE meta SET value='6' WHERE key='schema_version';").unwrap();
         }
         let store = Store::open(&paths).unwrap();
         assert_eq!(
