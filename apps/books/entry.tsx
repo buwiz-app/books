@@ -238,10 +238,12 @@ function EntrySheet(p: { mode: Any; close: () => void; setMode: (m: string) => v
   const payee = signal("");
   const memo = signal("");
   const reference = signal("");
-  const jl = signal<Any[]>([
-    { account: "", debit: "", credit: "" },
-    { account: "", debit: "", credit: "" },
-  ]);
+  const journalLine = () => ({
+    account: signal(""),
+    debit: signal(""),
+    credit: signal(""),
+  });
+  const jl = signal<Any[]>([journalLine(), journalLine()]);
   const busy = signal(false);
   const err = signal("");
   const mode = () => String(p.mode());
@@ -267,11 +269,11 @@ function EntrySheet(p: { mode: Any; close: () => void; setMode: (m: string) => v
     if (reference()) base.reference = reference();
     if (mode() === "journal") {
       const lines = jl()
-        .filter((l: Any) => l.account)
+        .filter((l: Any) => l.account())
         .map((l: Any) => {
-          const line: Record<string, string> = { account: l.account };
-          const dr = moneyText(l.debit);
-          const cr = moneyText(l.credit);
+          const line: Record<string, string> = { account: l.account() };
+          const dr = moneyText(l.debit());
+          const cr = moneyText(l.credit());
           if (dr) line.debit = dr;
           if (cr) line.credit = cr;
           return line;
@@ -324,7 +326,6 @@ function EntrySheet(p: { mode: Any; close: () => void; setMode: (m: string) => v
       .catch((e: Any) => err.set(errText(e)))
       .finally(() => busy.set(false));
   };
-  const setLine = (i: number, key: string, v: string) => jl.set(jl().map((l: Any, j: number) => (j === i ? { ...l, [key]: v } : l)));
   return (
     <View class="absolute inset-0 bg-black/50 items-center justify-center">
       <View class={`w-[560px] max-h-[600px] rounded-[14px] border ${C.panel} ${C.line}`}>
@@ -393,18 +394,18 @@ function EntrySheet(p: { mode: Any; close: () => void; setMode: (m: string) => v
                   {(l: Any, i: Any) => (
                     <View class="flex-row gap-2 items-start">
                       <View class="flex-1">
-                        <Pick value={l().account} options={o()?.all || []} onPick={(a: Any) => setLine(i(), "account", a.ticket)} placeholder="Account" />
+                        <Pick value={l().account()} options={o()?.all || []} onPick={(a: Any) => l().account.set(a.ticket)} placeholder="Account" />
                       </View>
                       <View class="w-[100px]">
-                        <TextBox value={l().debit} onChange={(v: string) => setLine(i(), "debit", v)} placeholder="Debit" />
+                        <TextBox value={l().debit()} onChange={(v: string) => l().debit.set(v)} placeholder="Debit" />
                       </View>
                       <View class="w-[100px]">
-                        <TextBox value={l().credit} onChange={(v: string) => setLine(i(), "credit", v)} placeholder="Credit" />
+                        <TextBox value={l().credit()} onChange={(v: string) => l().credit.set(v)} placeholder="Credit" />
                       </View>
                     </View>
                   )}
                 </Each>
-                <Btn label="+ Line" small onPress={() => jl.set([...jl(), { account: "", debit: "", credit: "" }])} />
+                <Btn label="+ Line" small onPress={() => jl.set([...jl(), journalLine()])} />
                 <Field label="What it was for">
                   <TextBox value={memo()} onChange={(v) => memo.set(v)} placeholder="Prepaid software" />
                 </Field>

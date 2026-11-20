@@ -12,13 +12,13 @@
 //! - [`imports`]: old books coming in, account matches, opening totals;
 //! - [`plumbing`]: idempotency, audit rows and tickets.
 
+#[cfg(not(unix))]
+use no_unix_modes::{DirBuilderExt as _, OpenOptionsExt as _, PermissionsExt as _};
 use std::fmt;
 use std::fs;
 use std::io::Write as _;
 #[cfg(unix)]
 use std::os::unix::fs::{DirBuilderExt as _, OpenOptionsExt as _, PermissionsExt as _};
-#[cfg(not(unix))]
-use no_unix_modes::{DirBuilderExt as _, OpenOptionsExt as _, PermissionsExt as _};
 use std::path::{Path, PathBuf};
 
 use rusqlite::{Connection, OptionalExtension as _, params};
