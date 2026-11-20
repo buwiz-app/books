@@ -188,14 +188,19 @@ pub(crate) fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
-/// Makes `path` and any missing parents, each mode 0700.
+/// Creates missing directories, each mode 0700 on Unix, leaving existing ones alone.
+/// On Windows a newly created leaf gets a protected owner-only ACL.
 pub fn private_dirs(path: &Path) -> std::io::Result<()> {
+    #[cfg(windows)]
+    let existed = path.is_dir();
     fs::DirBuilder::new()
         .recursive(true)
         .mode(0o700)
         .create(path)?;
     #[cfg(windows)]
-    win_acl::restrict_to_owner(path, true)?;
+    if !existed {
+        win_acl::restrict_to_owner(path, true)?;
+    }
     Ok(())
 }
 
@@ -277,10 +282,7 @@ impl Store {
     /// Open (creating when absent) the store at `paths`, migrated to the
     /// latest schema.
     pub fn open(paths: &Paths) -> Result<Self> {
-        fs::DirBuilder::new()
-            .recursive(true)
-            .mode(0o700)
-            .create(&paths.dir)
+        private_dirs(&paths.dir)
             .map_err(|_| error("data_dir", "The Books data folder cannot be made."))?;
         let db = paths.db();
         let fresh = !db.exists();
@@ -525,6 +527,31 @@ mod tests {
         assert!(!win_acl::others_can_read(&paths.dir).unwrap());
         assert!(win_acl::dacl_is_protected(&paths.key_file).unwrap());
         assert!(win_acl::dacl_is_protected(&paths.dir).unwrap());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_an_existing_key_folder_keeps_its_shared_acl() {
+        let tmp = TempDir::new("acl-existing");
+        let shared = tmp.0.join("shared");
+        fs::create_dir(&shared).unwrap();
+        let sid = win_acl::current_user_sid().unwrap();
+        win_acl::set_dacl(&shared, &format!("D:P(A;OICI;FA;;;{sid})(A;OICI;FR;;;BU)")).unwrap();
+        let before = win_acl::dacl_sddl(&shared).unwrap();
+        let paths = Paths {
+            dir: tmp.0.join("data"),
+            key_file: shared.join(KEY_FILE),
+        };
+        drop(Store::open(&paths).unwrap());
+        let after = win_acl::dacl_sddl(&shared).unwrap();
+        assert!(
+            before == after,
+            "the existing folder's DACL must not change"
+        );
+        assert!(after.contains(";;;BU)") || after.contains(";;;S-1-5-32-545)"));
+        assert!(win_acl::others_can_read(&shared).unwrap());
+        assert!(!win_acl::others_can_read(&paths.key_file).unwrap());
+        assert!(win_acl::dacl_is_protected(&paths.key_file).unwrap());
     }
 
     #[cfg(windows)]

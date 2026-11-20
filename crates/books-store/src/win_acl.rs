@@ -203,6 +203,37 @@ pub(crate) fn others_can_read(path: &Path) -> io::Result<bool> {
 }
 
 #[cfg(test)]
+pub(super) fn dacl_sddl(path: &Path) -> io::Result<String> {
+    use windows_sys::Win32::Security::Authorization::ConvertSecurityDescriptorToStringSecurityDescriptorW;
+
+    let (descriptor, _) = read_dacl(path)?;
+    let mut text = null_mut();
+    // SAFETY: descriptor is live and text is a writable output pointer.
+    if unsafe {
+        ConvertSecurityDescriptorToStringSecurityDescriptorW(
+            descriptor.0,
+            1,
+            DACL_SECURITY_INFORMATION,
+            &mut text,
+            null_mut(),
+        )
+    } == 0
+    {
+        return Err(io::Error::last_os_error());
+    }
+    let _text = LocalAllocation(text.cast());
+    // SAFETY: conversion returned a live, null-terminated UTF-16 string.
+    let units = unsafe {
+        let mut len = 0;
+        while *text.add(len) != 0 {
+            len += 1;
+        }
+        std::slice::from_raw_parts(text, len)
+    };
+    String::from_utf16(units).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))
+}
+
+#[cfg(test)]
 pub(super) fn dacl_is_protected(path: &Path) -> io::Result<bool> {
     use windows_sys::Win32::Security::{GetSecurityDescriptorControl, SE_DACL_PROTECTED};
 
