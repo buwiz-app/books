@@ -34,6 +34,9 @@ pub struct App {
 const BOOKS: &str = concat!(
     include_str!("../../../apps/books/kit.tsx"),
     "\n",
+    "const SUGGESTED_CATEGORY_CATALOG: Any[] = ",
+    include_str!("../../../apps/books/suggested-categories.json"),
+    ";\n",
     include_str!("../../../apps/books/today.tsx"),
     "\n",
     include_str!("../../../apps/books/ledger_review.tsx"),

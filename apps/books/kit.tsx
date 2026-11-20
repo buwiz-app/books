@@ -5,7 +5,7 @@
 // permissions.tools. Money arrives as display text from Books: the app
 // never does arithmetic on an amount (invariant 2).
 import { signal, computed, resource, Text, View, Scroll, Input, Overlay } from "nsh";
-import { Avatar } from "nsh/base";
+import { Avatar, Combobox, DatePicker } from "nsh/base";
 import { buwiz } from "buwiz";
 
 type Any = any;
@@ -13,40 +13,74 @@ const PROPS = (buwiz.props || {}) as { ticket?: string; page?: string; account?:
 
 /** Colors: a dark palette, with a light twin for each. */
 const C = {
-  bg: "bg-[#f6f6f4] dark:bg-[#151515]",
-  rail: "bg-[#efefec] dark:bg-[#0f0f0f]",
-  panel: "bg-white dark:bg-[#1d1d1d]",
-  raise: "bg-[#f0f0ee] dark:bg-[#262626]",
-  hover: "bg-[#e9e9e6] dark:bg-[#2d2d2d]",
-  line: "border-black/10 dark:border-[#2b2b2b]",
-  ink: "text-[#1c1c1c] dark:text-[#f0f0f0]",
-  mute: "text-[#5c5c5c] dark:text-[#a0a0a0]",
-  dim: "text-[#8a8a8a] dark:text-[#6e6e6e]",
-  green: "text-[#157a48] dark:text-[#3fcf89]",
-  greenBg: "bg-[#157a48] dark:bg-[#3fcf89]",
-  red: "text-[#c0392b] dark:text-[#ff7d75]",
-  redBg: "bg-[#c0392b] dark:bg-[#ff7d75]",
-  amber: "text-[#a2650f] dark:text-[#f3b64c]",
+  bg: "bg-white dark:bg-[#0a0a0b]",
+  rail: "bg-[#f1f5f9] dark:bg-[#141416]",
+  panel: "bg-white dark:bg-[#141416]",
+  raise: "bg-[#f1f5f9] dark:bg-[#1c1c1f]",
+  hover: "bg-[#f8fafc] dark:bg-[#1c1c1f]",
+  line: "border-[#e2e8f0] dark:border-[#2a2a2d]",
+  ink: "text-[#0f172a] dark:text-[#fafafa]",
+  mute: "text-[#475569] dark:text-[#a1a1aa]",
+  dim: "text-[#94a3b8] dark:text-[#71717a]",
+  green: "text-[#15803d] dark:text-[#22c55e]",
+  greenBg: "bg-[#16a34a] dark:bg-[#22c55e]",
+  red: "text-[#ef4444] dark:text-[#ff7d75]",
+  redBg: "bg-[#ef4444] dark:bg-[#ff7d75]",
+  amber: "text-[#f59e0b] dark:text-[#f3b64c]",
   blue: "text-[#2f6fd6] dark:text-[#7fb2ff]",
   blueBg: "bg-[#2f6fd6] dark:bg-[#7fb2ff]",
   violet: "text-[#6a46c9] dark:text-[#b79bff]",
   violetBg: "bg-[#6a46c9] dark:bg-[#b79bff]",
 };
 
+const BOOKS_TOKENS = {
+  colors: {
+    primary: {
+      50: "#f0fdf4", 100: "#dcfce7", 200: "#bbf7d0", 300: "#86efac", 400: "#4ade80",
+      500: "#22c55e", 600: "#16a34a", 700: "#15803d", 800: "#166534", 900: "#14532d",
+      hover: "#16a34a", light: "#86efac", dark: "#15803d",
+    },
+    background: "#ffffff", surface: "#f8fafc", surfaceElevated: "#f1f5f9", border: "#e2e8f0", borderSubtle: "#cbd5e1",
+    textPrimary: "#0f172a", textSecondary: "#475569", textMuted: "#94a3b8",
+    accent: "var(--color-primary)", accentHover: "var(--color-primary-hover)",
+    success: "#22c55e", warning: "#f59e0b", error: "#ef4444", info: "#3b82f6",
+    asset: "#14b8a6", liability: "#fb923c", equity: "#a855f7", revenue: "#3b82f6", expense: "#f87171",
+    debit: "#22c55e", credit: "#ef4444", income: "#22c55e",
+    app: {
+      backgroundStart: "#a5cbe7", backgroundEnd: "#9db9f0", card: "#f5f6f9",
+      headerBlue: "#2490ce", headerTeal: "#2a9d8f", textNavy: "#32497f", textLight: "#6b7c93",
+      buttonNeon: "#00ffbe", buttonNeonDark: "#00d9a0",
+    },
+    dark: {
+      background: "#0a0a0b", surface: "#141416", surfaceElevated: "#1c1c1f",
+      border: "#2a2a2d", borderSubtle: "#1f1f22", textPrimary: "#fafafa",
+      textSecondary: "#a1a1aa", textMuted: "#71717a",
+      app: { backgroundStart: "#0f172a", backgroundEnd: "#1e293b", card: "#1e293b", textNavy: "#e2e8f0", textLight: "#94a3b8" },
+    },
+  },
+  spacing: { xs: "0.25rem", sm: "0.5rem", md: "1rem", lg: "1.5rem", xl: "2rem", "2xl": "3rem" },
+  radius: { sm: "0.25rem", md: "0.5rem", lg: "0.75rem", xl: "1rem", "2xl": "1.5rem" },
+  font: { sans: '"Inter", system-ui, -apple-system, sans-serif', mono: '"JetBrains Mono", "Fira Code", monospace' },
+};
+
 /** Pill tones (`st`). */
 /** The accent: the page header, the main button and the picked state. A book picks one in
  *  Settings; the host tells an app light from dark and nothing else, so each solid is a tone
  *  that carries white text on both. Green is for money in and "posted", whatever the accent. */
-const ACCENTS: Record<string, { name: string; solid: string }> = {
-  green: { name: "Green", solid: "#16a34a" },
-  teal: { name: "Teal", solid: "#0d9488" },
-  blue: { name: "Blue", solid: "#2563eb" },
-  violet: { name: "Violet", solid: "#7c3aed" },
-  orange: { name: "Orange", solid: "#ea580c" },
-  rose: { name: "Rose", solid: "#e11d48" },
+const ACCENTS: Record<string, { name: string; solid: string; scale: string[] }> = {
+  green: { name: "Green", solid: "#22c55e", scale: ["#f0fdf4", "#dcfce7", "#bbf7d0", "#86efac", "#4ade80", "#22c55e", "#16a34a", "#15803d", "#166534", "#14532d"] },
+  teal: { name: "Teal", solid: "#0d9488", scale: ["#f0fdfa", "#ccfbf1", "#99f6e4", "#5eead4", "#2dd4bf", "#14b8a6", "#0d9488", "#0f766e", "#115e59", "#134e4a"] },
+  blue: { name: "Blue", solid: "#2563eb", scale: ["#eff6ff", "#dbeafe", "#bfdbfe", "#93c5fd", "#60a5fa", "#3b82f6", "#2563eb", "#1d4ed8", "#1e40af", "#1e3a8a"] },
+  violet: { name: "Violet", solid: "#7c3aed", scale: ["#f5f3ff", "#ede9fe", "#ddd6fe", "#c4b5fd", "#a78bfa", "#8b5cf6", "#7c3aed", "#6d28d9", "#5b21b6", "#4c1d95"] },
+  orange: { name: "Orange", solid: "#ea580c", scale: ["#fff7ed", "#ffedd5", "#fed7aa", "#fdba74", "#fb923c", "#f97316", "#ea580c", "#c2410c", "#9a3412", "#7c2d12"] },
+  rose: { name: "Rose", solid: "#e11d48", scale: ["#fff1f2", "#ffe4e6", "#fecdd3", "#fda4af", "#fb7185", "#f43f5e", "#e11d48", "#be123c", "#9f1239", "#881337"] },
 };
 const accent = signal("green");
-const acc = () => (ACCENTS[accent()] || ACCENTS.green).solid;
+const accShade = (step: number) => {
+  const current = ACCENTS[accent()] || ACCENTS.green;
+  return current.scale[step] || current.solid;
+};
+const acc = () => accShade(5);
 /** Text on the accent. */
 const ON_ACC = "text-white";
 /** The border of a picked card or option. */
@@ -299,6 +333,133 @@ function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; plac
         </View>
       </If>
     </View>
+  );
+}
+
+function BooksCombo(p: {
+  value: string;
+  options: Any[];
+  onPick: (o: Any) => void;
+  onQuery?: (query: string) => void;
+  query?: string;
+  suggestions?: Any[];
+  onSuggestion?: (o: Any) => void;
+  onCreate?: (query: string) => void;
+  placeholder?: string;
+  label?: string;
+  group?: string;
+}) {
+  const CREATE_VALUE = "__books_create_category__";
+  const items = [
+    ...(p.options || []).map((o: Any) => ({
+      value: String(o.ticket),
+      title: String(o.label || o.name || ""),
+      group: String(o.group || p.group || "Accounts"),
+    })),
+    ...(p.suggestions || []).map((o: Any, index: number) => ({
+      value: `__books_suggested_${index}__`,
+      title: `${String(o.name || o.label || "")} ${String((o.keywords || []).join(" "))}`,
+      group: "Suggested",
+    })),
+    ...(p.onCreate && p.query?.trim()
+      ? [{ value: CREATE_VALUE, title: `Create new category ${p.query.trim()}`, group: "Create new" }]
+      : []),
+  ];
+  return (
+    <Combobox
+      items={items}
+      value={p.value ? [p.value] : []}
+      query={p.query}
+      onChange={({ value }) => {
+        const selected = value[0] || "";
+        if (selected === CREATE_VALUE) {
+          p.onCreate?.(p.query?.trim() || "");
+          return;
+        }
+        if (selected.startsWith("__books_suggested_")) {
+          const index = Number(selected.slice("__books_suggested_".length).replace(/__/g, ""));
+          p.onSuggestion?.((p.suggestions || [])[index] || {});
+          return;
+        }
+        p.onPick((p.options || []).find((o: Any) => String(o.ticket) === selected) || {});
+      }}
+      onQueryChange={({ query }) => p.onQuery?.(query)}
+      accessibilityLabel={p.label || p.placeholder || "Account"}
+      placeholder={p.placeholder || "Select..."}
+      inputClass="h-8 rounded-md border border-[#e2e8f0] bg-white px-3 text-[13px] text-[#0f172a] dark:border-[#2a2a2d] dark:bg-[#141416] dark:text-[#fafafa]"
+      popupClass="rounded-md border border-[#e2e8f0] bg-white shadow-lg dark:border-[#2a2a2d] dark:bg-[#141416]"
+      listClass="max-h-[260px] p-1"
+      groupClass="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#94a3b8]"
+      itemClass="rounded px-2 py-1.5 text-[13px] text-[#0f172a] focus:bg-[#f1f5f9] selected:bg-[#dcfce7] dark:text-[#fafafa] dark:focus:bg-[#1c1c1f] dark:selected:bg-[#14532d]"
+      searchAccessibilityLabel={`Find ${p.label || p.placeholder || "account"}`}
+      searchPlaceholder="Type to filter..."
+      triggerButton={<Text class="text-[12px] text-[#94a3b8]">⌄</Text>}
+      renderItem={(item) => {
+        const suggested = item.value.startsWith("__books_suggested_");
+        const create = item.value === CREATE_VALUE;
+        const suggestion = suggested
+          ? (p.suggestions || [])[Number(item.value.slice("__books_suggested_".length).replace(/__/g, ""))]
+          : null;
+        const group = String(item.group || "").toLowerCase();
+        const income = group.includes("revenue") || group.includes("income");
+        const color = create
+          ? "#16a34a"
+          : suggested || group.includes("equity")
+            ? "#8b5cf6"
+            : income
+              ? "#3b82f6"
+              : group.includes("expense")
+                ? "#f87171"
+                : group.includes("liabilit")
+                  ? "#fb923c"
+                  : "#14b8a6";
+        const icon = create
+          ? "+"
+          : suggested
+            ? "✦"
+            : group.includes("liabilit")
+              ? "⇄"
+              : group.includes("equity")
+                ? "◆"
+                : income
+                  ? "↗"
+                  : group.includes("expense")
+                    ? "↘"
+                    : "▤";
+        return (
+          <View class="flex-row items-center gap-2">
+            <View class="w-5 h-5 rounded items-center justify-center" style={{ backgroundColor: `${color}22` }}>
+              <Text class="text-[11px] font-semibold" style={{ color }}>{icon}</Text>
+            </View>
+            <View class="flex-1 gap-0.5">
+              <Text class="text-[13px]">{create ? `Create new category “${p.query?.trim() || ""}”` : suggestion?.name || item.title}</Text>
+              <If when={Boolean(suggestion?.description)}>
+                <Text class="text-[11px] text-[#94a3b8]" numberOfLines={1}>{suggestion?.description || ""}</Text>
+              </If>
+            </View>
+          </View>
+        );
+      }}
+    />
+  );
+}
+
+function BooksDate(p: { value: string; onChange: (value: string) => void; today?: string }) {
+  return (
+    <DatePicker
+      value={p.value || null}
+      onChange={({ value }) => p.onChange(typeof value === "string" ? value : "")}
+      accessibilityLabel="Date"
+      dateFormat="%B %-d, %Y"
+      popupClass="rounded-lg border border-[#e2e8f0] bg-white shadow-lg dark:border-[#2a2a2d] dark:bg-[#141416]"
+      calendarClass="p-2"
+      trigger={
+        <View class="h-8 flex-row items-center justify-between rounded-md border border-[#e2e8f0] bg-white px-3 dark:border-[#2a2a2d] dark:bg-[#141416]">
+          <Text class="text-[13px] text-[#0f172a] dark:text-[#fafafa]">{p.value || p.today || "Select date"}</Text>
+          <Text class="text-[12px] text-[#94a3b8]">⌄</Text>
+        </View>
+      }
+    />
   );
 }
 
