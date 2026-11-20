@@ -458,10 +458,13 @@ mod tests {
             "the file has a plain SQLite header"
         );
         assert!(!find(b"CREATE TABLE"), "the schema is readable");
-        let mode = fs::metadata(&paths.key_file).unwrap().permissions().mode() & 0o777;
-        assert_eq!(mode, 0o600);
-        let mode = fs::metadata(&paths.dir).unwrap().permissions().mode() & 0o777;
-        assert_eq!(mode, 0o700);
+        #[cfg(unix)]
+        {
+            let mode = fs::metadata(&paths.key_file).unwrap().permissions().mode() & 0o777;
+            assert_eq!(mode, 0o600);
+            let mode = fs::metadata(&paths.dir).unwrap().permissions().mode() & 0o777;
+            assert_eq!(mode, 0o700);
+        }
         let store = Store::open(&paths).unwrap();
         assert_eq!(store.meta("canary").unwrap().as_deref(), Some(CANARY));
         assert_eq!(
