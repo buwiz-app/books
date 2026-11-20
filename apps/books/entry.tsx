@@ -218,8 +218,8 @@ function ExtractionPanel(p: { entry: Any }) {
 }
 
 const MODES: [string, string][] = [
-  ["money_in", "Money in"],
-  ["money_out", "Money out"],
+  ["money_in", "Pay In"],
+  ["money_out", "Pay Out"],
   ["transfer", "Transfer"],
   ["journal", "Journal"],
 ];
@@ -248,16 +248,38 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     () => buwiz.call("books_entry_options", {}),
   );
   const o = () => opts() as Any;
+  const chart = resource(
+    () => ({ v: ver() }),
+    () => buwiz.call("books_accounts_list", { group: "all" }),
+  );
+  const groupedOptions = (items: Any[]) => {
+    const groups = new Map((chart()?.rows || []).map((account: Any) => [String(account.ticket), account.group]));
+    return (items || []).map((item: Any) => ({
+      ...item,
+      group: String(groups.get(String(item.ticket)) || item.group || "Accounts"),
+    }));
+  };
   const amount = signal("");
   const date = signal("");
   const money = signal("");
   const toAccount = signal("");
   const category = signal("");
+  const categoryQuery = signal("");
   const payee = signal("");
+  const payeeTicket = signal("");
+  const partyQuery = signal("");
   const memo = signal("");
   const reference = signal("");
+  const categoryCreateOpen = signal(false);
+  const categoryCreating = signal(false);
+  const categoryCreateError = signal("");
+  const newCategoryName = signal("");
+  const newCategoryNumber = signal("");
+  const newCategoryType = signal("expense");
+  const newCategoryKind = signal("unsure");
   const journalLine = () => ({
     account: signal(""),
+    query: signal(""),
     debit: signal(""),
     credit: signal(""),
   });
@@ -265,7 +287,99 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
   const busy = signal(false);
   const err = signal("");
   const mode = () => String(p.mode());
+  const switchMode = (next: string) => {
+    if (next !== mode()) {
+      category.set("");
+      categoryQuery.set("");
+      payee.set("");
+      payeeTicket.set("");
+      partyQuery.set("");
+    }
+    p.setMode(next);
+  };
+  const people = resource(
+    () => ({ v: ver(), kind: mode() === "money_in" ? "customers" : "vendors" }),
+    (key: Any) => buwiz.call("books_people_list", { kind: key.kind }),
+  );
+  const partyOptions = () =>
+    (people()?.rows || []).map((person: Any) => ({
+      ticket: person.ticket,
+      name: person.name,
+      label: person.name,
+      group: mode() === "money_in" ? "Customers" : "Vendors",
+    }));
+  const categorySuggestions = () => {
+    const query = categoryQuery().trim().toLowerCase();
+    if (!query || (mode() !== "money_in" && mode() !== "money_out")) return [];
+    const types =
+      mode() === "money_in"
+        ? ["revenue", "other_income", "equity"]
+        : ["expense", "cost_of_revenue", "other_expense", "asset", "equity"];
+    const existing = new Set(
+      [...(o()?.income || []), ...(o()?.expense || [])].map((account: Any) => String(account.label || account.name || "").toLowerCase()),
+    );
+    return SUGGESTED_CATEGORY_CATALOG.filter((suggestion: Any) => {
+      const text = `${suggestion.name} ${suggestion.description} ${(suggestion.keywords || []).join(" ")}`.toLowerCase();
+      const cashAccrualOnly =
+        o()?.book?.basis === "cash" && ["account_receivable", "account_payable"].includes(String(suggestion.subtype));
+      return types.includes(suggestion.accountType) && !cashAccrualOnly && text.includes(query) && !existing.has(String(suggestion.name).toLowerCase());
+    }).slice(0, 8);
+  };
+  const startCategoryCreate = (name: string, suggestion?: Any) => {
+    newCategoryName.set(name || suggestion?.name || "");
+    newCategoryNumber.set("");
+    newCategoryType.set(suggestion?.accountType || (mode() === "money_in" ? "revenue" : "expense"));
+    newCategoryKind.set(suggestion?.subtype || "unsure");
+    categoryCreateError.set("");
+    categoryCreateOpen.set(true);
+  };
+  const createCategory = () => {
+    const name = newCategoryName().trim();
+    const number = newCategoryNumber().trim();
+    if (!name) return categoryCreateError.set("Enter a category name.");
+    if (!number) return categoryCreateError.set("Enter an account number.");
+    categoryCreating.set(true);
+    categoryCreateError.set("");
+    act("books_app_account_create", {
+      number,
+      name,
+      kind: newCategoryKind(),
+      type: newCategoryType(),
+    })
+      .then((result: Any) => {
+        category.set(result.account || "");
+        categoryQuery.set("");
+        categoryCreateOpen.set(false);
+        toast(`${name} added`);
+      })
+      .catch((e: Any) => categoryCreateError.set(errText(e)))
+      .finally(() => categoryCreating.set(false));
+  };
   const amt = computed(() => moneyText(amount()));
+  const journalTotals = computed(() => {
+    let debit = 0n;
+    let credit = 0n;
+    for (const line of jl()) {
+      const dr = moneyText(line.debit());
+      const cr = moneyText(line.credit());
+      if (dr) {
+        const [whole, cents] = dr.split(".");
+        debit += BigInt(whole) * 100n + BigInt(cents);
+      }
+      if (cr) {
+        const [whole, cents] = cr.split(".");
+        credit += BigInt(whole) * 100n + BigInt(cents);
+      }
+    }
+    return { debit, credit, difference: debit - credit, balanced: debit > 0n && debit === credit };
+  });
+  const shownCents = (value: bigint) => {
+    const negative = value < 0n;
+    const absolute = negative ? -value : value;
+    const whole = String(absolute / 100n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    const cents = String(absolute % 100n).padStart(2, "0");
+    return `${negative ? "−" : ""}₱${whole}.${cents}`;
+  };
   const moneyName = computed(() => ((o()?.money || []).find((a: Any) => a.ticket === money()) || {}).label || "the bank");
   const catName = computed(() => (((mode() === "money_in" ? o()?.income : o()?.expense) || []).find((a: Any) => a.ticket === category()) || {}).label || "the category");
   const behind = computed(() => {
@@ -281,11 +395,18 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
   const args = (): Record<string, Any> | null => {
     err.set("");
     const base: Record<string, Any> = { form: mode() };
-    if (date()) base.date = date();
+    if (date() || o()?.today) base.date = date() || o()?.today;
     if (payee()) base.payee = payee();
+    if (payeeTicket() && partyOptions().some((person: Any) => person.ticket === payeeTicket())) {
+      base.person = payeeTicket();
+    }
     if (memo()) base.memo = memo();
     if (reference()) base.reference = reference();
     if (mode() === "journal") {
+      if (!journalTotals().balanced) {
+        err.set("Debits and credits must be equal before saving.");
+        return null;
+      }
       const lines = jl()
         .filter((l: Any) => l.account())
         .map((l: Any) => {
@@ -316,6 +437,10 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     if (mode() === "transfer") {
       if (!toAccount()) {
         err.set("Pick where the money goes.");
+        return null;
+      }
+      if (money() === toAccount()) {
+        err.set("Choose two different accounts for a transfer.");
         return null;
       }
       base.to_account = toAccount();
@@ -352,34 +477,40 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
   };
   const modeName = () => (MODES.find((m) => m[0] === mode()) || ["", "New entry"])[1];
   return (
-    <View class={`flex-1 ${C.bg}`}>
-      <View class="flex-row items-center gap-2.5 px-4 py-3">
-        <View accessibilityLabel="Back to Home" class={`w-8 h-8 rounded-full border items-center justify-center ${C.panel} ${C.line}`} onPress={p.close} activeStyle={{ opacity: 0.7 }}>
-          <Text class={`text-[15px] font-bold ${C.ink}`}>‹</Text>
-        </View>
-        <Text class={`flex-1 text-[14px] font-bold ${C.ink}`}>New entry</Text>
-        <Text class={`text-[12px] ${C.dim}`}>{`${o()?.book?.basis_label || "Cash basis"} · counts on its date`}</Text>
-        <Btn label="Save draft" disabled={busy()} onPress={() => save(false)} />
-        <Btn label="Save & post" tone="go" disabled={busy()} onPress={() => save(true)} />
-      </View>
-      <View class="flex-1 flex-row gap-3 px-4 pb-4">
-        <View class="w-[104px] gap-1.5">
+    <View class="flex-1 flex-row bg-[#f0f2f5] dark:bg-slate-950">
+      <View class="w-16 shrink-0 bg-[#f7f8fa] dark:bg-slate-900 border-r border-[#e2e8f0] dark:border-slate-700 flex-col items-center pt-4 gap-1">
           <Each of={MODES}>
             {(m: Any) => (
               <View
-                class={`rounded-[10px] border px-2.5 py-2 ${mode() === m()[0] ? "border-transparent" : `${C.panel} ${C.line}`}`}
-                style={mode() === m()[0] ? { backgroundColor: acc() } : undefined}
-                onPress={() => p.setMode(m()[0])}
+                class={`w-14 flex-col items-center gap-1 py-2.5 rounded-lg border transition-all ${mode() === m()[0] ? `bg-white dark:bg-slate-800 shadow-sm ${C.line}` : "border-transparent"}`}
+                style={mode() === m()[0] ? { color: "#2a9d8f" } : undefined}
+                onPress={() => switchMode(m()[0])}
                 activeStyle={{ opacity: 0.7 }}
               >
-                <Text class={`text-[12.5px] font-semibold ${mode() === m()[0] ? ON_ACC : C.ink}`}>{m()[1]}</Text>
+                <Text class={`text-[16px] ${mode() === m()[0] ? "text-[#2a9d8f] dark:text-[#2a9d8f]" : "text-[#64748b] dark:text-slate-500"}`}>
+                  {m()[0] === "money_in" ? "↓" : m()[0] === "money_out" ? "↑" : m()[0] === "transfer" ? "⇄" : "≡"}
+                </Text>
+                <Text class={`text-[10px] font-medium ${mode() === m()[0] ? "text-[#2a9d8f] dark:text-[#2a9d8f]" : "text-[#64748b] dark:text-slate-500"}`}>{m()[1]}</Text>
               </View>
             )}
           </Each>
+      </View>
+      <View class="flex-1 flex-col overflow-hidden">
+        <View class={`flex-row items-center gap-3 px-6 py-3 border-b bg-white dark:bg-slate-900 ${C.line}`}>
+          <View accessibilityLabel="Go back" class="w-9 h-9 rounded-lg items-center justify-center" onPress={p.close} activeStyle={{ opacity: 0.7 }}>
+            <Text class={`text-[18px] ${C.mute}`}>‹</Text>
+          </View>
+          <View class="flex-1" />
+          <If when={Boolean(err())}>
+            <Text class={`text-[12px] font-medium ${C.red}`} numberOfLines={1}>{err()}</Text>
+          </If>
+          <Btn label="Save" disabled={busy()} onPress={() => save(false)} />
+          <Btn label="Save & post" tone="go" disabled={busy()} onPress={() => save(true)} />
         </View>
+        <View class="flex-1 flex-row gap-5 p-5 overflow-hidden">
         <Scroll class="flex-1">
-          <View class={`rounded-xl border overflow-hidden ${C.panel} ${C.line}`}>
-            <View class="px-4 pt-3.5 pb-4 gap-3" style={{ backgroundColor: acc() }}>
+          <View class={`rounded-2xl border overflow-hidden ${C.panel} ${C.line}`}>
+            <View class={`px-4 pt-3.5 pb-4 gap-3 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
               <View class="flex-row items-center gap-3">
                 <View class="flex-1 gap-0.5">
                   <Text class={`text-[18px] font-bold ${ON_ACC}`}>{modeName()}</Text>
@@ -394,7 +525,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               <View class="flex-row gap-3">
                 <View class="w-[150px] gap-1">
                   <Text class="text-[11px] uppercase tracking-wider text-white/80">Date</Text>
-                  <TextBox label="Date" value={date()} onChange={(v) => date.set(v)} placeholder={o()?.today || "YYYY-MM-DD"} />
+                  <BooksDate value={date() || o()?.today || ""} today={o()?.today} onChange={(v) => date.set(v)} />
                 </View>
                 <View class="flex-1 gap-1">
                   <Text class="text-[11px] uppercase tracking-wider text-white/80">Reference number</Text>
@@ -403,34 +534,65 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                 <If when={mode() !== "transfer"}>
                   <View class="flex-1 gap-1">
                     <Text class="text-[11px] uppercase tracking-wider text-white/80">{mode() === "money_in" ? "Received from" : mode() === "money_out" ? "Paid to" : "Party"}</Text>
-                    <TextBox label="Party" value={payee()} onChange={(v) => payee.set(v)} placeholder={mode() === "money_in" ? "Customer" : mode() === "money_out" ? "Vendor" : "Optional"} />
+                    <BooksCombo
+                      label={mode() === "money_in" ? "Customer" : "Vendor"}
+                      value={payeeTicket()}
+                      options={partyOptions()}
+                      onPick={(person: Any) => {
+                        payeeTicket.set(person.ticket || "");
+                        payee.set(person.name || person.label || "");
+                        partyQuery.set("");
+                      }}
+                      onQuery={(query: string) => {
+                        partyQuery.set(query);
+                        if (query) {
+                          payeeTicket.set("");
+                          payee.set(query);
+                        }
+                      }}
+                      query={partyQuery()}
+                      placeholder={payee() || (mode() === "money_in" ? "Customer" : "Vendor")}
+                      group={mode() === "money_in" ? "Customers" : "Vendors"}
+                    />
                   </View>
                 </If>
               </View>
             </View>
-            <View class="p-4 gap-3.5">
-              <Field label="Memo">
-                <TextBox label="Memo" value={memo()} onChange={(v) => memo.set(v)} placeholder="What it was for" />
-              </Field>
+            <View class="px-6 relative z-10 -mt-12">
+              <Text class="text-[12px] font-semibold text-white mb-2 pl-1">Memo</Text>
+              <View class={`rounded-xl shadow-sm border p-4 min-h-16 ${C.panel} ${C.line}`}>
+                <TextBox label="Memo" value={memo()} onChange={(v) => memo.set(v)} placeholder="Add a memo..." />
+              </View>
+            </View>
+            <View class="px-6 py-4 pb-12 gap-3.5 bg-[#f8f9fb] dark:bg-slate-950/40">
               <If when={mode() !== "journal"}>
                 <View class="gap-3.5">
                   <View class="flex-row gap-3">
                     <Field label={mode() === "money_in" ? "Into" : mode() === "transfer" ? "From" : "Paid from"} grow>
-                      <Pick label="Account" value={money()} options={o()?.money || []} onPick={(a: Any) => money.set(a.ticket)} placeholder="Bank, cash or card" />
+                      <BooksCombo label="Account" value={money()} options={groupedOptions(o()?.money || [])} onPick={(a: Any) => money.set(a.ticket)} placeholder="Bank, cash or card" group="Cash, bank & card" />
                     </Field>
                     <If when={mode() === "transfer"}>
                       <Field label="To" grow>
-                        <Pick label="To account" value={toAccount()} options={o()?.money || []} onPick={(a: Any) => toAccount.set(a.ticket)} placeholder="Bank, cash or card" />
+                        <BooksCombo label="To account" value={toAccount()} options={groupedOptions(o()?.money || [])} onPick={(a: Any) => toAccount.set(a.ticket)} placeholder="Bank, cash or card" group="Cash, bank & card" />
                       </Field>
                     </If>
                     <If when={mode() !== "transfer"}>
                       <Field label="Category" grow>
-                        <Pick
+                        <BooksCombo
                           label="Category"
                           value={category()}
-                          options={(mode() === "money_in" ? o()?.income : o()?.expense) || []}
-                          onPick={(a: Any) => category.set(a.ticket)}
+                          options={groupedOptions((mode() === "money_in" ? o()?.income : o()?.expense) || [])}
+                          onPick={(a: Any) => {
+                            category.set(a.ticket);
+                            categoryQuery.set("");
+                          }}
+                          query={categoryQuery()}
+                          onQuery={(query: string) => categoryQuery.set(query)}
+                          suggestions={categorySuggestions()}
+                          onSuggestion={(suggestion: Any) => startCategoryCreate(suggestion.name, suggestion)}
+                          onCreate={(query: string) => startCategoryCreate(query)}
                           placeholder="Pick a category"
+                          group={mode() === "money_in" ? "Income categories" : "Expense categories"}
                         />
                       </Field>
                     </If>
@@ -458,7 +620,18 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                       <View class="flex-row gap-2 items-start">
                         <Text class={`w-5 pt-2 text-[12px] font-mono ${C.dim}`}>{String(i() + 1)}</Text>
                         <View class="flex-1">
-                          <Pick value={l().account()} options={o()?.all || []} onPick={(a: Any) => l().account.set(a.ticket)} placeholder="Account" />
+                          <BooksCombo
+                            value={l().account()}
+                            options={groupedOptions(o()?.all || [])}
+                            onPick={(a: Any) => {
+                              l().account.set(a.ticket);
+                              l().query.set("");
+                            }}
+                            query={l().query()}
+                            onQuery={(query: string) => l().query.set(query)}
+                            placeholder="Account"
+                            group="Accounts"
+                          />
                         </View>
                         <View class="w-[120px]">
                           <TextBox value={l().debit()} onChange={(v: string) => l().debit.set(v)} placeholder="Debit" />
@@ -476,7 +649,17 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                   </Each>
                   <View class="flex-row items-center gap-2">
                     <Btn label="+ Line" small onPress={() => jl.set([...jl(), journalLine()])} />
-                    <Text class={`flex-1 text-[12px] ${C.dim}`}>Debits must equal credits. Books checks the lines when you save.</Text>
+                    <Text class={`flex-1 text-[12px] ${C.dim}`}>Debits must equal credits.</Text>
+                  </View>
+                  <View class={`flex-row items-center justify-between rounded-md border px-3 py-2 ${journalTotals().balanced ? "border-[#86efac] bg-[#f0fdf4] dark:border-[#166534] dark:bg-[#14532d]" : "border-[#e2e8f0] bg-[#f8fafc] dark:border-[#2a2a2d] dark:bg-[#141416]"}`}>
+                    <Text class={`text-[12px] font-semibold ${journalTotals().balanced ? "text-[#15803d] dark:text-[#86efac]" : C.mute}`}>
+                      {journalTotals().balanced ? "Balanced" : "Difference"}
+                    </Text>
+                    <View class="flex-row gap-4">
+                      <Text class={`text-[12px] ${C.mute}`}>{`Debit ${shownCents(journalTotals().debit)}`}</Text>
+                      <Text class={`text-[12px] ${C.mute}`}>{`Credit ${shownCents(journalTotals().credit)}`}</Text>
+                      <Text class={`text-[12px] font-semibold ${journalTotals().balanced ? "text-[#15803d] dark:text-[#86efac]" : "text-[#ef4444]"}`}>{shownCents(journalTotals().difference)}</Text>
+                    </View>
                   </View>
                 </View>
               </If>
@@ -486,12 +669,16 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             </View>
           </View>
         </Scroll>
-        <View class={`w-[260px] rounded-xl border overflow-hidden ${C.panel} ${C.line}`}>
-          <View class="flex-row gap-1 px-2 py-2" style={{ backgroundColor: acc() }}>
-            <Each of={[["ai", "Assistant"], ["docs", "Attachments"]]}>
+        <View class={`w-[360px] shrink-0 rounded-2xl border overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex-col h-full ${C.panel} ${C.line}`}>
+          <View class={`flex-row justify-evenly px-4 py-3 gap-2 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
+            <Each of={[["attachments", "⌁"], ["ai", "✧"], ["activity", "◷"]]}>
               {(t: Any) => (
-                <View class={`rounded-[7px] px-2.5 py-1 ${side() === t()[0] ? "bg-white/25" : ""}`} onPress={() => side.set(t()[0])}>
-                  <Text class={`text-[12.5px] font-semibold ${ON_ACC}`}>{t()[1]}</Text>
+                <View
+                  accessibilityLabel={t()[0] === "ai" ? "Assistant" : t()[0] === "attachments" ? "Attachments" : "Activity log"}
+                  class={`w-[88px] h-11 rounded-full items-center justify-center ${side() === t()[0] ? "bg-white/20" : ""}`}
+                  onPress={() => side.set(t()[0])}
+                >
+                  <Text class={`text-[16px] ${side() === t()[0] ? "text-white" : "text-white/50"}`}>{t()[1]}</Text>
                 </View>
               )}
             </Each>
@@ -511,14 +698,63 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               <Text class={`text-[11.5px] ${C.dim}`}>A press copies a sentence to fill in and send. The assistant never posts.</Text>
             </View>
           </If>
-          <If when={side() === "docs"}>
+          <If when={side() === "attachments"}>
             <View class="p-3 gap-2.5">
-              <Text class={`text-[12.5px] ${C.mute}`}>Save the draft first, then attach its receipt or bill from Documents.</Text>
-              <Btn label="Open Documents" onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)} />
+              <Text class={`text-[13px] font-semibold ${C.ink}`}>Attachments</Text>
+              <View class={`rounded-xl border border-dashed p-4 gap-2 items-center ${C.line} ${C.raise}`}>
+                <Text class={`text-[22px] ${C.dim}`}>⌁</Text>
+                <Text class={`text-[12.5px] text-center ${C.mute}`}>Add a receipt or document to Books before asking the assistant to read it.</Text>
+                <Btn label="Browse documents" onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)} />
+              </View>
+              <Text class={`text-[11.5px] ${C.dim}`}>Documents are stored in Books and can be attached to a chat. This entry draft does not yet link a document directly.</Text>
+            </View>
+          </If>
+          <If when={side() === "activity"}>
+            <View class="p-3 gap-2.5">
+              <Text class={`text-[14px] font-semibold ${C.ink}`}>Activity Log</Text>
+              <View class="flex-row items-start gap-2">
+                <View class="w-6 h-6 rounded-full items-center justify-center" style={{ backgroundColor: "#2a9d8f" }}>
+                  <Text class="text-[10px] font-bold text-white">U</Text>
+                </View>
+                <View class="gap-0.5">
+                  <Text class={`text-[12px] ${C.ink}`}>You · Just now</Text>
+                  <Text class={`text-[11px] ${C.mute}`}>Creating transaction.</Text>
+                </View>
+              </View>
             </View>
           </If>
         </View>
       </View>
+      </View>
+      <If when={categoryCreateOpen()}>
+        <Overlay
+          anchor={{ x: 24, y: 120 }}
+          placement="bottom"
+          align="start"
+          offset={4}
+          margin={8}
+          onCancel={() => categoryCreateOpen.set(false)}
+          onPressOutside={() => categoryCreateOpen.set(false)}
+        >
+          <View class={`w-[360px] gap-3 p-4 rounded-xl border shadow-lg ${C.panel} ${C.line}`}>
+            <Text class={`text-[14px] font-bold ${C.ink}`}>Create category</Text>
+            <Field label="Category name">
+              <TextBox value={newCategoryName()} onChange={(value: string) => newCategoryName.set(value)} placeholder="Category name" />
+            </Field>
+            <Field label="Account number">
+              <TextBox value={newCategoryNumber()} onChange={(value: string) => newCategoryNumber.set(value.replace(/[^0-9]/g, ""))} placeholder="Enter an unused number" />
+            </Field>
+            <Text class={`text-[12px] ${C.dim}`}>{`Account type: ${newCategoryType()} · kind: ${newCategoryKind()}`}</Text>
+            <If when={Boolean(categoryCreateError())}>
+              <Text class={`text-[12px] ${C.red}`}>{categoryCreateError()}</Text>
+            </If>
+            <View class="flex-row justify-end gap-2">
+              <Btn label="Cancel" disabled={categoryCreating()} onPress={() => categoryCreateOpen.set(false)} />
+              <Btn label={categoryCreating() ? "Adding…" : "Add category"} tone="go" disabled={categoryCreating()} onPress={createCategory} />
+            </View>
+          </View>
+        </Overlay>
+      </If>
     </View>
   );
 }
