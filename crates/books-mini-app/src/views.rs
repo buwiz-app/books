@@ -296,6 +296,7 @@ pub fn book_json(store: &Store, book: &Book) -> Result<Value, Refusal> {
         "basis_label": if book.basis == books_core::ledger::Basis::Cash { "Cash basis" } else { "Accrual basis" },
         "year": today.year,
         "fiscal_year_start": book.fiscal_year_start,
+        "accent": book.accent,
     }))
 }
 

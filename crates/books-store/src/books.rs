@@ -23,6 +23,20 @@ pub struct Book {
     pub coa_preset_version: i64,
     pub cloud_tax_profile_id: Option<String>,
     pub created_at: String,
+    /// The window's accent colour: one of [`ACCENTS`]. Display only.
+    pub accent: String,
+}
+
+/// The accent colours the Books window offers.
+pub const ACCENTS: [&str; 6] = ["green", "teal", "blue", "violet", "orange", "rose"];
+
+/// Set the window's accent colour.
+pub fn set_accent(conn: &Connection, book_id: i64, accent: &str) -> Result<()> {
+    conn.execute(
+        "UPDATE book SET accent = ?2 WHERE book_id = ?1",
+        rusqlite::params![book_id, accent],
+    )?;
+    Ok(())
 }
 
 #[derive(Debug, Clone)]
@@ -60,7 +74,7 @@ impl Account {
     }
 }
 
-const BOOK_COLUMNS: &str = "book_id, label, country, basis, fiscal_year_start, coa_preset, coa_preset_version, cloud_tax_profile_id, created_at";
+const BOOK_COLUMNS: &str = "book_id, label, country, basis, fiscal_year_start, coa_preset, coa_preset_version, cloud_tax_profile_id, created_at, accent";
 
 fn book_row(r: &Row<'_>) -> rusqlite::Result<Book> {
     let basis: String = r.get(3)?;
@@ -75,6 +89,7 @@ fn book_row(r: &Row<'_>) -> rusqlite::Result<Book> {
         coa_preset_version: r.get(6)?,
         cloud_tax_profile_id: r.get(7)?,
         created_at: r.get(8)?,
+        accent: r.get(9)?,
     })
 }
 

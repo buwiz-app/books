@@ -19,7 +19,7 @@ const CERTIFICATES: &str = include_str!("../apps/books/certificates.tsx");
 const REPORTS: &str = include_str!("../apps/books/reports.tsx");
 
 /// Every page with a picker, to find a list of people without its label.
-const PAGES: [&str; 25] = [
+const PAGES: [&str; 26] = [
     KIT,
     UNPAID,
     FORMS,
@@ -30,6 +30,7 @@ const PAGES: [&str; 25] = [
     include_str!("../apps/books/accounts.tsx"),
     include_str!("../apps/books/activity.tsx"),
     include_str!("../apps/books/entry.tsx"),
+    include_str!("../apps/books/inbox.tsx"),
     include_str!("../apps/books/ledger_amend.tsx"),
     include_str!("../apps/books/ledger_bulk.tsx"),
     include_str!("../apps/books/ledger_findings.tsx"),

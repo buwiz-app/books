@@ -514,11 +514,21 @@ pub fn book_update(conn: &Connection, args: &Map<String, Value>) -> Answer {
                 .ok_or_else(|| Refusal::invalid("`fiscal_year_start` is a month, 1 to 12."))
         })
         .transpose()?;
+    let accent = text(args, "accent")
+        .map(|a| {
+            books::ACCENTS.contains(&a).then_some(a).ok_or_else(|| {
+                Refusal::invalid("`accent` is green, teal, blue, violet, orange or rose.")
+            })
+        })
+        .transpose()?;
     months::update_book(conn, &book, text(args, "label"), fy, basis, Date::today())?;
+    if let Some(a) = accent {
+        books::set_accent(conn, book.id, a)?;
+    }
     let after =
         books::get(conn, book.id)?.ok_or_else(|| Refusal::new("store", "The book vanished."))?;
     Ok(with_subject(
-        json!({ "label": after.label, "basis": after.basis.as_str(), "fiscal_year_start": after.fiscal_year_start }),
+        json!({ "label": after.label, "basis": after.basis.as_str(), "fiscal_year_start": after.fiscal_year_start, "accent": after.accent }),
         "book",
         book.id,
     ))

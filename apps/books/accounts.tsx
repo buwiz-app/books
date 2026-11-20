@@ -15,6 +15,12 @@ const accountDrawer = signal("");
 
 function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
   const group = signal("all");
+  const find = signal("");
+  const shown = () => {
+    const q = find().trim().toLowerCase();
+    const rows = (data() as Any)?.rows || [];
+    return q ? rows.filter((a: Any) => `${a.number} ${a.name}`.toLowerCase().includes(q)) : rows;
+  };
   const data = resource(
     () => ({ v: ver(), g: group() }),
     (k: Any) => buwiz.call("books_accounts_list", { group: k.g }),
@@ -42,7 +48,10 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
           <Btn label="Match your accounts" tone="go" onPress={() => p.go("import")} />
         </Panel>
       </If>
-      <View class="flex-row gap-1.5 flex-wrap">
+      <View class="flex-row items-center gap-1.5 flex-wrap">
+        <View class="w-[220px]">
+          <TextBox label="Find an account" value={find()} onChange={(v) => find.set(v)} placeholder="Find by name or number" />
+        </View>
         <Each of={GROUP_CHIPS}>{(g: Any) => <Chip label={g()[1]} on={group() === g()[0]} onPress={() => group.set(g()[0])} />}</Each>
       </View>
       <Loading res={data} />
@@ -55,7 +64,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
             <Text class={`w-[120px] text-right text-[10.5px] uppercase tracking-wider ${C.dim}`}>Balance</Text>
             <View class="w-[14px]" />
           </View>
-          <Each of={d()?.rows || []} key={rowKey}>
+          <Each of={shown()} key={rowKey}>
             {(a: Any) => (
               <View class={`flex-row items-center gap-3 px-3 py-2 border-b ${C.line}`} onPress={() => open(a())} activeStyle={{ opacity: a().off ? 1 : 0.75 }}>
                 <Text class={`w-[64px] text-[12.5px] font-mono ${a().off ? C.dim : C.ink}`}>{a().number}</Text>

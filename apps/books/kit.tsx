@@ -34,6 +34,24 @@ const C = {
 };
 
 /** Pill tones (`st`). */
+/** The accent: the page header, the main button and the picked state. A book picks one in
+ *  Settings; the host tells an app light from dark and nothing else, so each solid is a tone
+ *  that carries white text on both. Green is for money in and "posted", whatever the accent. */
+const ACCENTS: Record<string, { name: string; solid: string }> = {
+  green: { name: "Green", solid: "#16a34a" },
+  teal: { name: "Teal", solid: "#0d9488" },
+  blue: { name: "Blue", solid: "#2563eb" },
+  violet: { name: "Violet", solid: "#7c3aed" },
+  orange: { name: "Orange", solid: "#ea580c" },
+  rose: { name: "Rose", solid: "#e11d48" },
+};
+const accent = signal("green");
+const acc = () => (ACCENTS[accent()] || ACCENTS.green).solid;
+/** Text on the accent. */
+const ON_ACC = "text-white";
+/** The border of a picked card or option. */
+const picked = (on: boolean) => (on ? { borderColor: acc() } : undefined);
+
 const PILL: Record<string, string> = {
   ok: "bg-[#dff3e8] dark:bg-[#123423] text-[#157a48] dark:text-[#3fcf89]",
   draft: "bg-[#f8ecd2] dark:bg-[#3a2e12] text-[#a2650f] dark:text-[#f3b64c]",
@@ -104,14 +122,15 @@ function grouped(text: string): string {
 function Btn(p: { label: string; onPress: () => void; tone?: "go" | "vi" | "plain"; disabled?: boolean; small?: boolean }) {
   const tone =
     p.tone === "go"
-      ? `${C.greenBg} border-[#157a48] dark:border-[#3fcf89]`
+      ? "border-transparent"
       : p.tone === "vi"
         ? `${C.violetBg} border-[#6a46c9] dark:border-[#b79bff]`
         : `${C.raise} ${C.line}`;
-  const ink = p.tone === "go" ? "text-white dark:text-[#06281a]" : p.tone === "vi" ? "text-white dark:text-[#1a1033]" : C.ink;
+  const ink = p.tone === "go" ? "text-white" : p.tone === "vi" ? "text-white dark:text-[#1a1033]" : C.ink;
   return (
     <View
       class={`rounded-lg border ${p.small ? "px-2 py-0.5" : "px-3 py-1.5"} items-center justify-center ${tone} ${p.disabled ? "opacity-40" : ""}`}
+      style={p.tone === "go" ? { backgroundColor: acc() } : undefined}
       activeStyle={{ opacity: 0.7 }}
       onPress={() => (p.disabled ? null : p.onPress())}
     >
@@ -168,13 +187,26 @@ function Panel(p: { children?: Any; pad?: boolean; class?: string }) {
   return <View class={`rounded-xl border ${C.panel} ${C.line} ${p.pad ? "p-3.5" : ""} ${p.class || ""}`}>{p.children}</View>;
 }
 
-/** The page header: title, sub, buttons on the right. */
-function Head(p: { title: string; sub?: string; children?: Any }) {
+/** Set by the Books window: back to Home. Cards leave it unset, so they show no arrow. */
+let goBack: (() => void) | null = null;
+
+/** The page header: a green band with the way back, the title, and buttons on the right. */
+function Head(p: { title: string; sub?: string; children?: Any; home?: boolean }) {
   return (
-    <View class="flex-row items-center gap-2.5 flex-wrap">
-      <Text class={`text-[18px] font-bold ${C.ink}`}>{p.title}</Text>
+    <View class="flex-row items-center gap-2.5 flex-wrap rounded-xl px-3.5 py-2.5" style={{ backgroundColor: acc() }}>
+      <If when={Boolean(goBack) && !p.home}>
+        <View
+          accessibilityLabel="Back to Home"
+          class="w-7 h-7 rounded-full items-center justify-center bg-white/20"
+          onPress={() => (goBack ? goBack() : null)}
+          activeStyle={{ opacity: 0.7 }}
+        >
+          <Text class="text-[15px] font-bold text-white">‹</Text>
+        </View>
+      </If>
+      <Text class="text-[17px] font-bold text-white">{p.title}</Text>
       <If when={Boolean(p.sub)}>
-        <Text class={`text-[13px] ${C.mute}`}>{p.sub || ""}</Text>
+        <Text class="text-[12.5px] text-white/80">{p.sub || ""}</Text>
       </If>
       <View class="flex-1" />
       {p.children}

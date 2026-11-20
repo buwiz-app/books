@@ -80,6 +80,7 @@ const MIGRATIONS: &[(i64, &str)] = &[
     (20, include_str!("../migrations/0020_audit_subject.sql")),
     (21, include_str!("../migrations/0021_statement_pages.sql")),
     (22, include_str!("../migrations/0022_evidence_pages.sql")),
+    (23, include_str!("../migrations/0023_book_accent.sql")),
 ];
 
 pub const DATA_DIR_ENV: &str = "BOOKS_DATA_DIR";

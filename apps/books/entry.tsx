@@ -1,5 +1,5 @@
 // The entry parts of the Books window: the drawer (the double entry behind
-// an entry, Post or Void) and the new-entry sheet (Money in, Money out,
+// an entry, Post or Void) and the new-entry page (Money in, Money out,
 // Transfer, Journal). The Ledger itself is a native screen
 // (crates/books-screens); `openLedger` opens it. The assistant drafts; only
 // a click here posts or voids.
@@ -76,7 +76,8 @@ function EntryDrawer() {
                     <Each of={e()?.suggest || []} key={rowKey}>
                       {(c: Any) => (
                         <View
-                          class={`rounded-full border px-2.5 py-1 ${C.raise} ${c().best ? "border-[#157a48] dark:border-[#3fcf89]" : C.line}`}
+                          class={`rounded-full border px-2.5 py-1 ${C.raise} ${C.line}`}
+                          style={picked(Boolean(c().best))}
                           onPress={() =>
                             act("books_app_recategorize", { entry: drawerEntry(), category: c().ticket })
                               .then(() => toast(`Now ${c().name}`))
@@ -223,8 +224,25 @@ const MODES: [string, string][] = [
   ["journal", "Journal"],
 ];
 
-/** The new-entry sheet over the window. `mode` is the open mode, "" closed. */
-function EntrySheet(p: { mode: Any; close: () => void; setMode: (m: string) => void }) {
+const MODE_SUB: Record<string, string> = {
+  money_in: "A customer paid you",
+  money_out: "You paid someone",
+  transfer: "Between your accounts",
+  journal: "Any balanced set of lines",
+};
+
+/** What to ask the assistant in the chat: it saves a draft, which lands in the Inbox. */
+const ASK: [string, string][] = [
+  ["Pay expense", "Draft a money-out entry in Books: I paid [who] [amount] for [what] from [bank or cash]."],
+  ["Receive payment", "Draft a money-in entry in Books: [who] paid me [amount] for [what] into [bank or cash]."],
+  ["Transfer", "Draft a transfer in Books: moved [amount] from [account] to [account]."],
+  ["Journal", "Draft a journal entry in Books: debit [account] [amount], credit [account] [amount], for [what]."],
+  ["Rent", "Draft a money-out entry in Books: paid this month's rent of [amount] from [bank]."],
+  ["Utility", "Draft a money-out entry in Books: paid the [electric or water] bill of [amount] from [bank]."],
+];
+
+/** The new-entry page: the type rail, the entry, and the assistant beside it. `mode` is the open mode. */
+function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => void }) {
   const opts = resource(
     () => ({ v: ver() }),
     () => buwiz.call("books_entry_options", {}),
@@ -326,101 +344,179 @@ function EntrySheet(p: { mode: Any; close: () => void; setMode: (m: string) => v
       .catch((e: Any) => err.set(errText(e)))
       .finally(() => busy.set(false));
   };
+  const side = signal("ai");
+  const ask = (text: string) => {
+    if (!buwiz.copy) return toast("This Buwiz Bot cannot copy. Type it in the chat.");
+    buwiz.copy(text);
+    toast("Copied. Paste it in the chat; the draft lands in your Inbox.");
+  };
+  const modeName = () => (MODES.find((m) => m[0] === mode()) || ["", "New entry"])[1];
   return (
-    <View class="absolute inset-0 bg-black/50 items-center justify-center">
-      <View class={`w-[560px] max-h-[600px] rounded-[14px] border ${C.panel} ${C.line}`}>
-        <View class={`flex-row items-center gap-2.5 px-3.5 py-3 border-b ${C.line}`}>
-          <Text class={`flex-1 text-[14px] font-bold ${C.ink}`}>New entry</Text>
-          <Seg options={MODES} value={mode()} onPick={p.setMode} />
-          <Btn label="✕" small onPress={p.close} />
+    <View class={`flex-1 ${C.bg}`}>
+      <View class="flex-row items-center gap-2.5 px-4 py-3">
+        <View accessibilityLabel="Back to Home" class={`w-8 h-8 rounded-full border items-center justify-center ${C.panel} ${C.line}`} onPress={p.close} activeStyle={{ opacity: 0.7 }}>
+          <Text class={`text-[15px] font-bold ${C.ink}`}>‹</Text>
         </View>
-        <Scroll class="max-h-[460px]">
-          <View class="p-3.5 gap-3">
-            <If when={mode() !== "journal"}>
-              <View class="gap-3">
-                <Field label="Amount">
-                  <TextBox label="Amount" value={amount()} onChange={(v) => amount.set(v)} placeholder="₱ 0.00" big />
-                </Field>
-                <View class="flex-row gap-3">
-                  <Field label="Date" grow>
-                    <TextBox label="Date" value={date()} onChange={(v) => date.set(v)} placeholder={o()?.today || "YYYY-MM-DD"} />
-                  </Field>
-                  <Field label={mode() === "money_in" ? "Into" : mode() === "transfer" ? "From" : "Paid from"} grow>
-                    <Pick label="Account" value={money()} options={o()?.money || []} onPick={(a: Any) => money.set(a.ticket)} placeholder="Bank, cash or card" />
-                  </Field>
+        <Text class={`flex-1 text-[14px] font-bold ${C.ink}`}>New entry</Text>
+        <Text class={`text-[12px] ${C.dim}`}>{`${o()?.book?.basis_label || "Cash basis"} · counts on its date`}</Text>
+        <Btn label="Save draft" disabled={busy()} onPress={() => save(false)} />
+        <Btn label="Save & post" tone="go" disabled={busy()} onPress={() => save(true)} />
+      </View>
+      <View class="flex-1 flex-row gap-3 px-4 pb-4">
+        <View class="w-[104px] gap-1.5">
+          <Each of={MODES}>
+            {(m: Any) => (
+              <View
+                class={`rounded-[10px] border px-2.5 py-2 ${mode() === m()[0] ? "border-transparent" : `${C.panel} ${C.line}`}`}
+                style={mode() === m()[0] ? { backgroundColor: acc() } : undefined}
+                onPress={() => p.setMode(m()[0])}
+                activeStyle={{ opacity: 0.7 }}
+              >
+                <Text class={`text-[12.5px] font-semibold ${mode() === m()[0] ? ON_ACC : C.ink}`}>{m()[1]}</Text>
+              </View>
+            )}
+          </Each>
+        </View>
+        <Scroll class="flex-1">
+          <View class={`rounded-xl border overflow-hidden ${C.panel} ${C.line}`}>
+            <View class="px-4 pt-3.5 pb-4 gap-3" style={{ backgroundColor: acc() }}>
+              <View class="flex-row items-center gap-3">
+                <View class="flex-1 gap-0.5">
+                  <Text class={`text-[18px] font-bold ${ON_ACC}`}>{modeName()}</Text>
+                  <Text class="text-[12px] text-white/80">{MODE_SUB[mode()] || ""}</Text>
                 </View>
-                <If when={mode() === "transfer"}>
-                  <Field label="To">
-                    <Pick label="To account" value={toAccount()} options={o()?.money || []} onPick={(a: Any) => toAccount.set(a.ticket)} placeholder="Bank, cash or card" />
-                  </Field>
-                </If>
-                <If when={mode() !== "transfer"}>
-                  <View class="flex-row gap-3">
-                    <Field label={mode() === "money_in" ? "From" : "To"} grow>
-                      <TextBox label={mode() === "money_in" ? "From" : "To"} value={payee()} onChange={(v) => payee.set(v)} placeholder={mode() === "money_in" ? "Customer" : "Vendor"} />
-                    </Field>
-                    <Field label="Category" grow>
-                      <Pick
-                        label="Category"
-                        value={category()}
-                        options={(mode() === "money_in" ? o()?.income : o()?.expense) || []}
-                        onPick={(a: Any) => category.set(a.ticket)}
-                        placeholder="Pick a category"
-                      />
-                    </Field>
+                <If when={mode() !== "journal"}>
+                  <View class="w-[200px]">
+                    <TextBox label="Amount" value={amount()} onChange={(v) => amount.set(v)} placeholder="₱ 0.00" big />
                   </View>
                 </If>
-                <View class="flex-row gap-3">
-                  <Field label="What it was for" grow>
-                    <TextBox label="What it was for" value={memo()} onChange={(v) => memo.set(v)} placeholder="Office supplies" />
-                  </Field>
-                  <Field label="Reference" grow>
-                    <TextBox label="Reference" value={reference()} onChange={(v) => reference.set(v)} placeholder="Invoice 0143" />
-                  </Field>
+              </View>
+              <View class="flex-row gap-3">
+                <View class="w-[150px] gap-1">
+                  <Text class="text-[11px] uppercase tracking-wider text-white/80">Date</Text>
+                  <TextBox label="Date" value={date()} onChange={(v) => date.set(v)} placeholder={o()?.today || "YYYY-MM-DD"} />
                 </View>
-                <View class={`rounded-[10px] border border-dashed p-2.5 gap-1.5 ${C.line}`}>
-                  <Text class={`text-[12px] font-bold ${C.mute}`}>Behind the scenes</Text>
-                  <Text class={`text-[12px] font-mono ${C.ink}`}>{behind()}</Text>
+                <View class="flex-1 gap-1">
+                  <Text class="text-[11px] uppercase tracking-wider text-white/80">Reference number</Text>
+                  <TextBox label="Reference" value={reference()} onChange={(v) => reference.set(v)} placeholder="Invoice 0143" />
                 </View>
-                <If when={mode() === "transfer"}>
-                  <Text class={`text-[12px] ${C.dim}`}>Not income, not an expense. Reports leave it out of the P&L.</Text>
+                <If when={mode() !== "transfer"}>
+                  <View class="flex-1 gap-1">
+                    <Text class="text-[11px] uppercase tracking-wider text-white/80">{mode() === "money_in" ? "Received from" : mode() === "money_out" ? "Paid to" : "Party"}</Text>
+                    <TextBox label="Party" value={payee()} onChange={(v) => payee.set(v)} placeholder={mode() === "money_in" ? "Customer" : mode() === "money_out" ? "Vendor" : "Optional"} />
+                  </View>
                 </If>
               </View>
-            </If>
-            <If when={mode() === "journal"}>
-              <View class="gap-2">
-                <Text class={`text-[12px] ${C.dim}`}>For accountants: any balanced set of lines.</Text>
-                <Each of={jl()}>
-                  {(l: Any, i: Any) => (
-                    <View class="flex-row gap-2 items-start">
-                      <View class="flex-1">
-                        <Pick value={l().account()} options={o()?.all || []} onPick={(a: Any) => l().account.set(a.ticket)} placeholder="Account" />
+            </View>
+            <View class="p-4 gap-3.5">
+              <Field label="Memo">
+                <TextBox label="Memo" value={memo()} onChange={(v) => memo.set(v)} placeholder="What it was for" />
+              </Field>
+              <If when={mode() !== "journal"}>
+                <View class="gap-3.5">
+                  <View class="flex-row gap-3">
+                    <Field label={mode() === "money_in" ? "Into" : mode() === "transfer" ? "From" : "Paid from"} grow>
+                      <Pick label="Account" value={money()} options={o()?.money || []} onPick={(a: Any) => money.set(a.ticket)} placeholder="Bank, cash or card" />
+                    </Field>
+                    <If when={mode() === "transfer"}>
+                      <Field label="To" grow>
+                        <Pick label="To account" value={toAccount()} options={o()?.money || []} onPick={(a: Any) => toAccount.set(a.ticket)} placeholder="Bank, cash or card" />
+                      </Field>
+                    </If>
+                    <If when={mode() !== "transfer"}>
+                      <Field label="Category" grow>
+                        <Pick
+                          label="Category"
+                          value={category()}
+                          options={(mode() === "money_in" ? o()?.income : o()?.expense) || []}
+                          onPick={(a: Any) => category.set(a.ticket)}
+                          placeholder="Pick a category"
+                        />
+                      </Field>
+                    </If>
+                  </View>
+                  <View class={`rounded-[10px] border border-dashed p-2.5 gap-1.5 ${C.line}`}>
+                    <Text class={`text-[12px] font-bold ${C.mute}`}>Behind the scenes</Text>
+                    <Text class={`text-[12px] font-mono ${C.ink}`}>{behind()}</Text>
+                  </View>
+                  <If when={mode() === "transfer"}>
+                    <Text class={`text-[12px] ${C.dim}`}>Not income, not an expense. Reports leave it out of the P&L.</Text>
+                  </If>
+                </View>
+              </If>
+              <If when={mode() === "journal"}>
+                <View class="gap-2">
+                  <View class="flex-row gap-2">
+                    <Text class={`w-5 text-[10.5px] uppercase tracking-wider ${C.dim}`}>#</Text>
+                    <Text class={`flex-1 text-[10.5px] uppercase tracking-wider ${C.dim}`}>Account</Text>
+                    <Text class={`w-[120px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Debit</Text>
+                    <Text class={`w-[120px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Credit</Text>
+                    <View class="w-7" />
+                  </View>
+                  <Each of={jl()}>
+                    {(l: Any, i: Any) => (
+                      <View class="flex-row gap-2 items-start">
+                        <Text class={`w-5 pt-2 text-[12px] font-mono ${C.dim}`}>{String(i() + 1)}</Text>
+                        <View class="flex-1">
+                          <Pick value={l().account()} options={o()?.all || []} onPick={(a: Any) => l().account.set(a.ticket)} placeholder="Account" />
+                        </View>
+                        <View class="w-[120px]">
+                          <TextBox value={l().debit()} onChange={(v: string) => l().debit.set(v)} placeholder="Debit" />
+                        </View>
+                        <View class="w-[120px]">
+                          <TextBox value={l().credit()} onChange={(v: string) => l().credit.set(v)} placeholder="Credit" />
+                        </View>
+                        <View class="w-7 pt-1">
+                          <If when={jl().length > 2}>
+                            <Btn label="✕" small onPress={() => jl.set(jl().filter((_: Any, j: number) => j !== i()))} />
+                          </If>
+                        </View>
                       </View>
-                      <View class="w-[100px]">
-                        <TextBox value={l().debit()} onChange={(v: string) => l().debit.set(v)} placeholder="Debit" />
-                      </View>
-                      <View class="w-[100px]">
-                        <TextBox value={l().credit()} onChange={(v: string) => l().credit.set(v)} placeholder="Credit" />
-                      </View>
+                    )}
+                  </Each>
+                  <View class="flex-row items-center gap-2">
+                    <Btn label="+ Line" small onPress={() => jl.set([...jl(), journalLine()])} />
+                    <Text class={`flex-1 text-[12px] ${C.dim}`}>Debits must equal credits. Books checks the lines when you save.</Text>
+                  </View>
+                </View>
+              </If>
+              <If when={Boolean(err())}>
+                <Text class={`text-[12.5px] ${C.red}`}>{err()}</Text>
+              </If>
+            </View>
+          </View>
+        </Scroll>
+        <View class={`w-[260px] rounded-xl border overflow-hidden ${C.panel} ${C.line}`}>
+          <View class="flex-row gap-1 px-2 py-2" style={{ backgroundColor: acc() }}>
+            <Each of={[["ai", "Assistant"], ["docs", "Attachments"]]}>
+              {(t: Any) => (
+                <View class={`rounded-[7px] px-2.5 py-1 ${side() === t()[0] ? "bg-white/25" : ""}`} onPress={() => side.set(t()[0])}>
+                  <Text class={`text-[12.5px] font-semibold ${ON_ACC}`}>{t()[1]}</Text>
+                </View>
+              )}
+            </Each>
+          </View>
+          <If when={side() === "ai"}>
+            <View class="p-3 gap-2.5">
+              <Text class={`text-[12.5px] ${C.mute}`}>Tell the assistant in the chat what happened. It saves a draft, which waits in your Inbox for you to post.</Text>
+              <View class="flex-row gap-1.5 flex-wrap">
+                <Each of={ASK}>
+                  {(q: Any) => (
+                    <View class={`rounded-full border px-2.5 py-1 ${C.raise} ${C.line}`} onPress={() => ask(q()[1])} activeStyle={{ opacity: 0.7 }}>
+                      <Text class={`text-[12px] ${C.ink}`}>{q()[0]}</Text>
                     </View>
                   )}
                 </Each>
-                <Btn label="+ Line" small onPress={() => jl.set([...jl(), journalLine()])} />
-                <Field label="What it was for">
-                  <TextBox value={memo()} onChange={(v) => memo.set(v)} placeholder="Prepaid software" />
-                </Field>
               </View>
-            </If>
-            <If when={Boolean(err())}>
-              <Text class={`text-[12.5px] ${C.red}`}>{err()}</Text>
-            </If>
-          </View>
-        </Scroll>
-        <View class={`flex-row items-center gap-2 px-3.5 py-3 border-t ${C.line}`}>
-          <Text class={`flex-1 text-[12px] ${C.dim}`}>{`${o()?.book?.basis_label || "Cash basis"} · counts on its date`}</Text>
-          <Btn label="Cancel" onPress={p.close} />
-          <Btn label="Save draft" disabled={busy()} onPress={() => save(false)} />
-          <Btn label="Save & post" tone="go" disabled={busy()} onPress={() => save(true)} />
+              <Text class={`text-[11.5px] ${C.dim}`}>A press copies a sentence to fill in and send. The assistant never posts.</Text>
+            </View>
+          </If>
+          <If when={side() === "docs"}>
+            <View class="p-3 gap-2.5">
+              <Text class={`text-[12.5px] ${C.mute}`}>Save the draft first, then attach its receipt or bill from Documents.</Text>
+              <Btn label="Open Documents" onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)} />
+            </View>
+          </If>
         </View>
       </View>
     </View>

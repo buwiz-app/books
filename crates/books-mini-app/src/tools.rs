@@ -383,7 +383,7 @@ fn default_schema() -> Value {
 }
 
 fn book_update_schema() -> Value {
-    json!({ "type": "object", "required": ["client_request_id"], "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "label": { "type": "string" }, "fiscal_year_start": { "type": "integer" }, "basis": { "type": "string", "enum": ["cash", "accrual"] } } })
+    json!({ "type": "object", "required": ["client_request_id"], "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "label": { "type": "string" }, "fiscal_year_start": { "type": "integer" }, "basis": { "type": "string", "enum": ["cash", "accrual"] }, "accent": { "type": "string", "enum": ["green", "teal", "blue", "violet", "orange", "rose"] } } })
 }
 
 fn upload_part_schema() -> Value {

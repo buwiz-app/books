@@ -1,5 +1,5 @@
-// Today: cash now, the month so far, unpaid totals, then what needs the
-// user and the quick actions.
+// Home: cash now, the month so far, unpaid totals, what needs the user,
+// and the way to every page (the window has no rail).
 
 const ICON_TONE: Record<string, string> = {
   rev: PILL.rev,
@@ -22,7 +22,12 @@ function Kpi(p: { label: string; shown: string; tone?: string; rows: Any[] }) {
 
 function NeedRow(p: { n: Any; go: (page: string, filter?: string) => void }) {
   return (
-    <View class={`flex-row items-center gap-2.5 px-3.5 py-2.5 border-t ${C.line}`} onPress={() => p.go(p.n.go, p.n.filter)} activeStyle={{ opacity: 0.7 }}>
+    <View class={`flex-row items-center gap-2.5 px-3.5 py-2.5 border-t ${C.line}`} onPress={() => {
+        if (p.n.filter === "review" || p.n.filter === "draft") {
+          inboxFilter.set(p.n.filter);
+          p.go("inbox");
+        } else p.go(p.n.go, p.n.filter);
+      }} activeStyle={{ opacity: 0.7 }}>
       <View class={`w-7 h-7 rounded-lg items-center justify-center ${ICON_TONE[p.n.tone] || PILL.mute}`}>
         <Text class={`text-[12px] font-bold ${ICON_TONE[p.n.tone] || PILL.mute}`}>{String(p.n.count)}</Text>
       </View>
@@ -46,7 +51,21 @@ function Quick(p: { title: string; sub: string; onPress: () => void }) {
   );
 }
 
-function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mode: string) => void }) {
+/** Home's way to a page: a tile under its group. */
+function NavTile(p: { title: string; sub: string; onPress: () => void }) {
+  return (
+    <View class={`w-[176px] rounded-[10px] border p-2.5 gap-0.5 ${C.panel} ${C.line}`} onPress={p.onPress} activeStyle={{ opacity: 0.7 }}>
+      <Text class={`text-[13px] font-bold ${C.ink}`}>{p.title}</Text>
+      <Text class={`text-[11px] ${C.dim}`} numberOfLines={1}>
+        {p.sub}
+      </Text>
+    </View>
+  );
+}
+
+const NAV_GROUPS = ["Money", "Results", "Records"];
+
+function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mode: string) => void; pages: Any[] }) {
   const today = resource(
     () => ({ v: ver() }),
     () => buwiz.call("books_today", {}),
@@ -54,10 +73,11 @@ function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
   const t = () => today() as Any;
   return (
     <View class="gap-3.5">
-      <Head title="Today" sub={t() ? t().today_label : ""}>
+      <Head home title="Home" sub={t() ? t().today_label : ""}>
         <View class="flex-row gap-2">
           <Btn label="+ Money out" onPress={() => p.sheet("money_out")} />
-          <Btn label="+ Money in" tone="go" onPress={() => p.sheet("money_in")} />
+          <Btn label="+ Money in" onPress={() => p.sheet("money_in")} />
+          <Btn label="+ New entry" tone="go" onPress={() => p.sheet("journal")} />
         </View>
       </Head>
       <Loading res={today} />
@@ -83,7 +103,7 @@ function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
             </Panel>
             <Panel class="flex-1">
               <View class="flex-row items-center justify-between px-3.5 pt-3 pb-1">
-                <Text class={`text-[13px] font-bold ${C.ink}`}>Quick</Text>
+                <Text class={`text-[13px] font-bold ${C.ink}`}>Add an entry</Text>
                 <Text class={`text-[12px] ${C.dim}`}>also in chat as /books</Text>
               </View>
               <View class="p-3.5 gap-2">
@@ -93,17 +113,28 @@ function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
                 </View>
                 <View class="flex-row gap-2">
                   <Quick title="Transfer" sub="Between your accounts" onPress={() => p.sheet("transfer")} />
-                  <Quick title="Unpaid" sub="Invoices and bills waiting" onPress={() => p.go("unpaid")} />
-                </View>
-                <View class="flex-row gap-2">
-                  <Quick title="Ledger" sub="Every entry this month" onPress={() => p.go("ledger")} />
-                  <Quick title={`${t()?.month_name || "This month"}'s P&L`} sub={`Net ${t()?.month.shown || ""}`} onPress={() => p.go("reports")} />
+                  <Quick title="Journal" sub="Any balanced set of lines" onPress={() => p.sheet("journal")} />
                 </View>
               </View>
             </Panel>
           </View>
         </View>
       </If>
+      <Each of={NAV_GROUPS}>
+        {(g: Any) => (
+          <View class="gap-1.5">
+            <Text class={`text-[10.5px] uppercase tracking-widest ${C.dim}`}>{g()}</Text>
+            <View class="flex-row gap-2 flex-wrap">
+              <Each of={(p.pages || []).filter((x: Any) => x.group === g())} key={(x: Any) => x.id}>
+                {(x: Any) => <NavTile title={x().label} sub={x().sub || ""} onPress={() => p.go(x().id)} />}
+              </Each>
+              <If when={g() === "Records"}>
+                <NavTile title="Documents" sub="Receipts, bills, statements" onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)} />
+              </If>
+            </View>
+          </View>
+        )}
+      </Each>
     </View>
   );
 }

@@ -48,7 +48,7 @@ function FormsPage(p: { go: (page: string, filter?: string) => void }) {
   const o = () => v()?.owners || {};
   return (
     <View class="gap-3.5">
-      <Head title="Forms" sub="Books totals for eBIRForms">
+      <Head title="Tax hand-off" sub="Books totals for your tax app">
         <View class="flex-row gap-2">
           <Btn label="2307s" onPress={() => p.go("certificates")} />
           <Btn label="Payroll" onPress={() => p.go("payroll")} />
