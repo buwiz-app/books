@@ -13,7 +13,7 @@
 //! - [`plumbing`]: idempotency, audit rows and tickets.
 
 #[cfg(not(unix))]
-use no_unix_modes::{DirBuilderExt as _, OpenOptionsExt as _, PermissionsExt as _};
+use no_unix_modes::{DirBuilderExt as _, OpenOptionsExt as _};
 use std::fmt;
 use std::fs;
 use std::io::Write as _;
@@ -41,6 +41,10 @@ pub mod review;
 pub mod slices;
 pub mod statement_drafts;
 pub mod statement_lock;
+
+#[cfg(windows)]
+#[allow(unsafe_code)]
+mod win_acl;
 
 pub use rusqlite;
 
@@ -189,28 +193,44 @@ pub fn private_dirs(path: &Path) -> std::io::Result<()> {
     fs::DirBuilder::new()
         .recursive(true)
         .mode(0o700)
-        .create(path)
+        .create(path)?;
+    #[cfg(windows)]
+    win_acl::restrict_to_owner(path, true)?;
+    Ok(())
 }
 
 /// Creates a new file at `path`, mode 0600, open for writing. It fails when
 /// the path exists, a link included.
 pub fn private_file(path: &Path) -> std::io::Result<fs::File> {
-    fs::OpenOptions::new()
+    let file = fs::OpenOptions::new()
         .write(true)
         .create_new(true)
         .mode(0o600)
-        .open(path)
+        .open(path)?;
+    #[cfg(windows)]
+    win_acl::restrict_to_owner(path, false)?;
+    Ok(file)
 }
 
 /// Read the key file, or create it (0600, 32 random bytes as hex) when it
 /// does not exist. A key file others can read is refused.
 fn key(path: &Path) -> Result<String> {
     match fs::metadata(path) {
-        Ok(meta) => {
-            if meta.permissions().mode() & 0o077 != 0 {
+        Ok(_meta) => {
+            #[cfg(unix)]
+            if _meta.permissions().mode() & 0o077 != 0 {
                 return Err(error(
                     "key_file_mode",
                     "The Books key file can be read by other users; it must be mode 0600.",
+                ));
+            }
+            #[cfg(windows)]
+            if win_acl::others_can_read(path)
+                .map_err(|_| error("key_file", "The Books key file permissions cannot be read."))?
+            {
+                return Err(error(
+                    "key_file_mode",
+                    "The Books key file can be read by other users; only you may have access to it.",
                 ));
             }
             let text = fs::read_to_string(path)
@@ -485,12 +505,69 @@ mod tests {
         );
     }
 
+    #[cfg(unix)]
     #[test]
     fn a_key_file_others_can_read_is_refused() {
         let tmp = TempDir::new("mode");
         let paths = Paths::in_dir(tmp.0.join("data"));
         drop(Store::open(&paths).unwrap());
         fs::set_permissions(&paths.key_file, fs::Permissions::from_mode(0o644)).unwrap();
+        assert_eq!(Store::open(&paths).err().unwrap().code, "key_file_mode");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_new_store_paths_are_owner_only_and_protected() {
+        let tmp = TempDir::new("acl-owner");
+        let paths = Paths::in_dir(tmp.0.join("data"));
+        drop(Store::open(&paths).unwrap());
+        assert!(!win_acl::others_can_read(&paths.key_file).unwrap());
+        assert!(!win_acl::others_can_read(&paths.dir).unwrap());
+        assert!(win_acl::dacl_is_protected(&paths.key_file).unwrap());
+        assert!(win_acl::dacl_is_protected(&paths.dir).unwrap());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_a_key_readable_by_everyone_is_refused() {
+        let tmp = TempDir::new("acl-everyone");
+        let paths = Paths::in_dir(tmp.0.join("data"));
+        drop(Store::open(&paths).unwrap());
+        let sid = win_acl::current_user_sid().unwrap();
+        win_acl::set_dacl(&paths.key_file, &format!("D:P(A;;FA;;;{sid})(A;;FR;;;WD)")).unwrap();
+        assert!(win_acl::others_can_read(&paths.key_file).unwrap());
+        let error = Store::open(&paths).err().unwrap();
+        assert_eq!(error.code, "key_file_mode");
+        assert_eq!(
+            error.message,
+            "The Books key file can be read by other users; only you may have access to it."
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_system_and_administrators_may_read_the_key() {
+        let tmp = TempDir::new("acl-system");
+        let paths = Paths::in_dir(tmp.0.join("data"));
+        drop(Store::open(&paths).unwrap());
+        let sid = win_acl::current_user_sid().unwrap();
+        win_acl::set_dacl(
+            &paths.key_file,
+            &format!("D:P(A;;FA;;;{sid})(A;;FR;;;SY)(A;;FR;;;BA)"),
+        )
+        .unwrap();
+        assert!(!win_acl::others_can_read(&paths.key_file).unwrap());
+        drop(Store::open(&paths).unwrap());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_a_null_key_dacl_is_refused() {
+        let tmp = TempDir::new("acl-null");
+        let paths = Paths::in_dir(tmp.0.join("data"));
+        drop(Store::open(&paths).unwrap());
+        win_acl::set_dacl(&paths.key_file, "D:NO_ACCESS_CONTROL").unwrap();
+        assert!(win_acl::others_can_read(&paths.key_file).unwrap());
         assert_eq!(Store::open(&paths).err().unwrap().code, "key_file_mode");
     }
 
@@ -519,8 +596,7 @@ mod tests {
     }
 }
 
-/// Off Unix there are no permission bits: files and folders take the
-/// inherited ACLs of the user's data folder, and a key file counts as 0600.
+/// Off Unix mode builders are no-ops; Windows ACLs are set in `win_acl`.
 #[cfg(not(unix))]
 mod no_unix_modes {
     pub trait DirBuilderExt {
@@ -537,14 +613,6 @@ mod no_unix_modes {
     impl OpenOptionsExt for std::fs::OpenOptions {
         fn mode(&mut self, _: u32) -> &mut Self {
             self
-        }
-    }
-    pub trait PermissionsExt {
-        fn mode(&self) -> u32;
-    }
-    impl PermissionsExt for std::fs::Permissions {
-        fn mode(&self) -> u32 {
-            0o600
         }
     }
 }
