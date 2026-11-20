@@ -13,7 +13,9 @@
 //! - [`plumbing`]: idempotency, audit rows and tickets.
 
 #[cfg(not(unix))]
-use no_unix_modes::{DirBuilderExt as _, OpenOptionsExt as _};
+use no_unix_modes::DirBuilderExt as _;
+#[cfg(all(not(unix), not(windows)))]
+use no_unix_modes::OpenOptionsExt as _;
 use std::fmt;
 use std::fs;
 use std::io::Write as _;
@@ -189,32 +191,36 @@ pub(crate) fn hex(bytes: &[u8]) -> String {
 }
 
 /// Creates missing directories, each mode 0700 on Unix, leaving existing ones alone.
-/// On Windows a newly created leaf gets a protected owner-only ACL.
+/// On Windows a new leaf is created with a protected owner-only ACL.
 pub fn private_dirs(path: &Path) -> std::io::Result<()> {
     #[cfg(windows)]
-    let existed = path.is_dir();
-    fs::DirBuilder::new()
-        .recursive(true)
-        .mode(0o700)
-        .create(path)?;
-    #[cfg(windows)]
-    if !existed {
-        win_acl::restrict_to_owner(path, true)?;
+    {
+        win_acl::create_owner_only_dir(path)
     }
-    Ok(())
+    #[cfg(not(windows))]
+    {
+        fs::DirBuilder::new()
+            .recursive(true)
+            .mode(0o700)
+            .create(path)
+    }
 }
 
 /// Creates a new file at `path`, mode 0600, open for writing. It fails when
 /// the path exists, a link included.
 pub fn private_file(path: &Path) -> std::io::Result<fs::File> {
-    let file = fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .mode(0o600)
-        .open(path)?;
     #[cfg(windows)]
-    win_acl::restrict_to_owner(path, false)?;
-    Ok(file)
+    {
+        win_acl::create_owner_only_file(path)
+    }
+    #[cfg(not(windows))]
+    {
+        fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .mode(0o600)
+            .open(path)
+    }
 }
 
 /// Read the key file, or create it (0600, 32 random bytes as hex) when it
@@ -556,6 +562,29 @@ mod tests {
 
     #[cfg(windows)]
     #[test]
+    fn windows_private_paths_start_owner_only_in_a_shared_folder() {
+        let tmp = TempDir::new("acl-create");
+        let shared = tmp.0.join("shared");
+        fs::create_dir(&shared).unwrap();
+        let sid = win_acl::current_user_sid().unwrap();
+        win_acl::set_dacl(&shared, &format!("D:P(A;OICI;FA;;;{sid})(A;OICI;FR;;;BU)")).unwrap();
+        let path = shared.join(KEY_FILE);
+        let file = private_file(&path).unwrap();
+        assert!(!win_acl::others_can_read(&path).unwrap());
+        assert!(win_acl::dacl_is_protected(&path).unwrap());
+        assert_eq!(
+            private_file(&path).err().unwrap().kind(),
+            std::io::ErrorKind::AlreadyExists
+        );
+        let leaf = shared.join("parent").join("private");
+        private_dirs(&leaf).unwrap();
+        assert!(!win_acl::others_can_read(&leaf).unwrap());
+        assert!(win_acl::dacl_is_protected(&leaf).unwrap());
+        drop(file);
+    }
+
+    #[cfg(windows)]
+    #[test]
     fn windows_a_key_readable_by_everyone_is_refused() {
         let tmp = TempDir::new("acl-everyone");
         let paths = Paths::in_dir(tmp.0.join("data"));
@@ -634,9 +663,11 @@ mod no_unix_modes {
             self
         }
     }
+    #[cfg(not(windows))]
     pub trait OpenOptionsExt {
         fn mode(&mut self, mode: u32) -> &mut Self;
     }
+    #[cfg(not(windows))]
     impl OpenOptionsExt for std::fs::OpenOptions {
         fn mode(&mut self, _: u32) -> &mut Self {
             self

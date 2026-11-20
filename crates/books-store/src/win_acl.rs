@@ -1,26 +1,41 @@
 use std::ffi::c_void;
+use std::fs::File;
 use std::io;
 use std::os::windows::ffi::OsStrExt as _;
+use std::os::windows::io::FromRawHandle as _;
 use std::path::Path;
-use std::ptr::{null, null_mut};
+use std::ptr::null_mut;
 
 use windows_sys::Win32::Foundation::{
-    CloseHandle, ERROR_INSUFFICIENT_BUFFER, GENERIC_ALL, GENERIC_READ, HANDLE, LocalFree,
+    CloseHandle, ERROR_INSUFFICIENT_BUFFER, GENERIC_ALL, GENERIC_READ, GENERIC_WRITE, HANDLE,
+    INVALID_HANDLE_VALUE, LocalFree,
 };
 use windows_sys::Win32::Security::Authorization::{
     ConvertSidToStringSidW, ConvertStringSecurityDescriptorToSecurityDescriptorW,
-    GetNamedSecurityInfoW, SE_FILE_OBJECT, SetNamedSecurityInfoW,
+    GetNamedSecurityInfoW, SE_FILE_OBJECT,
 };
 use windows_sys::Win32::Security::{
-    ACCESS_ALLOWED_ACE, ACE_HEADER, ACL, DACL_SECURITY_INFORMATION, GetAce,
-    GetSecurityDescriptorDacl, GetTokenInformation, PROTECTED_DACL_SECURITY_INFORMATION, PSID,
-    TOKEN_QUERY, TOKEN_USER, TokenUser,
+    ACCESS_ALLOWED_ACE, ACE_HEADER, ACL, DACL_SECURITY_INFORMATION, GetAce, GetTokenInformation,
+    PSID, SECURITY_ATTRIBUTES, TOKEN_QUERY, TOKEN_USER, TokenUser,
 };
-use windows_sys::Win32::Storage::FileSystem::FILE_READ_DATA;
+use windows_sys::Win32::Storage::FileSystem::{
+    CREATE_NEW, CreateDirectoryW, CreateFileW, FILE_ATTRIBUTE_NORMAL, FILE_FLAG_OPEN_REPARSE_POINT,
+    FILE_READ_DATA,
+};
 use windows_sys::Win32::System::SystemServices::ACCESS_ALLOWED_ACE_TYPE;
 use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
 
 struct LocalAllocation(*mut c_void);
+
+impl LocalAllocation {
+    fn attributes(&self) -> SECURITY_ATTRIBUTES {
+        SECURITY_ATTRIBUTES {
+            nLength: size_of::<SECURITY_ATTRIBUTES>() as u32,
+            lpSecurityDescriptor: self.0,
+            bInheritHandle: 0,
+        }
+    }
+}
 
 impl Drop for LocalAllocation {
     fn drop(&mut self) {
@@ -97,8 +112,7 @@ fn wide_path(path: &Path) -> io::Result<Vec<u16>> {
     Ok(wide)
 }
 
-pub(super) fn set_dacl(path: &Path, sddl: &str) -> io::Result<()> {
-    let path = wide_path(path)?;
+fn descriptor_from_sddl(sddl: &str) -> io::Result<LocalAllocation> {
     let sddl: Vec<_> = sddl.encode_utf16().chain(Some(0)).collect();
     let mut descriptor = LocalAllocation(null_mut());
     // SAFETY: SDDL is null-terminated and descriptor is a writable output pointer.
@@ -113,6 +127,18 @@ pub(super) fn set_dacl(path: &Path, sddl: &str) -> io::Result<()> {
     {
         return Err(io::Error::last_os_error());
     }
+    Ok(descriptor)
+}
+
+#[cfg(test)]
+pub(super) fn set_dacl(path: &Path, sddl: &str) -> io::Result<()> {
+    use windows_sys::Win32::Security::Authorization::SetNamedSecurityInfoW;
+    use windows_sys::Win32::Security::{
+        GetSecurityDescriptorDacl, PROTECTED_DACL_SECURITY_INFORMATION,
+    };
+
+    let path = wide_path(path)?;
+    let descriptor = descriptor_from_sddl(sddl)?;
     let mut present = 0;
     let mut defaulted = 0;
     let mut dacl = null_mut();
@@ -134,7 +160,7 @@ pub(super) fn set_dacl(path: &Path, sddl: &str) -> io::Result<()> {
             null_mut(),
             null_mut(),
             dacl,
-            null(),
+            std::ptr::null(),
         )
     };
     if status != 0 {
@@ -143,10 +169,53 @@ pub(super) fn set_dacl(path: &Path, sddl: &str) -> io::Result<()> {
     Ok(())
 }
 
-pub(crate) fn restrict_to_owner(path: &Path, dir: bool) -> io::Result<()> {
+fn owner_descriptor(dir: bool) -> io::Result<LocalAllocation> {
     let sid = current_user_sid()?;
     let flags = if dir { "OICI" } else { "" };
-    set_dacl(path, &format!("D:P(A;{flags};FA;;;{sid})"))
+    descriptor_from_sddl(&format!("D:P(A;{flags};FA;;;{sid})"))
+}
+
+pub(crate) fn create_owner_only_file(path: &Path) -> io::Result<File> {
+    let path = wide_path(path)?;
+    let descriptor = owner_descriptor(false)?;
+    let attributes = descriptor.attributes();
+    // SAFETY: path is null-terminated and attributes borrows the live descriptor.
+    let handle = unsafe {
+        CreateFileW(
+            path.as_ptr(),
+            GENERIC_WRITE,
+            0,
+            &attributes,
+            CREATE_NEW,
+            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OPEN_REPARSE_POINT,
+            null_mut(),
+        )
+    };
+    if handle == INVALID_HANDLE_VALUE {
+        return Err(io::Error::last_os_error());
+    }
+    // SAFETY: CreateFileW returned a valid, owned handle; File takes ownership once.
+    Ok(unsafe { File::from_raw_handle(handle) })
+}
+
+pub(crate) fn create_owner_only_dir(path: &Path) -> io::Result<()> {
+    if path.as_os_str().is_empty() {
+        return Ok(());
+    }
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let wide = wide_path(path)?;
+    let descriptor = owner_descriptor(true)?;
+    let attributes = descriptor.attributes();
+    // SAFETY: wide is null-terminated and attributes borrows the live descriptor.
+    if unsafe { CreateDirectoryW(wide.as_ptr(), &attributes) } == 0 {
+        let error = io::Error::last_os_error();
+        if error.kind() != io::ErrorKind::AlreadyExists || !path.is_dir() {
+            return Err(error);
+        }
+    }
+    Ok(())
 }
 
 fn read_dacl(path: &Path) -> io::Result<(LocalAllocation, *mut ACL)> {
