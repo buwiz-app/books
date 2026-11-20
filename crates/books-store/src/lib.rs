@@ -15,7 +15,10 @@
 use std::fmt;
 use std::fs;
 use std::io::Write as _;
+#[cfg(unix)]
 use std::os::unix::fs::{DirBuilderExt as _, OpenOptionsExt as _, PermissionsExt as _};
+#[cfg(not(unix))]
+use no_unix_modes::{DirBuilderExt as _, OpenOptionsExt as _, PermissionsExt as _};
 use std::path::{Path, PathBuf};
 
 use rusqlite::{Connection, OptionalExtension as _, params};
@@ -510,5 +513,35 @@ mod tests {
             iso_instant(1_793_232_000_000 + 3_723_000),
             "2026-10-29T01:02:03Z"
         );
+    }
+}
+
+/// Off Unix there are no permission bits: files and folders take the
+/// inherited ACLs of the user's data folder, and a key file counts as 0600.
+#[cfg(not(unix))]
+mod no_unix_modes {
+    pub trait DirBuilderExt {
+        fn mode(&mut self, mode: u32) -> &mut Self;
+    }
+    impl DirBuilderExt for std::fs::DirBuilder {
+        fn mode(&mut self, _: u32) -> &mut Self {
+            self
+        }
+    }
+    pub trait OpenOptionsExt {
+        fn mode(&mut self, mode: u32) -> &mut Self;
+    }
+    impl OpenOptionsExt for std::fs::OpenOptions {
+        fn mode(&mut self, _: u32) -> &mut Self {
+            self
+        }
+    }
+    pub trait PermissionsExt {
+        fn mode(&self) -> u32;
+    }
+    impl PermissionsExt for std::fs::Permissions {
+        fn mode(&self) -> u32 {
+            0o600
+        }
     }
 }
