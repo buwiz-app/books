@@ -854,7 +854,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                         <View class="hidden md:flex md:flex-col gap-2">
                         <View class="flex-row gap-2 items-center">
                           <Text class="w-5 shrink-0 text-[11px] font-semibold text-center text-[#94a3b8] dark:text-slate-500">{String(i() + 1)}</Text>
-                          <View class="flex-[2] min-w-[120px]">
+                          <View class="flex-1 min-w-[120px]">
                             <Input accessibilityLabel="Line description" value={l().memo()} onChange={(e: Any) => l().memo.set(typeof e === "string" ? e : e.value)} placeholder="Add description for this item..." class="w-full min-w-0 bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
                           </View>
                           <View class="w-20 shrink-0">
