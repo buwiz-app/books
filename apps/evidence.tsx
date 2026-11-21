@@ -130,6 +130,14 @@ export default function Evidence() {
   const proposals = () => ((review() as Any)?.rows || []) as Any[];
   return (
     <View style={{ flex: 1 }} class={`${C.bg}`}>
+      <View
+        class="group flex-row items-center gap-1.5 h-11 min-w-11 justify-center rounded-lg transition-colors sm:min-w-0 sm:justify-start"
+        onPress={() => buwiz.open({ app: "books", props: { page: "today" } }).catch(() => null)}
+        activeStyle={{ opacity: 0.7 }}
+      >
+        <Text class={`text-[14px] font-medium transition-colors ${C.ink} group-hover:text-[#0f766e] dark:group-hover:text-[#2dd4bf]`}>‹ Back</Text>
+        <Text class={`hidden sm:inline text-[14px] font-medium transition-colors ${C.ink} group-hover:text-[#0f766e] dark:group-hover:text-[#2dd4bf]`}>to Dashboard</Text>
+      </View>
       <Head title="Books documents" sub="Receipts, bills, statements and other papers kept with your books.">
         <View
           accessibilityLabel="Upload document"

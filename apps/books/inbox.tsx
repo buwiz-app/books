@@ -173,11 +173,12 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
       <View class="shrink-0 flex-col sm:flex-row sm:items-center justify-between px-4 py-3 sm:px-6 sm:py-3.5 gap-2 sm:gap-3">
         <View class="flex-row items-center gap-3">
           <View
-            class="flex-row items-center gap-1.5 py-1.5 pr-2"
+            class="group flex-row items-center gap-1.5 h-11 min-w-11 justify-center rounded-lg transition-colors sm:min-w-0 sm:justify-start"
             onPress={() => p.go("today")}
             activeStyle={{ opacity: 0.7 }}
           >
-            <Text class={`text-[14px] font-medium ${C.ink}`}>‹ Back to Dashboard</Text>
+            <Text class={`text-[14px] font-medium transition-colors ${C.ink} group-hover:text-[#0f766e] dark:group-hover:text-[#2dd4bf]`}>‹ Back</Text>
+            <Text class={`hidden sm:inline text-[14px] font-medium transition-colors ${C.ink} group-hover:text-[#0f766e] dark:group-hover:text-[#2dd4bf]`}>to Dashboard</Text>
           </View>
           <Text class={`text-[18px] font-semibold ${C.ink}`}>Inbox</Text>
           <Text class={`text-[12.5px] ${C.mute}`}>
