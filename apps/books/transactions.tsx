@@ -7,7 +7,7 @@
 // Void (posted) / Discard (drafts) — the only batch writes Books tools offer;
 // inline edits, batch match and CSV export have no tool, so they're left out.
 
-const txMonth = signal(""); // "YYYY-MM", "" = the tool's current month
+const txMonth = signal(String(PROPS.month || "")); // "YYYY-MM", "" = the tool's current month
 const txAccount = signal(""); // account ticket, "" = All accounts
 const txFilter = signal("all"); // tool enum: all/review/draft/posted/checks
 const txSearch = signal("");
@@ -40,6 +40,11 @@ const txAccounts = resource(
 
 const txD = () => txData() as Any;
 const txRows = () => ((txD()?.rows as Any[]) || []) as Any[];
+// Kit ICONS has no search or x yet (kit.tsx is agent B's); same svgIcon helper.
+const TX_ICONS = {
+  search: svgIcon('<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>', 2),
+  x: svgIcon('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', 2),
+};
 const MONTH_KEYS = MONTH_NAMES;
 
 /** Add `n` months to a YYYY-MM key. */
@@ -199,7 +204,7 @@ function TxRow(p: { r: Any; balance: boolean; edit: boolean; checked: boolean; o
             }`}
           >
             <If when={p.checked}>
-              <Text class="text-white text-[10px] font-bold">✓</Text>
+              <Avatar src={ICONS.check} class="w-2.5 h-2.5" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
             </If>
           </View>
         </View>
@@ -239,7 +244,7 @@ function TxRow(p: { r: Any; balance: boolean; edit: boolean; checked: boolean; o
         </View>
       </If>
       <View class="w-9 items-center justify-center shrink-0">
-        <Text class="text-[#cbd5e1] dark:text-slate-600">›</Text>
+        <Avatar src={ICONS.chevronRight} class="w-4 h-4" imageClass="tint-[#cbd5e1] dark:tint-slate-600" fallbackDelay={Infinity} accessibilityLabel="" />
       </View>
     </View>
   );
@@ -422,12 +427,6 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
         <Scroll class="flex-1"><TxSide /></Scroll>
       </View>
       <View class="flex-1 min-w-0 flex flex-col">
-        {/* ‹ Back to Dashboard (the window's own back path) */}
-        <View class="flex-row items-center">
-          <View class="flex-row items-center h-8 px-2 rounded-md gap-1 transition-colors hover:bg-[#f1f5f9] dark:hover:bg-slate-800 cursor-pointer" onPress={() => p.go("today")}>
-            <Text class="text-[13px] font-medium text-[#64748b] dark:text-slate-400">‹ Back to Dashboard</Text>
-          </View>
-        </View>
         <View class="flex-1 min-h-0 flex flex-col md:m-3 md:rounded-lg md:border md:border-[#e5e7eb] md:shadow-sm overflow-hidden bg-white dark:bg-slate-900">
           {/* Header — LedgerHeader */}
           <View class="flex-row items-center px-5 py-3 bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c] rounded-t-lg">
@@ -436,7 +435,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 class="w-8 h-8 rounded-lg items-center justify-center transition-colors hover:bg-white/10 cursor-pointer"
                 onPress={() => txSideOpen.set(true)}
               >
-                <Text class="text-[13px] text-white/70">▤</Text>
+                <Avatar src={ICONS.table} class="w-4 h-4" imageClass="tint-white opacity-70" fallbackDelay={Infinity} accessibilityLabel="" />
               </View>
               <Text class="text-[15px] font-semibold text-white">Ledger</Text>
             </View>
@@ -466,14 +465,14 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 class="w-8 h-8 items-center justify-center rounded-l-lg cursor-pointer transition-colors hover:bg-white/10"
                 onPress={() => month().prev && goMonth(String(month().prev))}
               >
-                <Text class="text-[15px] leading-none text-white/70">‹</Text>
+                <Avatar src={ICONS.chevronLeft} class="w-4 h-4" imageClass="tint-white opacity-70" fallbackDelay={Infinity} accessibilityLabel="" />
               </View>
               <Text class="px-2 text-xs font-medium text-white/70 truncate">{String(month().range || month().label || "")}</Text>
               <View
                 class="w-8 h-8 items-center justify-center rounded-r-lg cursor-pointer transition-colors hover:bg-white/10"
                 onPress={() => month().next && goMonth(String(month().next))}
               >
-                <Text class="text-[15px] leading-none text-white/70">›</Text>
+                <Avatar src={ICONS.chevronRight} class="w-4 h-4" imageClass="tint-white opacity-70" fallbackDelay={Infinity} accessibilityLabel="" />
               </View>
             </View>
             <View class="flex-1 min-w-0 flex-row items-center gap-1 overflow-hidden p-1">
@@ -502,7 +501,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
           {/* Search + filters — LedgerSearchBar */}
           <View class="flex-row items-center gap-2 border-b border-[#e5e7eb] dark:border-slate-700 px-3 py-2">
             <View class="flex-1 min-w-0 flex-row items-center gap-2 rounded-lg border border-[#e2e8f0] bg-[#f9fafb] px-3 py-1.5 dark:border-white/10 dark:bg-white/5">
-              <Text class="text-[13px] text-[#94a3b8] dark:text-slate-500">⌕</Text>
+              <Avatar src={TX_ICONS.search} class="w-3.5 h-3.5" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
               <TextBox
                 value={txSearch()}
                 onChange={(v) => txSearch.set(v)}
@@ -527,7 +526,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
               {chips().map((c) => (
                 <View class="flex-row items-center gap-1 rounded-full bg-[#f1f5f9] px-2.5 py-0.5 dark:bg-slate-800 cursor-pointer hover:bg-[#e2e8f0] dark:hover:bg-slate-700" onPress={c.clear}>
                   <Text class="text-[11px] font-medium text-[#475569] dark:text-slate-300">{c.label}</Text>
-                  <Text class="text-[11px] text-[#94a3b8]">✕</Text>
+                  <Avatar src={TX_ICONS.x} class="w-2.5 h-2.5" imageClass="tint-[#94a3b8]" fallbackDelay={Infinity} accessibilityLabel="" />
                 </View>
               ))}
               <View class="cursor-pointer" onPress={txClearFilters}>
@@ -644,46 +643,47 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
         </View>
       </View>
 
-      {/* Accounts sheet below lg */}
+      {/* Accounts sheet below lg — fixed + sibling backdrop (kit's sheet pattern);
+          Overlay+absolute mis-positions on the native host. */}
       <If when={txSideOpen()}>
-        <Overlay onPressOutside={() => txSideOpen.set(false)} class="lg:hidden">
+        <View class="fixed inset-0 lg:hidden">
+          <View class="absolute inset-0 bg-black/30" onPress={() => txSideOpen.set(false)} />
           <View class="absolute left-0 top-0 bottom-0 w-[280px] bg-white dark:bg-slate-900 shadow-2xl border-r border-[#e5e7eb] dark:border-slate-700">
             <View class="flex-row items-center justify-between border-b border-[#e5e7eb] dark:border-slate-700 pl-4 pr-2 py-2">
               <Text class="text-sm font-semibold text-[#1e293b] dark:text-slate-100">Accounts</Text>
               <View class="w-8 h-8 items-center justify-center rounded-lg cursor-pointer hover:bg-[#f1f5f9] dark:hover:bg-slate-700" onPress={() => txSideOpen.set(false)}>
-                <Text class="text-[#94a3b8]">✕</Text>
+                <Avatar src={TX_ICONS.x} class="w-4 h-4" imageClass="tint-[#94a3b8]" fallbackDelay={Infinity} accessibilityLabel="" />
               </View>
             </View>
             <Scroll class="flex-1"><TxSide /></Scroll>
           </View>
-        </Overlay>
+        </View>
       </If>
 
       {/* Confirm modal — ConfirmModal (Delete Transactions → Books void/discard) */}
       <If when={Boolean(txConfirm())}>
-        <Overlay onPressOutside={() => txConfirm.set("")}>
-          <View class="absolute inset-0 items-center justify-center bg-black/30">
-            <View class="w-[380px] rounded-xl bg-white dark:bg-slate-900 p-5 gap-3 shadow-xl border border-[#e5e7eb] dark:border-slate-700">
-              <Text class="text-[15px] font-semibold text-[#1e293b] dark:text-slate-100">
-                {txConfirm() === "void" ? "Void transactions" : "Discard drafts"}
-              </Text>
-              <Text class="text-[13px] text-[#475569] dark:text-slate-400">
-                {txConfirm() === "void"
-                  ? `Void ${voidables().length} posted transaction(s)? A reversing entry is recorded — it cannot be undone.`
-                  : `Discard ${drafts().length} draft(s)? This cannot be undone.`}
-              </Text>
-              <View class="flex-row justify-end gap-2">
-                <Btn label="Cancel" disabled={txBusy()} onPress={() => txConfirm.set("")} />
-                <Btn
-                  label={txConfirm() === "void" ? "Void" : "Discard"}
-                  tone="vi"
-                  disabled={txBusy()}
-                  onPress={() => actBatch(txConfirm() === "void" ? "books_app_void_entry" : "books_app_discard_entry")}
-                />
-              </View>
+        <View class="fixed inset-0 items-center justify-center">
+          <View class="absolute inset-0 bg-black/30" onPress={() => txConfirm.set("")} />
+          <View class="w-[380px] rounded-xl bg-white dark:bg-slate-900 p-5 gap-3 shadow-xl border border-[#e5e7eb] dark:border-slate-700">
+            <Text class="text-[15px] font-semibold text-[#1e293b] dark:text-slate-100">
+              {txConfirm() === "void" ? "Void transactions" : "Discard drafts"}
+            </Text>
+            <Text class="text-[13px] text-[#475569] dark:text-slate-400">
+              {txConfirm() === "void"
+                ? `Void ${voidables().length} posted transaction(s)? A reversing entry is recorded — it cannot be undone.`
+                : `Discard ${drafts().length} draft(s)? This cannot be undone.`}
+            </Text>
+            <View class="flex-row justify-end gap-2">
+              <Btn label="Cancel" disabled={txBusy()} onPress={() => txConfirm.set("")} />
+              <Btn
+                label={txConfirm() === "void" ? "Void" : "Discard"}
+                tone="vi"
+                disabled={txBusy()}
+                onPress={() => actBatch(txConfirm() === "void" ? "books_app_void_entry" : "books_app_discard_entry")}
+              />
             </View>
           </View>
-        </Overlay>
+        </View>
       </If>
     </View>
   );
