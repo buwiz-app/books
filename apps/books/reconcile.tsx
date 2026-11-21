@@ -12,9 +12,10 @@ let recFiltAnchor: ViewRef | undefined;
 
 /** "1,234.56" or "+42.18" -> centavos, string math only (integer centavos, no float). */
 function centsOf(text: string): bigint {
-  const t = String(text || "0").replace(/[₱,\s]/g, "");
-  const neg = t.startsWith("-");
-  const [w, f = ""] = t.replace(/^[+-]/, "").split(".");
+  const t = String(text ?? "0");
+  const neg = /^[-−–]/.test(t.trim()) || /^\(.*\)$/.test(t.trim());
+  const cleaned = t.replace(/[^0-9.]/g, "");
+  const [w = "", f = ""] = cleaned.split(".");
   const c = BigInt(w || "0") * 100n + BigInt((f + "00").slice(0, 2) || "0");
   return neg ? -c : c;
 }
@@ -527,18 +528,16 @@ function RecSumCard(p: { title: string; glyph: string; highlight?: string; rows:
           </View>
           <Text class="text-[13px] font-semibold text-white">{p.title}</Text>
         </View>
-        <If when={Boolean(p.highlight)}>
-          <Text class="text-[13px] font-bold text-white">{p.highlight || ""}</Text>
-        </If>
+        <Text class="text-[13px] font-bold text-white">{p.highlight || ""}</Text>
       </View>
-      <Each of={p.rows}>
-        {(row: Any) => (
+      <Each of={[0, 1]}>
+        {(i: Any) => (
           <View class="flex-row items-center justify-between">
             <View class="flex-row items-center gap-2">
-              <Text class="text-[11px] text-white/60">{row()[0] === "Bank" ? "▤" : "▦"}</Text>
-              <Text class="text-[12px] font-medium text-white/60">{row()[0]}</Text>
+              <Text class="text-[11px] text-white/60">{p.rows[i()][0] === "Bank" ? "▤" : "▦"}</Text>
+              <Text class="text-[12px] font-medium text-white/60">{p.rows[i()][0]}</Text>
             </View>
-            <Text class="text-[13px] font-medium text-white">{row()[1]}</Text>
+            <Text class="text-[13px] font-medium text-white">{p.rows[i()][1]}</Text>
           </View>
         )}
       </Each>
@@ -611,8 +610,6 @@ function MatchView() {
   const depLeg = () => sumOf((r) => r.match === "m" && centsOf(r.amount_shown) > 0n, (r) => r.books?.amount_shown);
   const wdLeg = () => sumOf((r) => r.match === "m" && centsOf(r.amount_shown) < 0n, (r) => r.books?.amount_shown);
   const isCard = /card|credit/i.test(String(d()?.account?.name || ""));
-  const cardCls = "flex-1 rounded-xl px-4 py-3 gap-2";
-  const cardRow = "flex-row items-center justify-between";
   const hdrBtnCls = "flex-row items-center gap-1.5 px-3 py-1.5 rounded-lg";
   return (
     <View class="gap-0">
@@ -659,51 +656,9 @@ function MatchView() {
           </If>
           {/* green summary strip: inflow / outflow / Net glass cards (old app's SummaryRow) */}
           <View class="flex-row gap-3 rounded-xl px-4 py-3" style={{ backgroundImage: "linear-gradient(to right,#1a6b3c,#27ae60)" }}>
-            <RecSumCard title={isCard ? "Charges" : "Deposits"} glyph="−" rows={[["Bank", centsShown(depBank(), true)], ["Ledger", centsShown(depLeg(), true)]]} />
-            <RecSumCard title={isCard ? "Payments" : "Withdrawals"} glyph="−" rows={[["Bank", centsShown(wdBank())], ["Ledger", centsShown(wdLeg())]]} />
+            <RecSumCard title={isCard ? "Charges" : "Deposits"} glyph="↓" rows={[["Bank", centsShown(depBank(), true)], ["Ledger", centsShown(depLeg(), true)]]} />
+            <RecSumCard title={isCard ? "Payments" : "Withdrawals"} glyph="↑" rows={[["Bank", centsShown(wdBank())], ["Ledger", centsShown(wdLeg())]]} />
             <RecSumCard title="Net" glyph="≈" highlight={s()?.difference_shown} rows={[["Bank", String(s()?.closing_shown || "—")], ["Ledger", String(s()?.books_shown || "—")]]} />
-          </View>
-          {/* search / filter bar: magnifier, chips input, matched+unsettled counters, funnel, + */}
-          <View class={`flex-row items-center gap-2 px-4 py-2.5 rounded-xl ${C.panel} border ${C.line}`}>
-            <Text class={`text-[13px] ${C.dim}`}>⌕</Text>
-            <View class="flex-1">
-              <TextBox value={recQ()} onChange={(v: string) => recQ.set(v)} placeholder="Filter transactions…" />
-            </View>
-            <View
-              class={`flex-row items-center gap-1.5 px-2 py-0.5 rounded-sm bg-[#e6f4ea] dark:bg-emerald-500/10 border ${recStat() === "m" ? "border-emerald-500" : "border-transparent"}`}
-              hoverStyle={{ borderColor: "#6ee7b7" }}
-              activeStyle={{ opacity: 0.7 }}
-              onPress={() => recStat.set(recStat() === "m" ? "all" : "m")}
-            >
-              <Text class="text-[12px] font-semibold text-[#1e8e3e] dark:text-emerald-400">{String(matched())}</Text>
-              <Text class="text-[11px] font-bold text-[#1e8e3e] dark:text-emerald-400">✓</Text>
-            </View>
-            <View
-              class={`flex-row items-center gap-1.5 px-2 py-0.5 rounded-sm bg-[#fef7e0] dark:bg-amber-500/10 border ${recStat() === "x" ? "border-amber-500" : "border-transparent"}`}
-              hoverStyle={{ borderColor: "#fcd34d" }}
-              activeStyle={{ opacity: 0.7 }}
-              onPress={() => recStat.set(recStat() === "x" ? "all" : "x")}
-            >
-              <Text class="text-[12px] font-semibold text-[#f9ab00] dark:text-amber-400">{String(unsettled())}</Text>
-              <Text class="text-[11px] font-bold text-[#f9ab00] dark:text-amber-400">◷</Text>
-            </View>
-            <View
-              ref={recFiltAnchor}
-              class={`w-8 h-6 rounded-sm items-center justify-center ${recStat() !== "all" || recQ() ? "bg-[#ccece8] dark:bg-teal-900/40" : ""}`}
-              hoverStyle={{ backgroundColor: "rgba(148,163,184,0.2)" }}
-              activeStyle={{ opacity: 0.7 }}
-              onPress={() => recFiltMenu.set(!recFiltMenu())}
-            >
-              <Text class={`text-[12px] ${recStat() !== "all" || recQ() ? "text-teal-600 dark:text-teal-400" : C.dim}`}>⏷</Text>
-            </View>
-            <View
-              class="w-8 h-6 rounded-sm items-center justify-center"
-              hoverStyle={{ backgroundColor: "rgba(148,163,184,0.2)" }}
-              activeStyle={{ opacity: 0.7 }}
-              onPress={() => importStatement(recAccount())}
-            >
-              <Text class={`text-[14px] font-bold ${C.dim}`}>+</Text>
-            </View>
           </View>
           <View class={side() ? "flex-row items-start gap-3.5" : "gap-3.5"}>
             <If when={side()}>
@@ -723,6 +678,54 @@ function MatchView() {
               />
             </If>
             <Panel class={side() ? "flex-1" : ""}>
+              {/* search / filter bar inside the card (old app's ReconciliationSearchBar): magnifier, borderless input, counters, funnel, + */}
+              <View class={`flex-row items-center gap-2 px-4 py-2.5 border-b ${C.line}`}>
+                <Text class={`text-[13px] ${C.dim}`}>⌕</Text>
+                <View class="flex-1">
+                  <Input
+                    accessibilityLabel="Filter transactions"
+                    value={recQ()}
+                    placeholder="Filter transactions…"
+                    onChange={(e: Any) => recQ.set(typeof e === "string" ? e : e.value)}
+                    class={`h-7 text-[13px] bg-transparent border-none outline-none placeholder:text-[#8e8e93] focus:ring-0 ${C.ink}`}
+                  />
+                </View>
+                <View
+                  class={`flex-row items-center gap-1.5 px-2 py-0.5 rounded-sm bg-[#e6f4ea] dark:bg-emerald-500/10 border ${recStat() === "m" ? "border-emerald-500" : "border-transparent"}`}
+                  hoverStyle={{ borderColor: "#6ee7b7" }}
+                  activeStyle={{ opacity: 0.7 }}
+                  onPress={() => recStat.set(recStat() === "m" ? "all" : "m")}
+                >
+                  <Text class="text-[12px] font-semibold text-[#1e8e3e] dark:text-emerald-400">{String(matched())}</Text>
+                  <Text class="text-[11px] font-bold text-[#1e8e3e] dark:text-emerald-400">✓</Text>
+                </View>
+                <View
+                  class={`flex-row items-center gap-1.5 px-2 py-0.5 rounded-sm bg-[#fef7e0] dark:bg-amber-500/10 border ${recStat() === "x" ? "border-amber-500" : "border-transparent"}`}
+                  hoverStyle={{ borderColor: "#fcd34d" }}
+                  activeStyle={{ opacity: 0.7 }}
+                  onPress={() => recStat.set(recStat() === "x" ? "all" : "x")}
+                >
+                  <Text class="text-[12px] font-semibold text-[#f9ab00] dark:text-amber-400">{String(unsettled())}</Text>
+                  <Text class="text-[11px] font-bold text-[#f9ab00] dark:text-amber-400">◷</Text>
+                </View>
+                <View
+                  ref={recFiltAnchor}
+                  class={`w-8 h-6 rounded-sm items-center justify-center ${recStat() !== "all" || recQ() ? "bg-[#ccece8] dark:bg-teal-900/40" : ""}`}
+                  hoverStyle={{ backgroundColor: "rgba(148,163,184,0.2)" }}
+                  activeStyle={{ opacity: 0.7 }}
+                  onPress={() => recFiltMenu.set(!recFiltMenu())}
+                >
+                  <Text class={`text-[12px] ${recStat() !== "all" || recQ() ? "text-teal-600 dark:text-teal-400" : C.dim}`}>⏷</Text>
+                </View>
+                <View
+                  class="w-8 h-6 rounded-sm items-center justify-center"
+                  hoverStyle={{ backgroundColor: "rgba(148,163,184,0.2)" }}
+                  activeStyle={{ opacity: 0.7 }}
+                  onPress={() => importStatement(recAccount())}
+                >
+                  <Text class={`text-[14px] font-bold ${C.dim}`}>+</Text>
+                </View>
+              </View>
               <If when={!side()}>
                 <View class={`flex-row border-b ${C.line}`}>
                   <Text class={`flex-1 px-3 py-2.5 text-[11px] uppercase tracking-wider ${C.dim}`}>Bank statement</Text>
@@ -845,7 +848,9 @@ function MatchView() {
           </If>
         </View>
       </If>
-      <RecFilterMenu />
+      <If when={recFiltMenu()}>
+        <RecFilterMenu />
+      </If>
     </View>
   );
 }
