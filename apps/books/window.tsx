@@ -142,6 +142,9 @@ export default function Books() {
         <If when={page() === "accounts"}>
           <AccountsPage go={go} />
         </If>
+        <If when={page() === "category"}>
+          <CategoryDetailPage go={go} />
+        </If>
         <If when={page() === "inbox"}>
           <InboxPage go={go} sheet={newEntry} />
         </If>
@@ -151,7 +154,7 @@ export default function Books() {
         <If when={page() === "tags"}>
           <TagsPage go={go} />
         </If>
-        <If when={page() !== "new" && page() !== "accounts" && page() !== "inbox" && page() !== "tags" && page() !== "transactions"}>
+        <If when={page() !== "new" && page() !== "accounts" && page() !== "category" && page() !== "inbox" && page() !== "tags" && page() !== "transactions"}>
           <Scroll class="flex-1">
             <View class="p-6 gap-5">
               <If when={page() === "today"}>
