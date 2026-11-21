@@ -169,15 +169,14 @@ function grouped(text: string): string {
 function Btn(p: { label: string; onPress: () => void; tone?: "go" | "vi" | "plain"; disabled?: boolean; small?: boolean }) {
   const tone =
     p.tone === "go"
-      ? "border-transparent"
+      ? `bg-[${acc()}] hover:bg-[${accShade(6)}] border-transparent`
       : p.tone === "vi"
-        ? `${C.violetBg} border-[#6a46c9] dark:border-[#b79bff]`
-        : `${C.raise} ${C.line}`;
+        ? `${C.violetBg} border-[#6a46c9] dark:border-[#b79bff] hover:bg-[#5a35b3] dark:hover:bg-[#9d7ef2]`
+        : `${C.raise} ${C.line} hover:bg-[#e2e8f0] dark:hover:bg-[#2a2a2d]`;
   const ink = p.tone === "go" ? "text-white" : p.tone === "vi" ? "text-white dark:text-[#1a1033]" : C.ink;
   return (
     <View
-      class={`rounded-lg border ${p.small ? "px-2 py-0.5" : "px-3 py-1.5"} items-center justify-center ${tone} ${p.disabled ? "opacity-40" : ""}`}
-      style={p.tone === "go" ? { backgroundColor: acc() } : undefined}
+      class={`rounded-lg border ${p.small ? "px-2 py-0.5" : "px-3 py-1.5"} items-center justify-center transition-colors ${tone} ${p.disabled ? "opacity-40" : ""}`}
       activeStyle={{ opacity: 0.7 }}
       onPress={() => (p.disabled ? null : p.onPress())}
     >
@@ -204,7 +203,7 @@ function Chip(p: { label: string; count?: Any; on: boolean; onPress: () => void;
     <View
       accessibilityLabel={p.said}
       accessibilityValue={p.said ? { text: p.label } : undefined}
-      class={`rounded-full px-2.5 py-1 border flex-row gap-1 ${p.on ? "bg-[#1c1c1c] dark:bg-[#f0f0f0] border-transparent" : `${C.panel} ${C.line}`}`}
+      class={`rounded-full px-2.5 py-1 border flex-row gap-1 transition-colors ${p.on ? "bg-[#1c1c1c] dark:bg-[#f0f0f0] border-transparent" : `${C.panel} ${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]`}`}
       onPress={p.onPress}
       activeStyle={{ opacity: 0.7 }}
     >
@@ -221,7 +220,7 @@ function Seg(p: { options: [string, string][]; value: string; onPick: (v: string
     <View class={`flex-row rounded-[9px] border p-0.5 gap-0.5 self-start ${C.panel} ${C.line}`}>
       <Each of={p.options}>
         {(o: Any) => (
-          <View class={`rounded-[7px] px-2.5 py-1 ${o()[0] === p.value ? C.raise : ""}`} onPress={() => p.onPick(o()[0])}>
+          <View class={`rounded-[7px] px-2.5 py-1 transition-colors ${o()[0] === p.value ? C.raise : "hover:bg-[#e2e8f0] dark:hover:bg-[#26262a]"}`} onPress={() => p.onPick(o()[0])}>
             <Text class={`text-[12.5px] ${o()[0] === p.value ? `font-semibold ${C.ink}` : C.mute}`}>{o()[1]}</Text>
           </View>
         )}
@@ -244,7 +243,7 @@ function Head(p: { title: string; sub?: string; children?: Any; home?: boolean }
       <If when={Boolean(goBack) && !p.home}>
         <View
           accessibilityLabel="Back to Home"
-          class="w-7 h-7 rounded-full items-center justify-center bg-white/20"
+          class="w-7 h-7 rounded-full items-center justify-center bg-white/20 hover:bg-white/30 transition-colors"
           onPress={() => (goBack ? goBack() : null)}
           activeStyle={{ opacity: 0.7 }}
         >
@@ -299,7 +298,7 @@ function TextBox(p: { value: string; onChange: (v: string) => void; placeholder?
       onChange={(e: Any) => p.onChange(typeof e === "string" ? e : e.value)}
       class={p.transferAmount
         ? "w-28 h-8 text-right text-xl font-semibold text-white tabular-nums bg-transparent border-none outline-none placeholder-white/40 focus:ring-0"
-        : `placeholder:text-[#8e8e93] ${p.entry ? "rounded-md" : "rounded-lg"} border px-2.5 ${p.big ? "h-10 text-[18px] font-mono" : "h-8 text-[13px]"} ${p.entry ? "bg-white dark:bg-slate-700 border-[#e2e8f0] dark:border-slate-600 text-[#0f172a] dark:text-slate-100" : `${C.bg} ${C.line} ${C.ink}`}`}
+        : `placeholder:text-[#8e8e93] transition-colors ${p.entry ? "rounded-md" : "rounded-lg"} border px-2.5 ${p.big ? "h-10 text-[18px] font-mono" : "h-8 text-[13px]"} focus:outline-none focus:ring-1 focus:ring-[#2a9d8f] focus:border-[#2a9d8f] ${p.entry ? "bg-white dark:bg-slate-700 border-[#e2e8f0] dark:border-slate-600 text-[#0f172a] dark:text-slate-100" : `${C.bg} ${C.line} ${C.ink}`}`}
     />
   );
 }
@@ -316,7 +315,7 @@ function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; plac
   const current = computed(() => (p.options || []).find((o: Any) => o.ticket === p.value));
   return (
     <View class="gap-1">
-      <View accessibilityLabel={p.label} class={`flex-row items-center rounded-lg border px-2.5 h-8 ${C.bg} ${C.line}`} onPress={() => open.set(!open())}>
+      <View accessibilityLabel={p.label} class={`flex-row items-center rounded-lg border px-2.5 h-8 transition-colors ${C.bg} ${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]`} onPress={() => open.set(!open())}>
         <Text accessibilityElementsHidden={Boolean(p.label)} class={`flex-1 text-[13px] ${current() ? C.ink : C.dim}`} numberOfLines={1}>
           {current() ? current().label || current().name : p.placeholder || "Pick one"}
         </Text>
@@ -332,7 +331,7 @@ function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; plac
                 <View
                   accessibilityLabel={p.optionSaid}
                   accessibilityValue={p.optionSaid ? { text: o().label || o().name } : undefined}
-                  class={`px-2.5 py-1.5 ${o().ticket === p.value ? C.raise : ""}`}
+                  class={`px-2.5 py-1.5 transition-colors ${o().ticket === p.value ? C.raise : "hover:bg-[#f8fafc] dark:hover:bg-[#1c1c1f]"}`}
                   onPress={() => {
                     p.onPick(o());
                     open.set(false);
@@ -405,7 +404,7 @@ function BooksCombo(p: {
     <View class={chip ? "relative w-full" : ""}>
       {chip && (
         <View
-          class="absolute inset-0 flex-row items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 hover:border-[#d1d5db] dark:border-slate-600 dark:bg-slate-800 dark:hover:border-[#64748b] cursor-pointer"
+          class={`absolute inset-0 flex-row items-center gap-2 rounded-lg border bg-white px-3 py-2 transition-colors cursor-pointer dark:bg-slate-800 ${open() ? "border-[#2a9d8f] dark:border-[#2dd4bf]" : "border-[#e5e7eb] hover:border-[#d1d5db] dark:border-slate-600 dark:hover:border-[#64748b]"}`}
           onPress={() => open.set(!open())}
         >
           <If when={Boolean(p.icon)}>
@@ -453,13 +452,13 @@ function BooksCombo(p: {
         inputClass={
           chip
             ? `w-full py-2 text-sm ${p.icon ? "pl-[38px] pr-3" : "px-3"} ${typing() ? "text-[#1e293b] dark:text-slate-100" : "opacity-0"}`
-            : "min-h-10 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-[13px] text-[#0f172a] focus:border-[#2a9d8f] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            : "min-h-10 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-[13px] text-[#0f172a] transition-colors focus:outline-none focus:ring-1 focus:ring-[#2a9d8f] focus:border-[#2a9d8f] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         }
         popupClass={`rounded-xl border border-[#e2e8f0] bg-white shadow-xl overflow-hidden dark:border-slate-700 dark:bg-slate-800${chip ? " min-w-[240px]" : ""}`}
       popupStartingClass="opacity-0"
       listClass="max-h-[280px]"
       groupClass="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#94a3b8] bg-[#f8fafc] border-t border-[#e2e8f0] dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700"
-      itemClass="px-4 min-h-10 text-[13px] text-[#0f172a] focus:bg-[#f1f5f9] selected:bg-[#eaf6f6] dark:text-slate-100 dark:focus:bg-slate-700 dark:selected:bg-teal-900/30"
+      itemClass="px-4 min-h-10 text-[13px] text-[#0f172a] focus:bg-[#f8fafc] selected:bg-[#eaf6f6] dark:text-slate-100 dark:focus:bg-slate-700 dark:selected:bg-teal-900/30"
       searchAccessibilityLabel={`Find ${p.label || p.placeholder || "account"}`}
       searchPlaceholder="Type to filter..."
       empty={<Text class="px-4 py-2.5 text-[13px] text-[#94a3b8]">No matches found</Text>}
@@ -553,7 +552,7 @@ function BooksDate(p: { value: string; onChange: (value: string) => void; today?
             <Text class="text-[14px] text-white/90">▦</Text>
           </View>
         ) : (
-          <View class="min-h-10 flex-row items-center justify-between rounded-lg border border-[#e2e8f0] bg-[#f9fafb] px-3 py-2.5 dark:border-white/10 dark:bg-white/5">
+          <View class="min-h-10 flex-row items-center justify-between rounded-lg border border-[#e2e8f0] bg-[#f9fafb] px-3 py-2.5 transition-colors hover:border-[#cbd5e1] dark:border-white/10 dark:bg-white/5 dark:hover:border-white/25">
             <Text class="text-[13px] font-medium text-[#1f2937] dark:text-white">{longDate(p.value || p.today || "Select date")}</Text>
             <Text class="text-[16px] text-[#9ca3af] dark:text-white/40">▦</Text>
           </View>
