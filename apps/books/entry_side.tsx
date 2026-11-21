@@ -108,6 +108,13 @@ function SideAttachments() {
         </Each>
       </If>
       <Btn label="Browse existing documents" onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)} />
+      <If when={entryStaged().length === 0}>
+        <View class="flex-col items-center justify-center gap-1.5 py-8">
+          <Text class="text-[20px] text-[#94a3b8]">▤</Text>
+          <Text class="text-[11px] font-medium text-[#94a3b8] dark:text-slate-500">No attachments yet</Text>
+          <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">Drop receipts, invoices, or documents</Text>
+        </View>
+      </If>
       <Text class={`text-[11.5px] ${C.dim}`}>A press adds the document to Books documents, and it links to the entry when you save. Previewing and attaching an existing document lives in Books documents.</Text>
     </View>
   );
@@ -115,12 +122,12 @@ function SideAttachments() {
 
 /** What to ask the assistant in the chat: it saves a draft, which lands in the Inbox. */
 const SIDE_ASK: [string, string][] = [
-  ["Pay expense", "Draft a money-out entry in Books: I paid [who] [amount] for [what] from [bank or cash]."],
-  ["Receive payment", "Draft a money-in entry in Books: [who] paid me [amount] for [what] into [bank or cash]."],
-  ["Transfer", "Draft a transfer in Books: moved [amount] from [account] to [account]."],
-  ["Journal", "Draft a journal entry in Books: debit [account] [amount], credit [account] [amount], for [what]."],
-  ["Rent", "Draft a money-out entry in Books: paid this month's rent of [amount] from [bank]."],
-  ["Utility", "Draft a money-out entry in Books: paid the [electric or water] bill of [amount] from [bank]."],
+  ["💸 Pay expense", "Draft a money-out entry in Books: I paid [who] [amount] for [what] from [bank or cash]."],
+  ["💰 Receive payment", "Draft a money-in entry in Books: [who] paid me [amount] for [what] into [bank or cash]."],
+  ["🔄 Transfer", "Draft a transfer in Books: moved [amount] from [account] to [account]."],
+  ["📝 Journal", "Draft a journal entry in Books: debit [account] [amount], credit [account] [amount], for [what]."],
+  ["🏠 Rent", "Draft a money-out entry in Books: paid this month's rent of [amount] from [bank]."],
+  ["⚡ Utility", "Draft a money-out entry in Books: paid the [electric or water] bill of [amount] from [bank]."],
 ];
 
 function sideAsk(text: string) {
@@ -129,7 +136,7 @@ function sideAsk(text: string) {
   toast("Copied. Paste it in the chat; the draft lands in your Inbox.");
 }
 
-/** The old app's AI chat panel: quick prompts, the prompt box, and Send. */
+/** The old app's AI chat panel: quick prompts, the prompt box, and Apply. */
 function SideAssistant() {
   const send = () => {
     const text = sideComposer().trim();
@@ -179,9 +186,9 @@ function SideAssistant() {
           class={`flex-row items-center gap-1 px-3 py-1.5 rounded-md bg-[#2a9d8f] ${sideComposer().trim() ? "" : "opacity-40"}`}
           onPress={send}
           activeStyle={{ opacity: 0.7 }}
-          accessibilityLabel="Send prompt"
+          accessibilityLabel="Apply prompt"
         >
-          <Text class="text-[10px] font-medium text-white">Send ➤</Text>
+          <Text class="text-[10px] font-medium text-white">✈ Apply</Text>
         </View>
       </View>
       <Text class={`text-[11.5px] ${C.dim}`}>Tell the assistant in the chat what happened. It saves a draft, which waits in your Inbox for you to post — the assistant never posts.</Text>
