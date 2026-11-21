@@ -324,7 +324,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
           body={sideCards}
         />
         <If when={sidePanel() === "empty"}>
-          <PanelFab label="Open details" glyph="☰" onPress={openNew} />
+          <PanelFab label="Open details" icon="panelRight" onPress={openNew} />
         </If>
       </View>
     </View>

@@ -329,7 +329,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
           body={sideInner}
         />
         <If when={!Boolean(selected()) && !mFilter()}>
-          <PanelFab label="Open details" glyph="☰" onPress={() => mFilter.set(true)} />
+          <PanelFab label="Open details" icon="panelRight" onPress={() => mFilter.set(true)} />
         </If>
       </View>
 
