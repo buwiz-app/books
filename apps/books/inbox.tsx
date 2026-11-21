@@ -50,7 +50,7 @@ function InboxDetail(p: { ticket: string; row?: Any }) {
           <View class="flex-row items-start justify-between gap-4">
             <View class="min-w-0 flex-1 gap-0.5">
               <Text class="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-300">{src()}</Text>
-              <Text class="mt-2 text-[20px] font-semibold text-white" numberOfLines={1}>
+              <Text class="mt-2 text-[20px] font-semibold text-white truncate">
                 {p.row ? String(p.row.title || "") : ""}
               </Text>
               <Text class="mt-1 text-[13px] text-slate-300">{`${e()?.date_label || ""} · ${e()?.big || ""}`}</Text>
