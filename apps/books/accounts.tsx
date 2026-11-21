@@ -53,13 +53,8 @@ const ACCT_TYPES: [string, string, string, string, string, string][] = [
 const acctType = (id: string) => ACCT_TYPES.find((t) => t[0] === id) || ACCT_TYPES[0];
 const acctTypeLabel = (id: string) => acctType(id)[1];
 
-// FilterPanel TYPE_OPTIONS dot colors (they differ from the row colors; both
-// are the reference's, and the row colors match the owner's words).
-const ACCT_FILTER_DOTS: Record<string, string> = {
-  asset: "#2e7d32", cost_of_revenue: "#4e342e", equity: "#6a1b9a",
-  expense: "#c62828", revenue: "#1565c0", liability: "#e65100",
-  other_expense: "#b71c1c", other_income: "#00838f",
-};
+// Chip and drawer dots use the ACCT_TYPES tile palette (owner: sidebar colours
+// match the main content), not the old FilterPanel TYPE_OPTIONS palette.
 
 // Kind (subtype) labels — data/categories.v1.json id → name.
 const ACCT_KIND_LABELS: Record<string, string> = {
@@ -334,7 +329,8 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
     const out: AcctNode[] = [];
     const walk = (n: AcctNode) => {
       out.push(n);
-      if (!collapsed()[String(n.a.ticket)]) n.kids.forEach(walk);
+      const open = collapsed()[String(n.a.ticket)] === undefined ? n.level === 0 : !collapsed()[String(n.a.ticket)];
+      if (open) n.kids.forEach(walk);
     };
     tree().forEach(walk);
     return out;
@@ -488,7 +484,9 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
     const a = n.a;
     const t = acctType(String(a.type));
     const isSel = () => selected()?.ticket === a.ticket;
-    const expanded = () => !collapsed()[String(a.ticket)];
+    // Roots with children start expanded; deeper parents start collapsed
+    // (CategoryTree.tsx:114-122). `collapsed` only stores user toggles.
+    const expanded = () => collapsed()[String(a.ticket)] === undefined ? n.level === 0 : !collapsed()[String(a.ticket)];
     const hasKids = n.kids.length > 0;
     return (
       <View
@@ -580,12 +578,15 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
                 activeStyle={{ opacity: 0.7 }}
               >
                 <View
-                  class={`w-14 h-14 rounded-xl items-center justify-center border-[2.5px] transition-colors ${
-                    on() ? "shadow-md" : "hover:shadow-md"
-                  }`}
+                  class="w-14 h-14 rounded-xl items-center justify-center transition-transform duration-150"
                   style={{
                     backgroundColor: on() ? t()[3] : "var(--color-app-filter-idle, #f0f2f5)",
-                    borderColor: on() ? t()[2] : "transparent",
+                    border: on() ? `2.5px solid ${t()[2]}` : "2.5px solid transparent",
+                    boxShadow: on() ? `0 2px 8px ${t()[2]}33` : "none",
+                  }}
+                  hoverStyle={{
+                    scale: 1.08,
+                    boxShadow: on() ? `0 2px 8px ${t()[2]}33` : "0 4px 12px rgba(0,0,0,0.1)",
                   }}
                 >
                   <Avatar
@@ -597,7 +598,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
                   />
                 </View>
                 <Text
-                  class="text-[11px] text-center leading-tight"
+                  class="text-[0.7rem] text-center leading-tight"
                   style={{ color: on() ? t()[2] : "#6b7c93", fontWeight: on() ? "700" : "500" }}
                 >
                   {t()[1]}
@@ -846,8 +847,8 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
             <Text class="text-[16px] font-semibold text-white">Category Manager</Text>
           </View>
 
-          {/* Filter bar — funnel button, chips, Lookup input (wraps), Clear */}
-          <View class={`shrink-0 flex-row flex-wrap items-center gap-1.5 px-4 py-3 border-b bg-white dark:bg-slate-800 ${C.line}`}>
+          {/* Filter bar — funnel button, chips, bare Lookup input (wraps), Clear */}
+          <View class={`shrink-0 flex-row flex-wrap items-center gap-1.5 px-4 py-3 border-b bg-white dark:bg-slate-800 ${C.line} focus-within:border-b-[#2a9d8f] transition-colors`}>
             <View
               ref={filterAnchor}
               class={`w-9 h-9 items-center justify-center rounded-md transition-colors ${
@@ -875,14 +876,18 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
               }
             </Each>
             <Each of={types()}>
-              {(t: Any) => chip(acctTypeLabel(t()), ACCT_FILTER_DOTS[t()] || "#94a3b8", () => toggleType(t()))}
+              {(t: Any) => chip(acctTypeLabel(t()), acctType(t())[2], () => toggleType(t()))}
             </Each>
             <Each of={kindsSel()}>
               {(k: Any) => chip(acctKindLabel(k()), "#2a9d8f", () => toggleKind(k()))}
             </Each>
-            <View class="flex-1 min-w-[100px]">
-              <TextBox label="Lookup category" value={find()} onChange={(v) => find.set(v)} placeholder="Lookup category..." entry />
-            </View>
+            <Input
+              accessibilityLabel="Lookup category"
+              value={find()}
+              placeholder="Lookup category..."
+              onChange={(e: Any) => find.set(typeof e === "string" ? e : e.value)}
+              class="h-11 min-w-[220px] flex-1 border-none bg-transparent outline-none text-base sm:text-sm text-[#32497f] dark:text-slate-200 placeholder:text-[#6b7c93] dark:placeholder:text-slate-500"
+            />
             <If when={hasFilters()}>
               <View class="px-2 py-1" onPress={clearFilters} activeStyle={{ opacity: 0.7 }}>
                 <Text class="text-[12px] font-semibold text-[#0d9488] transition-colors hover:text-[#0f766e] dark:text-[#2dd4bf] dark:hover:text-[#5eead4]">Clear</Text>
@@ -909,7 +914,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
                   types().length,
                   <View>
                     <Each of={ACCT_TYPES}>
-                      {(t: Any) => checkRow(t()[1], ACCT_FILTER_DOTS[t()[0]] || "#94a3b8", types().includes(t()[0]), () => toggleType(t()[0]))}
+                      {(t: Any) => checkRow(t()[1], t()[2], types().includes(t()[0]), () => toggleType(t()[0]))}
                     </Each>
                   </View>,
                 )}
@@ -958,9 +963,18 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
         <SidePanel
           open={() => Boolean(selected()) || mode() !== "" || mFilter()}
           onBack={closeSide}
-          card
-          class={`rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}
-          body={() => (mode() !== "" ? formCard() : Boolean(selected()) ? detailCard() : filterTiles())}
+          fill
+          body={() =>
+            mode() !== "" || Boolean(selected()) ? (
+              <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
+                {mode() !== "" ? formCard() : detailCard()}
+              </View>
+            ) : (
+              <View class={`w-[360px] max-w-full rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line} shadow-[0_4px_24px_rgba(0,0,0,0.08)]`}>
+                {filterTiles()}
+              </View>
+            )
+          }
         />
         <If when={!Boolean(selected()) && mode() === "" && !mFilter()}>
           <PanelFab label="Open filters" glyph="☰" onPress={() => mFilter.set(true)} />
