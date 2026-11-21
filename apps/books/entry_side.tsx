@@ -39,7 +39,7 @@ function sideB64(bytes: Any): string {
 
 function sideBytesShown(size: Any): string {
   const n = Number(size || 0);
-  if (n >= 1048576) return `${(n / 1048576).toFixed(1)} MB`;
+  if (n >= 1048576) return `${Math.round(n / 104857.6) / 10} MB`;
   if (n >= 1024) return `${Math.round(n / 1024)} KB`;
   return `${n} B`;
 }
