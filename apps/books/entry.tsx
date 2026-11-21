@@ -311,6 +311,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
   const mode = () => String(p.mode());
   const switchMode = (next: string) => {
     if (next !== mode()) {
+      err.set("");
       category.set("");
       categoryQuery.set("");
       payee.set("");
@@ -334,12 +335,12 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     () => ({ v: ver() }),
     () => buwiz.call("books_tags_list", { kind: "location" }),
   );
-  const tagOptions = (res: Any) =>
+  const tagOptions = (res: Any, group: string) =>
     (res()?.rows || []).map((tag: Any) => ({
       ticket: tag.ticket,
       name: tag.name,
       label: tag.name,
-      group: tag.kind === "location" ? "Locations" : "Departments",
+      group,
     }));
   const partyOptions = () =>
     (people()?.rows || []).map((person: Any) => ({
@@ -591,10 +592,9 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
           <Text class={`text-[16px] font-semibold ${C.ink}`}>{`New ${modeName()}`}</Text>
           <View class="flex-1" />
         </View>
-        <View class="flex-1 flex-row gap-6 p-6 pb-0 overflow-hidden">
-        <Scroll class="flex-1 min-h-0">
-          <View class={`rounded-[24px] border overflow-hidden min-h-full flex-col bg-white dark:bg-slate-800 ${C.line}`}>
-            <View class={`px-4 pt-3.5 pb-4 gap-3 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
+        <View class="flex-1 flex-row gap-6 p-6 pb-4 overflow-hidden">
+        <View class={`flex-1 min-h-0 rounded-[24px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
+            <View class={`shrink-0 px-4 pt-3.5 pb-4 gap-3 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
               <View class="flex-row items-center gap-3">
                 <View class="w-12 h-12 rounded-full items-center justify-center bg-white/15">
                   <Text class="text-[20px] text-white">{mode() === "journal" ? "≡" : mode() === "transfer" ? "⇄" : mode() === "money_in" ? "↓" : "↑"}</Text>
@@ -607,12 +607,12 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                   <If when={mode() === "transfer"}>
                     <View class="w-[200px] flex-row items-center justify-end gap-1 border border-white/20 rounded-lg px-3 py-1.5 bg-white/10 focus-within:border-white/40 focus-within:ring-1 focus-within:ring-white/30 transition-colors">
                       <Text class="text-xl font-semibold text-white/60">₱</Text>
-                      <TextBox label="Amount" value={amount()} onChange={(v) => amount.set(v)} placeholder="0.00" transferAmount />
+                      <TextBox label="Amount" value={amount()} onChange={(v) => { amount.set(v); err.set(""); }} placeholder="0.00" transferAmount />
                     </View>
                   </If>
                   <If when={mode() !== "transfer"}>
                     <View class="w-[200px]">
-                      <TextBox label="Amount" value={amount()} onChange={(v) => amount.set(v)} placeholder="₱ 0.00" big entry />
+                      <TextBox label="Amount" value={amount()} onChange={(v) => { amount.set(v); err.set(""); }} placeholder="₱ 0.00" big entry />
                     </View>
                   </If>
                 </If>
@@ -656,6 +656,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                 </If>
               </View>
             </View>
+            <Scroll class="flex-1 min-h-0">
               <View class="px-6 pt-4">
               <Text class={`text-[13px] font-semibold ${C.ink} mb-2 pl-1`}>Memo</Text>
               <View class="rounded-xl border p-3 min-h-16 bg-white dark:bg-slate-800 border-[#e2e8f0] dark:border-slate-600">
@@ -718,21 +719,21 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 label="Category"
                                 value={line().category()}
                                 options={() => groupedOptions((mode() === "money_in" ? o()?.income : o()?.expense) || [])}
-                                onPick={(account: Any) => { line().category.set(account.ticket || ""); line().query.set(""); }}
+                                onPick={(account: Any) => { line().category.set(account.ticket || ""); line().query.set(""); err.set(""); }}
                                 query={() => line().query()}
                                 onQuery={(query: string) => line().query.set(query)}
                                 suggestions={() => suggestionsFor(line().query())}
-                                onSuggestion={(suggestion: Any) => startCategoryCreate(suggestion.name, suggestion, (ticket) => { line().category.set(ticket); line().query.set(""); })}
-                                onCreate={(query: string) => startCategoryCreate(query, undefined, (ticket) => { line().category.set(ticket); line().query.set(""); })}
+                                onSuggestion={(suggestion: Any) => startCategoryCreate(suggestion.name, suggestion, (ticket) => { line().category.set(ticket); line().query.set(""); err.set(""); })}
+                                onCreate={(query: string) => startCategoryCreate(query, undefined, (ticket) => { line().category.set(ticket); line().query.set(""); err.set(""); })}
                                 placeholder="Category"
                                 group={mode() === "money_in" ? "Income categories" : "Expense categories"}
                               />
                             </View>
                             <View class="w-[120px]">
-                              <TextBox label="Allocation amount" value={line().amount()} onChange={(value: string) => line().amount.set(value)} placeholder="₱ 0.00" entry />
+                              <TextBox label="Allocation amount" value={line().amount()} onChange={(value: string) => { line().amount.set(value); err.set(""); }} placeholder="₱ 0.00" entry />
                             </View>
                             <If when={allocations().length > 1}>
-                              <Btn label="×" small onPress={() => allocations.set(allocations().filter((_: Any, i: number) => i !== index()))} />
+                              <Btn label="×" small onPress={() => { allocations.set(allocations().filter((_: Any, i: number) => i !== index())); err.set(""); }} />
                             </If>
                           </View>
                           <View class="flex-row gap-2">
@@ -749,10 +750,10 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               />
                             </View>
                             <View class="flex-1">
-                              <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments)} onPick={(tag: Any) => line().department.set(tag.ticket || "")} placeholder="Department" group="Departments" />
+                              <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => line().department.set(tag.ticket || "")} placeholder="Department" group="Departments" />
                             </View>
                             <View class="flex-1">
-                              <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations)} onPick={(tag: Any) => line().location.set(tag.ticket || "")} placeholder="Location" group="Locations" />
+                              <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => line().location.set(tag.ticket || "")} placeholder="Location" group="Locations" />
                             </View>
                           </View>
                           <TextBox label="Allocation memo" value={line().memo()} onChange={(value: string) => line().memo.set(value)} placeholder="Description for this category" entry />
@@ -767,8 +768,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                 </View>
               </If>
               <If when={mode() === "journal"}>
-                <View class="gap-2">
-                  <View class="flex-row gap-2">
+                <View class="gap-1">
+                  <View class="flex-row gap-2 pb-1">
                     <Text class={`w-5 text-[10.5px] uppercase tracking-wider ${C.dim}`}>#</Text>
                     <Text class={`flex-1 text-[11px] font-semibold ${C.mute}`}>Line description</Text>
                     <Text class={`w-[100px] text-[11px] font-semibold text-right ${C.mute}`}>Debit</Text>
@@ -777,21 +778,21 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                   </View>
                   <Each of={jl()}>
                     {(l: Any, i: Any) => (
-                      <View class="rounded-xl border border-[#e2e8f0] dark:border-slate-600 bg-white dark:bg-slate-800/60 p-3 gap-2 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                      <View class="border-b border-[#e2e8f0] dark:border-slate-700 py-3 gap-2">
                         <View class="flex-row gap-2 items-center">
                           <Text class={`w-5 text-[11px] font-semibold text-center ${C.dim}`}>{String(i() + 1)}</Text>
                           <View class="flex-1">
                             <TextBox label="Line description" value={l().memo()} onChange={(v: string) => l().memo.set(v)} placeholder="Add description for this item..." entry />
                           </View>
                           <View class="w-[100px]">
-                            <TextBox label="Debit" value={l().debit()} onChange={(v: string) => l().debit.set(v)} placeholder="₱ 0.00" entry />
+                            <TextBox label="Debit" value={l().debit()} onChange={(v: string) => { l().debit.set(v); err.set(""); }} placeholder="₱ 0.00" entry />
                           </View>
                           <View class="w-[100px]">
-                            <TextBox label="Credit" value={l().credit()} onChange={(v: string) => l().credit.set(v)} placeholder="₱ 0.00" entry />
+                            <TextBox label="Credit" value={l().credit()} onChange={(v: string) => { l().credit.set(v); err.set(""); }} placeholder="₱ 0.00" entry />
                           </View>
                           <View class="flex-row items-center gap-1">
                             <If when={jl().length > 2}>
-                              <Btn label="×" small onPress={() => jl.set(jl().filter((_: Any, j: number) => j !== i()))} />
+                              <Btn label="×" small onPress={() => { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); }} />
                             </If>
                             <Btn label="⧉" small onPress={() => {
                               const copy = journalLine();
@@ -806,6 +807,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               const next = [...jl()];
                               next.splice(i() + 1, 0, copy);
                               jl.set(next);
+                              err.set("");
                             }} />
                             <Btn label="+" small onPress={() => { const next = [...jl()]; next.splice(i() + 1, 0, journalLine()); jl.set(next); }} />
                           </View>
@@ -816,11 +818,11 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               label="Account"
                               value={l().account()}
                               options={() => groupedOptions(o()?.all || [])}
-                              onPick={(account: Any) => { l().account.set(account.ticket || ""); l().query.set(""); }}
+                              onPick={(account: Any) => { l().account.set(account.ticket || ""); l().query.set(""); err.set(""); }}
                               query={() => l().query()}
                               onQuery={(query: string) => l().query.set(query)}
-                              onSuggestion={(suggestion: Any) => startCategoryCreate(suggestion.name, suggestion, (ticket) => { l().account.set(ticket); l().query.set(""); })}
-                              onCreate={(query: string) => startCategoryCreate(query, undefined, (ticket) => { l().account.set(ticket); l().query.set(""); })}
+                              onSuggestion={(suggestion: Any) => startCategoryCreate(suggestion.name, suggestion, (ticket) => { l().account.set(ticket); l().query.set(""); err.set(""); })}
+                              onCreate={(query: string) => startCategoryCreate(query, undefined, (ticket) => { l().account.set(ticket); l().query.set(""); err.set(""); })}
                               placeholder="Category"
                               group="Accounts"
                             />
@@ -838,37 +840,37 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                             />
                           </View>
                           <View class="flex-1">
-                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments)} onPick={(tag: Any) => l().department.set(tag.ticket || "")} placeholder="Department" group="Departments" />
+                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => l().department.set(tag.ticket || "")} placeholder="Department" group="Departments" />
                           </View>
                           <View class="flex-1">
-                            <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations)} onPick={(tag: Any) => l().location.set(tag.ticket || "")} placeholder="Location" group="Locations" />
+                            <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => l().location.set(tag.ticket || "")} placeholder="Location" group="Locations" />
                           </View>
                         </View>
                       </View>
                     )}
                   </Each>
-                  <View class="flex-row items-center gap-2">
+                  <View class="flex-row items-center gap-2 pt-2">
                     <Btn label="+ Add line" small onPress={() => jl.set([...jl(), journalLine()])} />
                     <Text class={`flex-1 text-[12px] ${C.dim}`}>Debits must equal credits.</Text>
                   </View>
-                  <View class="mt-auto flex-row items-center justify-between border-t border-[#e2e8f0] dark:border-slate-600 px-1 py-3">
-                    <View class="flex-row items-center gap-2">
-                      <Text class={`text-[16px] font-bold ${journalTotals().balanced ? "text-[#16a34a] dark:text-[#4ade80]" : "text-[#ef4444]"}`}>{journalTotals().balanced ? "✓" : "!"}</Text>
-                      <Text class={`text-[12px] font-semibold tabular-nums ${journalTotals().balanced ? "text-[#16a34a] dark:text-[#4ade80]" : "text-[#ef4444]"}`}>
-                        {journalTotals().balanced ? shownCents(journalTotals().debit) : `Difference ${shownCents(journalTotals().difference)}`}
-                      </Text>
-                    </View>
-                    <View class="flex-row gap-6">
-                      <Text class={`text-[12px] ${C.mute}`}>{`Debit ${shownCents(journalTotals().debit)}`}</Text>
-                      <Text class={`text-[12px] ${C.mute}`}>{`Credit ${shownCents(journalTotals().credit)}`}</Text>
-                    </View>
-                  </View>
                 </View>
               </If>
-              <If when={Boolean(err())}>
-                <Text class={`text-[12.5px] ${C.red}`}>{err()}</Text>
-              </If>
             </View>
+            </Scroll>
+            <If when={mode() === "journal"}>
+              <View class="shrink-0 flex-row items-center justify-between border-t border-[#e2e8f0] dark:border-slate-600 px-6 py-2.5 bg-[#f8f9fb] dark:bg-slate-800/90">
+                <View class="flex-row items-center gap-2">
+                  <Text class={`text-[16px] font-bold ${journalTotals().balanced ? "text-[#16a34a] dark:text-[#4ade80]" : "text-[#ef4444]"}`}>{journalTotals().balanced ? "✓" : "!"}</Text>
+                  <Text class={`text-[12px] font-semibold tabular-nums ${journalTotals().balanced ? "text-[#16a34a] dark:text-[#4ade80]" : "text-[#ef4444]"}`}>
+                    {journalTotals().balanced ? shownCents(journalTotals().debit) : `Difference ${shownCents(journalTotals().difference)}`}
+                  </Text>
+                </View>
+                <View class="flex-row gap-6">
+                  <Text class={`text-[12px] ${C.mute}`}>{`Debit ${shownCents(journalTotals().debit)}`}</Text>
+                  <Text class={`text-[12px] ${C.mute}`}>{`Credit ${shownCents(journalTotals().credit)}`}</Text>
+                </View>
+              </View>
+            </If>
             <View class={`shrink-0 flex-row items-center justify-between border-t px-6 py-3 bg-white dark:bg-slate-800 ${C.line}`}>
               <View class="flex-1">
                 <If when={Boolean(err())}>
@@ -909,8 +911,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                 </If>
               </View>
             </View>
-          </View>
-        </Scroll>
+        </View>
         <View class="w-[360px] shrink-0 rounded-[24px] border border-[#e2e8f0] dark:border-slate-600 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex-col h-full bg-white dark:bg-slate-800">
           <View class={`flex-row justify-evenly px-4 py-3 gap-2 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
             <Each of={[["attachments", "⌁"], ["ai", "✧"], ["activity", "◷"]]}>

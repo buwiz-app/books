@@ -139,14 +139,17 @@ export default function Books() {
         <If when={page() === "new"}>
           <EntryPage mode={sheetMode} close={() => go("today")} setMode={(m: string) => sheetMode.set(m)} />
         </If>
-        <If when={page() !== "new"}>
+        <If when={page() === "accounts"}>
+          <AccountsPage go={go} />
+        </If>
+        <If when={page() === "inbox"}>
+          <InboxPage go={go} sheet={newEntry} />
+        </If>
+        <If when={page() !== "new" && page() !== "accounts" && page() !== "inbox"}>
           <Scroll class="flex-1">
-            <View class="p-4 gap-3.5">
+            <View class="p-6 gap-5">
               <If when={page() === "today"}>
                 <TodayPage go={go} sheet={newEntry} pages={PAGES.filter((x) => x.group)} />
-              </If>
-              <If when={page() === "inbox"}>
-                <InboxPage go={go} sheet={newEntry} />
               </If>
               <If when={page() === "unpaid"}>
                 <UnpaidPage go={go} />
@@ -162,9 +165,6 @@ export default function Books() {
               </If>
               <If when={page() === "people"}>
                 <PeoplePage go={go} />
-              </If>
-              <If when={page() === "accounts"}>
-                <AccountsPage go={go} />
               </If>
               <If when={page() === "tags"}>
                 <TagsPage go={go} />

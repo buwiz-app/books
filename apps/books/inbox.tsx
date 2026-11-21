@@ -138,72 +138,139 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
   });
   const waiting = () => (rv()?.counts?.review || 0) + (rv()?.counts?.draft || 0);
   const month = () => rv()?.month || {};
+  const query = signal("");
+  const visibleRows = () => {
+    const q = query().trim().toLowerCase();
+    const list = rows();
+    return q
+      ? list.filter((r: Any) => `${r.title || ""} ${r.category || ""} ${r.amount_shown || ""}`.toLowerCase().includes(q))
+      : list;
+  };
+  const selectedTicket = () => {
+    const cur = inboxOpen();
+    const list = visibleRows();
+    if (cur && list.some((r: Any) => r.ticket === cur)) return cur;
+    return list[0]?.ticket || "";
+  };
   return (
-    <View class="gap-3.5">
-      <Head title="Inbox" sub={waiting() === 1 ? "1 waiting to be booked" : `${String(waiting())} waiting to be booked`}>
+    <View class="flex-1 flex-col overflow-hidden">
+      {/* Top Navigation + Month + New Entry */}
+      <View class="shrink-0 flex-row items-center justify-between px-6 py-3.5">
+        <View class="flex-row items-center gap-3">
+          <View
+            class="flex-row items-center gap-1.5 py-1.5 pr-2"
+            onPress={() => p.go("today")}
+            activeStyle={{ opacity: 0.7 }}
+          >
+            <Text class={`text-[14px] font-medium ${C.ink}`}>‹ Back to Dashboard</Text>
+          </View>
+          <Text class={`text-[18px] font-semibold ${C.ink}`}>Inbox</Text>
+          <Text class={`text-[12.5px] ${C.mute}`}>
+            {waiting() === 1 ? "1 waiting to be booked" : `${String(waiting())} waiting to be booked`}
+          </Text>
+        </View>
         <View class="flex-row items-center gap-2">
           <Btn label="‹" small onPress={() => (month().prev ? inboxMonth.set(month().prev) : null)} />
-          <Text class="text-[12.5px] font-semibold text-white">{month().label || ""}</Text>
+          <Text class={`text-[12.5px] font-semibold ${C.ink}`}>{month().label || ""}</Text>
           <Btn label="›" small onPress={() => (month().next ? inboxMonth.set(month().next) : null)} />
-          <Btn label="+ New entry" tone="go" onPress={() => p.sheet("money_out")} />
+          <View
+            class="h-[34px] px-4 rounded-full bg-[#0d9488] items-center justify-center"
+            onPress={() => p.sheet("money_out")}
+            activeStyle={{ opacity: 0.85 }}
+          >
+            <Text class="text-[12.5px] font-semibold text-white">+ New entry</Text>
+          </View>
         </View>
-      </Head>
-      <View class="flex-row gap-1.5 flex-wrap">
-        <Each of={INBOX_FILTERS}>
-          {(f: Any) => (
-            <Chip
-              label={f()[1]}
-              count={f()[0] === "all" ? waiting() : rv()?.counts?.[f()[0]] || 0}
-              on={inboxFilter() === f()[0]}
-              onPress={() => inboxFilter.set(f()[0])}
-            />
-          )}
-        </Each>
       </View>
-      <Loading res={review} />
-      <If when={Boolean(rv())}>
-        <Panel class="overflow-hidden">
-          <If when={rows().length === 0}>
-            <Text class={`text-[12.5px] px-3.5 py-3 ${C.dim}`}>Nothing waits in this month. Bank lines, receipts a routine reads from your mail and drafts from chat show up here.</Text>
-          </If>
-          <Each of={rows()} key={(r: Any) => r.ticket}>
-            {(r: Any) => (
-              <View>
-                <View
-                  class={`flex-row items-center gap-3 px-3.5 py-2.5 border-b ${C.line} ${inboxOpen() === r().ticket ? C.raise : ""}`}
-                  onPress={() => inboxOpen.set(inboxOpen() === r().ticket ? "" : r().ticket)}
-                  activeStyle={{ opacity: 0.7 }}
-                >
-                  <View class="w-[78px]">
-                    <Pill tone={inboxSource(r())[0]} label={inboxSource(r())[1]} />
-                  </View>
-                  <Text class={`w-[52px] text-[12.5px] font-mono ${C.ink}`}>{r().date_short}</Text>
-                  <View class="flex-1 gap-0.5">
-                    <Text class={`text-[13px] font-semibold ${C.ink}`} numberOfLines={1}>
+
+      {/* Split Review Workspace — Queue on left, Source & Suggested Entry on right */}
+      <View class="flex-1 min-h-0 flex-row gap-5 px-6 pb-6 overflow-hidden">
+        {/* Left Queue Panel */}
+        <View class={`w-[420px] shrink-0 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
+          <View class={`shrink-0 px-3.5 py-3 gap-2 border-b ${C.line}`}>
+            <TextBox
+              label="Search inbox"
+              value={query()}
+              onChange={(v) => query.set(v)}
+              placeholder="Search inbox items..."
+              entry
+            />
+            <View class="flex-row gap-1.5 flex-wrap">
+              <Each of={INBOX_FILTERS}>
+                {(f: Any) => (
+                  <Chip
+                    label={f()[1]}
+                    count={f()[0] === "all" ? waiting() : rv()?.counts?.[f()[0]] || 0}
+                    on={inboxFilter() === f()[0]}
+                    onPress={() => inboxFilter.set(f()[0])}
+                  />
+                )}
+              </Each>
+            </View>
+          </View>
+          <Loading res={review} />
+          <If when={Boolean(rv())}>
+            <Scroll class="flex-1 min-h-0">
+              <If when={visibleRows().length === 0}>
+                <Text class={`text-[12.5px] px-4 py-5 ${C.dim}`}>
+                  Nothing waits in this month. Bank lines, receipts a routine reads from your mail and drafts from chat show up here.
+                </Text>
+              </If>
+              <Each of={visibleRows()} key={(r: Any) => r.ticket}>
+                {(r: Any) => (
+                  <View
+                    class={`px-4 py-3 border-b gap-1.5 ${C.line} ${
+                      selectedTicket() === r().ticket ? "bg-[#f0fdfa] dark:bg-slate-700" : ""
+                    }`}
+                    onPress={() => inboxOpen.set(r().ticket)}
+                    activeStyle={{ opacity: 0.75 }}
+                  >
+                    <View class="flex-row items-center justify-between gap-2">
+                      <View class="flex-row items-center gap-1.5">
+                        <Pill tone={inboxSource(r())[0]} label={inboxSource(r())[1]} />
+                        <Text class={`text-[11.5px] font-mono ${C.dim}`}>{r().date_short}</Text>
+                      </View>
+                      <Text class={`text-[13px] font-mono font-semibold ${AMT[r().tone] || C.ink}`}>
+                        {r().amount_shown}
+                      </Text>
+                    </View>
+                    <Text class={`text-[13.5px] font-semibold ${C.ink}`} numberOfLines={1}>
                       {r().title}
                     </Text>
+                    <View class="flex-row items-center justify-between gap-2">
+                      <View class="flex-row items-center gap-1.5 flex-1">
+                        <Dot color={r().category_color} />
+                        <Text class={`text-[12px] ${C.mute}`} numberOfLines={1}>
+                          {r().category || "No category yet"}
+                        </Text>
+                      </View>
+                      <Pill tone={r().pill} label={r().status_label} />
+                    </View>
                     <ReviewBadges row={r()} />
                   </View>
-                  <View class="w-[170px] flex-row items-center gap-1.5">
-                    <Dot color={r().category_color} />
-                    <Text class={`text-[12.5px] ${C.ink}`} numberOfLines={1}>
-                      {r().category || "No category yet"}
-                    </Text>
-                  </View>
-                  <View class="w-[96px]">
-                    <Pill tone={r().pill} label={r().status_label} />
-                  </View>
-                  <Text class={`w-[110px] text-right text-[13px] font-mono ${AMT[r().tone] || C.ink}`}>{r().amount_shown}</Text>
-                </View>
-                <If when={inboxOpen() === r().ticket}>
-                  <InboxDetail ticket={r().ticket} />
-                </If>
-              </View>
-            )}
-          </Each>
-        </Panel>
-      </If>
-      <Text class={`text-[12px] ${C.dim}`}>Filled by bank statement imports, routines and drafts from chat. Nothing posts until you accept it.</Text>
+                )}
+              </Each>
+            </Scroll>
+          </If>
+        </View>
+
+        {/* Right Detail & Source Preview Pane */}
+        <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
+          <If when={Boolean(selectedTicket())}>
+            <Scroll class="flex-1 min-h-0">
+              <InboxDetail ticket={selectedTicket()} />
+            </Scroll>
+          </If>
+          <If when={!selectedTicket()}>
+            <View class="flex-1 items-center justify-center p-8 gap-2">
+              <Text class={`text-[15px] font-semibold ${C.ink}`}>Inbox is clear</Text>
+              <Text class={`text-[13px] text-center ${C.mute}`}>
+                Filled by bank statement imports, routines and drafts from chat. Nothing posts until you accept it.
+              </Text>
+            </View>
+          </If>
+        </View>
+      </View>
     </View>
   );
 }
