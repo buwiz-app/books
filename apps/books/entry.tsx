@@ -40,7 +40,7 @@ function EntryDrawer() {
   return (
     <View class={`absolute top-0 right-0 bottom-0 w-[340px] border-l ${C.panel} ${C.line}`}>
       <View class={`flex-row items-center gap-2 px-3.5 py-3 border-b ${C.line}`}>
-        <Text class={`flex-1 text-[14px] font-bold ${C.ink}`} numberOfLines={1}>
+        <Text class={`flex-1 text-[14px] font-bold ${C.ink} truncate`}>
           {e()?.title || "Entry"}
         </Text>
         <If when={Boolean(e())}>
@@ -102,7 +102,7 @@ function EntryDrawer() {
                   <Each of={e()?.lines || []}>
                     {(l: Any) => (
                       <View class={`flex-row gap-1.5 px-2.5 py-1.5 border-t ${C.line}`}>
-                        <Text class={`flex-1 text-[12px] ${C.ink}`} numberOfLines={1}>
+                        <Text class={`flex-1 text-[12px] ${C.ink} truncate`}>
                           {l().account}
                         </Text>
                         <Text class={`w-[84px] text-right text-[12px] font-mono ${C.ink}`}>{l().debit_shown}</Text>
@@ -158,7 +158,7 @@ function Kv(p: { k: string; v: Any }) {
   return (
     <View class="flex-row gap-2.5">
       <Text class={`w-[96px] text-[12.5px] ${C.dim}`}>{p.k}</Text>
-      <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={2}>
+      <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
         {String(p.v ?? "—")}
       </Text>
     </View>
@@ -204,7 +204,7 @@ function ExtractionPanel(p: { entry: Any }) {
           <Each of={docs()} key={rowKey}>
             {(d: Any) => (
               <View class="flex-row gap-2">
-                <Text class={`flex-1 text-[12px] ${C.ink}`} numberOfLines={1}>
+                <Text class={`flex-1 text-[12px] ${C.ink} truncate`}>
                   {d().label}
                 </Text>
                 <Text class={`text-[11.5px] ${C.dim}`}>{d().source === "assistant" ? "Assistant" : "You"}</Text>

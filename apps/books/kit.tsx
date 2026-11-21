@@ -180,7 +180,7 @@ function Btn(p: { label: string; onPress: () => void; tone?: "go" | "vi" | "plai
       activeStyle={{ opacity: 0.7 }}
       onPress={() => (p.disabled ? null : p.onPress())}
     >
-      <Text class={`text-[12.5px] font-semibold ${ink}`} numberOfLines={1}>
+      <Text class={`text-[12.5px] font-semibold ${ink} truncate`}>
         {p.label}
       </Text>
     </View>
@@ -190,7 +190,7 @@ function Btn(p: { label: string; onPress: () => void; tone?: "go" | "vi" | "plai
 function Pill(p: { tone: string; label: string }) {
   return (
     <View class={`rounded-full px-2 py-0.5 self-start ${PILL[p.tone] || PILL.mute}`}>
-      <Text class={`text-[11px] ${PILL[p.tone] || PILL.mute}`} numberOfLines={1}>
+      <Text class={`text-[11px] ${PILL[p.tone] || PILL.mute} truncate`}>
         {p.label}
       </Text>
     </View>
@@ -264,7 +264,7 @@ function Head(p: { title: string; sub?: string; children?: Any; home?: boolean }
 function Bar(p: { label: string; pct: Any; shown: string; tone: string }) {
   return (
     <View class="flex-row items-center gap-2">
-      <Text class={`text-[11.5px] w-[104px] ${C.mute}`} numberOfLines={1}>
+      <Text class={`text-[11.5px] w-[104px] ${C.mute} truncate`}>
         {p.label}
       </Text>
       <View class={`flex-1 h-[6px] rounded-[3px] overflow-hidden ${C.raise}`}>
@@ -316,7 +316,7 @@ function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; plac
   return (
     <View class="gap-1">
       <View accessibilityLabel={p.label} class={`flex-row items-center rounded-lg border px-2.5 h-8 transition-colors ${C.bg} ${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]`} onPress={() => open.set(!open())}>
-        <Text accessibilityElementsHidden={Boolean(p.label)} class={`flex-1 text-[13px] ${current() ? C.ink : C.dim}`} numberOfLines={1}>
+        <Text accessibilityElementsHidden={Boolean(p.label)} class={`flex-1 text-[13px] ${current() ? C.ink : C.dim} truncate`}>
           {current() ? current().label || current().name : p.placeholder || "Pick one"}
         </Text>
         <Text accessibilityElementsHidden={Boolean(p.label)} class={C.dim}>
@@ -337,7 +337,7 @@ function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; plac
                     open.set(false);
                   }}
                 >
-                  <Text class={`text-[12.5px] ${C.ink}`} numberOfLines={1}>
+                  <Text class={`text-[12.5px] ${C.ink} truncate`}>
                     {o().label || o().name}
                   </Text>
                 </View>
@@ -511,7 +511,7 @@ function BooksCombo(p: {
                 {create ? `Create ${createLabel()} “${queryValue().trim()}”` : suggestion?.name || item.title}
               </Text>
               <If when={Boolean(suggestion?.description)}>
-                <Text class="text-[11px] text-[#94a3b8]" numberOfLines={1}>{suggestion?.description || ""}</Text>
+                <Text class="text-[11px] text-[#94a3b8] truncate">{suggestion?.description || ""}</Text>
               </If>
             </View>
             <If when={create}>

@@ -21,10 +21,10 @@ function RepeatsDue(p: { rows: Any[] }) {
         <Each of={p.rows || []} key={(r: Any) => r.owed}>
           {(r: Any) => (
             <View class={`flex-row items-center gap-3 px-3 py-2 border-b ${C.line}`}>
-              <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>
+              <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
                 {r().who || ""}
               </Text>
-              <Text class={`w-[150px] text-[12.5px] ${C.ink}`} numberOfLines={1}>
+              <Text class={`w-[150px] text-[12.5px] ${C.ink} truncate`}>
                 {r().doc || ""}
               </Text>
               <Text class={`w-[90px] text-[12.5px] font-mono ${C.ink}`}>{r().issued}</Text>

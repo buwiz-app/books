@@ -143,7 +143,7 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
                         <View class={`flex-row gap-3 px-3 py-2 border-b ${C.line}`}>
                           <Text class={`w-[130px] text-[12.5px] ${C.ink}`}>{e().month}</Text>
                           <Pill tone={e().event === "close" ? "ok" : "draft"} label={e().event === "close" ? "Closed" : "Reopened"} />
-                          <Text class={`flex-1 text-[12.5px] ${C.mute}`} numberOfLines={1}>
+                          <Text class={`flex-1 text-[12.5px] ${C.mute} truncate`}>
                             {e().reason || ""}
                           </Text>
                         </View>
@@ -274,7 +274,7 @@ function CloudLink() {
           {(x: Any) => (
             <View class={`flex-row items-center gap-3 py-1.5 border-t ${C.line}`}>
               <Text class={`text-[13px] font-mono ${C.ink}`}>{x().tin_masked || "—"}</Text>
-              <Text class={`flex-1 text-[12.5px] ${C.mute}`} numberOfLines={1}>
+              <Text class={`flex-1 text-[12.5px] ${C.mute} truncate`}>
                 {x().registered_name || ""}
               </Text>
               <If when={Boolean(x().linked)}>

@@ -121,7 +121,7 @@ function Statement(p: { person: string }) {
             {(r: Any) => (
               <View class={`flex-row gap-3 py-1.5 border-t ${C.line}`} onPress={() => drawerEntry.set(r().entry)}>
                 <Text class={`w-[52px] text-[12.5px] font-mono ${C.ink}`}>{r().date_shown}</Text>
-                <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>
+                <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
                   {r().what}
                 </Text>
                 <Text class={`w-[100px] text-right text-[12.5px] font-mono ${C.green}`}>{r().in_shown}</Text>
@@ -212,10 +212,10 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
                 >
                   <PersonAvatar initials={r().initials} color={r().color} />
                   <View class="flex-1 gap-0.5">
-                    <Text class={`text-[13px] font-semibold ${C.ink}`} numberOfLines={1}>
+                    <Text class={`text-[13px] font-semibold ${C.ink} truncate`}>
                       {r().name}
                     </Text>
-                    <Text class={`text-[11.5px] ${C.dim}`} numberOfLines={1}>
+                    <Text class={`text-[11.5px] ${C.dim} truncate`}>
                       {r().sub}
                     </Text>
                   </View>
@@ -263,7 +263,7 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
                   {(r: Any) => (
                     <View class={`flex-row gap-3 py-2 border-t ${C.line}`} onPress={() => drawerEntry.set(r().ticket)}>
                       <Text class={`w-[52px] text-[12.5px] font-mono ${C.ink}`}>{r().date_short}</Text>
-                      <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>
+                      <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
                         {r().title}
                       </Text>
                       <Text class={`text-[12.5px] font-mono ${AMT[r().tone] || C.ink}`}>{r().amount_shown}</Text>

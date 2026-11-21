@@ -41,7 +41,7 @@ function RepRow(p: { r: Any; cols: number; go: (page: string, filter?: string) =
   return (
     <View class={`flex-row items-center gap-3 px-3 py-2 border-b ${C.line}`} onPress={open} activeStyle={{ opacity: r.ticket ? 0.75 : 1 }}>
       <View class="flex-1 flex-row items-center gap-2">
-        <Text class={`text-[13px] ${C.ink}`} numberOfLines={1}>
+        <Text class={`text-[13px] ${C.ink} truncate`}>
           {r.name}
         </Text>
         <If when={Boolean(r.review)}>

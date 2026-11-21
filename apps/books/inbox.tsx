@@ -87,7 +87,7 @@ function InboxDetail(p: { ticket: string; row?: Any }) {
               <Each of={e()?.lines || []}>
                 {(l: Any) => (
                   <View class={`flex-row gap-1.5 px-2.5 py-1.5 border-t ${C.line}`}>
-                    <Text class={`flex-1 text-[12px] ${C.ink}`} numberOfLines={1}>
+                    <Text class={`flex-1 text-[12px] ${C.ink} truncate`}>
                       {l().account}
                     </Text>
                     <Text class={`w-[96px] text-right text-[12px] font-mono ${C.ink}`}>{l().debit_shown}</Text>
@@ -263,13 +263,13 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
                         {r().amount_shown}
                       </Text>
                     </View>
-                    <Text class={`text-[13.5px] font-semibold ${C.ink}`} numberOfLines={1}>
+                    <Text class={`text-[13.5px] font-semibold ${C.ink} truncate`}>
                       {r().title}
                     </Text>
                     <View class="flex-row items-center justify-between gap-2">
                       <View class="flex-row items-center gap-1.5 flex-1">
                         <Dot color={r().category_color} />
-                        <Text class={`text-[12px] ${C.mute}`} numberOfLines={1}>
+                        <Text class={`text-[12px] ${C.mute} truncate`}>
                           {r().category || "No category yet"}
                         </Text>
                       </View>

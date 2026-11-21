@@ -107,7 +107,7 @@ function SideAttachments() {
                 <Text class="text-[14px] text-[#94a3b8]">{String(d().mime).startsWith("image/") ? "▦" : "≣"}</Text>
               </View>
               <View class="flex-1 gap-0.5">
-                <Text class={`text-[12px] font-medium ${C.ink}`} numberOfLines={1}>{d().filename}</Text>
+                <Text class={`text-[12px] font-medium ${C.ink} truncate`}>{d().filename}</Text>
                 <Text class={`text-[10px] ${C.dim}`}>{`${SIDE_MIME[String(d().mime)] || "File"} · ${sideBytesShown(d().size)}`}</Text>
               </View>
               <Btn label="×" small accessibilityLabel="Remove attachment" onPress={() => entryStaged.set(entryStaged().filter((_: Any, j: number) => j !== i()))} />

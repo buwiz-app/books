@@ -30,7 +30,7 @@ export function DraftBanner(p: { account: string; month: string; draft: Any }) {
           <View class={`flex-row items-center gap-2 border-b ${C.line} py-1.5`}>
             <Btn label={isOut(r().no) ? "Left out" : "Use"} small onPress={() => toggle(r().no)} />
             <Text class={`w-[52px] text-[12px] font-mono ${C.ink}`}>{r().date_short}</Text>
-            <Text class={`flex-1 text-[12.5px] ${isOut(r().no) ? C.dim : C.ink}`} numberOfLines={1}>
+            <Text class={`flex-1 text-[12.5px] ${isOut(r().no) ? C.dim : C.ink} truncate`}>
               {r().description}
             </Text>
             <If when={Boolean(r().low)}>

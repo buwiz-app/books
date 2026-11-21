@@ -43,7 +43,7 @@ function NeedRow(p: { n: Any; go: (page: string, filter?: string) => void }) {
       </View>
       <View class="flex-1 gap-0.5">
         <Text class={`text-[13.5px] font-medium ${C.ink}`}>{p.n.title}</Text>
-        <Text class={`text-[12px] ${C.dim}`} numberOfLines={1}>
+        <Text class={`text-[12px] ${C.dim} truncate`}>
           {p.n.detail}
         </Text>
       </View>
@@ -74,7 +74,7 @@ function NavTile(p: { title: string; sub: string; onPress: () => void }) {
       activeStyle={{ opacity: 0.75 }}
     >
       <Text class={`text-[13.5px] font-semibold ${C.ink}`}>{p.title}</Text>
-      <Text class={`text-[11.5px] ${C.dim}`} numberOfLines={1}>
+      <Text class={`text-[11.5px] ${C.dim} truncate`}>
         {p.sub}
       </Text>
     </View>

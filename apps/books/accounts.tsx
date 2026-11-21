@@ -196,7 +196,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
                       </View>
                       <View class="flex-1 min-w-0">
                         <View class="flex-row items-baseline gap-1.5 min-w-0">
-                          <Text class={`text-[13.5px] font-semibold ${a().off ? C.dim : C.ink}`} numberOfLines={1}>{a().name}</Text>
+                          <Text class={`text-[13.5px] font-semibold ${a().off ? C.dim : C.ink} truncate`}>{a().name}</Text>
                           <Text class={`text-[11.5px] font-mono ${C.dim}`}>{a().number}</Text>
                         </View>
                         <Text class={`text-[11.5px] truncate ${a().off ? C.dim : C.mute}`}>
@@ -230,7 +230,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
             <View class="flex-1 flex-col">
               <View class={`flex-row items-center justify-between px-5 py-4 border-b ${C.line}`}>
                 <View class="flex-1 gap-0.5">
-                  <Text class={`text-[15px] font-semibold ${C.ink}`} numberOfLines={1}>
+                  <Text class={`text-[15px] font-semibold ${C.ink} truncate`}>
                     {selected()?.name || ""}
                   </Text>
                   <Text class={`text-[12px] font-mono ${C.dim}`}>{selected()?.number || ""}</Text>
