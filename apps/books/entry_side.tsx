@@ -14,6 +14,8 @@ const sideComposer = signal("");
 const sidePromptError = signal("");
 /** What the person sent from the chat tab; role "note" rows are delivery notes. */
 const sideChat = signal<Any[]>([]);
+/** The feed's scroll view; scrollToEnd keeps the newest message in view. */
+let sideFeedRef: Any;
 /** Files picked into the composer, not yet sent. */
 const sideFiles = signal<Any[]>([]);
 
@@ -310,6 +312,7 @@ async function sideSend() {
   sideComposer.set("");
   sideFiles.set([]);
   sidePromptError.set("");
+  sideFeedRef?.scrollToEnd?.({ animated: true });
 }
 
 /** The old app's AI chat panel: the feed, quick prompts, and the composer. */
@@ -318,7 +321,7 @@ function SideAssistant() {
   const canSend = () => Boolean(sideComposer().trim()) || sideFiles().length > 0;
   return (
     <View class="flex-1 flex-col min-h-0">
-      <Scroll class="flex-1 px-3 py-3">
+      <Scroll ref={sideFeedRef} class="flex-1 px-3 py-3">
         <If when={msgs().length === 0}>
           <View class="flex-1 flex-col items-center justify-center py-10 gap-2">
             <Avatar src={SIDE_GLYPHS.sparkle} accessibilityLabel="" class="w-8 h-8" fallbackDelay={Infinity} />
@@ -389,7 +392,16 @@ function SideAssistant() {
               </Each>
             </View>
           </If>
-          <TextBox label="Assistant prompt" value={sideComposer()} onChange={(v: string) => { sideComposer.set(v); sidePromptError.set(""); }} placeholder='"Paid ₱500 for office supplies"' entry />
+          <Input
+            accessibilityLabel="Assistant prompt"
+            value={sideComposer()}
+            placeholder='"Paid ₱500 for office supplies"'
+            multiline={true}
+            submitBehavior="submit"
+            onSubmit={() => sideSend()}
+            onChange={(e: Any) => { sideComposer.set(typeof e === "string" ? e : e.value); sidePromptError.set(""); }}
+            class="w-full min-h-6 max-h-28 text-[13px] bg-transparent border-none outline-none placeholder:text-[#8e8e93] text-[#0f172a] dark:text-slate-100 focus:outline-none focus:ring-0"
+          />
           <View class="flex-row items-center justify-between">
             <View
               class="w-7 h-7 rounded-lg items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700 transition-colors cursor-pointer"
@@ -400,7 +412,7 @@ function SideAssistant() {
               <Avatar src={SIDE_GLYPHS.clip} accessibilityLabel="" class="w-4 h-4" fallbackDelay={Infinity} />
             </View>
             <View class="flex-row items-center gap-2">
-              <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">Ctrl ↵</Text>
+              <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">↵ send · ⇧↵ line</Text>
               <View
                 class={`w-8 h-8 rounded-full items-center justify-center bg-[#2a9d8f] ${canSend() ? "cursor-pointer" : "opacity-40"}`}
                 accessibilityLabel="Send to the Bot chat"
