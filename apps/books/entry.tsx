@@ -224,11 +224,12 @@ const MODES: [string, string][] = [
   ["transfer", "Transfer"],
 ];
 
-const MODE_SUB: Record<string, string> = {
-  money_in: "A customer paid you",
-  money_out: "You paid someone",
-  transfer: "Between your accounts",
-  journal: "Any balanced set of lines",
+/** Same labels as the old app's shared TYPE_LABELS (constants.tsx). */
+const TYPE_LABEL: Record<string, string> = {
+  journal: "Journal Entry",
+  money_in: "Pay In",
+  money_out: "Pay Out",
+  transfer: "Transfer",
 };
 
 /** What to ask the assistant in the chat: it saves a draft, which lands in the Inbox. */
@@ -586,80 +587,121 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
       </View>
       <View class="flex-1 flex-col overflow-hidden">
         <View class={`flex-row items-center gap-3 px-6 py-3 border-b bg-white dark:bg-slate-900 ${C.line}`}>
-          <View accessibilityLabel="Go back" class="w-9 h-9 rounded-lg items-center justify-center" onPress={p.close} activeStyle={{ opacity: 0.7 }}>
-            <Text class={`text-[18px] ${C.mute}`}>‹</Text>
+          <View accessibilityLabel="Go back" class="w-9 h-9 rounded-lg items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-800" onPress={p.close} activeStyle={{ opacity: 0.7 }}>
+            <Text class={`text-[18px] ${C.mute} hover:text-[#1e293b] dark:hover:text-slate-200`}>←</Text>
           </View>
-          <Text class={`text-[16px] font-semibold ${C.ink}`}>{`New ${modeName()}`}</Text>
           <View class="flex-1" />
+          <If when={Boolean(err())}>
+            <Text class="text-[12px] font-medium text-[#ef4444]" numberOfLines={1}>{err()}</Text>
+          </If>
+          <View class="relative flex-row items-stretch">
+            <View
+              class={`items-center justify-center rounded-l-lg px-5 py-2.5 hover:bg-[#248f82] ${busy() ? "opacity-50" : ""}`}
+              style={{ backgroundColor: "#2a9d8f" }}
+              activeStyle={{ opacity: 0.7 }}
+              onPress={() => { if (!busy()) save(false, true); }}
+            >
+              <Text class="text-[13px] font-medium text-white">{busy() ? "Saving..." : "Save & Close"}</Text>
+            </View>
+            <View
+              class="w-10 items-center justify-center rounded-r-lg border-l border-white/25 hover:bg-[#248f82]"
+              style={{ backgroundColor: "#2a9d8f" }}
+              activeStyle={{ opacity: 0.7 }}
+              accessibilityLabel="More save options"
+              onPress={() => saveMenuOpen.set(!saveMenuOpen())}
+            >
+              <Text class="text-[12px] text-white">⌄</Text>
+            </View>
+            <If when={saveMenuOpen()}>
+              <View class={`absolute right-0 top-full z-50 mt-1 w-[160px] rounded-lg border py-1 shadow-lg ${C.panel} ${C.line}`}>
+                <View class="px-3 py-2 hover:bg-[#f9fafb] dark:hover:bg-slate-800" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false); }}>
+                  <Text class={`text-[12px] ${C.ink}`}>Save</Text>
+                </View>
+                <View class="px-3 py-2 hover:bg-[#f9fafb] dark:hover:bg-slate-800" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false, true); }}>
+                  <Text class={`text-[12px] ${C.ink}`}>Save & New</Text>
+                </View>
+                <View class={`px-3 py-2 border-t hover:bg-[#f9fafb] dark:hover:bg-slate-800 ${C.line}`} activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(true, true); }}>
+                  <Text class={`text-[12px] ${C.ink}`}>Post</Text>
+                </View>
+              </View>
+            </If>
+          </View>
         </View>
         <View class="flex-1 flex-row gap-6 p-6 pb-4 overflow-hidden">
-        <View class={`flex-1 min-h-0 rounded-[24px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
-            <View class={`shrink-0 px-4 pt-3.5 pb-4 gap-3 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
-              <View class="flex-row items-center gap-3">
-                <View class="w-12 h-12 rounded-full items-center justify-center bg-white/15">
-                  <Text class="text-[20px] text-white">{mode() === "journal" ? "≡" : mode() === "transfer" ? "⇄" : mode() === "money_in" ? "↓" : "↑"}</Text>
+        <View class="flex-1 min-h-0 rounded-2xl overflow-hidden flex-col bg-white dark:bg-[#1e293b] shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
+            <View class={`shrink-0 px-6 pt-6 pb-12 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
+              <View class="flex-row items-start gap-5">
+                <View class="flex-row items-center gap-5 flex-1">
+                  <View class="w-12 h-12 rounded-full items-center justify-center bg-white/15">
+                    <Text class="text-[20px] text-white">{mode() === "journal" ? "≡" : mode() === "transfer" ? "⇄" : mode() === "money_in" ? "↓" : "↑"}</Text>
+                  </View>
+                  <View class="gap-1">
+                    <If when={mode() === "money_in" || mode() === "money_out"}>
+                      <View class="w-[200px]">
+                        <BooksCombo
+                          label={mode() === "money_in" ? "Customer" : "Vendor"}
+                          value={payeeTicket()}
+                          options={() => partyOptions()}
+                          onPick={(person: Any) => {
+                            payeeTicket.set(person.ticket || "");
+                            payee.set(person.name || person.label || "");
+                            partyQuery.set("");
+                          }}
+                          onQuery={(query: string) => {
+                            partyQuery.set(query);
+                            if (query) {
+                              payeeTicket.set("");
+                              payee.set(query);
+                            }
+                          }}
+                          query={partyQuery()}
+                          placeholder={payee() || "Select Party"}
+                          group={mode() === "money_in" ? "Customers" : "Vendors"}
+                        />
+                      </View>
+                    </If>
+                    <If when={mode() === "journal" || mode() === "transfer"}>
+                      <Text class={`text-[24px] font-bold ${ON_ACC}`}>{mode() === "transfer" ? "Transfer" : "Journal"}</Text>
+                    </If>
+                    <Input
+                      accessibilityLabel="Reference"
+                      value={reference()}
+                      placeholder="Reference Number"
+                      onChange={(e: Any) => reference.set(typeof e === "string" ? e : e.value)}
+                      class="w-[200px] h-9 rounded-md px-2 text-[12px] text-white placeholder-white/50 border-none outline-none focus:bg-black/30"
+                      style={{ backgroundColor: "rgba(0,0,0,0.2)" }}
+                    />
+                  </View>
                 </View>
-                <View class="flex-1 gap-0.5">
-                  <Text class={`text-[24px] font-bold ${ON_ACC}`}>{modeName()}</Text>
-                  <Text class="text-[12px] text-white/80">{MODE_SUB[mode()] || ""}</Text>
-                </View>
-                <If when={mode() !== "journal"}>
+                <View class="flex-col items-end gap-1">
                   <If when={mode() === "transfer"}>
-                    <View class="w-[200px] flex-row items-center justify-end gap-1 border border-white/20 rounded-lg px-3 py-1.5 bg-white/10 focus-within:border-white/40 focus-within:ring-1 focus-within:ring-white/30 transition-colors">
+                    <View class="flex-row items-center justify-end gap-1 border border-white/20 rounded-lg px-3 py-1.5 bg-white/10 focus-within:border-white/40">
                       <Text class="text-xl font-semibold text-white/60">₱</Text>
                       <TextBox label="Amount" value={amount()} onChange={(v) => { amount.set(v); err.set(""); }} placeholder="0.00" transferAmount />
                     </View>
                   </If>
-                  <If when={mode() !== "transfer"}>
+                  <If when={mode() === "money_in" || mode() === "money_out"}>
                     <View class="w-[200px]">
                       <TextBox label="Amount" value={amount()} onChange={(v) => { amount.set(v); err.set(""); }} placeholder="₱ 0.00" big entry />
                     </View>
                   </If>
-                </If>
-                <If when={mode() === "journal"}>
-                  <Text class="text-[20px] font-semibold text-white tabular-nums">{shownCents(journalTotals().debit)}</Text>
-                </If>
-              </View>
-              <View class="flex-row gap-3">
-                <View class="w-[150px] gap-1">
-                  <Text class="text-[13px] font-medium text-white/85">Date</Text>
-                  <BooksDate value={date() || o()?.today || ""} today={o()?.today} onChange={(v) => date.set(v)} />
-                </View>
-                <View class="flex-1 gap-1">
-                  <Text class="text-[13px] font-medium text-white/85">Reference number</Text>
-                  <TextBox label="Reference" value={reference()} onChange={(v) => reference.set(v)} placeholder="Invoice 0143" entry />
-                </View>
-                <If when={mode() !== "transfer"}>
-                  <View class="flex-1 gap-1">
-                    <Text class="text-[13px] font-medium text-white/85">{mode() === "money_in" ? "Received from" : mode() === "money_out" ? "Paid to" : "Party"}</Text>
-                    <BooksCombo
-                      label={mode() === "money_in" ? "Customer" : mode() === "money_out" ? "Vendor" : "Party"}
-                      value={payeeTicket()}
-                      options={() => partyOptions()}
-                      onPick={(person: Any) => {
-                        payeeTicket.set(person.ticket || "");
-                        payee.set(person.name || person.label || "");
-                        partyQuery.set("");
-                      }}
-                      onQuery={(query: string) => {
-                        partyQuery.set(query);
-                        if (query) {
-                          payeeTicket.set("");
-                          payee.set(query);
-                        }
-                      }}
-                      query={partyQuery()}
-                      placeholder={payee() || (mode() === "money_in" ? "Customer" : "Vendor")}
-                      group={mode() === "money_in" ? "Customers" : mode() === "money_out" ? "Vendors" : "People"}
-                    />
+                  <If when={mode() === "journal"}>
+                    <Text class="text-[24px] font-bold text-white tabular-nums">{shownCents(journalTotals().debit)}</Text>
+                  </If>
+                  <View class="flex-row items-center justify-end gap-2 mt-1">
+                    <BooksDate value={date() || o()?.today || ""} today={o()?.today} onChange={(v) => date.set(v)} />
                   </View>
-                </If>
+                  <View class="flex-row items-center gap-2 px-3 py-1.5 rounded-lg mt-4 bg-black/20">
+                    <Text class="text-[14px] text-white">{mode() === "journal" ? "≡" : mode() === "transfer" ? "⇄" : "◈"}</Text>
+                    <Text class="text-[12px] font-semibold text-white">{TYPE_LABEL[mode()] || modeName()}</Text>
+                  </View>
+                </View>
               </View>
             </View>
             <Scroll class="flex-1 min-h-0">
-              <View class="px-6 pt-4">
-              <Text class={`text-[13px] font-semibold ${C.ink} mb-2 pl-1`}>Memo</Text>
-              <View class="rounded-xl border p-3 min-h-16 bg-white dark:bg-slate-800 border-[#e2e8f0] dark:border-slate-600">
+              <View class="px-6" style={{ marginTop: -44 }}>
+              <Text class="text-[12px] font-semibold text-white mb-2 pl-1">≡ Memo</Text>
+              <View class="rounded-xl border p-3 min-h-16 bg-white dark:bg-slate-800 border-[#e2e8f0] dark:border-slate-600 shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
                 <TextBox label="Memo" value={memo()} onChange={(v) => memo.set(v)} placeholder="Add a memo..." entry />
               </View>
             </View>
@@ -769,50 +811,28 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               </If>
               <If when={mode() === "journal"}>
                 <View class="gap-1">
-                  <View class="flex-row gap-2 pb-1">
-                    <Text class={`w-5 text-[10.5px] uppercase tracking-wider ${C.dim}`}>#</Text>
-                    <Text class={`flex-1 text-[11px] font-semibold ${C.mute}`}>Line description</Text>
-                    <Text class={`w-[100px] text-[11px] font-semibold text-right ${C.mute}`}>Debit</Text>
-                    <Text class={`w-[100px] text-[11px] font-semibold text-right ${C.mute}`}>Credit</Text>
-                    <View class="w-[104px]" />
+                  <View class="flex-row items-center gap-2 pb-1">
+                    <View class="w-5 shrink-0" />
+                    <Text class="flex-1 text-[12px] font-semibold text-[#475569] dark:text-slate-400">≡ Lines</Text>
+                    <Text class="w-20 text-right text-[12px] font-medium text-[#64748b] dark:text-slate-400">Debit</Text>
+                    <Text class="w-20 text-right text-[12px] font-medium text-[#64748b] dark:text-slate-400">Credit</Text>
                   </View>
                   <Each of={jl()}>
                     {(l: Any, i: Any) => (
-                      <View class="border-b border-[#e2e8f0] dark:border-slate-700 py-3 gap-2">
+                      <View class="border-b border-[#f0f2f5] dark:border-slate-700 py-3 gap-2">
                         <View class="flex-row gap-2 items-center">
-                          <Text class={`w-5 text-[11px] font-semibold text-center ${C.dim}`}>{String(i() + 1)}</Text>
+                          <Text class="w-5 text-[11px] font-semibold text-center text-[#94a3b8] dark:text-slate-500">{String(i() + 1)}</Text>
                           <View class="flex-1">
                             <TextBox label="Line description" value={l().memo()} onChange={(v: string) => l().memo.set(v)} placeholder="Add description for this item..." entry />
                           </View>
-                          <View class="w-[100px]">
-                            <TextBox label="Debit" value={l().debit()} onChange={(v: string) => { l().debit.set(v); err.set(""); }} placeholder="₱ 0.00" entry />
+                          <View class="w-20">
+                            <TextBox label="Debit" value={l().debit()} onChange={(v: string) => { l().debit.set(v); err.set(""); }} placeholder="₱0.00" entry />
                           </View>
-                          <View class="w-[100px]">
-                            <TextBox label="Credit" value={l().credit()} onChange={(v: string) => { l().credit.set(v); err.set(""); }} placeholder="₱ 0.00" entry />
-                          </View>
-                          <View class="flex-row items-center gap-1">
-                            <If when={jl().length > 2}>
-                              <Btn label="×" small onPress={() => { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); }} />
-                            </If>
-                            <Btn label="⧉" small onPress={() => {
-                              const copy = journalLine();
-                              copy.account.set(l().account());
-                              copy.query.set(l().query());
-                              copy.debit.set(l().debit());
-                              copy.credit.set(l().credit());
-                              copy.memo.set(l().memo());
-                              copy.person.set(l().person());
-                              copy.department.set(l().department());
-                              copy.location.set(l().location());
-                              const next = [...jl()];
-                              next.splice(i() + 1, 0, copy);
-                              jl.set(next);
-                              err.set("");
-                            }} />
-                            <Btn label="+" small onPress={() => { const next = [...jl()]; next.splice(i() + 1, 0, journalLine()); jl.set(next); }} />
+                          <View class="w-20">
+                            <TextBox label="Credit" value={l().credit()} onChange={(v: string) => { l().credit.set(v); err.set(""); }} placeholder="₱0.00" entry />
                           </View>
                         </View>
-                        <View class="flex-row gap-2 pl-7">
+                        <View class="flex-row items-center gap-2 pl-7">
                           <View class="flex-1">
                             <BooksCombo
                               label="Account"
@@ -845,6 +865,46 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                           <View class="flex-1">
                             <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => l().location.set(tag.ticket || "")} placeholder="Location" group="Locations" />
                           </View>
+                          <View class="flex-row items-center gap-1 shrink-0">
+                            <View
+                              accessibilityLabel="Delete line"
+                              class={`w-8 h-8 rounded items-center justify-center ${jl().length <= 2 ? "opacity-0" : "hover:bg-[#fef2f2]"}`}
+                              activeStyle={jl().length > 2 ? { opacity: 0.7 } : undefined}
+                              onPress={() => { if (jl().length > 2) { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); } }}
+                            >
+                              <Text class="text-[15px] text-[#94a3b8] hover:text-[#f87171]">🗑</Text>
+                            </View>
+                            <View
+                              accessibilityLabel="Copy line"
+                              class="w-8 h-8 rounded items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700"
+                              activeStyle={{ opacity: 0.7 }}
+                              onPress={() => {
+                                const copy = journalLine();
+                                copy.account.set(l().account());
+                                copy.query.set(l().query());
+                                copy.debit.set(l().debit());
+                                copy.credit.set(l().credit());
+                                copy.memo.set(l().memo());
+                                copy.person.set(l().person());
+                                copy.department.set(l().department());
+                                copy.location.set(l().location());
+                                const next = [...jl()];
+                                next.splice(i() + 1, 0, copy);
+                                jl.set(next);
+                                err.set("");
+                              }}
+                            >
+                              <Text class="text-[15px] text-[#94a3b8] hover:text-[#475569]">⧉</Text>
+                            </View>
+                            <View
+                              accessibilityLabel="Add line below"
+                              class="w-8 h-8 rounded items-center justify-center hover:bg-[#f0fdfa] dark:hover:bg-slate-700"
+                              activeStyle={{ opacity: 0.7 }}
+                              onPress={() => { const next = [...jl()]; next.splice(i() + 1, 0, journalLine()); jl.set(next); err.set(""); }}
+                            >
+                              <Text class="text-[16px] font-semibold text-[#94a3b8] hover:text-[#2a9d8f]">+</Text>
+                            </View>
+                          </View>
                         </View>
                       </View>
                     )}
@@ -857,61 +917,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               </If>
             </View>
             </Scroll>
-            <If when={mode() === "journal"}>
-              <View class="shrink-0 flex-row items-center justify-between border-t border-[#e2e8f0] dark:border-slate-600 px-6 py-2.5 bg-[#f8f9fb] dark:bg-slate-800/90">
-                <View class="flex-row items-center gap-2">
-                  <Text class={`text-[16px] font-bold ${journalTotals().balanced ? "text-[#16a34a] dark:text-[#4ade80]" : "text-[#ef4444]"}`}>{journalTotals().balanced ? "✓" : "!"}</Text>
-                  <Text class={`text-[12px] font-semibold tabular-nums ${journalTotals().balanced ? "text-[#16a34a] dark:text-[#4ade80]" : "text-[#ef4444]"}`}>
-                    {journalTotals().balanced ? shownCents(journalTotals().debit) : `Difference ${shownCents(journalTotals().difference)}`}
-                  </Text>
-                </View>
-                <View class="flex-row gap-6">
-                  <Text class={`text-[12px] ${C.mute}`}>{`Debit ${shownCents(journalTotals().debit)}`}</Text>
-                  <Text class={`text-[12px] ${C.mute}`}>{`Credit ${shownCents(journalTotals().credit)}`}</Text>
-                </View>
-              </View>
-            </If>
-            <View class={`shrink-0 flex-row items-center justify-between border-t px-6 py-3 bg-white dark:bg-slate-800 ${C.line}`}>
-              <View class="flex-1">
-                <If when={Boolean(err())}>
-                  <Text class={`text-[12px] ${C.red}`} numberOfLines={1}>{err()}</Text>
-                </If>
-                <If when={!err() && mode() === "money_in" || !err() && mode() === "money_out"}>
-                  <Text class={`text-[12px] ${allocationRemaining() === 0n ? "text-[#14b8a6]" : C.mute}`}>{`Remaining ${shownCents(allocationRemaining())}`}</Text>
-                </If>
-              </View>
-              <View class="relative flex-row items-stretch">
-                <View
-                  class="items-center justify-center rounded-l-lg bg-[#2a9d8f] px-5 py-2.5"
-                  activeStyle={{ opacity: 0.7 }}
-                  onPress={() => { if (!busy()) save(false, true); }}
-                >
-                  <Text class="text-[13px] font-medium text-white">{busy() ? "Saving..." : "Save & Close"}</Text>
-                </View>
-                <View
-                  class="w-10 items-center justify-center rounded-r-lg border-l border-white/25 bg-[#2a9d8f]"
-                  activeStyle={{ opacity: 0.7 }}
-                  accessibilityLabel="More save options"
-                  onPress={() => saveMenuOpen.set(!saveMenuOpen())}
-                >
-                  <Text class="text-[12px] text-white">⌄</Text>
-                </View>
-                <If when={saveMenuOpen()}>
-                  <View class={`absolute right-0 bottom-full z-50 mb-1 w-[160px] rounded-lg border py-1 shadow-lg ${C.panel} ${C.line}`}>
-                    <View class="px-3 py-2" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false); }}>
-                      <Text class={`text-[12px] ${C.ink}`}>Save</Text>
-                    </View>
-                    <View class="px-3 py-2" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false, true); }}>
-                      <Text class={`text-[12px] ${C.ink}`}>Save & New</Text>
-                    </View>
-                    <View class={`px-3 py-2 border-t ${C.line}`} activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(true, true); }}>
-                      <Text class={`text-[12px] ${C.ink}`}>Post</Text>
-                    </View>
-                  </View>
-                </If>
-              </View>
-            </View>
         </View>
+        {/* ENTRY_SIDE_MOUNT: agent C moves this right column to apps/books/entry_side.tsx */}
         <View class="w-[360px] shrink-0 rounded-[24px] border border-[#e2e8f0] dark:border-slate-600 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex-col h-full bg-white dark:bg-slate-800">
           <View class={`flex-row justify-evenly px-4 py-3 gap-2 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
             <Each of={[["attachments", "⌁"], ["ai", "✧"], ["activity", "◷"]]}>
