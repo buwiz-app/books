@@ -100,10 +100,13 @@ function EvRow(p: { item: Any; proposals: Any[] }) {
   const mine = () => p.proposals.filter((x: Any) => x.evidence === e.evidence);
   const pages = e.page_count ? ` · ${String(e.page_count)} ${e.page_count === 1 ? "page" : "pages"}` : "";
   return (
-    <View class={`px-4 py-3 border-b ${C.line}`}>
-      <View class="flex-row items-center gap-2">
-        <Text class={`flex-1 text-[13px] ${C.ink}`}>{`${EV_KIND[String(e.kind)] || "Document"} · ${EV_MIME[String(e.mime)] || "File"}${pages}`}</Text>
-        <Text class={`text-[12px] ${C.dim}`}>{`${String(e.linked_count || 0)} linked`}</Text>
+    <View class={`px-4 py-3 md:px-5 md:py-3.5 border-b transition-colors hover:bg-[#f8fafc] dark:hover:bg-white/[0.02] ${C.line}`}>
+      <View class="flex-row items-center gap-3">
+        <View class={`w-8 h-8 rounded items-center justify-center shrink-0 border bg-gray-50 border-gray-200 dark:bg-white/5 dark:border-white/10`}>
+          <Text class="text-[9px] font-bold text-[#94a3b8] dark:text-white/40">{EV_MIME[String(e.mime)] || "FILE"}</Text>
+        </View>
+        <Text class={`flex-1 text-sm font-medium truncate ${C.ink}`}>{`${EV_KIND[String(e.kind)] || "Document"} · ${EV_MIME[String(e.mime)] || "File"}${pages}`}</Text>
+        <Text class={`text-xs ${C.dim}`}>{`${String(e.linked_count || 0)} linked`}</Text>
         <Btn small label="Preview" onPress={() => evPreview(e.evidence)} />
         <Btn small label="Attach to chat" onPress={() => evAttach(e.evidence)} />
       </View>
@@ -128,13 +131,40 @@ export default function Evidence() {
   return (
     <View style={{ flex: 1 }} class={`${C.bg}`}>
       <Head title="Books documents" sub="Receipts, bills, statements and other papers kept with your books.">
-        <Btn tone="go" label={evBusy() ? "Adding…" : "Add a document"} disabled={evBusy()} onPress={() => evAdd()} />
+        <View
+          accessibilityLabel="Upload document"
+          class={`h-11 px-5 rounded-lg bg-linear-to-r from-[#10b981] to-[#059669] flex-row items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all ${evBusy() ? "opacity-60" : ""}`}
+          onPress={() => {
+            if (!evBusy()) evAdd();
+          }}
+          activeStyle={{ opacity: 0.85 }}
+        >
+          <Text class="text-[13px] font-medium text-white">{evBusy() ? "Adding…" : "↑ Upload document"}</Text>
+        </View>
       </Head>
       <Scroll style={{ flex: 1 }}>
         <Panel>
           <Loading res={list} />
           <If when={Boolean(list()) && items().length === 0}>
-            <Text class={`p-4 text-[13px] ${C.mute}`}>No documents yet. Add a PDF or a photo, then attach it to a chat so the assistant can read it.</Text>
+            <View class="items-center justify-center px-4 py-16 gap-1">
+              <View class="w-20 h-20 rounded-2xl bg-[#10b981]/10 items-center justify-center mb-4">
+                <Text class="text-[30px] text-[#10b981]">▤</Text>
+              </View>
+              <Text class={`text-lg font-semibold ${C.ink}`}>No documents yet</Text>
+              <Text class={`text-sm text-center text-[#94a3b8] dark:text-white/40`} style={{ maxWidth: 420 }}>
+                Upload statements, invoices, receipts and other financial documents to keep everything organized. Then attach one to a chat so the assistant can read it.
+              </Text>
+              <View
+                accessibilityLabel="Upload document"
+                class="h-11 px-5 rounded-lg bg-linear-to-r from-[#10b981] to-[#059669] flex-row items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all mt-4"
+                onPress={() => {
+                  if (!evBusy()) evAdd();
+                }}
+                activeStyle={{ opacity: 0.85 }}
+              >
+                <Text class="text-[13px] font-medium text-white">↑ Upload document</Text>
+              </View>
+            </View>
           </If>
           {items().map((e: Any) => (
             <EvRow item={e} proposals={proposals()} />
