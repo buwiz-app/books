@@ -11,6 +11,9 @@ use books_mini_app::{demo, tools};
 use books_store::{Paths, TempDir};
 use serde_json::{Map, Value, json};
 
+#[path = "support/owed_tool.rs"]
+mod owed_tool;
+
 const DEMO: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../fixtures/demo/buwiz-trading-2026.json"
@@ -19,6 +22,7 @@ const CSV: &str = "Date,Description,Debit,Credit,Balance\n2026-09-03,Coffee shop
 const PNG: &[u8] = b"\x89PNG\r\n\x1a\nsynthetic-image";
 
 fn call(books: &mut Books, name: &str, args: Value) -> Value {
+    let (name, args) = owed_tool::normalize(name, args);
     let args: Map<String, Value> = args.as_object().unwrap().clone();
     tools::call(name, &args, Origin::App, books).unwrap()
 }

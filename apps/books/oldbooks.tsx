@@ -83,11 +83,11 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
             <View class="flex-row gap-2 flex-wrap items-center">
               <Btn label={csvChart() ? "Change the chart…" : "Pick the chart…"} onPress={() => pickOne([".csv", ".xlsx", ".xls"], (f: Any) => csvChart.set(f))} />
               <If when={Boolean(csvChart())}>
-                <Text class={`text-[12px] ${C.mute}`} numberOfLines={1}>{`Chart: ${String(csvChart()?.name)}`}</Text>
+                <Text class={`text-[12px] ${C.mute} truncate`}>{`Chart: ${String(csvChart()?.name)}`}</Text>
               </If>
               <Btn label={csvJournal() ? "Change the journal…" : "Pick the journal…"} onPress={() => pickOne([".csv", ".xlsx", ".xls"], (f: Any) => csvJournal.set(f))} />
               <If when={Boolean(csvJournal())}>
-                <Text class={`text-[12px] ${C.mute}`} numberOfLines={1}>{`Journal: ${String(csvJournal()?.name)}`}</Text>
+                <Text class={`text-[12px] ${C.mute} truncate`}>{`Journal: ${String(csvJournal()?.name)}`}</Text>
               </If>
               <Btn label="Bring them in" tone="go" disabled={!csvChart() || !csvJournal()} onPress={() => importCsv().catch(() => null)} />
             </View>
@@ -113,10 +113,10 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
             {(m: Any) => (
               <View class={`flex-row items-start gap-3 px-3.5 py-2 border-b ${C.line}`}>
                 <View class="flex-1">
-                  <Text class={`text-[13px] font-semibold ${C.ink}`} numberOfLines={1}>
+                  <Text class={`text-[13px] font-semibold ${C.ink} truncate`}>
                     {m().imported_name || m().name}
                   </Text>
-                  <Text class={`text-[11.5px] ${C.dim}`} numberOfLines={1}>
+                  <Text class={`text-[11.5px] ${C.dim} truncate`}>
                     {`${m().number} · ${m().type_label}${m().imported_name ? ` · now ${m().name}` : ""}`}
                   </Text>
                 </View>
@@ -124,7 +124,7 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
                 <View class="w-[230px]">
                   <Pick value={m().kind} options={(d()?.kinds || {})[m().side] || []} onPick={(k: Any) => act("books_app_account_match", { account: m().ticket, kind: k.ticket }).catch(() => null)} />
                 </View>
-                <Text class={`w-[170px] text-[12px] ${C.mute}`} numberOfLines={2}>
+                <Text class={`w-[170px] text-[12px] ${C.mute} line-clamp-2`}>
                   {m().feeds}
                 </Text>
                 <View class="w-[96px] gap-1">
@@ -157,7 +157,7 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
                 <Text class={`w-[200px] text-[13px] ${C.ink}`}>{o().label}</Text>
                 <Text class={`w-[130px] text-[12.5px] ${C.mute}`}>{o().range_label}</Text>
                 <Text class={`w-[120px] text-right text-[12.5px] font-mono ${C.ink}`}>{o().amount_shown}</Text>
-                <Text class={`flex-1 text-[12px] ${C.dim}`} numberOfLines={1}>
+                <Text class={`flex-1 text-[12px] ${C.dim} truncate`}>
                   {o().proof || ""}
                 </Text>
                 <Btn label="Remove" small onPress={() => act("books_app_opening_set", { measure: o().measure, from: o().from, delete: true }).catch(() => null)} />

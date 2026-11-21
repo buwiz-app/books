@@ -497,12 +497,20 @@ pub fn add_line(
                     debit: c,
                     credit: 0,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
                 LineInput {
                     account_id: category.id,
                     debit: 0,
                     credit: c,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
             ],
         )
@@ -515,12 +523,20 @@ pub fn add_line(
                     debit: c,
                     credit: 0,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
                 LineInput {
                     account_id,
                     debit: 0,
                     credit: c,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
             ],
         )
@@ -636,12 +652,20 @@ pub fn recategorize(
                 debit: l.debit,
                 credit: l.credit,
                 facts: Facts::default(),
+                person_id: l.person_id,
+                department_id: l.department_id,
+                location_id: l.location_id,
+                memo: l.memo.clone(),
             });
             moves.push(LineInput {
                 account_id: a.id,
                 debit: l.credit,
                 credit: l.debit,
                 facts: Facts::default(),
+                person_id: l.person_id,
+                department_id: l.department_id,
+                location_id: l.location_id,
+                memo: l.memo.clone(),
             });
         }
     }

@@ -174,7 +174,7 @@ function OwedCard() {
                 primary
                 disabled={!account()}
                 onPress={() =>
-                  act("books_app_owed_settle", { owed: d()?.row.ticket, account: account().ticket })
+                  act("books_app_owed", { owed: d()?.row.ticket, account: account().ticket, action: "settle" })
                     .then(() => paid.set(String(d()?.row.amount_shown)))
                     .catch(() => null)
                 }

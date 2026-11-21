@@ -414,26 +414,41 @@ fn flows(
         ) {
             continue;
         }
-        if let Some(t) = tag {
-            let (_, dept, loc) = people::links(store.conn(), e.id)?;
-            let on = match t.column {
-                TagColumn::Department => dept,
-                TagColumn::Location => loc,
-            };
-            if on != Some(t.id) {
+        let summary = Summary::of(store, chart, e)?;
+        let cash = if let Some(t) = tag {
+            let tagged_cash: i64 = summary
+                .lines
+                .iter()
+                .filter(|line| {
+                    let linked = match t.column {
+                        TagColumn::Department => line.department_id,
+                        TagColumn::Location => line.location_id,
+                    };
+                    linked == Some(t.id)
+                        && !chart
+                            .by_id
+                            .get(&line.account_id)
+                            .is_some_and(Account::is_cash)
+                })
+                .map(|line| line.credit - line.debit)
+                .sum();
+            if tagged_cash == 0 {
                 continue;
             }
-        }
-        kept.push(Summary::of(store, chart, e)?);
+            tagged_cash
+        } else {
+            summary.cash
+        };
+        kept.push((summary, cash));
     }
     let (mut inflow, mut outflow, mut moved) = (0i64, 0i64, 0i64);
-    for s in &kept {
+    for (s, cash) in &kept {
         if s.entry.form == Form::Transfer {
-            moved += s.cash;
-        } else if s.cash > 0 {
-            inflow += s.cash;
+            moved += cash;
+        } else if *cash > 0 {
+            inflow += cash;
         } else {
-            outflow += s.cash;
+            outflow += cash;
         }
     }
     Ok(Flows {

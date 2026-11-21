@@ -265,15 +265,16 @@ fn the_window_grants_batch_and_ledger_list_within_the_cap() {
         .collect();
     assert!(before.is_subset(&granted), "a grant was dropped");
     let added: BTreeSet<&String> = granted.difference(&before).collect();
+    // `books_ledger_list` is the Inbox's read too, so the bulk panel alone no longer adds it.
+    assert!(granted.contains("books_ledger_list"));
     let expected = [
         "books_app_batch".to_string(),
         "books_app_press_card".to_string(),
-        "books_ledger_list".to_string(),
     ];
     assert_eq!(
         added,
         expected.iter().collect::<BTreeSet<&String>>(),
         "{added:?}"
     );
-    assert!(granted.len() <= 64, "{} grants", granted.len());
+    assert_eq!(granted.len(), 64, "the window has {} grants", granted.len());
 }

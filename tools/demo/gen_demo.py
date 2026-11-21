@@ -161,7 +161,7 @@ for side, who, ref, due, amount, cat in [("collect", "Isla Café", "Invoice 0143
                                          ("collect", "Bayani Foods", "Invoice 0144", "2026-11-20", php(45000), SALES),
                                          ("pay", "Pixel Print Shop", "Bill PP-0381", "2026-11-05", php(3200), SUPPLIES),
                                          ("pay", "Lumen Power Co.", "November bill", "2026-11-12", php(2600), UTIL)]:
-    step("books_app_owed_create", {"side": side, "person_name": who, "reference": ref, "issued": "2026-10-29", "due": due, "amount": text(amount), "category": cat})
+    step("books_app_owed", {"action": "create", "side": side, "person_name": who, "reference": ref, "issued": "2026-10-29", "due": due, "amount": text(amount), "category": cat})
 
 # --- the golden checks -----------------------------------------------------
 TYPES = {BANK: "a", CASHBOX: "a", CWT: "a", CARD: "l", WTC: "l", SSS: "l", DRAW: "e", SALES: "r", REFUNDS: "r",

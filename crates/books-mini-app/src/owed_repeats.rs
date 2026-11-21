@@ -1,5 +1,5 @@
 //! Monthly repeats of unpaid documents: the
-//! `books_app_owed_repeat` write and the repeat fields `books_owed_list`
+//! `books_app_owed` repeat action and the repeat fields `books_owed_list`
 //! carries. The user adds each month's copy from the app; no routine and
 //! no assistant writes one (cards.rs routines change nothing here).
 
@@ -26,7 +26,7 @@ fn owed_in(conn: &Connection, args: &Map<String, Value>) -> Result<i64, Refusal>
     }
 }
 
-/// `books_app_owed_repeat`: `action` start, stop or add (`month`, this
+/// `books_app_owed` repeat action: `repeat_action` start, stop or add (`month`, this
 /// month when absent). Returns `{owed, repeat, added?}`.
 pub fn repeat(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let book = writes::book_in(conn, args)?;

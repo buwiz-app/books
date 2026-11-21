@@ -104,7 +104,7 @@ function ReconcileGrid() {
             <Each of={d()?.rows || []} key={rowKey}>
               {(r: Any) => (
                 <View class={`flex-row items-center gap-2 px-3 py-2.5 border-t ${C.line}`}>
-                  <Text class={`flex-1 text-[13px] font-semibold ${C.ink}`} numberOfLines={1}>
+                  <Text class={`flex-1 text-[13px] font-semibold ${C.ink} truncate`}>
                     {r().name}
                   </Text>
                   <Each of={r().cells}>
@@ -238,7 +238,7 @@ function MatchView() {
                       <If when={Boolean(r().flag)}>
                         <View class="w-[7px] h-[7px] rounded-full bg-[#f3b64c]" />
                       </If>
-                      <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>
+                      <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
                         {r().description}
                       </Text>
                       <If when={Boolean(r().low)}>
@@ -283,7 +283,7 @@ function MatchView() {
                           <Each of={r().books?.lines || []}>
                             {(l: Any) => (
                               <View class="flex-row gap-2">
-                                <Text class={`flex-1 text-[11.5px] ${C.mute}`} numberOfLines={1}>
+                                <Text class={`flex-1 text-[11.5px] ${C.mute} truncate`}>
                                   {l().account || "—"}
                                 </Text>
                                 <Text class={`w-[84px] text-right text-[11.5px] font-mono ${C.ink}`}>{l().debit_shown}</Text>

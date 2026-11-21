@@ -153,14 +153,14 @@ const step = async (name, body) => {
   }
 };
 let screen = null;
-await step("the Books window mounts and shows its rail", async () => {
+await step("the Books window mounts and shows Home navigation", async () => {
   screen = mountApp(src.json.source, { esbuild, bridge });
-  await screen.until(() => screen.pressable("People"), "the rail's People row");
+  await screen.until(() => screen.hasText("People"), "Home's People link", 30000);
 });
 const NAME_BOX = "Name, never a TIN";
 const TYPED = "Synthetic Vendor W4";
 await step("typing into a TextBox (People › + New › Name) keeps the text, and Add saves it", async () => {
-  screen.press("People");
+  screen.pressContaining("People");
   await screen.until(() => screen.pressable("+ New"), "People's + New");
   screen.press("+ New");
   await screen.until(() => screen.input(NAME_BOX), "the Name box");
@@ -171,10 +171,12 @@ await step("typing into a TextBox (People › + New › Name) keeps the text, an
   await screen.until(() => screen.hasText(TYPED), "the new person in the list");
   return { typed: true, saved: true };
 });
-const RAISED = "bg-[#f0f0ee]";
+const RAISED = "bg-[#f1f5f9]";
 const chosen = (label) => String(screen.pressable(label)?.props.class || "").includes(RAISED);
 await step("changing a picker (Certificates › + Add a 2307 › Form, Kind, Status) moves the choice", async () => {
-  screen.press("Certificates");
+  screen.unmount();
+  const certBridge = { ...bridge, props: { page: "certificates" } };
+  screen = mountApp(src.json.source, { esbuild, bridge: certBridge });
   await screen.until(() => screen.pressable("+ Add a 2307"), "Certificates' + Add a 2307");
   screen.press("+ Add a 2307");
   await screen.until(() => screen.pressable("2306 (final)"), "the Form picker");

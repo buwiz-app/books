@@ -11,7 +11,11 @@ use books_mini_app::tools;
 use books_store::{Paths, TempDir};
 use serde_json::{Map, Value, json};
 
+#[path = "support/owed_tool.rs"]
+mod owed_tool;
+
 fn call(books: &mut Books, name: &str, args: Value, origin: Origin) -> Value {
+    let (name, args) = owed_tool::normalize(name, args);
     let args: Map<String, Value> = args.as_object().unwrap().clone();
     let out = tools::call(name, &args, origin, books).unwrap();
     assert_eq!(out["isError"], false, "{name}: {out}");
@@ -324,7 +328,7 @@ fn m1_m2_today_people_and_mark_paid_on_the_golden_book() {
     );
     // marking paid is the user's click in the app
     assert_eq!(
-        tools::find("books_app_owed_settle").unwrap().reach,
+        tools::find("books_app_owed").unwrap().reach,
         tools::Reach::App
     );
 }

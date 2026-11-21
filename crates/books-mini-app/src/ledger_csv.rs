@@ -112,14 +112,6 @@ pub fn ledger_csv(store: &Store, book: Book, args: &Map<String, Value>, origin: 
         if !keep {
             continue;
         }
-        let person = if full {
-            match people::links(c, s.entry.id)?.0 {
-                Some(id) => people::person(c, id)?.map(|p| p.name).unwrap_or_default(),
-                None => String::new(),
-            }
-        } else {
-            String::new()
-        };
         let category = s.category.as_ref().map_or("", |a| a.name.as_str());
         for l in &s.lines {
             let acct = chart
@@ -136,6 +128,10 @@ pub fn ledger_csv(store: &Store, book: Book, args: &Map<String, Value>, origin: 
                 cell(category),
             ];
             if full {
+                let person = match l.person_id {
+                    Some(id) => people::person(c, id)?.map(|p| p.name).unwrap_or_default(),
+                    None => String::new(),
+                };
                 cells.push(cell(&person));
                 for t in [&s.entry.payee, &s.entry.memo, &s.entry.reference] {
                     cells.push(cell(t.as_deref().unwrap_or("")));

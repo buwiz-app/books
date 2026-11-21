@@ -560,9 +560,19 @@ fn ledger_body(
     let prev_month = text_value(data.pointer("/month/prev"), "").to_owned();
     let next_month = text_value(data.pointer("/month/next"), "").to_owned();
 
+    // the book's accent (apps/books/kit.tsx `ACCENTS`): a tone that carries white text in light and dark
+    let accent_bg = match text_value(data.pointer("/book/accent"), "green") {
+        "teal" => "bg-[#0d9488]",
+        "blue" => "bg-[#2563eb]",
+        "violet" => "bg-[#7c3aed]",
+        "orange" => "bg-[#ea580c]",
+        "rose" => "bg-[#e11d48]",
+        _ => "bg-[#16a34a]",
+    };
     let mut header = view()
         .app_class(Some(
-            "flex-row items-center gap-2.5 flex-wrap rounded-t-xl px-3.5 py-3 bg-[#157a48]".into(),
+            format!("flex-row items-center gap-2.5 flex-wrap rounded-t-xl px-3.5 py-3 {accent_bg}")
+                .into(),
         ))
         .child(
             text(account_name.clone()).app_class(Some("text-[15px] font-bold text-white".into())),

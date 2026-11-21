@@ -6,7 +6,7 @@
 const peopleKind = signal("vendors");
 const personPick = signal("");
 
-function Avatar(p: { initials: string; color: string; big?: boolean }) {
+function PersonAvatar(p: { initials: string; color: string; big?: boolean }) {
   return (
     <View class={`${p.big ? "w-10 h-10" : "w-8 h-8"} rounded-full items-center justify-center`} style={{ backgroundColor: p.color }}>
       <Text class={`${p.big ? "text-[14px]" : "text-[11px]"} font-bold text-white`}>{p.initials}</Text>
@@ -121,7 +121,7 @@ function Statement(p: { person: string }) {
             {(r: Any) => (
               <View class={`flex-row gap-3 py-1.5 border-t ${C.line}`} onPress={() => drawerEntry.set(r().entry)}>
                 <Text class={`w-[52px] text-[12.5px] font-mono ${C.ink}`}>{r().date_shown}</Text>
-                <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>
+                <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
                   {r().what}
                 </Text>
                 <Text class={`w-[100px] text-right text-[12.5px] font-mono ${C.green}`}>{r().in_shown}</Text>
@@ -210,12 +210,12 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
                   class={`flex-row items-center gap-2.5 px-3 py-2 border-b ${C.line} ${current()?.ticket === r().ticket ? C.raise : ""}`}
                   onPress={() => personPick.set(r().ticket)}
                 >
-                  <Avatar initials={r().initials} color={r().color} />
+                  <PersonAvatar initials={r().initials} color={r().color} />
                   <View class="flex-1 gap-0.5">
-                    <Text class={`text-[13px] font-semibold ${C.ink}`} numberOfLines={1}>
+                    <Text class={`text-[13px] font-semibold ${C.ink} truncate`}>
                       {r().name}
                     </Text>
-                    <Text class={`text-[11.5px] ${C.dim}`} numberOfLines={1}>
+                    <Text class={`text-[11.5px] ${C.dim} truncate`}>
                       {r().sub}
                     </Text>
                   </View>
@@ -226,7 +226,7 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
           <If when={Boolean(d())}>
             <Panel pad class="flex-1 gap-3">
               <View class="flex-row items-center gap-2.5">
-                <Avatar initials={d()?.initials || ""} color={d()?.color || "#888888"} big />
+                <PersonAvatar initials={d()?.initials || ""} color={d()?.color || "#888888"} big />
                 <View class="flex-1">
                   <Text class={`text-[16px] font-bold ${C.ink}`}>{d()?.name || ""}</Text>
                   <Text class={`text-[12px] ${C.dim}`}>{d()?.sub || ""}</Text>
@@ -263,7 +263,7 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
                   {(r: Any) => (
                     <View class={`flex-row gap-3 py-2 border-t ${C.line}`} onPress={() => drawerEntry.set(r().ticket)}>
                       <Text class={`w-[52px] text-[12.5px] font-mono ${C.ink}`}>{r().date_short}</Text>
-                      <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>
+                      <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
                         {r().title}
                       </Text>
                       <Text class={`text-[12.5px] font-mono ${AMT[r().tone] || C.ink}`}>{r().amount_shown}</Text>

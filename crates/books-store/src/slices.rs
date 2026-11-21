@@ -1,12 +1,12 @@
-//! Slices of the ledger: account movements narrowed to the entries that
-//! carry a tag (a department or a location on the entry).
+//! Slices of the ledger: account movements narrowed to lines that carry
+//! a tag (a department or a location), with NULL lines inheriting the entry link.
 
 use std::collections::HashMap;
 
 use books_core::date::Date;
 use rusqlite::{Connection, params};
 
-use crate::Result;
+use crate::{Result, people};
 
 /// Which entry column a tag lives in. Each maps to a fixed column name, so
 /// no caller text ever reaches the SQL.
@@ -25,25 +25,6 @@ impl TagColumn {
             _ => None,
         }
     }
-
-    fn sql(self) -> &'static str {
-        match self {
-            Self::Department => {
-                "SELECT l.account_id, sum(l.debit) - sum(l.credit)
-                 FROM line l JOIN entry e ON e.entry_id = l.entry_id
-                 WHERE e.book_id = ?1 AND e.status IN ('posted', 'voided')
-                   AND e.entry_date >= ?2 AND e.entry_date <= ?3 AND e.department_id = ?4
-                 GROUP BY l.account_id"
-            }
-            Self::Location => {
-                "SELECT l.account_id, sum(l.debit) - sum(l.credit)
-                 FROM line l JOIN entry e ON e.entry_id = l.entry_id
-                 WHERE e.book_id = ?1 AND e.status IN ('posted', 'voided')
-                   AND e.entry_date >= ?2 AND e.entry_date <= ?3 AND e.location_id = ?4
-                 GROUP BY l.account_id"
-            }
-        }
-    }
 }
 
 /// [`crate::books::movements`] over the entries tagged `tag_id` only.
@@ -57,11 +38,30 @@ pub fn movements_tagged(
 ) -> Result<HashMap<i64, i64>> {
     let from = from.map_or_else(|| "0000-00-00".to_string(), |d| d.to_string());
     let to = to.map_or_else(|| "9999-99-99".to_string(), |d| d.to_string());
-    let mut stmt = conn.prepare(column.sql())?;
-    let rows = stmt.query_map(params![book_id, from, to, tag_id], |r| {
-        Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?))
-    })?;
-    Ok(rows.collect::<rusqlite::Result<_>>()?)
+    let rows: Vec<(i64, i64, i64, i64, i64)> = {
+        let mut stmt = conn.prepare(
+            "SELECT l.line_id, e.entry_id, l.account_id, l.debit, l.credit
+             FROM line l JOIN entry e ON e.entry_id = l.entry_id
+             WHERE e.book_id = ?1 AND e.status IN ('posted', 'voided')
+               AND e.entry_date >= ?2 AND e.entry_date <= ?3",
+        )?;
+        stmt.query_map(params![book_id, from, to], |r| {
+            Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
+        })?
+        .collect::<rusqlite::Result<_>>()?
+    };
+    let mut movements = HashMap::new();
+    for (line_id, entry_id, account_id, debit, credit) in rows {
+        let links = people::effective_links(conn, entry_id, line_id)?;
+        let matches = match column {
+            TagColumn::Department => links.department_id,
+            TagColumn::Location => links.location_id,
+        } == Some(tag_id);
+        if matches {
+            *movements.entry(account_id).or_insert(0) += debit - credit;
+        }
+    }
+    Ok(movements)
 }
 
 #[cfg(test)]
@@ -96,12 +96,20 @@ mod tests {
                     debit: amount,
                     credit: 0,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
                 LineInput {
                     account_id: bank,
                     debit: 0,
                     credit: amount,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
             ],
         };

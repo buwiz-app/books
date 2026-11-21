@@ -354,6 +354,21 @@ pub fn write(
     write_prepared(books, tool, origin, args, |_| Ok(()), |tx, ()| f(tx))
 }
 
+/// A shared app tool with a required operation selector keeps that selector
+/// in the replay digest, as the former distinct tool names did.
+pub fn write_with_action(
+    books: &mut Books,
+    tool: &str,
+    action: &str,
+    origin: Origin,
+    args: &Map<String, Value>,
+    f: impl FnOnce(&Transaction<'_>) -> Answer,
+) -> Value {
+    let mut keyed = args.clone();
+    keyed.insert("__books_action".into(), json!(action));
+    write(books, tool, origin, &keyed, f)
+}
+
 pub(crate) fn write_prepared<T>(
     books: &mut Books,
     tool: &str,

@@ -38,7 +38,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
       args.amount = amount;
     }
     if (settleOn().trim()) args.on = settleOn().trim();
-    act("books_app_owed_settle", args)
+    act("books_app_owed", { ...args, action: "settle" })
       .then((r: Any) => {
         settling.set("");
         settleAmount.set("");
@@ -96,14 +96,14 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
                     onPress={() => history.set(history() === r().ticket ? "" : r().ticket)}
                     activeStyle={{ opacity: 0.75 }}
                   >
-                    <Text class={`text-[13px] font-semibold ${C.ink}`} numberOfLines={1}>
+                    <Text class={`text-[13px] font-semibold ${C.ink} truncate`}>
                       {r().who}
                     </Text>
                     <If when={r().state === "part_paid"}>
                       <Pill tone="rev" label="Part paid" />
                     </If>
                   </View>
-                  <Text class={`w-[150px] text-[12.5px] ${C.ink}`} numberOfLines={1}>
+                  <Text class={`w-[150px] text-[12.5px] ${C.ink} truncate`}>
                     {(r().evidence || []).length > 0 ? `${r().doc || ""} · ${String(r().evidence.length)} ${r().evidence.length === 1 ? "file" : "files"}` : r().doc}
                   </Text>
                   <Text class={`w-[64px] text-[12.5px] font-mono ${r().late ? C.red : C.ink}`}>{r().due_short}</Text>
@@ -129,7 +129,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
                       <TextBox value={settleOn()} onChange={(v) => settleOn.set(v)} placeholder="Today" />
                     </View>
                     <Btn label="Record it" tone="go" small onPress={() => settle(r().ticket)} />
-                    <Btn label="Cancel document" small onPress={() => act("books_app_owed_cancel", { owed: r().ticket }).catch(() => null)} />
+            <Btn label="Cancel document" small onPress={() => act("books_app_owed", { owed: r().ticket, action: "cancel" }).catch(() => null)} />
                     <OwedRepeatToggle ticket={r().ticket} on={r().repeat === "monthly"} />
                   </View>
                 </If>
@@ -167,7 +167,7 @@ function ProposalRow(p: { p: Any; side: string; opts: Any }) {
       if (issued()) args.issued = issued();
       args.due = due();
     }
-    act("books_app_owed_create", args)
+    act("books_app_owed", { ...args, action: "create" })
       .then(() => toast(decision === "accept" ? "Accepted" : "Discarded"))
       .catch((e: Any) => err.set(errText(e)));
   };
@@ -175,7 +175,7 @@ function ProposalRow(p: { p: Any; side: string; opts: Any }) {
   return (
     <View class={`gap-2 py-2 border-t ${C.line}`}>
       <View class="flex-row items-center gap-3">
-        <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>{p.p.source}</Text>
+        <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>{p.p.source}</Text>
         <Pill tone={p.p.confidence >= 80 ? "ok" : "draft"} label={`${String(p.p.confidence)}% sure`} />
         <Text class={`w-[110px] text-right text-[12.5px] font-mono ${C.ink}`}>{p.p.amount_shown}</Text>
       </View>
@@ -222,7 +222,7 @@ function OwedSheet(p: { side: string; opts: Any; close: () => void }) {
     else if (whoName().trim()) args.person_name = whoName().trim();
     if (reference()) args.reference = reference();
     if (due()) args.due = due();
-    act("books_app_owed_create", args)
+    act("books_app_owed", { ...args, action: "create" })
       .then(() => {
         toast(p.side === "collect" ? "Invoice saved" : "Bill saved");
         p.close();
@@ -284,7 +284,7 @@ function OwedHistory(p: { side: string; owed: string }) {
             <View class="flex-row items-center gap-3">
               <Text class={`w-[90px] text-[12px] font-mono ${C.ink}`}>{x().date}</Text>
               <Text class={`w-[110px] text-right text-[12px] font-mono ${C.ink}`}>{x().amount_shown}</Text>
-              <Text class={`flex-1 text-[12px] ${C.ink}`} numberOfLines={1}>
+              <Text class={`flex-1 text-[12px] ${C.ink} truncate`}>
                 {x().account || ""}
               </Text>
               <If when={Boolean(x().voided)}>

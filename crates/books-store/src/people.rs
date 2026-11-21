@@ -3,7 +3,7 @@
 //! A person is a name and a kind (vendor, customer, employee, owner,
 //! lender, government); banks and cards are the book's cash and card
 //! accounts. There is no TIN anywhere: the BIR app keeps them. Tags are
-//! departments and locations, set on an entry.
+//! departments and locations, set on an entry or line.
 //!
 //! An unpaid document waits for money. On a cash book (the default, ADR
 //! 0008) it is a reminder and posts nothing; marking it paid posts the
@@ -243,6 +243,26 @@ pub fn links(conn: &Connection, entry_id: i64) -> Result<(Option<i64>, Option<i6
     )?)
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EffectiveLinks {
+    pub person_id: Option<i64>,
+    pub department_id: Option<i64>,
+    pub location_id: Option<i64>,
+}
+
+pub fn effective_links(conn: &Connection, entry_id: i64, line_id: i64) -> Result<EffectiveLinks> {
+    Ok(conn.query_row(
+        "SELECT coalesce(l.person_id, e.person_id), coalesce(l.department_id, e.department_id), coalesce(l.location_id, e.location_id)
+         FROM line l JOIN entry e ON e.entry_id = l.entry_id WHERE e.entry_id = ?1 AND l.line_id = ?2",
+        params![entry_id, line_id],
+        |r| Ok(EffectiveLinks {
+            person_id: r.get(0)?,
+            department_id: r.get(1)?,
+            location_id: r.get(2)?,
+        }),
+    )?)
+}
+
 #[derive(Debug, Clone)]
 pub struct Unpaid {
     pub id: i64,
@@ -443,6 +463,10 @@ pub fn create_unpaid(
                     } else {
                         Facts::default()
                     },
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
                 LineInput {
                     account_id: cr,
@@ -453,6 +477,10 @@ pub fn create_unpaid(
                     } else {
                         Facts::default()
                     },
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
             ],
         };
