@@ -7,8 +7,8 @@
 //     as nsh-js's `signal_set` does (crates/nsh-js/src/reactive.rs, `this_signal`); a detached `x.set` passed as a
 //     prop and called as `p.onChange(v)` fails here as it does in the Bot;
 //   - `<Input>`'s onChange gets `{ value }` (nsh docs/dev/elements.md).
-// It draws nothing: the tree is host nodes ({host, props, kids}) to query and press. Imports allowed are those of
-// protocol 1.0 §11.2 (`nsh`, `buwiz`); the caller supplies the bridge.
+// It draws nothing: the tree is host nodes ({host, props, kids}) to query and press. Imports allowed are `nsh`,
+// `nsh/base` controls represented as host nodes, and `buwiz`; the caller supplies the bridge.
 
 // ---- the reactive graph: signals, memos, effects, owners (Solid's algorithm, CLEAN / CHECK / DIRTY) ----
 
@@ -506,7 +506,8 @@ export function prepareApp(source, { esbuild }) {
 export function mountApp(source, { esbuild, bridge, prepared = false }) {
   const cjs = prepared ? source : prepareApp(source, { esbuild });
   const nsh = { signal, computed, resource, View, Text, Scroll, Input, Image };
-  const modules = { nsh, buwiz: { buwiz: bridge, default: bridge } };
+  const base = { Avatar: host("Avatar"), Combobox: host("Combobox"), DatePicker: host("DatePicker") };
+  const modules = { nsh, "nsh/base": base, buwiz: { buwiz: bridge, default: bridge } };
   const require = (id) => {
     if (!(id in modules)) throw new Error(`the app imports ${id}; apps may import only nsh and buwiz`);
     return modules[id];
