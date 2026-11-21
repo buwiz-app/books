@@ -170,7 +170,7 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
   return (
     <View class="flex-1 flex-col overflow-hidden">
       {/* Top Navigation + Month + New Entry */}
-      <View class="shrink-0 flex-row items-center justify-between px-6 py-3.5">
+      <View class="shrink-0 flex-col sm:flex-row sm:items-center justify-between px-4 py-3 sm:px-6 sm:py-3.5 gap-2 sm:gap-3">
         <View class="flex-row items-center gap-3">
           <View
             class="flex-row items-center gap-1.5 py-1.5 pr-2"
@@ -199,9 +199,9 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
       </View>
 
       {/* Split Review Workspace — Queue on left, Source & Suggested Entry on right */}
-      <View class="flex-1 min-h-0 flex-row gap-5 px-6 pb-6 overflow-hidden">
+      <View class="flex-1 min-h-0 flex-row gap-5 px-4 pb-4 sm:px-6 sm:pb-6 overflow-hidden">
         {/* Left Queue Panel */}
-        <View class={`w-[420px] shrink-0 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-900 ${C.line}`}>
+        <View class={`${inboxOpen() ? "hidden lg:flex" : "flex"} flex-1 lg:flex-none lg:w-[420px] shrink-0 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-900 ${C.line}`}>
           <View class={`shrink-0 px-3.5 py-3 gap-2 border-b ${C.line}`}>
             <View class="h-10 flex-row items-center rounded-md border border-slate-200 bg-white pl-3 pr-2 transition-colors focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/15 dark:border-slate-700 dark:bg-slate-900">
               <Text class="text-[14px] text-slate-400 dark:text-slate-500">⌕</Text>
@@ -284,7 +284,12 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
         </View>
 
         {/* Right Detail & Source Preview Pane */}
-        <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-900 ${C.line}`}>
+        <View class={`${inboxOpen() ? "flex" : "hidden lg:flex"} flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-900 ${C.line}`}>
+          <View class={`lg:hidden shrink-0 flex-row items-center border-b px-2 py-1 ${C.line}`}>
+            <View class="h-9 flex-row items-center gap-1.5 rounded-lg px-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800" onPress={() => inboxOpen.set("")} activeStyle={{ opacity: 0.7 }}>
+              <Text class={`text-[13px] font-semibold ${C.mute}`}>‹ Back to list</Text>
+            </View>
+          </View>
           <If when={Boolean(selectedTicket())}>
             <Scroll class="flex-1 min-h-0">
               <InboxDetail
