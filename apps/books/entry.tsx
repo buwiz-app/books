@@ -636,7 +636,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
         <View class="flex-1 flex-row gap-6 p-6 pb-4 overflow-hidden">
         <View class="flex-1 min-h-0 rounded-2xl overflow-hidden flex-col bg-white dark:bg-[#1e293b] shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
             <View class={`shrink-0 px-6 pt-6 pb-12 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
-              <View class="flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
+              <View class="flex-row flex-wrap items-start gap-5">
                 <View class="flex-row items-center gap-5 flex-1 min-w-[280px]">
                   <View class="w-14 h-14 rounded-full border-2 border-white/30 items-center justify-center bg-white/20 shrink-0">
                     <Text class="text-[24px] text-white">{mode() === "journal" ? "≡" : mode() === "transfer" ? "⇄" : mode() === "money_in" ? "↓" : "↑"}</Text>
@@ -728,7 +728,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               <If when={mode() !== "journal"}>
                 <View class="gap-3.5">
                   <If when={mode() === "transfer"}>
-                    <View class="flex-row items-start gap-5">
+                    <View class="flex-col gap-2 md:flex-row md:items-start md:gap-5">
                       <View class="flex-1 gap-2">
                         <Field label="Transfer From" plain>
                           <BooksCombo label="Transfer From" value={money()} options={() => groupedOptions(o()?.money || [])} onPick={(a: Any) => money.set(a.ticket)} placeholder="Select account" group="Cash, bank & card" />
@@ -746,7 +746,10 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                           group="People"
                         />
                       </View>
-                      <Text class="pt-6 text-[24px] text-[#94a3b8]">→</Text>
+                      <View class="flex-row items-center justify-center py-1 md:pt-8 md:py-0">
+                        <Text class="md:hidden text-[24px] text-[#94a3b8]">↓</Text>
+                        <Text class="hidden md:block text-[24px] text-[#94a3b8]">→</Text>
+                      </View>
                       <View class="flex-1 gap-2">
                         <Field label="Transfer To" plain>
                           <BooksCombo label="Transfer To" value={toAccount()} options={() => groupedOptions(o()?.money || [])} onPick={(a: Any) => toAccount.set(a.ticket)} placeholder="Select account" group="Cash, bank & card" />
@@ -776,10 +779,20 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                     </View>
                     <Each of={allocations()}>
                       {(line: Any, index: Any) => (
-                        <View class="rounded-xl border border-[#e2e8f0] dark:border-slate-600 bg-white dark:bg-slate-800 p-3 gap-2.5">
-                          <View class="flex-row items-center gap-2">
-                            <Text class="w-5 text-[11px] font-semibold text-[#94a3b8]">{String(index() + 1)}</Text>
-                            <View class="flex-1">
+                        <View class="gap-2 rounded-xl border border-[#e2e8f0] dark:border-slate-600 bg-white dark:bg-slate-800 p-3 md:p-0 md:py-3 md:rounded-none md:border-0 md:border-b md:border-[#f0f2f5] md:dark:border-slate-800 md:bg-transparent md:dark:bg-transparent md:last:border-b-0">
+                          {/* Desktop (md+): row 1 = # + description + amount */}
+                          <View class="hidden md:flex flex-row items-center gap-2">
+                            <Text class="w-5 shrink-0 text-[11px] font-semibold text-center text-[#94a3b8] dark:text-slate-500">{String(index() + 1)}</Text>
+                            <View class="flex-[2] lg:flex-1 min-w-0">
+                              <Input accessibilityLabel="Allocation description" value={line().memo()} onChange={(e: Any) => line().memo.set(typeof e === "string" ? e : e.value)} placeholder="Add description for this item..." class="w-full min-w-0 bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
+                            </View>
+                            <View class="flex-1 min-w-0 lg:flex-none lg:w-20">
+                              <Input accessibilityLabel="Allocation amount" value={line().amount()} onChange={(e: Any) => { line().amount.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
+                            </View>
+                          </View>
+                          {/* Desktop (md+): combo rows — 2 rows at md–lg, one at lg+ */}
+                          <View class="hidden md:flex flex-row flex-wrap items-center gap-2 pl-7">
+                            <View class="flex-1 min-w-[45%] lg:min-w-0">
                               <BooksCombo
                                 label="Category"
                                 value={line().category()}
@@ -796,15 +809,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 icon="▤"
                               />
                             </View>
-                            <View class="w-[120px]">
-                              <Input accessibilityLabel="Allocation amount" value={line().amount()} onChange={(e: Any) => { line().amount.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱ 0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
-                            </View>
-                            <If when={allocations().length > 1}>
-                              <Btn label="×" small onPress={() => { allocations.set(allocations().filter((_: Any, i: number) => i !== index())); err.set(""); }} />
-                            </If>
-                          </View>
-                          <View class="flex-row gap-2">
-                            <View class="flex-1">
+                            <View class="flex-1 min-w-[45%] lg:min-w-0">
                               <BooksCombo
                                 label="Party"
                                 value={line().person()}
@@ -820,14 +825,77 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 icon="♟"
                               />
                             </View>
-                            <View class="flex-1">
+                            <View class="flex-1 min-w-[45%] lg:min-w-0">
                               <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { line().department.set(tag.ticket || ""); line().deptQuery.set(""); }} query={() => line().deptQuery()} onQuery={(query: string) => line().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { line().department.set(ticket); line().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="⌂" />
                             </View>
-                            <View class="flex-1">
+                            <View class="flex-1 min-w-[45%] lg:min-w-0">
                               <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { line().location.set(tag.ticket || ""); line().locQuery.set(""); }} query={() => line().locQuery()} onQuery={(query: string) => line().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { line().location.set(ticket); line().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="⚲" />
                             </View>
+                            <If when={allocations().length > 1}>
+                              <View class="ml-auto">
+                                <Btn label="×" small onPress={() => { allocations.set(allocations().filter((_: Any, i: number) => i !== index())); err.set(""); }} />
+                              </View>
+                            </If>
                           </View>
-                          <Input accessibilityLabel="Allocation memo" value={line().memo()} onChange={(e: Any) => line().memo.set(typeof e === "string" ? e : e.value)} placeholder="Description for this category" class="w-full bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
+                          {/* Mobile (below md): stacked card */}
+                          <View class="md:hidden flex-col">
+                            <View class="flex-row items-center gap-2 pb-2">
+                              <View class="w-6 h-6 rounded-full bg-[#2a9d8f] items-center justify-center shrink-0">
+                                <Text class="text-[11px] font-bold text-white">{String(index() + 1)}</Text>
+                              </View>
+                              <View class="flex-1 min-w-0">
+                                <Input accessibilityLabel="Allocation description" value={line().memo()} onChange={(e: Any) => line().memo.set(typeof e === "string" ? e : e.value)} placeholder="Line description..." class="w-full bg-transparent border-none outline-none px-1 py-1 text-base sm:text-sm text-[#1e293b] dark:text-slate-200 placeholder-[#94a3b8] dark:placeholder-slate-500" />
+                              </View>
+                            </View>
+                            <View class="gap-1 pb-2">
+                              <Text class={`text-[10px] font-medium uppercase tracking-wider ${C.dim}`}>Amount</Text>
+                              <Input accessibilityLabel="Allocation amount" value={line().amount()} onChange={(e: Any) => { line().amount.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-lg px-3 py-2 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] focus:ring-1 focus:ring-[#2a9d8f] transition-colors" />
+                            </View>
+                            <View class="gap-2 pb-2">
+                              <BooksCombo
+                                label="Category"
+                                value={line().category()}
+                                options={() => groupedOptions((mode() === "money_in" ? o()?.income : o()?.expense) || [])}
+                                onPick={(account: Any) => { line().category.set(account.ticket || ""); line().query.set(""); err.set(""); }}
+                                query={() => line().query()}
+                                onQuery={(query: string) => line().query.set(query)}
+                                suggestions={() => suggestionsFor(line().query())}
+                                onSuggestion={(suggestion: Any) => startCategoryCreate(suggestion.name, suggestion, (ticket) => { line().category.set(ticket); line().query.set(""); err.set(""); })}
+                                onCreate={(query: string) => startCategoryCreate(query, undefined, (ticket) => { line().category.set(ticket); line().query.set(""); err.set(""); })}
+                                placeholder="Category"
+                                group={mode() === "money_in" ? "Income categories" : "Expense categories"}
+                                trigger="chip"
+                                icon="▤"
+                              />
+                            </View>
+                            <View class="gap-2 pb-2">
+                              <BooksCombo
+                                label="Party"
+                                value={line().person()}
+                                options={() => partyOptions()}
+                                onPick={(person: Any) => { line().person.set(person.ticket || ""); line().partyQuery.set(""); }}
+                                query={() => line().partyQuery()}
+                                onQuery={(query: string) => line().partyQuery.set(query)}
+                                onCreate={(query: string) => createParty(partyKindFor(line().category(), mode() === "money_in" ? "customers" : "vendors"), query, (ticket) => { line().person.set(ticket); line().partyQuery.set(""); })}
+                                createLabel={mode() === "money_in" ? "customer" : "vendor"}
+                                placeholder="Party"
+                                group={mode() === "money_in" ? "Customers" : "Vendors"}
+                                trigger="chip"
+                                icon="♟"
+                              />
+                            </View>
+                            <View class="gap-2 pb-2">
+                              <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { line().department.set(tag.ticket || ""); line().deptQuery.set(""); }} query={() => line().deptQuery()} onQuery={(query: string) => line().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { line().department.set(ticket); line().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="⌂" />
+                            </View>
+                            <View class="gap-2 pb-2">
+                              <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { line().location.set(tag.ticket || ""); line().locQuery.set(""); }} query={() => line().locQuery()} onQuery={(query: string) => line().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { line().location.set(ticket); line().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="⚲" />
+                            </View>
+                            <If when={allocations().length > 1}>
+                              <View class="flex-row items-center gap-2">
+                                <Btn label="×" small onPress={() => { allocations.set(allocations().filter((_: Any, i: number) => i !== index())); err.set(""); }} />
+                              </View>
+                            </If>
+                          </View>
                         </View>
                       )}
                     </Each>
@@ -840,21 +908,126 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               </If>
               <If when={mode() === "journal"}>
                 <View class="gap-0">
-                  <View class="flex-row items-center justify-between gap-2 pb-1 mb-2">
+                  <View class="flex md:hidden lg:flex flex-row items-center justify-between gap-2 pb-1 mb-2">
                     <Text class="text-[12px] font-semibold text-[#475569] dark:text-slate-400 shrink-0">≡ Lines</Text>
                     <View class="hidden lg:flex lg:flex-row gap-8 shrink-0">
                       <Text class="w-20 text-right text-[12px] font-medium text-[#64748b] dark:text-slate-400">Debit</Text>
                       <Text class="w-20 text-right text-[12px] font-medium text-[#64748b] dark:text-slate-400">Credit</Text>
                     </View>
                   </View>
+                  <View class="hidden md:flex lg:hidden flex-row items-center gap-2 mb-3">
+                    <Text class="w-5 shrink-0" />
+                    <View class="flex-[2] min-w-0">
+                      <Text class="text-[12px] font-semibold text-[#475569] dark:text-slate-400">≡ Lines</Text>
+                    </View>
+                    <Text class="flex-1 min-w-0 text-left text-[12px] font-medium text-[#64748b] dark:text-slate-400">Debit</Text>
+                    <Text class="flex-1 min-w-0 text-left text-[12px] font-medium text-[#64748b] dark:text-slate-400">Credit</Text>
+                  </View>
                   <Each of={jl()}>
                     {(l: Any, i: Any) => (
                       <View class="gap-2 rounded-xl border border-[#e2e8f0] dark:border-slate-700 bg-[#fafbfc] dark:bg-slate-800/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)] mb-3 md:rounded-none md:border-0 md:border-b md:border-[#f0f2f5] md:dark:border-slate-700 md:bg-transparent md:dark:bg-transparent md:shadow-none md:px-0 md:py-3 md:mb-0">
-                        {/* Desktop (md+): two compact rows */}
-                        <View class="hidden md:flex md:flex-col gap-2">
+                        {/* Tablet (md–lg): desc flex-[2] + flexible amounts */}
+                        <View class="hidden md:flex lg:hidden md:flex-col gap-2">
                         <View class="flex-row gap-2 items-center">
                           <Text class="w-5 shrink-0 text-[11px] font-semibold text-center text-[#94a3b8] dark:text-slate-500">{String(i() + 1)}</Text>
-                          <View class="flex-1 min-w-[120px]">
+                          <View class="flex-[2] min-w-0">
+                            <Input accessibilityLabel="Line description" value={l().memo()} onChange={(e: Any) => l().memo.set(typeof e === "string" ? e : e.value)} placeholder="Add description for this item..." class="w-full min-w-0 bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
+                          </View>
+                          <View class="flex-1 min-w-0">
+                            <Input accessibilityLabel="Debit" value={l().debit()} onChange={(e: Any) => { l().debit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
+                          </View>
+                          <View class="flex-1 min-w-0">
+                            <Input accessibilityLabel="Credit" value={l().credit()} onChange={(e: Any) => { l().credit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
+                          </View>
+                        </View>
+                        <View class="flex-row items-center gap-2 pl-7">
+                          <View class="flex-1">
+                            <BooksCombo
+                              label="Account"
+                              value={l().account()}
+                              options={() => groupedOptions(o()?.all || [])}
+                              onPick={(account: Any) => { l().account.set(account.ticket || ""); l().query.set(""); err.set(""); }}
+                              query={() => l().query()}
+                              onQuery={(query: string) => l().query.set(query)}
+                              onSuggestion={(suggestion: Any) => startCategoryCreate(suggestion.name, suggestion, (ticket) => { l().account.set(ticket); l().query.set(""); err.set(""); })}
+                              onCreate={(query: string) => startCategoryCreate(query, undefined, (ticket) => { l().account.set(ticket); l().query.set(""); err.set(""); })}
+                              placeholder="Category"
+                              group="Accounts"
+                              trigger="chip"
+                              icon="▤"
+                            />
+                          </View>
+                          <View class="flex-1">
+                            <BooksCombo
+                              label="Party"
+                              value={l().person()}
+                              options={() => partyOptions()}
+                              onPick={(person: Any) => { l().person.set(person.ticket || ""); l().partyQuery.set(""); }}
+                              query={() => l().partyQuery()}
+                              onQuery={(query: string) => l().partyQuery.set(query)}
+                              onCreate={(query: string) => createParty(partyKindFor(l().account(), "vendors"), query, (ticket) => { l().person.set(ticket); l().partyQuery.set(""); })}
+                              createLabel="vendor or customer"
+                              placeholder="Party"
+                              group="People"
+                              trigger="chip"
+                              icon="♟"
+                            />
+                          </View>
+                        </View>
+                        <View class="flex-row items-center gap-2 pl-7">
+                          <View class="flex-1">
+                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { l().department.set(tag.ticket || ""); l().deptQuery.set(""); }} query={() => l().deptQuery()} onQuery={(query: string) => l().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { l().department.set(ticket); l().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="⌂" />
+                          </View>
+                          <View class="flex-1">
+                            <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { l().location.set(tag.ticket || ""); l().locQuery.set(""); }} query={() => l().locQuery()} onQuery={(query: string) => l().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { l().location.set(ticket); l().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="⚲" />
+                          </View>
+                          <View class="flex-row items-center gap-1 shrink-0">
+                            <View
+                              accessibilityLabel="Delete line"
+                              class={`w-11 h-11 rounded items-center justify-center transition-colors ${jl().length <= 2 ? "opacity-0" : "hover:bg-[#fef2f2] dark:hover:bg-red-900/20"}`}
+                              activeStyle={jl().length > 2 ? { opacity: 0.7 } : undefined}
+                              onPress={() => { if (jl().length > 2) { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); } }}
+                            >
+                              <Text class="text-[15px] text-[#94a3b8] hover:text-[#f87171]">🗑</Text>
+                            </View>
+                            <View
+                              accessibilityLabel="Copy line"
+                              class="w-11 h-11 rounded items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700 transition-colors"
+                              activeStyle={{ opacity: 0.7 }}
+                              onPress={() => {
+                                const copy = journalLine();
+                                copy.account.set(l().account());
+                                copy.query.set(l().query());
+                                copy.debit.set(l().debit());
+                                copy.credit.set(l().credit());
+                                copy.memo.set(l().memo());
+                                copy.person.set(l().person());
+                                copy.department.set(l().department());
+                                copy.location.set(l().location());
+                                const next = [...jl()];
+                                next.splice(i() + 1, 0, copy);
+                                jl.set(next);
+                                err.set("");
+                              }}
+                            >
+                              <Text class="text-[15px] text-[#94a3b8] hover:text-[#475569] dark:hover:text-slate-300">⧉</Text>
+                            </View>
+                            <View
+                              accessibilityLabel="Add line below"
+                              class="w-11 h-11 rounded items-center justify-center hover:bg-[#f0fdfa] dark:hover:bg-slate-700 transition-colors"
+                              activeStyle={{ opacity: 0.7 }}
+                              onPress={() => { const next = [...jl()]; next.splice(i() + 1, 0, journalLine()); jl.set(next); err.set(""); }}
+                            >
+                              <Text class="text-[16px] font-semibold text-[#94a3b8] hover:text-[#2a9d8f]">+</Text>
+                            </View>
+                          </View>
+                        </View>
+                        </View>
+                        {/* Desktop (lg+): two compact rows */}
+                        <View class="hidden lg:flex lg:flex-col gap-2">
+                        <View class="flex-row gap-2 items-center">
+                          <Text class="w-5 shrink-0 text-[11px] font-semibold text-center text-[#94a3b8] dark:text-slate-500">{String(i() + 1)}</Text>
+                          <View class="flex-1 min-w-0">
                             <Input accessibilityLabel="Line description" value={l().memo()} onChange={(e: Any) => l().memo.set(typeof e === "string" ? e : e.value)} placeholder="Add description for this item..." class="w-full min-w-0 bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
                           </View>
                           <View class="w-20 shrink-0">
