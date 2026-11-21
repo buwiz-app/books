@@ -580,8 +580,10 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
                 <View
                   class="w-14 h-14 rounded-xl items-center justify-center transition-transform duration-150"
                   style={{
-                    backgroundColor: on() ? t()[3] : "var(--color-app-filter-idle, #f0f2f5)",
-                    border: on() ? `2.5px solid ${t()[2]}` : "2.5px solid transparent",
+                    backgroundColor: on() ? t()[3] : "#f0f2f5",
+                    borderColor: on() ? t()[2] : "transparent",
+                    borderWidth: 2.5,
+                    borderStyle: "solid",
                     boxShadow: on() ? `0 2px 8px ${t()[2]}33` : "none",
                   }}
                   hoverStyle={{
@@ -646,7 +648,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
               <Avatar src={ACCT_ICON_PATHS[ACCT_KIND_ICON[String(a.kind || "unsure")]] || ACCT_TYPE_ICONS[String(a.type)] || ACCT_TYPE_ICONS.asset} class="w-6 h-6" imageClass={`tint-[${t[2]}] dark:tint-[${t[4]}]`} fallbackDelay={Infinity} accessibilityLabel="" />
             </View>
             <View class="flex-1 min-w-0">
-              <Text class="text-[18px] font-bold text-[var(--color-app-text-navy)] leading-snug">{a.name}</Text>
+              <Text class="text-[18px] font-bold text-[#32497f] dark:text-slate-200 leading-snug">{a.name}</Text>
               <If when={Boolean(a.number)}>
                 <Text class={`text-[12px] ${C.dim} mt-0.5`}>{a.number}</Text>
               </If>

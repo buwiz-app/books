@@ -234,13 +234,13 @@ function TxRow(p: { r: Any; balance: boolean; edit: boolean; checked: boolean; o
         <Text class="text-[11px] text-[#cbd5e1] dark:text-slate-600 italic">{TX_DIMS.location}</Text>
       </View>
       <View class="w-[100px] py-2.5 px-2 items-end shrink-0">
-        <Text class={`tabular-figures whitespace-nowrap text-[13px] font-semibold ${String(r().tone) === "neg" ? "text-[#1e293b] dark:text-slate-100" : "text-[#16a34a] dark:text-emerald-400"}`}>
+        <Text class={`tabular-nums whitespace-nowrap text-[13px] font-semibold ${String(r().tone) === "neg" ? "text-[#1e293b] dark:text-slate-100" : "text-[#16a34a] dark:text-emerald-400"}`}>
           {String(r().amount_shown || r().amount || "")}
         </Text>
       </View>
       <If when={p.balance}>
         <View class="w-[110px] py-2.5 px-2 items-end shrink-0">
-          <Text class="tabular-figures text-[12px] text-[#64748b] dark:text-slate-400">{String(r().balance_shown || "")}</Text>
+          <Text class="tabular-nums text-[12px] text-[#64748b] dark:text-slate-400">{String(r().balance_shown || "")}</Text>
         </View>
       </If>
       <View class="w-9 items-center justify-center shrink-0">
@@ -281,7 +281,7 @@ function TxCard(p: { r: Any; onOpen: () => void }) {
           </View>
         </View>
         <View class="shrink-0 items-end gap-0.5">
-          <Text class={`tabular-figures text-[15px] font-semibold ${String(r().tone) === "neg" ? "text-[#1e293b] dark:text-slate-100" : "text-[#16a34a] dark:text-emerald-400"}`}>
+          <Text class={`tabular-nums text-[15px] font-semibold ${String(r().tone) === "neg" ? "text-[#1e293b] dark:text-slate-100" : "text-[#16a34a] dark:text-emerald-400"}`}>
             {String(r().amount_shown || r().amount || "")}
           </Text>
           <Text class="text-xs font-medium text-[#94a3b8] dark:text-slate-500">{String(r().date_short || "")}</Text>
@@ -301,13 +301,13 @@ function TxSideRow(p: { a: Any; on: boolean; onPress: () => void }) {
       }`}
       onPress={p.onPress}
     >
-      <Text class={`text-[11px] tabular-figures w-[52px] shrink-0 ${p.on ? "text-[#0f766e] dark:text-teal-400" : "text-[#94a3b8] dark:text-slate-500"}`}>
+      <Text class={`text-[11px] tabular-nums w-[52px] shrink-0 ${p.on ? "text-[#0f766e] dark:text-teal-400" : "text-[#94a3b8] dark:text-slate-500"}`}>
         {String(a().number || "")}
       </Text>
       <Text class={`flex-1 min-w-0 truncate text-[13px] ${p.on ? "font-medium text-[#0f766e] dark:text-teal-300" : "text-[#334155] dark:text-slate-300"}`}>
         {String(a().name || "")}
       </Text>
-      <Text class={`tabular-figures text-[11px] shrink-0 ${p.on ? "text-[#0f766e] dark:text-teal-400" : "text-[#94a3b8] dark:text-slate-500"}`}>
+      <Text class={`tabular-nums text-[11px] shrink-0 ${p.on ? "text-[#0f766e] dark:text-teal-400" : "text-[#94a3b8] dark:text-slate-500"}`}>
         {String(a().balance_shown || "")}
       </Text>
     </View>
@@ -619,7 +619,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 <Text class="text-[12px] text-[#94a3b8] dark:text-slate-500">
                   {String(d()?.account?.number || "")} {String(d()?.account?.name || "")}
                 </Text>
-                <Text class="tabular-figures text-[15px] font-bold text-[#1e293b] dark:text-slate-100">
+                <Text class="tabular-nums text-[15px] font-bold text-[#1e293b] dark:text-slate-100">
                   {String(d()?.account?.balance_shown || "")}
                 </Text>
               </View>
