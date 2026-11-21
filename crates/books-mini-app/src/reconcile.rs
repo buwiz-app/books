@@ -46,17 +46,35 @@ fn grid_accounts(store: &Store, chart: &Chart) -> Result<Vec<Account>, Refusal> 
     Ok(out)
 }
 
-/// The Reconcile grid: accounts down, the last four months across.
-pub fn grid(store: &Store, book: Book) -> Answer {
+/// The Reconcile grid: accounts down, the last four months across — or the
+/// twelve months of `year` when one is given. Without `year` the answer is
+/// unchanged from before the argument existed.
+pub fn grid(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
     let chart = Chart::load(store, book)?;
     let today = Date::today();
     let mut months_list = Vec::new();
-    let mut p = Period::of(today, PeriodKind::Month);
-    for _ in 0..4 {
-        months_list.push(p.clone());
-        p = p.previous();
-    }
-    months_list.reverse();
+    let year = match args.get("year") {
+        None => {
+            let mut p = Period::of(today, PeriodKind::Month);
+            for _ in 0..4 {
+                months_list.push(p.clone());
+                p = p.previous();
+            }
+            months_list.reverse();
+            today.year
+        }
+        Some(y) => {
+            let y = y
+                .as_i64()
+                .and_then(|y| i32::try_from(y).ok())
+                .filter(|y| (1900..=9999).contains(y))
+                .ok_or_else(|| Refusal::invalid("`year` is a four-digit year."))?;
+            for m in 1..=12 {
+                months_list.push(Period::of(Date::new(y, m, 1).unwrap(), PeriodKind::Month));
+            }
+            y
+        }
+    };
     let statements = months::statements(store.conn(), chart.book.id)?;
     let (mut done, mut todo, mut drafts, mut cells) = (0, 0, 0, 0);
     let mut oldest: Option<(Period, String)> = None;
@@ -90,7 +108,12 @@ pub fn grid(store: &Store, book: Book) -> Answer {
             }
             states.push(json!({ "month": m.key, "state": state, "label": match state { "done" => "✓ Matched", "draft" => "Draft", "todo" => "To do", _ => "—" } }));
         }
-        rows.push(json!({ "ticket": ticket(store, "account", a.id)?, "name": a.name, "number": a.number, "cells": states }));
+        let mut row = json!({ "ticket": ticket(store, "account", a.id)?, "name": a.name, "number": a.number, "cells": states });
+        if args.get("year").is_some() {
+            row["kind"] = json!(a.kind.as_str());
+            row["type"] = json!(a.account_type.as_str());
+        }
+        rows.push(row);
     }
     Ok(json!({
         "months": months_list.iter().map(|m| json!({ "key": m.key, "label": month_short(m) })).collect::<Vec<_>>(),
@@ -101,7 +124,7 @@ pub fn grid(store: &Store, book: Book) -> Answer {
             { "label": "Drafts", "shown": drafts.to_string() },
             { "label": "Oldest open", "shown": oldest.map_or_else(|| "—".to_string(), |(m, a)| format!("{} · {}", month_short(&m), a)) },
         ],
-        "year": today.year,
+        "year": year,
     }))
 }
 

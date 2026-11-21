@@ -141,6 +141,10 @@ fn book_only() -> Value {
     json!({ "type": "object", "properties": { "book": { "type": "string", "description": "A book ticket; the only book when absent." } } })
 }
 
+fn book_year() -> Value {
+    json!({ "type": "object", "properties": { "book": { "type": "string", "description": "A book ticket; the only book when absent." }, "year": { "type": "integer", "description": "A four-digit year: the grid covers its twelve months instead of the last four." } } })
+}
+
 fn resolve_schema() -> Value {
     json!({
         "type": "object",
@@ -782,7 +786,7 @@ pub const TOOLS: &[Tool] = &[
         name: RECONCILE_GRID,
         reach: Reach::Everyone,
         write: false,
-        schema: book_only,
+        schema: book_year,
         description: "Bank, cash and card accounts by month: matched, draft or to do, with counts.",
     },
     Tool {
@@ -1354,8 +1358,8 @@ pub fn call(
             records::tag_create(tx, arguments)
         }),
         OWED => owed_action(books, origin, arguments),
-        RECONCILE_GRID => read(books, arguments, |store, book, _| {
-            reconcile::grid(store, book)
+        RECONCILE_GRID => read(books, arguments, |store, book, args| {
+            reconcile::grid(store, book, args)
         }),
         STATEMENT_GET => read(books, arguments, |store, book, args| {
             reconcile::statement_view(store, book, args, origin)
