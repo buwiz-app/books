@@ -50,9 +50,14 @@ function sideBytesShown(size: Any): string {
 /** Pick a PDF or image and add it to Books documents, then stage it for this entry. */
 async function sideUpload() {
   if (!buwiz.pickFile) return toast("This Buwiz Bot cannot pick files.");
-  const files = (await buwiz.pickFile({ extensions: [".pdf", ".png", ".jpg", ".jpeg"] }).catch(() => [])) as Any[];
+  let files: Any[] = [];
+  try {
+    files = (await buwiz.pickFile({ extensions: [".pdf", ".png", ".jpg", ".jpeg"] })) as Any[];
+  } catch (e) {
+    return toast(errText(e));
+  }
   const file = (files || [])[0];
-  if (!file) return;
+  if (!file) return toast("No file was picked — this build may not have a file dialog.");
   const ext = String(file.name || "").split(".").pop()?.toLowerCase() || "";
   const mime = SIDE_EXT[ext] || String(file.type || "");
   if (!SIDE_MIME[mime]) return toast("Books keeps PDF, PNG and JPEG documents.");
@@ -79,16 +84,15 @@ async function sideUpload() {
 /** The old app's attachments panel: drop zone, staged documents, library browse. */
 function SideAttachments() {
   return (
-    <View class="p-3 gap-2.5">
-      <Text class={`text-[13px] font-semibold ${C.ink}`}>Attachments</Text>
+    <View class="p-3 gap-3">
       <View
         class="flex-col items-center justify-center gap-2 px-4 py-6 rounded-xl border-2 border-dashed border-[#cbd5e1] cursor-pointer transition-all dark:border-slate-600 hover:border-[#2a9d8f] hover:bg-[#f8fafb] dark:hover:bg-slate-800/50"
         accessibilityLabel="Browse for an attachment"
         onPress={() => sideUpload()}
         activeStyle={{ opacity: 0.75 }}
       >
-        <View class="w-10 h-10 rounded-full flex items-center justify-center bg-[#f1f5f9] text-[#94a3b8] dark:bg-slate-800 dark:text-slate-500">
-          <Text class="text-[20px]">⇧</Text>
+        <View class="w-10 h-10 rounded-full flex items-center justify-center bg-[#f1f5f9] dark:bg-slate-800">
+          <Text class="text-[18px] text-[#94a3b8] dark:text-slate-500">⇧</Text>
         </View>
         <View class="items-center">
           <Text class="text-[12px] font-medium text-[#2a9d8f]">{entryStagedBusy() ? "Uploading…" : "Browse"}</Text>
@@ -111,15 +115,22 @@ function SideAttachments() {
           )}
         </Each>
       </If>
-      <Btn label="Browse existing documents" onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)} />
+      <View
+        class="flex-row items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-white/10 hover:bg-[#f8fafc] dark:hover:bg-white/5 transition-colors cursor-pointer"
+        accessibilityLabel="Browse existing documents"
+        onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)}
+        activeStyle={{ opacity: 0.7 }}
+      >
+        <Text class="text-[13px] text-[#64748b] dark:text-white/50">📁</Text>
+        <Text class="text-xs font-medium text-[#64748b] dark:text-white/50 hover:text-[#1e293b] dark:hover:text-white">Browse existing documents</Text>
+      </View>
       <If when={entryStaged().length === 0}>
-        <View class="flex-col items-center justify-center gap-1.5 py-8">
-          <Text class="text-[20px] text-[#94a3b8]">▤</Text>
-          <Text class="text-[11px] font-medium text-[#94a3b8] dark:text-slate-500">No attachments yet</Text>
-          <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">Drop receipts, invoices, or documents</Text>
+        <View class="flex-1 flex-col items-center justify-center py-8 opacity-60 gap-0">
+          <Text class="text-[28px] text-[#94a3b8] mb-2">🗎</Text>
+          <Text class="text-[10px] font-medium text-[#94a3b8] dark:text-slate-500">No attachments yet</Text>
+          <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500 mt-0.5">Drop receipts, invoices, or documents</Text>
         </View>
       </If>
-      <Text class={`text-[11.5px] ${C.dim}`}>A press adds the document to Books documents, and it links to the entry when you save. Previewing and attaching an existing document lives in Books documents.</Text>
     </View>
   );
 }
@@ -230,15 +241,20 @@ function EntrySide() {
   return (
     <View class="w-[360px] shrink-0 rounded-[24px] border border-[#e2e8f0] dark:border-slate-600 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex-col h-full bg-white dark:bg-slate-800">
       <View class={`flex-row justify-evenly px-4 py-3 gap-2 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
-        <Each of={[["attachments", "⌁"], ["ai", "✧"], ["activity", "◷"]]}>
+        <Each of={[["attachments", "📎"], ["ai", "✧"], ["activity", "◷"]]}>
           {(t: Any) => (
             <View
               accessibilityLabel={t()[0] === "ai" ? "Assistant" : t()[0] === "attachments" ? "Attachments" : "Activity log"}
-              class={`w-[88px] h-11 rounded-full items-center justify-center ${side() === t()[0] ? "bg-white/20" : ""}`}
+              class={`relative w-[88px] h-11 rounded-full items-center justify-center transition-colors ${side() === t()[0] ? "bg-white/20" : "hover:bg-white/10"}`}
               onPress={() => side.set(t()[0])}
               activeStyle={{ opacity: 0.7 }}
             >
-              <Text class={`text-[16px] ${side() === t()[0] ? "text-white" : "text-white/50"}`}>{t()[1]}</Text>
+              <Text class={`text-[16px] ${side() === t()[0] ? "text-white" : "text-white/50 hover:text-white"}`}>{t()[1]}</Text>
+              <If when={t()[0] === "attachments" && entryStaged().length > 0}>
+                <View class="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-white items-center justify-center">
+                  <Text class="text-[9px] font-bold text-[#1a6b3c]">{`${entryStaged().length}`}</Text>
+                </View>
+              </If>
             </View>
           )}
         </Each>
