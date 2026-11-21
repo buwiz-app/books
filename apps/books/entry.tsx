@@ -1086,7 +1086,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             <Each of={MODES}>
               {(m: Any) => (
                 <View
-                  class="flex-row items-center gap-2 px-3 py-1.5 hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
+                  class="flex-row items-center gap-2 px-3 py-1.5 hover:bg-[#f1f5f9] dark:hover:bg-slate-700"
                   activeStyle={{ opacity: 0.7 }}
                   onPress={() => { typeMenuOpen.set(false); switchMode(m()[0]); }}
                 >
@@ -1100,7 +1100,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               )}
             </Each>
             <View
-              class={`flex-row items-center gap-2 px-3 py-1.5 border-t ${C.line} hover:bg-[#f1f5f9] dark:hover:bg-slate-800`}
+              class={`flex-row items-center gap-2 px-3 py-1.5 border-t ${C.line} hover:bg-[#f1f5f9] dark:hover:bg-slate-700`}
               activeStyle={{ opacity: 0.7 }}
               onPress={() => { typeMenuOpen.set(false); p.close(); }}
             >
