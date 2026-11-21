@@ -101,6 +101,63 @@ fn money_side(a: &Account) -> bool {
     a.is_cash() || a.kind == KindRef::Kind("loan_payable".into())
 }
 
+type LinkIds = (Option<i64>, Option<i64>, Option<i64>);
+
+fn line_links(
+    conn: &Connection,
+    book: &Book,
+    args: &Map<String, Value>,
+) -> Result<LinkIds, Refusal> {
+    let person = match text(args, "person") {
+        Some(ticket) => match plumbing::subject(conn, ticket)? {
+            Some((kind, id)) if kind == "person" => Some(id),
+            _ => {
+                return Err(Refusal::new(
+                    "not_found",
+                    "That person ticket is not one Books issued.",
+                ));
+            }
+        },
+        None => None,
+    };
+    let tag = |key: &str, kind: &str| -> Result<Option<i64>, Refusal> {
+        let Some(value) = text(args, key)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        else {
+            return Ok(None);
+        };
+        if plumbing::is_ticket(value) {
+            return match plumbing::subject(conn, value)? {
+                Some((tag_kind, id))
+                    if tag_kind == "tag"
+                        && people::tag(conn, id)?
+                            .is_some_and(|tag| tag.book_id == book.id && tag.kind == kind) =>
+                {
+                    Ok(Some(id))
+                }
+                _ => Err(Refusal::new(
+                    "not_found",
+                    format!("That {kind} ticket is not one Books issued."),
+                )),
+            };
+        }
+        if let Some(tag) = people::tags(conn, book.id, Some(kind))?
+            .into_iter()
+            .find(|tag| tag.name.eq_ignore_ascii_case(value))
+        {
+            Ok(Some(tag.id))
+        } else {
+            Ok(Some(people::create_tag(conn, book, kind, value)?))
+        }
+    };
+    Ok((
+        person,
+        tag("department", "department")?,
+        tag("location", "location")?,
+    ))
+}
+
 /// The draft a request describes. `money_in`: the money account takes the
 /// debit, the category the credit; `money_out` the other way; `transfer`
 /// moves between two money accounts; `journal` takes its lines as given.
@@ -122,13 +179,6 @@ pub(crate) fn draft_input(
                     money.name
                 )));
             }
-            let category = account_in(conn, book, service::required(args, "category")?)?;
-            if category.id == money.id {
-                return Err(Refusal::invalid(
-                    "The category and the money account are the same.",
-                ));
-            }
-            let own = facts(args, "facts")?;
             let (m, k) = if form == Form::MoneyIn {
                 ((c, 0), (0, c))
             } else {
@@ -139,17 +189,85 @@ pub(crate) fn draft_input(
                 debit: m.0,
                 credit: m.1,
                 facts: Facts::default(),
+                person_id: None,
+                department_id: None,
+                location_id: None,
+                memo: None,
             };
-            let category_line = LineInput {
-                account_id: category.id,
-                debit: k.0,
-                credit: k.1,
-                facts: own,
-            };
-            if form == Form::MoneyIn {
-                vec![money_line, category_line]
+            let mut categories = Vec::new();
+            if let Some(allocations) = args.get("allocations") {
+                let allocations = allocations
+                    .as_array()
+                    .ok_or_else(|| Refusal::invalid("`allocations` is a list of category rows."))?;
+                if allocations.is_empty() {
+                    return Err(Refusal::invalid("Add at least one allocation."));
+                }
+                let mut total = 0_i128;
+                for (i, allocation) in allocations.iter().enumerate() {
+                    let allocation = allocation.as_object().ok_or_else(|| {
+                        Refusal::invalid(format!("Allocation {} must be an object.", i + 1))
+                    })?;
+                    let amount_text = service::required(allocation, "amount")?;
+                    let amount = money::parse(amount_text)
+                        .map_err(|e| Refusal::invalid(format!("Allocation {}: {e}", i + 1)))?;
+                    if amount <= 0 {
+                        return Err(Refusal::invalid(format!(
+                            "Allocation {} must be more than 0.00.",
+                            i + 1
+                        )));
+                    }
+                    total += i128::from(amount);
+                    let category =
+                        account_in(conn, book, service::required(allocation, "category")?)?;
+                    if category.id == money.id {
+                        return Err(Refusal::invalid(
+                            "The category and the money account are the same.",
+                        ));
+                    }
+                    let (person_id, department_id, location_id) =
+                        line_links(conn, book, allocation)?;
+                    categories.push(LineInput {
+                        account_id: category.id,
+                        debit: if form == Form::MoneyOut { amount } else { 0 },
+                        credit: if form == Form::MoneyIn { amount } else { 0 },
+                        facts: facts(args, "facts")?,
+                        person_id,
+                        department_id,
+                        location_id,
+                        memo: text(allocation, "memo").map(str::to_string),
+                    });
+                }
+                if total != i128::from(c) {
+                    return Err(Refusal::invalid(
+                        "Allocation amounts must add up exactly to the transaction amount.",
+                    ));
+                }
             } else {
-                vec![category_line, money_line]
+                let category = account_in(conn, book, service::required(args, "category")?)?;
+                if category.id == money.id {
+                    return Err(Refusal::invalid(
+                        "The category and the money account are the same.",
+                    ));
+                }
+                let (person_id, department_id, location_id) = line_links(conn, book, args)?;
+                categories.push(LineInput {
+                    account_id: category.id,
+                    debit: k.0,
+                    credit: k.1,
+                    facts: facts(args, "facts")?,
+                    person_id,
+                    department_id,
+                    location_id,
+                    memo: None,
+                });
+            }
+            if form == Form::MoneyIn {
+                std::iter::once(money_line).chain(categories).collect()
+            } else {
+                categories
+                    .into_iter()
+                    .chain(std::iter::once(money_line))
+                    .collect()
             }
         }
         Form::Transfer => {
@@ -167,12 +285,20 @@ pub(crate) fn draft_input(
                     debit: c,
                     credit: 0,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
                 LineInput {
                     account_id: from.id,
                     debit: 0,
                     credit: c,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
             ]
         }
@@ -194,11 +320,16 @@ pub(crate) fn draft_input(
                     }
                 };
                 let account = account_in(conn, book, service::required(l, "account")?)?;
+                let (person_id, department_id, location_id) = line_links(conn, book, l)?;
                 out.push(LineInput {
                     account_id: account.id,
                     debit: side("debit")?,
                     credit: side("credit")?,
                     facts: facts(l, "facts")?,
+                    person_id,
+                    department_id,
+                    location_id,
+                    memo: text(l, "memo").map(str::to_string),
                 });
             }
             out
@@ -331,6 +462,10 @@ pub fn draft(conn: &Connection, args: &Map<String, Value>, origin: Origin) -> An
                         debit: l.debit,
                         credit: l.credit,
                         facts: l.own,
+                        person_id: l.person_id,
+                        department_id: l.department_id,
+                        location_id: l.location_id,
+                        memo: l.memo,
                     })
                     .collect(),
             }

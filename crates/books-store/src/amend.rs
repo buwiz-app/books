@@ -53,6 +53,10 @@ pub fn amend(
             debit: l.debit,
             credit: l.credit,
             facts: l.own,
+            person_id: l.person_id,
+            department_id: l.department_id,
+            location_id: l.location_id,
+            memo: l.memo,
         })
         .collect();
     let input = DraftInput {
@@ -99,6 +103,14 @@ mod tests {
         let bid = books::create(c, "Test Book", Basis::Cash, 1).unwrap();
         let book = books::get(c, bid).unwrap().unwrap();
         let acct = |n: &str| books::account_by_number(c, bid, n).unwrap().unwrap().id;
+        let person =
+            crate::people::person_for(c, &book, "vendor", "Synthetic Amendment Vendor").unwrap();
+        let department =
+            crate::people::create_tag(c, &book, "department", "Synthetic Amendment Department")
+                .unwrap();
+        let location =
+            crate::people::create_tag(c, &book, "location", "Synthetic Amendment Location")
+                .unwrap();
         let input = DraftInput {
             date: Date::new(2026, 10, 28).unwrap(),
             form: Form::MoneyIn,
@@ -112,12 +124,20 @@ mod tests {
                     debit: 50_000,
                     credit: 0,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
                 LineInput {
                     account_id: acct("41000"),
                     debit: 0,
                     credit: 50_000,
                     facts: Facts::default(),
+                    person_id: Some(person),
+                    department_id: Some(department),
+                    location_id: Some(location),
+                    memo: None,
                 },
             ],
         };
@@ -154,6 +174,19 @@ mod tests {
                 .map(|l| (l.account_id, l.debit, l.credit))
                 .collect::<Vec<_>>()
         );
+        let original_links: Vec<_> = a
+            .iter()
+            .map(|l| (l.person_id, l.department_id, l.location_id))
+            .collect();
+        for copied in [entries::lines(c, rev).unwrap(), b] {
+            assert_eq!(
+                copied
+                    .iter()
+                    .map(|l| (l.person_id, l.department_id, l.location_id))
+                    .collect::<Vec<_>>(),
+                original_links
+            );
+        }
         assert_eq!(
             amend(c, &book, id, date, "again please", OPEN)
                 .unwrap_err()

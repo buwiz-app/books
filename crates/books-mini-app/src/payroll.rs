@@ -274,6 +274,10 @@ pub fn save(conn: &Connection, args: &Map<String, Value>) -> Answer {
                     debit: c,
                     credit: 0,
                     facts: fact(component, "debit"),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 });
             }
         }
@@ -299,6 +303,10 @@ pub fn save(conn: &Connection, args: &Map<String, Value>) -> Answer {
                     debit: 0,
                     credit: ee,
                     facts: contribution("employee", "credit"),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 });
             }
             if er > 0 {
@@ -307,12 +315,20 @@ pub fn save(conn: &Connection, args: &Map<String, Value>) -> Answer {
                     debit: er,
                     credit: 0,
                     facts: contribution("employer", "debit"),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 });
                 lines.push(LineInput {
                     account_id: payable.id,
                     debit: 0,
                     credit: er,
                     facts: contribution("employer", "credit"),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 });
             }
         }
@@ -324,6 +340,10 @@ pub fn save(conn: &Connection, args: &Map<String, Value>) -> Answer {
                 debit: 0,
                 credit: tax,
                 facts: fact("tax_withheld", "credit"),
+                person_id: None,
+                department_id: None,
+                location_id: None,
+                memo: None,
             });
         }
         if deducted > gross {
@@ -340,6 +360,10 @@ pub fn save(conn: &Connection, args: &Map<String, Value>) -> Answer {
             debit: 0,
             credit: net_total,
             facts: Facts::default(),
+            person_id: None,
+            department_id: None,
+            location_id: None,
+            memo: None,
         });
     }
     let n = seen.len();
@@ -580,12 +604,20 @@ pub fn add_certificate(conn: &Connection, args: &Map<String, Value>) -> Answer {
                 debit: amount,
                 credit: 0,
                 facts: cert,
+                person_id: None,
+                department_id: None,
+                location_id: None,
+                memo: None,
             },
             LineInput {
                 account_id: against.id,
                 debit: 0,
                 credit: amount,
                 facts: sale,
+                person_id: None,
+                department_id: None,
+                location_id: None,
+                memo: None,
             },
         ],
     };

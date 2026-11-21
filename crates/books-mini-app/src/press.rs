@@ -41,15 +41,25 @@ pub fn needs_card(tools: &[String]) -> bool {
         .any(|t| APPROVED.contains(&t.as_str()) || t == ENTRY_DRAFT)
 }
 
-/// What a press on a screen can't put in a draft, at any switch: overwriting
-/// a draft (`entry`), copying an entry (`copy_of`) and what a reading of a
-/// receipt adds (`extracted`, `extraction`) change what is saved in ways a card
-/// can't show in a line. They are a person's, or the assistant's direct call.
-pub const DRAFT_REFUSED: [&str; 4] = ["entry", "copy_of", "extracted", "extraction"];
+/// What a press on a screen can't put in a draft: changes to an existing
+/// entry, receipt extracts, and lines a card can't show.
+pub const DRAFT_REFUSED: [&str; 5] = ["entry", "copy_of", "extracted", "extraction", "allocations"];
 
 /// Whether a press on a screen may save this draft.
 pub fn draft_pressable(args: &Map<String, Value>) -> bool {
-    !DRAFT_REFUSED.iter().any(|k| args.contains_key(*k))
+    if DRAFT_REFUSED.iter().any(|k| args.contains_key(*k)) {
+        return false;
+    }
+    let Some(lines) = args.get("lines") else {
+        return true;
+    };
+    let Some(lines) = lines.as_array() else {
+        return false;
+    };
+    lines.iter().all(|line| {
+        line.as_object()
+            .is_some_and(|line| line.keys().all(|key| LINE_ARGS.contains(&key.as_str())))
+    })
 }
 
 /// What a batch may do under an approved press.
@@ -378,7 +388,8 @@ fn saved_entry(
     chart: &Chart,
     e: &entries::Entry,
 ) -> Result<(i64, Vec<String>), Refusal> {
-    let rows: Vec<(i64, i64, i64)> = entries::lines(store.conn(), e.id)?
+    let saved_lines = entries::lines(store.conn(), e.id)?;
+    let rows: Vec<(i64, i64, i64)> = saved_lines
         .iter()
         .map(|l| (l.account_id, l.debit, l.credit))
         .collect();
@@ -392,6 +403,28 @@ fn saved_entry(
     lines.extend(line("Reference", e.reference.as_deref()));
     lines.extend(line("Department", department.as_deref()));
     lines.extend(line("Location", location.as_deref()));
+    for (index, saved_line) in saved_lines.iter().enumerate() {
+        let links = people::effective_links(store.conn(), e.id, saved_line.id)?;
+        let line_no = index + 1;
+        if let Some(person_id) = links.person_id
+            && let Some(person) = people::person(store.conn(), person_id)?
+        {
+            lines.push(format!("Line {line_no} person: {}", person.name));
+        }
+        for (label, tag_id) in [
+            ("Department", links.department_id),
+            ("Location", links.location_id),
+        ] {
+            if let Some(tag_id) = tag_id
+                && let Some(tag) = people::tag(store.conn(), tag_id)?
+            {
+                lines.push(format!("Line {line_no} {label}: {}", tag.name));
+            }
+        }
+        if let Some(memo) = saved_line.memo.as_deref() {
+            lines.push(format!("Line {line_no} memo: {memo}"));
+        }
+    }
     Ok((total, lines))
 }
 
@@ -558,9 +591,8 @@ mod tests {
         }
     }
 
-    /// Post's arguments that change nothing it posts: `copy_of` and the
-    /// extraction belong to a draft, so a press holding one is refused.
-    const POST_REFUSED: [&str; 3] = ["copy_of", "extracted", "extraction"];
+    /// Post's arguments a press card cannot show.
+    const POST_REFUSED: [&str; 4] = ["copy_of", "extracted", "extraction", "allocations"];
 
     #[test]
     fn every_argument_of_post_is_on_its_card_or_refused() {
@@ -589,6 +621,20 @@ mod tests {
             let call = json!({ arg: "x" }).as_object().unwrap().clone();
             assert!(accounted(&call, &POST_NEW_ARGS).is_err(), "{arg}");
         }
+    }
+
+    #[test]
+    fn a_press_refuses_allocations_and_lines_the_card_cannot_show() {
+        let allocation = json!({ "allocations": [{ "category": "67200", "amount": "1.00" }] })
+            .as_object()
+            .unwrap()
+            .clone();
+        assert!(!draft_pressable(&allocation));
+        let line = json!({ "lines": [{ "account": "67200", "debit": "1.00", "credit": "0.00", "person": "synthetic-person" }] })
+            .as_object()
+            .unwrap()
+            .clone();
+        assert!(!draft_pressable(&line));
     }
 
     #[test]

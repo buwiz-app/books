@@ -14,6 +14,7 @@ use books_core::money;
 use books_store::Store;
 use books_store::books::{self, Account, Book};
 use books_store::entries::{self, Entry, Filter, Form, LineRow};
+use books_store::people;
 use serde_json::{Map, Value, json};
 
 use crate::service::{self, Origin, Refusal, ticket};
@@ -121,7 +122,13 @@ pub struct Summary {
 
 impl Summary {
     pub fn of(store: &Store, chart: &Chart, entry: Entry) -> Result<Self, Refusal> {
-        let lines = entries::lines(store.conn(), entry.id)?;
+        let mut lines = entries::lines(store.conn(), entry.id)?;
+        for line in &mut lines {
+            let effective = people::effective_links(store.conn(), entry.id, line.id)?;
+            line.person_id = effective.person_id;
+            line.department_id = effective.department_id;
+            line.location_id = effective.location_id;
+        }
         let is_cash = |l: &LineRow| chart.by_id.get(&l.account_id).is_some_and(Account::is_cash);
         let cash = lines
             .iter()
@@ -626,15 +633,46 @@ pub fn entry(
     let lines: Vec<Value> = s
         .lines
         .iter()
-        .map(|l| {
+        .map(|l| -> Result<Value, Refusal> {
             let a = chart.by_id.get(&l.account_id);
-            json!({
+            let person = l
+                .person_id
+                .map(|id| -> Result<Value, Refusal> {
+                    let p = people::person(store.conn(), id)?.ok_or_else(|| {
+                        Refusal::new("not_found", "That line links to a missing person.")
+                    })?;
+                    Ok(json!({ "ticket": ticket(store, "person", id)?, "name": p.name }))
+                })
+                .transpose()?;
+            let department = l
+                .department_id
+                .map(|id| -> Result<Value, Refusal> {
+                    let tag = people::tag(store.conn(), id)?.ok_or_else(|| {
+                        Refusal::new("not_found", "That line links to a missing department.")
+                    })?;
+                    Ok(json!({ "ticket": ticket(store, "tag", id)?, "name": tag.name }))
+                })
+                .transpose()?;
+            let location = l
+                .location_id
+                .map(|id| -> Result<Value, Refusal> {
+                    let tag = people::tag(store.conn(), id)?.ok_or_else(|| {
+                        Refusal::new("not_found", "That line links to a missing location.")
+                    })?;
+                    Ok(json!({ "ticket": ticket(store, "tag", id)?, "name": tag.name }))
+                })
+                .transpose()?;
+            Ok(json!({
                 "account": a.map(|a| format!("{} {}", a.number, a.name)),
                 "debit_shown": if l.debit > 0 { money::display(l.debit) } else { String::new() },
                 "credit_shown": if l.credit > 0 { money::display(l.credit) } else { String::new() },
-            })
+                "memo": l.memo,
+                "person": person,
+                "department": department,
+                "location": location,
+            }))
         })
-        .collect();
+        .collect::<std::result::Result<_, Refusal>>()?;
     let e = &s.entry;
     let actions: Vec<&str> = match e.status {
         Status::Draft => vec!["discard", "edit", "post"],

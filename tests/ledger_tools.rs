@@ -119,6 +119,11 @@ fn data(result: &Value) -> &Value {
     &result["structuredContent"]
 }
 
+fn app_data(bot: &mut Bot, name: &str, args: Value) -> Value {
+    let result = bot.app(name, args);
+    data(&result).clone()
+}
+
 fn code(result: &Value) -> &str {
     assert_eq!(result["isError"], true, "{result}");
     result["structuredContent"]["code"].as_str().unwrap()
@@ -636,5 +641,285 @@ fn an_app_only_write_with_a_press_record_is_refused_even_as_origin_app() {
         data(&bot.app("books_app_post_entry", post))["status"],
         "posted",
         "the person's own click still runs"
+    );
+}
+
+#[test]
+fn allocations_keep_effective_links_in_entry_and_report_views() {
+    let dir = TempDir::new("line-allocation-links");
+    let mut bot = Bot::new(&dir);
+    let book = app_data(
+        &mut bot,
+        "books_app_book_create",
+        json!({ "client_request_id": "alloc-book-01", "label": "Synthetic Allocation Book" }),
+    )["book"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let make_person = |bot: &mut Bot, id: &str, name: &str| {
+        app_data(
+            bot,
+            "books_app_person_create",
+            json!({ "client_request_id": id, "kind": "vendors", "name": name, "book": book }),
+        )["person"]
+            .as_str()
+            .unwrap()
+            .to_string()
+    };
+    let make_tag = |bot: &mut Bot, id: &str, kind: &str, name: &str| {
+        app_data(
+            bot,
+            "books_app_tag_create",
+            json!({ "client_request_id": id, "kind": kind, "name": name, "book": book }),
+        )["tag"]
+            .as_str()
+            .unwrap()
+            .to_string()
+    };
+    let entry_person = make_person(&mut bot, "alloc-person1", "Synthetic Entry Vendor");
+    let line_person = make_person(&mut bot, "alloc-person2", "Synthetic Line Vendor");
+    let entry_department = make_tag(
+        &mut bot,
+        "alloc-dept-01",
+        "department",
+        "Synthetic Entry Department",
+    );
+    let line_department = make_tag(
+        &mut bot,
+        "alloc-dept-02",
+        "department",
+        "Synthetic Line Department",
+    );
+    let entry_location = make_tag(
+        &mut bot,
+        "alloc-loc-001",
+        "location",
+        "Synthetic Entry Location",
+    );
+    let line_location = make_tag(
+        &mut bot,
+        "alloc-loc-002",
+        "location",
+        "Synthetic Line Location",
+    );
+
+    let mismatch = bot.app(
+        "books_entry_draft",
+        json!({
+            "client_request_id": "alloc-mismatch-1", "book": book, "form": "money_out",
+            "date": "2026-10-18", "amount": "100.00", "account": "11000",
+            "allocations": [
+                { "category": "67200", "amount": "60.00" },
+                { "category": "66100", "amount": "39.99" }
+            ]
+        }),
+    );
+    assert_eq!(code(&mismatch), "invalid_args");
+
+    let other_book = app_data(
+        &mut bot,
+        "books_app_book_create",
+        json!({ "client_request_id": "alloc-book-02", "label": "Synthetic Foreign Book" }),
+    )["book"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let foreign_person = app_data(
+        &mut bot,
+        "books_app_person_create",
+        json!({
+            "client_request_id": "alloc-foreign1", "book": other_book,
+            "kind": "vendors", "name": "Synthetic Foreign Vendor"
+        }),
+    )["person"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let wrong_kind = bot.app(
+        "books_entry_draft",
+        json!({
+            "client_request_id": "alloc-wrong-tag", "book": book, "form": "money_out",
+            "date": "2026-10-18", "amount": "100.00", "account": "11000",
+            "allocations": [{ "category": "67200", "amount": "100.00", "department": line_location }]
+        }),
+    );
+    assert_eq!(code(&wrong_kind), "not_found");
+    let foreign = bot.app(
+        "books_entry_draft",
+        json!({
+            "client_request_id": "alloc-foreign2", "book": book, "form": "money_out",
+            "date": "2026-10-18", "amount": "100.00", "account": "11000",
+            "allocations": [{ "category": "67200", "amount": "100.00", "person": foreign_person }]
+        }),
+    );
+    assert_eq!(code(&foreign), "invalid_args");
+
+    let draft = app_data(
+        &mut bot,
+        "books_entry_draft",
+        json!({
+            "client_request_id": "alloc-valid-001", "book": book, "form": "money_out",
+            "date": "2026-10-18", "amount": "100.00", "account": "11000",
+            "department": entry_department, "location": entry_location,
+            "allocations": [
+                { "category": "67200", "amount": "60.00", "person": line_person,
+                  "department": line_department, "location": line_location },
+                { "category": "66100", "amount": "40.00", "person": entry_person }
+            ]
+        }),
+    );
+    let entry = draft["entry"].as_str().unwrap().to_string();
+    let detail = app_data(&mut bot, "books_entry_get", json!({ "entry": entry }));
+    let lines = detail["lines"].as_array().unwrap();
+    assert_eq!(lines.len(), 3);
+    assert!(lines[0]["person"]["ticket"] == line_person);
+    assert_eq!(lines[0]["person"]["name"], "Synthetic Line Vendor");
+    assert!(lines[0]["department"]["ticket"] == line_department);
+    assert_eq!(lines[0]["department"]["name"], "Synthetic Line Department");
+    assert!(lines[0]["location"]["ticket"] == line_location);
+    assert_eq!(lines[0]["location"]["name"], "Synthetic Line Location");
+    assert!(lines[1]["person"]["ticket"] == entry_person);
+    assert!(lines[1]["department"]["ticket"] == entry_department);
+    assert!(lines[1]["location"]["ticket"] == entry_location);
+    assert!(!detail["title"].as_str().unwrap().contains("tkt_"));
+    let model_detail = bot.agent("books_entry_get", json!({ "entry": entry }));
+    let model_text = model_detail.to_string();
+    assert!(!model_text.contains("Synthetic Line Vendor"));
+    assert!(!model_text.contains("Synthetic Line Department"));
+    assert!(!model_text.contains(line_person.as_str()));
+    assert!(!model_text.contains(line_department.as_str()));
+    assert!(!model_text.contains(line_location.as_str()));
+    let csv = app_data(
+        &mut bot,
+        "books_report_csv",
+        json!({ "book": book, "kind": "ledger", "filter": "draft" }),
+    );
+    let csv_rows: Vec<_> = csv["csv"].as_str().unwrap().lines().collect();
+    assert_eq!(csv_rows.len(), 4);
+    assert_eq!(csv_rows[1].split(',').nth(6), Some("Synthetic Line Vendor"));
+    assert_eq!(
+        csv_rows[2].split(',').nth(6),
+        Some("Synthetic Entry Vendor")
+    );
+    assert_eq!(csv_rows[3].split(',').nth(6), Some(""));
+    let card = app_data(
+        &mut bot,
+        "books_app_press_card",
+        json!({
+            "tool": "books_app_post_entry",
+            "args": { "client_request_id": "alloc-card-001", "entry": entry }
+        }),
+    );
+    let card_lines = card["lines"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(Value::as_str)
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(card_lines.contains("Line 1 person: Synthetic Line Vendor"));
+    assert!(card_lines.contains("Line 1 Department: Synthetic Line Department"));
+    assert!(card_lines.contains("Line 1 Location: Synthetic Line Location"));
+    assert!(card_lines.contains("Line 2 person: Synthetic Entry Vendor"));
+    assert!(!card_lines.contains(line_person.as_str()));
+    assert!(!card_lines.contains(line_department.as_str()));
+    assert!(!card_lines.contains(line_location.as_str()));
+    let shown_cents = |text: &Value| {
+        let text = text.as_str().unwrap();
+        if text.is_empty() {
+            0
+        } else {
+            books_core::money::parse(text).unwrap()
+        }
+    };
+    let debits: i64 = lines
+        .iter()
+        .map(|line| shown_cents(&line["debit_shown"]))
+        .sum();
+    let credits: i64 = lines
+        .iter()
+        .map(|line| shown_cents(&line["credit_shown"]))
+        .sum();
+    assert_eq!((debits, credits), (10_000, 10_000));
+
+    data(&bot.app(
+        "books_app_post_entry",
+        json!({ "client_request_id": "alloc-post-001", "entry": entry }),
+    ));
+    let copy = app_data(
+        &mut bot,
+        "books_entry_draft",
+        json!({ "client_request_id": "alloc-copy-001", "book": book, "copy_of": entry }),
+    );
+    let copied_entry = copy["entry"].as_str().unwrap().to_string();
+    let copied = app_data(
+        &mut bot,
+        "books_entry_get",
+        json!({ "entry": copied_entry }),
+    );
+    assert!(
+        copied["lines"][0]["person"]["ticket"] == line_person
+            && copied["lines"][0]["department"]["ticket"] == line_department
+            && copied["lines"][0]["location"]["ticket"] == line_location
+    );
+    let tagged = app_data(
+        &mut bot,
+        "books_tags_list",
+        json!({ "kind": "department", "month": "2026-10", "book": book }),
+    );
+    let line_tag = tagged["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["ticket"] == line_department)
+        .unwrap();
+    assert_eq!(line_tag["spent_shown"], "60.00");
+    assert_eq!(line_tag["count"], 1);
+    let entry_tag = tagged["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["ticket"] == entry_department)
+        .unwrap();
+    assert_eq!(entry_tag["spent_shown"], "40.00");
+    let profit_and_loss = app_data(
+        &mut bot,
+        "books_report",
+        json!({ "book": book, "kind": "pl", "period_kind": "month", "period": "2026-10", "tag": line_department }),
+    );
+    let line_expense = profit_and_loss["sections"][1]["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["number"] == "67200")
+        .unwrap();
+    assert_eq!(line_expense["shown"], "60.00");
+
+    let cash_flow = app_data(
+        &mut bot,
+        "books_report",
+        json!({ "book": book, "kind": "cf", "period_kind": "month", "period": "2026-10", "tag": line_department }),
+    );
+    assert_eq!(cash_flow["sections"][0]["rows"][1]["shown"], "−60.00");
+    let entry_cash_flow = app_data(
+        &mut bot,
+        "books_report",
+        json!({ "book": book, "kind": "cf", "period_kind": "month", "period": "2026-10", "tag": entry_department }),
+    );
+    assert_eq!(entry_cash_flow["sections"][0]["rows"][1]["shown"], "−40.00");
+    let checks = bot.agent(
+        "books_checks",
+        json!({ "book": book, "check": "missing_person" }),
+    );
+    assert_eq!(data(&checks)["total"], 0);
+    let person_statement = app_data(
+        &mut bot,
+        "books_report",
+        json!({ "book": book, "kind": "ps", "person": line_person, "period_kind": "month", "period": "2026-10" }),
+    );
+    assert_eq!(person_statement["activity"]["total_out_shown"], "60.00");
+    assert_eq!(
+        person_statement["activity"]["rows"][0]["what"],
+        "Office Supplies"
     );
 }

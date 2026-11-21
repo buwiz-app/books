@@ -82,6 +82,10 @@ pub struct LineRow {
     pub credit: i64,
     /// The line's own facts; the account's kind supplies the rest.
     pub own: Facts,
+    pub person_id: Option<i64>,
+    pub department_id: Option<i64>,
+    pub location_id: Option<i64>,
+    pub memo: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -90,6 +94,10 @@ pub struct LineInput {
     pub debit: i64,
     pub credit: i64,
     pub facts: Facts,
+    pub person_id: Option<i64>,
+    pub department_id: Option<i64>,
+    pub location_id: Option<i64>,
+    pub memo: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -163,7 +171,7 @@ pub fn get(conn: &Connection, id: i64) -> Result<Option<Entry>> {
 
 pub fn lines(conn: &Connection, entry_id: i64) -> Result<Vec<LineRow>> {
     let mut stmt = conn.prepare(
-        "SELECT line_id, line_no, account_id, debit, credit, facts FROM line WHERE entry_id = ?1 ORDER BY line_no",
+        "SELECT line_id, line_no, account_id, debit, credit, facts, person_id, department_id, location_id, memo FROM line WHERE entry_id = ?1 ORDER BY line_no",
     )?;
     let rows = stmt.query_map(params![entry_id], |r| {
         Ok((
@@ -173,11 +181,16 @@ pub fn lines(conn: &Connection, entry_id: i64) -> Result<Vec<LineRow>> {
             r.get::<_, i64>(3)?,
             r.get::<_, i64>(4)?,
             r.get::<_, String>(5)?,
+            r.get::<_, Option<i64>>(6)?,
+            r.get::<_, Option<i64>>(7)?,
+            r.get::<_, Option<i64>>(8)?,
+            r.get::<_, Option<String>>(9)?,
         ))
     })?;
     let mut out = Vec::new();
     for row in rows {
-        let (id, no, account_id, debit, credit, facts) = row?;
+        let (id, no, account_id, debit, credit, facts, person_id, department_id, location_id, memo) =
+            row?;
         let own = serde_json::from_str(&facts)
             .ok()
             .and_then(|v| Facts::from_json(&v).ok())
@@ -189,6 +202,10 @@ pub fn lines(conn: &Connection, entry_id: i64) -> Result<Vec<LineRow>> {
             debit,
             credit,
             own,
+            person_id,
+            department_id,
+            location_id,
+            memo,
         });
     }
     Ok(out)
@@ -206,6 +223,25 @@ fn check_lines_input(conn: &Connection, book: &Book, lines: &[LineInput]) -> Res
         return Err(error("invalid_args", "An entry has at most 200 lines."));
     }
     for (i, l) in lines.iter().enumerate() {
+        if let Some(person_id) = l.person_id
+            && !crate::people::person(conn, person_id)?.is_some_and(|p| p.book_id == book.id)
+        {
+            return Err(error(
+                "invalid_args",
+                format!("Line {}: that person is not in this book.", i + 1),
+            ));
+        }
+        for (tag_id, kind) in [(l.department_id, "department"), (l.location_id, "location")] {
+            if let Some(tag_id) = tag_id
+                && !crate::people::tag(conn, tag_id)?
+                    .is_some_and(|t| t.book_id == book.id && t.kind == kind)
+            {
+                return Err(error(
+                    "invalid_args",
+                    format!("Line {}: that {kind} is not in this book.", i + 1),
+                ));
+            }
+        }
         let account = books::account(conn, l.account_id)?
             .filter(|a| a.book_id == book.id)
             .ok_or_else(|| {
@@ -233,17 +269,22 @@ fn check_lines_input(conn: &Connection, book: &Book, lines: &[LineInput]) -> Res
 fn write_lines(conn: &Connection, entry_id: i64, lines: &[LineInput]) -> Result<()> {
     conn.execute("DELETE FROM line WHERE entry_id = ?1", params![entry_id])?;
     let mut insert = conn.prepare(
-        "INSERT INTO line (entry_id, line_no, account_id, debit, credit, facts) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        "INSERT INTO line (entry_id, line_no, account_id, debit, credit, facts, person_id, department_id, location_id, memo) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
     )?;
     for (i, l) in lines.iter().enumerate() {
         let no = i64::try_from(i + 1).unwrap_or(i64::MAX);
+        let memo = check_text("line memo", l.memo.as_deref(), 500)?;
         insert.execute(params![
             entry_id,
             no,
             l.account_id,
             l.debit,
             l.credit,
-            l.facts.to_json().to_string()
+            l.facts.to_json().to_string(),
+            l.person_id,
+            l.department_id,
+            l.location_id,
+            memo
         ])?;
     }
     Ok(())
@@ -418,6 +459,10 @@ pub fn void(conn: &Connection, book: &Book, id: i64, date: Date, gate: Gate<'_>)
             debit: l.credit,
             credit: l.debit,
             facts: l.own.clone(),
+            person_id: l.person_id,
+            department_id: l.department_id,
+            location_id: l.location_id,
+            memo: l.memo.clone(),
         })
         .collect();
     write_lines(conn, reversal, &inputs)?;
@@ -519,12 +564,20 @@ mod tests {
                     debit: amount,
                     credit: 0,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
                 LineInput {
                     account_id: acct(store, book, "41000"),
                     debit: 0,
                     credit: amount,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
             ],
         }
@@ -612,6 +665,82 @@ mod tests {
             "not_draft"
         );
         assert_eq!(discard(c, &book, id).unwrap_err().code, "not_draft");
+    }
+
+    #[test]
+    fn line_links_persist_inherit_and_refuse_foreign_or_wrong_kind_values() {
+        let (_t, store, book) = open("line-links");
+        let c = store.conn();
+        let entry_person =
+            crate::people::person_for(c, &book, "vendor", "Synthetic Entry Vendor").unwrap();
+        let line_person =
+            crate::people::person_for(c, &book, "vendor", "Synthetic Line Vendor").unwrap();
+        let entry_department =
+            crate::people::create_tag(c, &book, "department", "Synthetic Entry Department")
+                .unwrap();
+        let line_department =
+            crate::people::create_tag(c, &book, "department", "Synthetic Line Department").unwrap();
+        let entry_location =
+            crate::people::create_tag(c, &book, "location", "Synthetic Entry Location").unwrap();
+        let line_location =
+            crate::people::create_tag(c, &book, "location", "Synthetic Line Location").unwrap();
+
+        let mut input = sale(&store, &book, 10_000);
+        input.lines[1].person_id = Some(line_person);
+        input.lines[1].department_id = Some(line_department);
+        input.lines[1].location_id = Some(line_location);
+        let id = save_draft(c, &book, None, &input, "app").unwrap();
+        crate::people::set_entry_links(
+            c,
+            &book,
+            id,
+            Some(entry_person),
+            Some(entry_department),
+            Some(entry_location),
+        )
+        .unwrap();
+
+        let lines = lines(c, id).unwrap();
+        assert_eq!(lines[0].person_id, None);
+        assert_eq!(lines[1].person_id, Some(line_person));
+        assert_eq!(
+            crate::people::effective_links(c, id, lines[0].id).unwrap(),
+            crate::people::EffectiveLinks {
+                person_id: Some(entry_person),
+                department_id: Some(entry_department),
+                location_id: Some(entry_location),
+            }
+        );
+        assert_eq!(
+            crate::people::effective_links(c, id, lines[1].id).unwrap(),
+            crate::people::EffectiveLinks {
+                person_id: Some(line_person),
+                department_id: Some(line_department),
+                location_id: Some(line_location),
+            }
+        );
+
+        let other_id = books::create(c, "Other Synthetic Book", Basis::Cash, 1).unwrap();
+        let other = books::get(c, other_id).unwrap().unwrap();
+        let foreign_person =
+            crate::people::person_for(c, &other, "vendor", "Synthetic Foreign Vendor").unwrap();
+        let mut foreign = sale(&store, &book, 10_000);
+        foreign.lines[1].person_id = Some(foreign_person);
+        assert_eq!(
+            save_draft(c, &book, None, &foreign, "app")
+                .unwrap_err()
+                .code,
+            "invalid_args"
+        );
+
+        let mut wrong_kind = sale(&store, &book, 10_000);
+        wrong_kind.lines[1].department_id = Some(entry_location);
+        assert_eq!(
+            save_draft(c, &book, None, &wrong_kind, "app")
+                .unwrap_err()
+                .code,
+            "invalid_args"
+        );
     }
 
     #[test]
