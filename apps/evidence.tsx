@@ -302,7 +302,10 @@ export default function Evidence() {
                 : "border-[#e2e8f0] dark:border-white/10 hover:border-[#cbd5e1] dark:hover:border-white/20"
             }`}
             activeStyle={{ opacity: 0.7 }}
-            onPress={() => evFilterOpen.set(!evFilterOpen())}
+            onPress={() => {
+              evFilterOpen.set(!evFilterOpen());
+              evSheetOpen.set(false);
+            }}
           >
             <Text class={`text-[15px] transition-colors ${evActiveCount() > 0 ? "text-[#10b981]" : "text-[#94a3b8] dark:text-white/30 hover:text-[#64748b] dark:hover:text-white/50"}`}>▽</Text>
             <If when={evActiveCount() > 0}>
@@ -317,7 +320,10 @@ export default function Evidence() {
             accessibilityLabel="Filters"
             class="md:hidden flex-row items-center gap-2 h-11 px-4 rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#111827]"
             activeStyle={{ opacity: 0.7 }}
-            onPress={() => evSheetOpen.set(true)}
+            onPress={() => {
+              evSheetOpen.set(true);
+              evFilterOpen.set(false);
+            }}
           >
             <Text class="text-[14px] text-[#64748b] dark:text-white/50 transition-colors hover:text-[#475569] dark:hover:text-white/70">☰</Text>
             <Text class="text-sm font-medium text-[#1e293b] dark:text-white transition-colors hover:text-[#475569] dark:hover:text-white/70">{`Filters${evActiveCount() > 0 ? ` (${evActiveCount()})` : ""}`}</Text>
@@ -450,7 +456,7 @@ export default function Evidence() {
           onPressOutside={() => evFilterOpen.set(false)}
           onCancel={() => evFilterOpen.set(false)}
         >
-          <View class={`w-64 rounded-xl border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#1e293b] shadow-xl py-3 px-4`}>
+          <View class={`hidden md:flex md:flex-col w-64 rounded-xl border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#1e293b] shadow-xl py-3 px-4`}>
             {evFilterFields()}
           </View>
         </Overlay>
