@@ -12,10 +12,14 @@ const DRAFT: &str = "books_owed_draft";
 const CREATE: &str = "books_app_owed_create";
 const LIST: &str = "books_owed_list";
 
+#[path = "support/owed_tool.rs"]
+mod owed_tool;
+
 fn call(b: &mut Books, origin: Origin, tool: &str, mut args: Value) -> Value {
     if let Some(id) = args["client_request_id"].as_str() {
         args["client_request_id"] = json!(format!("request-{id}"));
     }
+    let (tool, args) = owed_tool::normalize(tool, args);
     tools::call(tool, args.as_object().unwrap(), origin, b).unwrap()
 }
 fn ok(b: &mut Books, origin: Origin, tool: &str, args: Value) -> Value {

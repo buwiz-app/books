@@ -13,6 +13,9 @@ use ed25519_dalek::SigningKey;
 use serde_json::{Value, json};
 use std::collections::HashMap;
 
+#[path = "support/owed_tool.rs"]
+mod owed_tool;
+
 const MEMO: &str = "MEMO-SYNTH-office-supplies";
 const PAYEE: &str = "Pixel Print Shop";
 
@@ -72,6 +75,7 @@ impl Bot {
     }
 
     fn raw(&mut self, name: &str, args: Value, caller: Value) -> Value {
+        let (name, args) = owed_tool::normalize(name, args);
         let id = self.next;
         self.next += 1;
         let mut params = json!({ "name": name, "arguments": args });

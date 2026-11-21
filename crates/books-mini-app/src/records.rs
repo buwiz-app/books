@@ -512,7 +512,7 @@ pub fn tag_create(conn: &Connection, args: &Map<String, Value>) -> Answer {
     ))
 }
 
-/// `books_app_owed_create`: an invoice to collect or a bill to pay.
+/// Create an invoice to collect or a bill to pay through `books_app_owed`.
 pub fn owed_create(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let book = writes::book_in(conn, args)?;
     let side = service::required(args, "side")?;
@@ -569,7 +569,7 @@ fn owed_in(conn: &Connection, args: &Map<String, Value>) -> Result<i64, Refusal>
     }
 }
 
-/// `books_app_owed_settle`: settle all of a document, or `amount` of it;
+/// Settle all of a document, or `amount` of it, through `books_app_owed`;
 /// posts the money on that day.
 pub fn owed_settle(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let book = writes::book_in(conn, args)?;
@@ -604,7 +604,7 @@ pub fn owed_settle(conn: &Connection, args: &Map<String, Value>) -> Answer {
     ))
 }
 
-/// `books_app_owed_cancel`.
+/// Cancel an open document through `books_app_owed`.
 pub fn owed_cancel(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let book = writes::book_in(conn, args)?;
     let id = owed_in(conn, args)?;

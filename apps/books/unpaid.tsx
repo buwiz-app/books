@@ -38,7 +38,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
       args.amount = amount;
     }
     if (settleOn().trim()) args.on = settleOn().trim();
-    act("books_app_owed_settle", args)
+    act("books_app_owed", { ...args, action: "settle" })
       .then((r: Any) => {
         settling.set("");
         settleAmount.set("");
@@ -129,7 +129,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
                       <TextBox value={settleOn()} onChange={(v) => settleOn.set(v)} placeholder="Today" />
                     </View>
                     <Btn label="Record it" tone="go" small onPress={() => settle(r().ticket)} />
-                    <Btn label="Cancel document" small onPress={() => act("books_app_owed_cancel", { owed: r().ticket }).catch(() => null)} />
+            <Btn label="Cancel document" small onPress={() => act("books_app_owed", { owed: r().ticket, action: "cancel" }).catch(() => null)} />
                     <OwedRepeatToggle ticket={r().ticket} on={r().repeat === "monthly"} />
                   </View>
                 </If>
@@ -167,7 +167,7 @@ function ProposalRow(p: { p: Any; side: string; opts: Any }) {
       if (issued()) args.issued = issued();
       args.due = due();
     }
-    act("books_app_owed_create", args)
+    act("books_app_owed", { ...args, action: "create" })
       .then(() => toast(decision === "accept" ? "Accepted" : "Discarded"))
       .catch((e: Any) => err.set(errText(e)));
   };
@@ -222,7 +222,7 @@ function OwedSheet(p: { side: string; opts: Any; close: () => void }) {
     else if (whoName().trim()) args.person_name = whoName().trim();
     if (reference()) args.reference = reference();
     if (due()) args.due = due();
-    act("books_app_owed_create", args)
+    act("books_app_owed", { ...args, action: "create" })
       .then(() => {
         toast(p.side === "collect" ? "Invoice saved" : "Bill saved");
         p.close();

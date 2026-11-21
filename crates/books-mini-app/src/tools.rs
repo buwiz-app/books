@@ -62,9 +62,7 @@ pub const REPORT_CSV: &str = "books_report_csv";
 pub const REPORT_XLSX: &str = "books_app_report_xlsx";
 pub const PERSON_CREATE: &str = "books_app_person_create";
 pub const TAG_CREATE: &str = "books_app_tag_create";
-pub const OWED_CREATE: &str = "books_app_owed_create";
-pub const OWED_SETTLE: &str = "books_app_owed_settle";
-pub const OWED_CANCEL: &str = "books_app_owed_cancel";
+pub const OWED: &str = "books_app_owed";
 pub const RECONCILE_GRID: &str = "books_reconcile_grid";
 pub const STATEMENT_GET: &str = "books_statement_get";
 pub const SETTINGS_GET: &str = "books_settings_get";
@@ -114,7 +112,6 @@ pub const RECONCILE_DOCUMENT: &str = "books_app_reconcile_document";
 pub const STATEMENT_PAGE: &str = "books_app_statement_page";
 pub const CHECKS: &str = "books_checks";
 pub const OWED_DOCUMENT: &str = "books_owed_document";
-pub const OWED_REPEAT: &str = "books_app_owed_repeat";
 pub const MONTH_PACK: &str = "books_app_month_pack";
 pub const BATCH: &str = "books_app_batch";
 pub const PRESS_CARD: &str = "books_app_press_card";
@@ -248,7 +245,7 @@ fn tags_schema() -> Value {
     json!({ "type": "object", "properties": { "book": { "type": "string" }, "kind": { "type": "string", "enum": ["department", "location"] }, "month": { "type": "string" } } })
 }
 
-fn owed_schema() -> Value {
+fn owed_write_schema() -> Value {
     json!({ "type": "object", "properties": { "book": { "type": "string" }, "side": { "type": "string", "enum": ["collect", "pay"] }, "owed": { "type": "string", "description": "A document ticket: adds its payment history as detail." } } })
 }
 
@@ -301,42 +298,38 @@ fn tag_create_schema() -> Value {
     })
 }
 
-fn owed_create_schema() -> Value {
+fn owed_schema() -> Value {
     json!({
         "type": "object",
-        "required": ["client_request_id"],
+        "required": ["client_request_id", "action"],
         "properties": {
-            "client_request_id": { "type": "string" }, "book": { "type": "string" },
-            "side": { "type": "string", "enum": ["collect", "pay"], "description": "Required without a proposal, as are amount and category." },
-            "proposal": { "type": "string", "description": "A proposal ticket from books_owed_list; with decision." },
+            "client_request_id": { "type": "string" },
+            "book": { "type": "string" },
+            "action": { "type": "string", "enum": ["create", "settle", "cancel", "repeat"] },
+            "side": { "type": "string", "enum": ["collect", "pay"], "description": "Create only; required without a proposal, as are amount and category." },
+            "proposal": { "type": "string", "description": "Create only: a proposal ticket from books_owed_list; with decision." },
             "decision": { "type": "string", "enum": ["accept", "discard"] },
-            "person": { "type": "string" }, "person_name": { "type": "string" },
-            "amount": { "type": "string" }, "category": { "type": "string" },
-            "issued": { "type": "string" }, "due": { "type": "string" },
-            "reference": { "type": "string" }, "memo": { "type": "string" }
-        }
-    })
-}
-
-fn owed_ref() -> Value {
-    json!({
-        "type": "object",
-        "required": ["client_request_id", "owed"],
-        "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "owed": { "type": "string" }, "account": { "type": "string" }, "date": { "type": "string" } }
-    })
-}
-
-fn owed_settle_schema() -> Value {
-    json!({
-        "type": "object",
-        "required": ["client_request_id", "owed", "account"],
-        "properties": {
-            "client_request_id": { "type": "string" }, "book": { "type": "string" },
-            "owed": { "type": "string" }, "account": { "type": "string" },
-            "amount": { "type": "string", "description": "Two-place decimal text; the whole balance when absent." },
-            "on": { "type": "string", "description": "YYYY-MM-DD; today when absent." },
-            "date": { "type": "string", "description": "Same as on." }
-        }
+            "person": { "type": "string" },
+            "person_name": { "type": "string" },
+            "amount": { "type": "string", "description": "Create or settle: two-place decimal text." },
+            "category": { "type": "string" },
+            "issued": { "type": "string" },
+            "due": { "type": "string" },
+            "reference": { "type": "string" },
+            "memo": { "type": "string" },
+            "owed": { "type": "string" },
+            "account": { "type": "string" },
+            "on": { "type": "string", "description": "Settle only: YYYY-MM-DD; today when absent." },
+            "date": { "type": "string", "description": "Cancel only: YYYY-MM-DD." },
+            "repeat_action": { "type": "string", "enum": ["start", "stop", "add"], "description": "Repeat only; the former repeat action." },
+            "month": { "type": "string", "description": "Repeat add only: YYYY-MM; this month when absent." }
+        },
+        "oneOf": [
+            { "properties": { "action": { "const": "create" } } },
+            { "properties": { "action": { "const": "settle" } }, "required": ["owed", "account"] },
+            { "properties": { "action": { "const": "cancel" } }, "required": ["owed"] },
+            { "properties": { "action": { "const": "repeat" } }, "required": ["owed", "repeat_action"] }
+        ]
     })
 }
 
@@ -729,7 +722,7 @@ pub const TOOLS: &[Tool] = &[
         name: OWED_LIST,
         reach: Reach::Everyone,
         write: false,
-        schema: owed_schema,
+        schema: owed_write_schema,
         description: "Unpaid invoices to collect or bills to pay, by due date, with totals. On a cash book they are reminders, not entries.",
     },
     Tool {
@@ -776,25 +769,11 @@ pub const TOOLS: &[Tool] = &[
         description: "Add a department or a location.",
     },
     Tool {
-        name: OWED_CREATE,
+        name: OWED,
         reach: Reach::App,
         write: true,
-        schema: owed_create_schema,
-        description: "Save an invoice to collect or a bill to pay. On a cash book it is a reminder; on an accrual book it posts the receivable or payable.",
-    },
-    Tool {
-        name: OWED_SETTLE,
-        reach: Reach::App,
-        write: true,
-        schema: owed_settle_schema,
-        description: "Settle an invoice or bill after the user's click, in full or by an amount: posts the money on that day.",
-    },
-    Tool {
-        name: OWED_CANCEL,
-        reach: Reach::App,
-        write: true,
-        schema: owed_ref,
-        description: "Cancel an open invoice or bill after the user's click.",
+        schema: owed_schema,
+        description: "Create, settle, cancel or repeat an invoice or bill after the user's click. For repeat, repeat_action is start, stop or add.",
     },
     Tool {
         name: RECONCILE_GRID,
@@ -1141,13 +1120,6 @@ pub const TOOLS: &[Tool] = &[
         description: "A print page (Statement of account or Bill record) for one owed document, shown by the Books app's print preview.",
     },
     Tool {
-        name: OWED_REPEAT,
-        reach: Reach::App,
-        write: true,
-        schema: owed_repeat_schema,
-        description: "Start or stop a monthly repeat on an invoice or bill, or add this month's copy after the user's click.",
-    },
-    Tool {
         name: MONTH_PACK,
         reach: Reach::App,
         write: false,
@@ -1162,20 +1134,6 @@ pub const TOOLS: &[Tool] = &[
         description: "Post or discard drafts, or give posted entries a category, 1 to 50 at once after the user's click. All or nothing: the first refusal names the entry and changes none.",
     },
 ];
-
-fn owed_repeat_schema() -> Value {
-    json!({
-        "type": "object",
-        "required": ["client_request_id", "owed", "action"],
-        "properties": {
-            "client_request_id": { "type": "string" },
-            "book": { "type": "string" },
-            "owed": { "type": "string" },
-            "action": { "type": "string", "enum": ["start", "stop", "add"] },
-            "month": { "type": "string", "description": "YYYY-MM, add only; this month when absent." }
-        }
-    })
-}
 
 fn month_pack_schema() -> Value {
     json!({
@@ -1235,6 +1193,39 @@ pub fn list() -> Vec<Value> {
             entry
         })
         .collect()
+}
+
+fn owed_action(books: &mut Books, origin: Origin, args: &Map<String, Value>) -> Value {
+    let Some(action) = args.get("action").and_then(Value::as_str) else {
+        return Refusal::invalid("`action` is create, settle, cancel or repeat.").into_result();
+    };
+    let mut operation_args = args.clone();
+    operation_args.remove("action");
+    if action == "repeat" {
+        let Some(repeat_action) = operation_args.remove("repeat_action") else {
+            return Refusal::invalid("`repeat_action` is start, stop or add.").into_result();
+        };
+        operation_args.insert("action".into(), repeat_action);
+    }
+    match action {
+        "create" => owed_proposals::owed_create(books, OWED, origin, &operation_args),
+        "settle" => {
+            service::write_with_action(books, OWED, action, origin, &operation_args, |tx| {
+                records::owed_settle(tx, &operation_args)
+            })
+        }
+        "cancel" => {
+            service::write_with_action(books, OWED, action, origin, &operation_args, |tx| {
+                records::owed_cancel(tx, &operation_args)
+            })
+        }
+        "repeat" => {
+            service::write_with_action(books, OWED, action, origin, &operation_args, |tx| {
+                owed_repeats::repeat(tx, &operation_args)
+            })
+        }
+        _ => Refusal::invalid("`action` is create, settle, cancel or repeat.").into_result(),
+    }
 }
 
 /// Run a Books tool. `None`: no such tool.
@@ -1359,13 +1350,7 @@ pub fn call(
         TAG_CREATE => write(books, name, origin, arguments, |tx| {
             records::tag_create(tx, arguments)
         }),
-        OWED_CREATE => owed_proposals::owed_create(books, name, origin, arguments),
-        OWED_SETTLE => write(books, name, origin, arguments, |tx| {
-            records::owed_settle(tx, arguments)
-        }),
-        OWED_CANCEL => write(books, name, origin, arguments, |tx| {
-            records::owed_cancel(tx, arguments)
-        }),
+        OWED => owed_action(books, origin, arguments),
         RECONCILE_GRID => read(books, arguments, |store, book, _| {
             reconcile::grid(store, book)
         }),
@@ -1615,9 +1600,6 @@ pub fn call(
             crate::findings::checks(store, book, args)
         }),
         OWED_DOCUMENT => crate::owed_doc::tool(books, arguments, origin),
-        OWED_REPEAT => write(books, name, origin, arguments, |tx| {
-            owed_repeats::repeat(tx, arguments)
-        }),
         REPORT_XLSX => {
             if !origin.is_app() {
                 return Some(fail(

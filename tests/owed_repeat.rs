@@ -14,10 +14,14 @@ use books_store::{Paths, TempDir};
 use ed25519_dalek::SigningKey;
 use serde_json::{Map, Value, json};
 
+#[path = "support/owed_tool.rs"]
+mod owed_tool;
+
 /// `pin_today` is process-wide; the tests here take turns.
 static DAY: Mutex<()> = Mutex::new(());
 
 fn raw(books: &mut Books, name: &str, args: Value, origin: Origin) -> Value {
+    let (name, args) = owed_tool::normalize(name, args);
     let args: Map<String, Value> = args.as_object().unwrap().clone();
     tools::call(name, &args, origin, books).unwrap()
 }
@@ -52,6 +56,42 @@ fn book(dir: &TempDir, basis: &str) -> (Books, String) {
         json!({ "client_request_id": "rep-owed-0001", "side": "pay", "person_name": "Synthetic Vendor", "amount": "3200.00", "category": "67200", "issued": "2026-01-31", "due": "2026-02-10", "reference": "Bill SV-0001", "memo": "Synthetic memo" }),
     );
     (books, bill["owed"].as_str().unwrap().to_string())
+}
+
+#[test]
+fn owed_action_is_part_of_the_idempotency_request() {
+    let dir = TempDir::new("owed-action-idempotency");
+    let mut books = Books::new(Paths::in_dir(dir.0.join("store")));
+    call(
+        &mut books,
+        "books_app_book_create",
+        json!({ "client_request_id": "owed-act-book", "label": "Action Test", "basis": "cash" }),
+    );
+    let created = call(
+        &mut books,
+        "books_app_owed",
+        json!({
+            "client_request_id": "owed-act-same-id",
+            "action": "create",
+            "side": "pay",
+            "person_name": "Synthetic Vendor",
+            "amount": "10.00",
+            "category": "67200"
+        }),
+    );
+    let refused = raw(
+        &mut books,
+        "books_app_owed",
+        json!({
+            "client_request_id": "owed-act-same-id",
+            "action": "cancel",
+            "owed": created["owed"]
+        }),
+        Origin::App,
+    );
+    assert_eq!(refused["isError"], true, "{refused}");
+    assert_eq!(refused["structuredContent"]["code"], "request_id_reused");
+    assert!(tools::find("books_app_owed_create").is_none());
 }
 
 fn repeat(books: &mut Books, rid: &str, owed: &str, action: &str) -> Value {
@@ -335,7 +375,7 @@ fn the_repeat_tool_is_the_apps_alone() {
         .unwrap();
     assert_eq!(p["result"]["isError"], false, "{p}");
     let caller = json!({ "origin": "agent", "plugin": manifest::PLUGIN_ID, "ts": ts });
-    let params = json!({ "name": "books_app_owed_repeat", "arguments": { "client_request_id": "rep-asst-001", "owed": owed, "action": "start" }, "_meta": { "buwiz/caller": caller } });
+    let params = json!({ "name": "books_app_owed", "arguments": { "client_request_id": "rep-asst-001", "owed": owed, "action": "repeat", "repeat_action": "start" }, "_meta": { "buwiz/caller": caller } });
     let reply = server
         .handle(&json!({ "jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": params }))
         .unwrap();
@@ -344,11 +384,11 @@ fn the_repeat_tool_is_the_apps_alone() {
         reply["result"]["structuredContent"]["code"],
         "permission_denied"
     );
-    let tool = tools::find("books_app_owed_repeat").unwrap();
+    let tool = tools::find("books_app_owed").unwrap();
     assert_eq!((tool.reach, tool.write), (tools::Reach::App, true));
     let listed = tools::list()
         .into_iter()
-        .find(|t| t["name"] == "books_app_owed_repeat")
+        .find(|t| t["name"] == "books_app_owed")
         .unwrap();
     assert_eq!(listed["_meta"]["buwiz/audience"], json!(["app"]));
     pin_today(None);
