@@ -1710,8 +1710,9 @@
    }
   },
   {
-   "tool": "books_app_owed_create",
+   "tool": "books_app_owed",
    "args": {
+    "action": "create",
     "side": "collect",
     "person_name": "Isla Café",
     "reference": "Invoice 0143",
@@ -1723,8 +1724,9 @@
    }
   },
   {
-   "tool": "books_app_owed_create",
+   "tool": "books_app_owed",
    "args": {
+    "action": "create",
     "side": "collect",
     "person_name": "Bayani Foods",
     "reference": "Invoice 0144",
@@ -1736,8 +1738,9 @@
    }
   },
   {
-   "tool": "books_app_owed_create",
+   "tool": "books_app_owed",
    "args": {
+    "action": "create",
     "side": "pay",
     "person_name": "Pixel Print Shop",
     "reference": "Bill PP-0381",
@@ -1749,8 +1752,9 @@
    }
   },
   {
-   "tool": "books_app_owed_create",
+   "tool": "books_app_owed",
    "args": {
+    "action": "create",
     "side": "pay",
     "person_name": "Lumen Power Co.",
     "reference": "November bill",

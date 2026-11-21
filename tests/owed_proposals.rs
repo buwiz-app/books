@@ -532,8 +532,8 @@ fn the_assistant_sees_the_draft_tool_but_not_app_acceptance() {
     let draft = find(DRAFT);
     assert_eq!(draft["_meta"]["buwiz/audience"], json!(["app", "agent"]));
     assert_eq!(draft["annotations"]["readOnlyHint"], false);
-    assert_eq!(find(CREATE)["_meta"]["buwiz/audience"], json!(["app"]));
-    assert!(find(CREATE)["inputSchema"]["properties"]["decision"].is_object());
+    assert_eq!(find(tools::OWED)["_meta"]["buwiz/audience"], json!(["app"]));
+    assert!(find(tools::OWED)["inputSchema"]["properties"]["decision"].is_object());
 }
 
 #[test]
