@@ -245,14 +245,13 @@ pub fn list(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let more = rows.len() > limit;
     rows.truncate(limit);
     let next = match rows.last() {
-        Some(r) if more => lookup(conn, r.id)?,
+        Some(r) if more => Some(plumbing::ticket_for(conn, "evidence", r.id)?),
         _ => None,
     };
     let mut items = Vec::new();
     for e in rows {
-        if let Some(t) = lookup(conn, e.id)? {
-            items.push(json!({"evidence":t,"kind":e.kind,"mime":e.mime,"page_count":e.page_count,"source":e.source,"linked_count":evidence::linked_count(conn,e.id)?}));
-        }
+        let t = plumbing::ticket_for(conn, "evidence", e.id)?;
+        items.push(json!({"evidence":t,"kind":e.kind,"mime":e.mime,"page_count":e.page_count,"source":e.source,"linked_count":evidence::linked_count(conn,e.id)?}));
     }
     Ok(json!({"items":items,"next_cursor":next}))
 }
@@ -265,25 +264,27 @@ pub fn scope(store: &books_store::Store, book: &books_store::books::Book, value:
             .ok_or_else(|| Refusal::new("not_found", "Evidence missing."))?;
         return Ok(json!({"result":"token","ticket":value,"title":label(&e)}));
     }
-    let mut stmt = conn.prepare("SELECT e.id,e.book_id,e.kind,e.mime,e.page_count,e.source,t.ticket FROM evidence e JOIN ticket t ON t.subject_kind='evidence' AND t.subject_id=e.id AND t.revoked_at IS NULL WHERE e.book_id=?1 ORDER BY e.id LIMIT 200").map_err(books_store::StoreError::from)?;
+    let mut stmt = conn
+        .prepare("SELECT e.id,e.book_id,e.kind,e.mime,e.page_count,e.source FROM evidence e WHERE e.book_id=?1 ORDER BY e.id LIMIT 200")
+        .map_err(books_store::StoreError::from)?;
     let rows = stmt
         .query_map(params![book.id], |r| {
-            Ok((
-                Metadata {
-                    id: r.get(0)?,
-                    book_id: r.get(1)?,
-                    kind: r.get(2)?,
-                    mime: r.get(3)?,
-                    page_count: r.get(4)?,
-                    source: r.get(5)?,
-                },
-                r.get::<_, String>(6)?,
-            ))
+            Ok(Metadata {
+                id: r.get(0)?,
+                book_id: r.get(1)?,
+                kind: r.get(2)?,
+                mime: r.get(3)?,
+                page_count: r.get(4)?,
+                source: r.get(5)?,
+            })
         })
+        .map_err(books_store::StoreError::from)?
+        .collect::<Result<Vec<_>, _>>()
         .map_err(books_store::StoreError::from)?;
+    drop(stmt);
     let mut choices = Vec::new();
-    for row in rows {
-        let (e, t) = row.map_err(books_store::StoreError::from)?;
+    for e in rows {
+        let t = plumbing::ticket_for(conn, "evidence", e.id)?;
         let label = label(&e);
         if label.to_lowercase().contains(&value.to_lowercase()) {
             choices.push(json!({"label":label,"value":t}));
