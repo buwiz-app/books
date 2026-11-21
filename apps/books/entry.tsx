@@ -397,9 +397,6 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     const base: Record<string, Any> = { form: mode() };
     if (date() || o()?.today) base.date = date() || o()?.today;
     if (payee()) base.payee = payee();
-    if (payeeTicket() && partyOptions().some((person: Any) => person.ticket === payeeTicket())) {
-      base.person = payeeTicket();
-    }
     if (memo()) base.memo = memo();
     if (reference()) base.reference = reference();
     if (mode() === "journal") {
