@@ -585,7 +585,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             )}
           </Each>
       </View>
-      <View class="flex-1 flex-col overflow-hidden">
+      <View class="flex-1 flex-col overflow-hidden relative">
         <View class={`flex-row items-center gap-3 px-6 py-3 border-b bg-white dark:bg-slate-900 ${C.line}`}>
           <View accessibilityLabel="Go back" class="w-9 h-9 rounded-lg items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-800" onPress={p.close} activeStyle={{ opacity: 0.7 }}>
             <Text class={`text-[18px] ${C.mute} hover:text-[#1e293b] dark:hover:text-slate-200`}>←</Text>
@@ -612,19 +612,6 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             >
               <Text class="text-[12px] text-white">⌄</Text>
             </View>
-            <If when={saveMenuOpen()}>
-              <View class={`absolute right-0 top-full z-50 mt-1 w-[160px] rounded-lg border py-1 shadow-lg ${C.panel} ${C.line}`}>
-                <View class="px-3 py-2 hover:bg-[#f9fafb] dark:hover:bg-slate-800" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false); }}>
-                  <Text class={`text-[12px] ${C.ink}`}>Save</Text>
-                </View>
-                <View class="px-3 py-2 hover:bg-[#f9fafb] dark:hover:bg-slate-800" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false, true); }}>
-                  <Text class={`text-[12px] ${C.ink}`}>Save & New</Text>
-                </View>
-                <View class={`px-3 py-2 border-t hover:bg-[#f9fafb] dark:hover:bg-slate-800 ${C.line}`} activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(true, true); }}>
-                  <Text class={`text-[12px] ${C.ink}`}>Post</Text>
-                </View>
-              </View>
-            </If>
           </View>
         </View>
         <View class="flex-1 flex-row gap-6 p-6 pb-4 overflow-hidden">
@@ -990,6 +977,19 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             </View>
           </If>
         </View>
+        <If when={saveMenuOpen()}>
+          <View class={`absolute right-6 top-[66px] w-[160px] rounded-lg border py-1 shadow-lg ${C.panel} ${C.line}`}>
+            <View class="px-3 py-2 hover:bg-[#f9fafb] dark:hover:bg-slate-800" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false); }}>
+              <Text class={`text-[12px] ${C.ink}`}>Save</Text>
+            </View>
+            <View class="px-3 py-2 hover:bg-[#f9fafb] dark:hover:bg-slate-800" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false, true); }}>
+              <Text class={`text-[12px] ${C.ink}`}>Save & New</Text>
+            </View>
+            <View class={`px-3 py-2 border-t hover:bg-[#f9fafb] dark:hover:bg-slate-800 ${C.line}`} activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(true, true); }}>
+              <Text class={`text-[12px] ${C.ink}`}>Post</Text>
+            </View>
+          </View>
+        </If>
       </View>
       </View>
       <If when={categoryCreateOpen()}>
