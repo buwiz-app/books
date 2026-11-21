@@ -236,7 +236,7 @@ export default function Evidence() {
             evLinked.set("");
           }}
         >
-          <Text class="text-xs text-[#10b981] font-medium">Clear Filters</Text>
+          <Text class="text-xs text-[#10b981] font-medium hover:underline">Clear Filters</Text>
         </View>
       </If>
     </>
@@ -249,7 +249,7 @@ export default function Evidence() {
       activeStyle={{ opacity: 0.7 }}
       onPress={() => evView.set(mode)}
     >
-      <Text class={`text-[15px] ${evView() === mode ? "text-[#10b981]" : "text-[#94a3b8] dark:text-white/30"}`}>{glyph}</Text>
+      <Text class={`text-[15px] transition-colors ${evView() === mode ? "text-[#10b981]" : "text-[#94a3b8] dark:text-white/30 hover:text-[#64748b] dark:hover:text-white/50"}`}>{glyph}</Text>
     </View>
   );
 
@@ -304,7 +304,7 @@ export default function Evidence() {
             activeStyle={{ opacity: 0.7 }}
             onPress={() => evFilterOpen.set(!evFilterOpen())}
           >
-            <Text class={`text-[15px] ${evActiveCount() > 0 ? "text-[#10b981]" : "text-[#94a3b8] dark:text-white/30"}`}>▽</Text>
+            <Text class={`text-[15px] transition-colors ${evActiveCount() > 0 ? "text-[#10b981]" : "text-[#94a3b8] dark:text-white/30 hover:text-[#64748b] dark:hover:text-white/50"}`}>▽</Text>
             <If when={evActiveCount() > 0}>
               <View class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#10b981] items-center justify-center">
                 <Text class="text-[9px] font-bold text-white">{`${evActiveCount()}`}</Text>
@@ -319,8 +319,8 @@ export default function Evidence() {
             activeStyle={{ opacity: 0.7 }}
             onPress={() => evSheetOpen.set(true)}
           >
-            <Text class="text-[14px] text-[#64748b] dark:text-white/50">☰</Text>
-            <Text class="text-sm font-medium text-[#1e293b] dark:text-white">{`Filters${evActiveCount() > 0 ? ` (${evActiveCount()})` : ""}`}</Text>
+            <Text class="text-[14px] text-[#64748b] dark:text-white/50 transition-colors hover:text-[#475569] dark:hover:text-white/70">☰</Text>
+            <Text class="text-sm font-medium text-[#1e293b] dark:text-white transition-colors hover:text-[#475569] dark:hover:text-white/70">{`Filters${evActiveCount() > 0 ? ` (${evActiveCount()})` : ""}`}</Text>
           </View>
         </View>
       </View>
@@ -348,7 +348,7 @@ export default function Evidence() {
             <Each of={evFiltered()} key={(e: Any) => String(e.evidence)}>
               {(e: Any) => (
                 <View class="w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5 p-1.5 md:p-2.5">
-                  <View class={`rounded-xl border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#111827] overflow-hidden hover:shadow-lg hover:border-[#a7f3d0] dark:hover:border-[#10b981]/30 transition-all`}>
+                  <View class={`rounded-xl border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#111827] overflow-hidden hover:shadow-lg hover:border-[#a7f3d0] dark:hover:border-[#10b981]/30 transition-all cursor-pointer`}>
                     <View class="w-full h-[120px] bg-[#f1f5f9] dark:bg-[#0f172a] items-center justify-center overflow-hidden">
                       <View class="items-center gap-2">
                         <EvTypeTile mime={String(e().mime)} big />
@@ -392,7 +392,7 @@ export default function Evidence() {
             <Each of={evFiltered()} key={(e: Any) => String(e.evidence)}>
               {(e: Any) => (
                 <View>
-                  <View class={`flex-row items-center gap-3 px-4 py-3 md:px-5 md:py-3.5 border-b border-[#e2e8f0] dark:border-white/10 hover:bg-[#f8fafc] dark:hover:bg-white/[0.02] transition-colors`}>
+                  <View class={`flex-row items-center gap-3 px-4 py-3 md:px-5 md:py-3.5 border-b border-[#e2e8f0] dark:border-white/10 hover:bg-[#f8fafc] dark:hover:bg-white/[0.02] transition-colors cursor-pointer`}>
                     <View class="flex-row min-w-0 flex-1 items-center gap-3">
                       <View class="h-10 w-10 shrink-0 items-center justify-center">
                         <EvTypeTile mime={String(e().mime)} />
@@ -422,7 +422,7 @@ export default function Evidence() {
                       activeStyle={{ opacity: 0.7 }}
                       onPress={() => evActionsFor.set(String(e().evidence))}
                     >
-                      <Text class="h-8 w-8 text-center text-[18px] text-[#94a3b8] dark:text-white/30">⋯</Text>
+                      <Text class="h-8 w-8 text-center text-[18px] text-[#94a3b8] dark:text-white/30 transition-colors hover:text-[#64748b] dark:hover:text-white/50">⋯</Text>
                     </View>
                   </View>
                   {mine(e()).map((r: Any) => (
