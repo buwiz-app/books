@@ -1,0 +1,1546 @@
+{
+ "steps": [
+  {
+   "tool": "books_app_book_create",
+   "args": {
+    "label": "Buwiz Platform",
+    "basis": "accrual",
+    "client_request_id": "snap-0001-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "10000",
+    "name": "Assets",
+    "kind": "unsure",
+    "type": "asset",
+    "client_request_id": "snap-0002-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "10100",
+    "name": "Test Auto Number",
+    "kind": "unsure",
+    "type": "asset",
+    "client_request_id": "snap-0003-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "11200",
+    "name": "Mercury Checking 1231",
+    "kind": "bank_accounts",
+    "client_request_id": "snap-0004-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "11500",
+    "name": "Asset Clearing",
+    "kind": "unsure",
+    "type": "asset",
+    "client_request_id": "snap-0005-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "12000",
+    "name": "Accounts Receivable",
+    "kind": "accounts_receivable_gross",
+    "client_request_id": "snap-0006-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "14000",
+    "name": "Investments",
+    "kind": "unsure",
+    "type": "asset",
+    "client_request_id": "snap-0007-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "14500",
+    "name": "Shareholder Loans",
+    "kind": "unsure",
+    "type": "asset",
+    "client_request_id": "snap-0008-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "15999",
+    "name": "Uncategorized Assets",
+    "kind": "unsure",
+    "type": "asset",
+    "client_request_id": "snap-0009-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "16000",
+    "name": "Fixed Assets",
+    "kind": "unsure",
+    "type": "asset",
+    "client_request_id": "snap-0010-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "20000",
+    "name": "Liabilities",
+    "kind": "unsure",
+    "type": "liability",
+    "client_request_id": "snap-0011-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "22100",
+    "name": "Mercury Credit Card 1234",
+    "kind": "loan_payable",
+    "client_request_id": "snap-0012-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "22200",
+    "name": "Visa Credit Card 7744",
+    "kind": "loan_payable",
+    "client_request_id": "snap-0013-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "22201",
+    "name": "Visa Credit Card ****7744",
+    "kind": "loan_payable",
+    "client_request_id": "snap-0014-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "23000",
+    "name": "Liability Clearing",
+    "kind": "unsure",
+    "type": "liability",
+    "client_request_id": "snap-0015-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "23200",
+    "name": "Payroll Clearing",
+    "kind": "unsure",
+    "type": "liability",
+    "client_request_id": "snap-0016-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "23300",
+    "name": "Bill Pay Clearing",
+    "kind": "unsure",
+    "type": "liability",
+    "client_request_id": "snap-0017-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "24000",
+    "name": "Accrued Expenses",
+    "kind": "unsure",
+    "type": "liability",
+    "client_request_id": "snap-0018-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "25000",
+    "name": "Other Current Liabilities",
+    "kind": "unsure",
+    "type": "liability",
+    "client_request_id": "snap-0019-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "25066",
+    "name": "Uncategorized Liabilities",
+    "kind": "unsure",
+    "type": "liability",
+    "client_request_id": "snap-0020-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "25100",
+    "name": "Payroll Liabilities",
+    "kind": "unsure",
+    "type": "liability",
+    "client_request_id": "snap-0021-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "30000",
+    "name": "Equity",
+    "kind": "unsure",
+    "type": "equity",
+    "client_request_id": "snap-0022-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "31000",
+    "name": "Retained Earnings",
+    "kind": "unsure",
+    "type": "equity",
+    "client_request_id": "snap-0023-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "33000",
+    "name": "SAFEs",
+    "kind": "unsure",
+    "type": "equity",
+    "client_request_id": "snap-0024-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "40000",
+    "name": "Revenue",
+    "kind": "unsure",
+    "type": "revenue",
+    "client_request_id": "snap-0025-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "50000",
+    "name": "Cost of Revenue",
+    "kind": "unsure",
+    "type": "cost_of_revenue",
+    "client_request_id": "snap-0026-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "60000",
+    "name": "Operating Expenses",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0027-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "61000",
+    "name": "Payroll Expenses",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0028-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "62000",
+    "name": "Travel & Entertainment",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0029-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "62200",
+    "name": "Ground Transportation",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0030-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "62300",
+    "name": "Lodging",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0031-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "62500",
+    "name": "Entertainment",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0032-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "63000",
+    "name": "Professional Fees",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0033-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "63400",
+    "name": "Other Professional Fees",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0034-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "64000",
+    "name": "Sales and Marketing",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0035-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "64200",
+    "name": "Conference and Trade Shows",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0036-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "64300",
+    "name": "Promotional Items and Gifts",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0037-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "66000",
+    "name": "Facilities",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0038-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "67000",
+    "name": "Supplies & Materials",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0039-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "67100",
+    "name": "Computers Expense",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0040-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "68000",
+    "name": "General Operations",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0041-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "68100",
+    "name": "Memberships & Dues",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0042-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "68200",
+    "name": "Insurance",
+    "kind": "unsure",
+    "type": "expense",
+    "client_request_id": "snap-0043-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "80000",
+    "name": "Other Income",
+    "kind": "unsure",
+    "type": "other_income",
+    "client_request_id": "snap-0044-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "82000",
+    "name": "Credit Card Rewards",
+    "kind": "other_non_operating_income",
+    "client_request_id": "snap-0045-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "90000",
+    "name": "Other Expenses",
+    "kind": "unsure",
+    "type": "other_expense",
+    "client_request_id": "snap-0046-create"
+   }
+  },
+  {
+   "tool": "books_app_account_create",
+   "args": {
+    "number": "94000",
+    "name": "Taxes",
+    "kind": "unsure",
+    "type": "other_expense",
+    "client_request_id": "snap-0047-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "customers",
+    "name": "Greenleaf Industries",
+    "client_request_id": "snap-0048-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "Amazon Web Services",
+    "client_request_id": "snap-0049-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "WeWork",
+    "client_request_id": "snap-0050-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "Verizon Wireless",
+    "client_request_id": "snap-0051-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "Office Depot",
+    "client_request_id": "snap-0052-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "ADP Payroll",
+    "client_request_id": "snap-0053-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "State Farm Insurance",
+    "client_request_id": "snap-0054-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "Uber",
+    "client_request_id": "snap-0055-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "employees",
+    "name": "Jane Smith",
+    "client_request_id": "snap-0056-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "SmartStream",
+    "client_request_id": "snap-0057-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "customers",
+    "name": "Goldcoders Corp",
+    "client_request_id": "snap-0058-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "employees",
+    "name": "Mike Johnson",
+    "client_request_id": "snap-0059-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "customers",
+    "name": "MVG",
+    "client_request_id": "snap-0060-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "employees",
+    "name": "Jane Doe",
+    "client_request_id": "snap-0061-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "owners",
+    "name": "Uriah Galang",
+    "client_request_id": "snap-0062-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "customers",
+    "name": "Uriah Galang",
+    "client_request_id": "snap-0063-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "Shell Station #4821",
+    "client_request_id": "snap-0064-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "lenders",
+    "name": "Visa",
+    "client_request_id": "snap-0065-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "customers",
+    "name": "Johnson & Associates LLC",
+    "client_request_id": "snap-0066-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "lenders",
+    "name": "Veem",
+    "client_request_id": "snap-0067-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "Goodwin",
+    "client_request_id": "snap-0068-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "customers",
+    "name": "Acme Corp",
+    "client_request_id": "snap-0069-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "customers",
+    "name": "TechFlow Solutions",
+    "client_request_id": "snap-0070-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "lenders",
+    "name": "Mercury Bank",
+    "client_request_id": "snap-0071-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "government",
+    "name": "IRS",
+    "client_request_id": "snap-0072-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "owners",
+    "name": "Hugo Forbes",
+    "client_request_id": "snap-0073-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "Pacific Gas & Electric",
+    "client_request_id": "snap-0074-create"
+   }
+  },
+  {
+   "tool": "books_app_person_create",
+   "args": {
+    "kind": "vendors",
+    "name": "Staples Office Supply",
+    "client_request_id": "snap-0075-create"
+   }
+  },
+  {
+   "tool": "books_app_tag_create",
+   "args": {
+    "kind": "location",
+    "name": "Philippines",
+    "client_request_id": "snap-0076-create"
+   }
+  },
+  {
+   "tool": "books_app_tag_create",
+   "args": {
+    "kind": "location",
+    "name": "Manila",
+    "client_request_id": "snap-0077-create"
+   }
+  },
+  {
+   "tool": "books_app_tag_create",
+   "args": {
+    "kind": "location",
+    "name": "Zambales",
+    "client_request_id": "snap-0078-create"
+   }
+  },
+  {
+   "tool": "books_app_tag_create",
+   "args": {
+    "kind": "location",
+    "name": "Olongapo",
+    "client_request_id": "snap-0079-create"
+   }
+  },
+  {
+   "tool": "books_app_tag_create",
+   "args": {
+    "kind": "department",
+    "name": "Engineering",
+    "client_request_id": "snap-0080-create"
+   }
+  },
+  {
+   "tool": "books_app_tag_create",
+   "args": {
+    "kind": "department",
+    "name": "Sales Marketing",
+    "client_request_id": "snap-0081-create"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-01-02",
+    "memo": "Owner capital investment \u2014 initial funding",
+    "payee": "Hugo Forbes",
+    "person_kind": "owners",
+    "form": "money_in",
+    "account": "11000",
+    "amount": "50000.00",
+    "category": "32000",
+    "client_request_id": "snap-0082-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-01-05",
+    "memo": "Annual business insurance \u2014 State Farm",
+    "payee": "State Farm Insurance",
+    "person_kind": "vendors",
+    "form": "money_out",
+    "account": "11000",
+    "amount": "6000.00",
+    "category": "13000",
+    "client_request_id": "snap-0083-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-01-08",
+    "memo": "Office setup supplies \u2014 desks, chairs, monitors",
+    "payee": "Office Depot",
+    "person_kind": "vendors",
+    "form": "money_out",
+    "account": "22200",
+    "amount": "850.00",
+    "category": "67200",
+    "client_request_id": "snap-0084-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-01-10",
+    "memo": "Consulting services \u2014 Acme Corp Q1 retainer",
+    "payee": "Acme Corp",
+    "person_kind": "customers",
+    "form": "money_in",
+    "account": "11000",
+    "amount": "12500.00",
+    "category": "40000",
+    "client_request_id": "snap-0085-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-01-15",
+    "memo": "January office rent \u2014 WeWork",
+    "payee": "WeWork",
+    "person_kind": "vendors",
+    "form": "money_out",
+    "account": "11000",
+    "amount": "2200.00",
+    "category": "66100",
+    "client_request_id": "snap-0086-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-01-15",
+    "memo": "Payroll \u2014 Jan 1-15 biweekly",
+    "payee": "ADP Payroll",
+    "person_kind": "vendors",
+    "form": "money_out",
+    "account": "11000",
+    "amount": "10700.00",
+    "allocations": [
+     {
+      "category": "61100",
+      "amount": "5000.00",
+      "memo": "Jane Smith salary"
+     },
+     {
+      "category": "61100",
+      "amount": "4500.00",
+      "memo": "Mike Johnson salary"
+     },
+     {
+      "category": "61400",
+      "amount": "1200.00",
+      "memo": "Health insurance & 401k"
+     }
+    ],
+    "client_request_id": "snap-0087-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-01-20",
+    "memo": "AWS hosting \u2014 January",
+    "payee": "Amazon Web Services",
+    "person_kind": "vendors",
+    "form": "money_out",
+    "account": "22200",
+    "amount": "450.00",
+    "category": "54000",
+    "client_request_id": "snap-0088-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-01-22",
+    "memo": "Software development \u2014 TechFlow milestone 1",
+    "payee": "TechFlow Solutions",
+    "person_kind": "customers",
+    "form": "money_in",
+    "account": "11000",
+    "amount": "8000.00",
+    "category": "40000",
+    "client_request_id": "snap-0089-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-01-25",
+    "memo": "Verizon business phone plan \u2014 January",
+    "payee": "Verizon Wireless",
+    "person_kind": "vendors",
+    "form": "money_out",
+    "account": "11000",
+    "amount": "185.00",
+    "category": "66200",
+    "client_request_id": "snap-0090-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-01-31",
+    "memo": "Payroll \u2014 Jan 16-31 biweekly",
+    "payee": "ADP Payroll",
+    "person_kind": "vendors",
+    "form": "money_out",
+    "account": "11000",
+    "amount": "10700.00",
+    "allocations": [
+     {
+      "category": "61100",
+      "amount": "5000.00",
+      "memo": "Jane Smith salary"
+     },
+     {
+      "category": "61100",
+      "amount": "4500.00",
+      "memo": "Mike Johnson salary"
+     },
+     {
+      "category": "61400",
+      "amount": "1200.00",
+      "memo": "Health insurance & 401k"
+     }
+    ],
+    "client_request_id": "snap-0091-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-01-31",
+    "memo": "Mercury bank interest \u2014 January",
+    "payee": "Mercury Bank",
+    "person_kind": "lenders",
+    "form": "journal",
+    "lines": [
+     {
+      "account": "11000",
+      "debit": "12.50",
+      "memo": "Interest earned"
+     },
+     {
+      "account": "81000",
+      "credit": "12.50",
+      "memo": "Bank interest income"
+     }
+    ],
+    "client_request_id": "snap-0092-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-01-31",
+    "memo": "Insurance expense \u2014 January amortization",
+    "payee": "State Farm Insurance",
+    "person_kind": "vendors",
+    "form": "journal",
+    "lines": [
+     {
+      "account": "68200",
+      "debit": "500.00",
+      "memo": "1/12 of annual premium"
+     },
+     {
+      "account": "13000",
+      "credit": "500.00",
+      "memo": "Reduce prepaid"
+     }
+    ],
+    "client_request_id": "snap-0093-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-01-31",
+    "memo": "Mercury monthly service fee",
+    "payee": "Mercury Bank",
+    "person_kind": "lenders",
+    "form": "journal",
+    "lines": [
+     {
+      "account": "68300",
+      "debit": "25.00",
+      "memo": "Monthly fee"
+     },
+     {
+      "account": "11000",
+      "credit": "25.00",
+      "memo": "Fee deducted"
+     }
+    ],
+    "client_request_id": "snap-0094-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-02-03",
+    "memo": "Consulting services \u2014 Acme Corp project alpha",
+    "payee": "Acme Corp",
+    "person_kind": "customers",
+    "form": "money_in",
+    "account": "11000",
+    "amount": "15000.00",
+    "category": "40000",
+    "client_request_id": "snap-0095-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-02-05",
+    "memo": "Visa credit card payment \u2014 January balance",
+    "form": "transfer",
+    "account": "11000",
+    "to_account": "22200",
+    "amount": "1300.00",
+    "client_request_id": "snap-0096-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-02-01",
+    "memo": "February office rent \u2014 WeWork",
+    "payee": "WeWork",
+    "person_kind": "vendors",
+    "form": "money_out",
+    "account": "11000",
+    "amount": "2200.00",
+    "category": "66100",
+    "client_request_id": "snap-0097-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-02-15",
+    "memo": "Payroll \u2014 Feb 1-15 biweekly",
+    "payee": "ADP Payroll",
+    "person_kind": "vendors",
+    "form": "money_out",
+    "account": "11000",
+    "amount": "10700.00",
+    "allocations": [
+     {
+      "category": "61100",
+      "amount": "5000.00",
+      "memo": "Jane Smith salary"
+     },
+     {
+      "category": "61100",
+      "amount": "4500.00",
+      "memo": "Mike Johnson salary"
+     },
+     {
+      "category": "61400",
+      "amount": "1200.00",
+      "memo": "Health insurance & 401k"
+     }
+    ],
+    "client_request_id": "snap-0098-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-02-10",
+    "memo": "AWS hosting \u2014 February",
+    "payee": "Amazon Web Services",
+    "person_kind": "vendors",
+    "form": "money_out",
+    "account": "22200",
+    "amount": "520.00",
+    "category": "54000",
+    "client_request_id": "snap-0099-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-02-12",
+    "memo": "Data analytics consulting \u2014 Greenleaf",
+    "payee": "Greenleaf Industries",
+    "person_kind": "customers",
+    "form": "money_in",
+    "account": "11000",
+    "amount": "5500.00",
+    "category": "40000",
+    "client_request_id": "snap-0100-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-02-13",
+    "memo": "Uber rides \u2014 client site visits",
+    "payee": "Uber",
+    "person_kind": "vendors",
+    "form": "money_out",
+    "account": "22200",
+    "amount": "57.83",
+    "category": "62200",
+    "client_request_id": "snap-0101-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-02-14",
+    "memo": "Software subscriptions \u2014 Slack, Figma, GitHub",
+    "form": "money_out",
+    "account": "22200",
+    "amount": "320.00",
+    "category": "65000",
+    "client_request_id": "snap-0102-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-02-14",
+    "memo": "Client dinner \u2014 Acme Corp team",
+    "payee": "Acme Corp",
+    "person_kind": "customers",
+    "form": "money_out",
+    "account": "22200",
+    "amount": "175.40",
+    "category": "62400",
+    "client_request_id": "snap-0103-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-02-28",
+    "memo": "Insurance expense \u2014 February amortization",
+    "payee": "State Farm Insurance",
+    "person_kind": "vendors",
+    "form": "journal",
+    "lines": [
+     {
+      "account": "68200",
+      "debit": "500.00",
+      "memo": "1/12 of annual premium"
+     },
+     {
+      "account": "13000",
+      "credit": "500.00",
+      "memo": "Reduce prepaid"
+     }
+    ],
+    "client_request_id": "snap-0104-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-02-20",
+    "memo": "Verizon business phone plan \u2014 February",
+    "payee": "Verizon Wireless",
+    "person_kind": "vendors",
+    "form": "money_out",
+    "account": "11000",
+    "amount": "185.00",
+    "category": "66200",
+    "client_request_id": "snap-0105-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-02-18",
+    "memo": "Google Ads \u2014 February campaign",
+    "form": "money_out",
+    "account": "11000",
+    "amount": "1200.00",
+    "category": "64100",
+    "client_request_id": "snap-0106-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-02-28",
+    "memo": "Mercury bank interest \u2014 February",
+    "payee": "Mercury Bank",
+    "person_kind": "lenders",
+    "form": "journal",
+    "lines": [
+     {
+      "account": "11000",
+      "debit": "15.75",
+      "memo": "Interest earned"
+     },
+     {
+      "account": "81000",
+      "credit": "15.75",
+      "memo": "Bank interest income"
+     }
+    ],
+    "client_request_id": "snap-0107-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-02-28",
+    "memo": "Mercury monthly service fee",
+    "payee": "Mercury Bank",
+    "person_kind": "lenders",
+    "form": "journal",
+    "lines": [
+     {
+      "account": "68300",
+      "debit": "25.00",
+      "memo": "Monthly fee"
+     },
+     {
+      "account": "11000",
+      "credit": "25.00",
+      "memo": "Fee deducted"
+     }
+    ],
+    "client_request_id": "snap-0108-entry"
+   }
+  },
+  {
+   "tool": "books_app_post_entry",
+   "args": {
+    "date": "2026-02-28",
+    "memo": "Estimated quarterly tax \u2014 Q1 installment",
+    "payee": "IRS",
+    "person_kind": "government",
+    "form": "money_out",
+    "account": "11000",
+    "amount": "3500.00",
+    "category": "94000",
+    "client_request_id": "snap-0109-entry"
+   }
+  },
+  {
+   "tool": "books_app_upload_part",
+   "args": {
+    "upload": "stmt-oid-0158",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDEwNz4-CnN0cmVhbQpCVCAvRjEgMTAgVGYgNDAgNzIwIFRkIChCYW5rIFN0YXRlbWVudCAtIFZpc2EgQ3JlZGl0IENhcmQgNzc0NCAyMDI2LTAxLTAxIHRvIDIwMjYtMDItMTcucGRmI29pZC0wMTU3KSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwvVHlwZS9Gb250L1N1YnR5cGUvVHlwZTEvQmFzZUZvbnQvSGVsdmV0aWNhPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU0IDAwMDAwIG4gCjAwMDAwMDAxMDUgMDAwMDAgbiAKMDAwMDAwMDIxNyAwMDAwMCBuIAowMDAwMDAwMzczIDAwMDAwIG4gCnRyYWlsZXI8PC9TaXplIDYvUm9vdCAxIDAgUj4-CnN0YXJ0eHJlZgo0MzYKJSVFT0Y",
+    "client_request_id": "snap-0110-part"
+   }
+  },
+  {
+   "tool": "books_app_statement_import",
+   "args": {
+    "account": "22200",
+    "document_upload": "stmt-oid-0158",
+    "document_mime": "application/pdf",
+    "client_request_id": "snap-0111-import"
+   }
+  },
+  {
+   "tool": "books_app_upload_part",
+   "args": {
+    "upload": "stmt-oid-0120",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDExMD4-CnN0cmVhbQpCVCAvRjEgMTAgVGYgNDAgNzIwIFRkIChCYW5rIFN0YXRlbWVudCAtIE1lcmN1cnkgQ3JlZGl0IENhcmQgMTIzNCAyMDI2LTAxLTAxIHRvIDIwMjYtMDEtMzEucGRmI29pZC0wMTE5KSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwvVHlwZS9Gb250L1N1YnR5cGUvVHlwZTEvQmFzZUZvbnQvSGVsdmV0aWNhPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU0IDAwMDAwIG4gCjAwMDAwMDAxMDUgMDAwMDAgbiAKMDAwMDAwMDIxNyAwMDAwMCBuIAowMDAwMDAwMzc2IDAwMDAwIG4gCnRyYWlsZXI8PC9TaXplIDYvUm9vdCAxIDAgUj4-CnN0YXJ0eHJlZgo0MzkKJSVFT0Y",
+    "client_request_id": "snap-0112-part"
+   }
+  },
+  {
+   "tool": "books_app_statement_import",
+   "args": {
+    "account": "22100",
+    "document_upload": "stmt-oid-0120",
+    "document_mime": "application/pdf",
+    "client_request_id": "snap-0113-import"
+   }
+  },
+  {
+   "tool": "books_app_upload_part",
+   "args": {
+    "upload": "stmt-oid-0129",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDEwNz4-CnN0cmVhbQpCVCAvRjEgMTAgVGYgNDAgNzIwIFRkIChCYW5rIFN0YXRlbWVudCAtIE1lcmN1cnkgQ2hlY2tpbmcgMTIzMSAyMDI2LTAxLTAxIHRvIDIwMjYtMDMtMzEucGRmI29pZC0wMTI4KSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwvVHlwZS9Gb250L1N1YnR5cGUvVHlwZTEvQmFzZUZvbnQvSGVsdmV0aWNhPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU0IDAwMDAwIG4gCjAwMDAwMDAxMDUgMDAwMDAgbiAKMDAwMDAwMDIxNyAwMDAwMCBuIAowMDAwMDAwMzczIDAwMDAwIG4gCnRyYWlsZXI8PC9TaXplIDYvUm9vdCAxIDAgUj4-CnN0YXJ0eHJlZgo0MzYKJSVFT0Y",
+    "client_request_id": "snap-0114-part"
+   }
+  },
+  {
+   "tool": "books_app_statement_import",
+   "args": {
+    "account": "11200",
+    "document_upload": "stmt-oid-0129",
+    "document_mime": "application/pdf",
+    "client_request_id": "snap-0115-import"
+   }
+  },
+  {
+   "tool": "books_app_upload_part",
+   "args": {
+    "upload": "stmt-oid-0127",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDEwNz4-CnN0cmVhbQpCVCAvRjEgMTAgVGYgNDAgNzIwIFRkIChCYW5rIFN0YXRlbWVudCAtIFZpc2EgQ3JlZGl0IENhcmQgNzc0NCAyMDI2LTAyLTAxIHRvIDIwMjYtMDItMjgucGRmI29pZC0wMTI2KSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwvVHlwZS9Gb250L1N1YnR5cGUvVHlwZTEvQmFzZUZvbnQvSGVsdmV0aWNhPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU0IDAwMDAwIG4gCjAwMDAwMDAxMDUgMDAwMDAgbiAKMDAwMDAwMDIxNyAwMDAwMCBuIAowMDAwMDAwMzczIDAwMDAwIG4gCnRyYWlsZXI8PC9TaXplIDYvUm9vdCAxIDAgUj4-CnN0YXJ0eHJlZgo0MzYKJSVFT0Y",
+    "client_request_id": "snap-0116-part"
+   }
+  },
+  {
+   "tool": "books_app_statement_import",
+   "args": {
+    "account": "22200",
+    "document_upload": "stmt-oid-0127",
+    "document_mime": "application/pdf",
+    "client_request_id": "snap-0117-import"
+   }
+  },
+  {
+   "tool": "books_app_statement_import",
+   "args": {
+    "account": "11200",
+    "csv_text": "Date,Description,Amount\r\n2026-01-02,Hugo Forbes,50000.00\r\n2026-01-05,State Farm Insurance,6000.00\r\n2026-01-05,State Farm Insurance,-6000.00\r\n2026-01-10,Acme Corp,12500.00\r\n2026-01-15,WeWork,-2200.00\r\n2026-01-15,ADP Payroll,-10700.00\r\n2026-01-22,TechFlow Solutions,8000.00\r\n2026-01-25,Verizon Wireless,-185.00\r\n2026-01-31,Mercury Bank,-25.00\r\n2026-01-31,ADP Payroll,-10700.00\r\n2026-01-31,Mercury Bank,12.50\r\n2026-01-31,State Farm Insurance,-500.00\r\n",
+    "closing": "46202.50",
+    "file_name": "11200-2026-01.csv",
+    "client_request_id": "snap-0118-import"
+   }
+  },
+  {
+   "tool": "books_app_statement_accept",
+   "args": {
+    "account": "11200",
+    "month": "2026-01",
+    "client_request_id": "snap-0119-accept"
+   }
+  },
+  {
+   "tool": "books_app_statement_import",
+   "args": {
+    "account": "11200",
+    "csv_text": "Date,Description,Amount\r\n2026-02-01,WeWork,-2200.00\r\n2026-02-03,Acme Corp,15000.00\r\n2026-02-05,Mercury Checking,-1300.00\r\n2026-02-12,Greenleaf Industries,5500.00\r\n2026-02-15,ADP Payroll,-10700.00\r\n2026-02-18,Mercury Checking,-1200.00\r\n2026-02-20,Verizon Wireless,-185.00\r\n2026-02-28,IRS,-3500.00\r\n2026-02-28,State Farm Insurance,-500.00\r\n2026-02-28,Mercury Bank,15.75\r\n2026-02-28,Mercury Bank,-25.00\r\n",
+    "closing": "47108.25",
+    "file_name": "11200-2026-02.csv",
+    "client_request_id": "snap-0120-import"
+   }
+  },
+  {
+   "tool": "books_app_statement_accept",
+   "args": {
+    "account": "11200",
+    "month": "2026-02",
+    "client_request_id": "snap-0121-accept"
+   }
+  },
+  {
+   "tool": "books_app_statement_import",
+   "args": {
+    "account": "22100",
+    "csv_text": "Date,Description,Amount\r\n2026-01-08,Office Depot,-850.00\r\n2026-01-20,Amazon Web Services,-450.00\r\n",
+    "closing": "-1300.00",
+    "file_name": "22100-2026-01.csv",
+    "client_request_id": "snap-0122-import"
+   }
+  },
+  {
+   "tool": "books_app_statement_accept",
+   "args": {
+    "account": "22100",
+    "month": "2026-01",
+    "client_request_id": "snap-0123-accept"
+   }
+  },
+  {
+   "tool": "books_app_statement_import",
+   "args": {
+    "account": "22200",
+    "csv_text": "Date,Description,Amount\r\n2026-01-08,Office Depot,-850.00\r\n2026-01-20,Amazon Web Services,-450.00\r\n",
+    "closing": "-1300.00",
+    "file_name": "22200-2026-01.csv",
+    "client_request_id": "snap-0124-import"
+   }
+  },
+  {
+   "tool": "books_app_statement_accept",
+   "args": {
+    "account": "22200",
+    "month": "2026-01",
+    "client_request_id": "snap-0125-accept"
+   }
+  },
+  {
+   "tool": "books_app_statement_import",
+   "args": {
+    "account": "22200",
+    "csv_text": "Date,Description,Amount\r\n2026-02-05,Pay down CC balance,1300.00\r\n2026-02-10,Amazon Web Services,-520.00\r\n2026-02-13,Uber,-57.83\r\n2026-02-14,Visa ****7744,-320.00\r\n2026-02-14,Acme Corp,-175.40\r\n",
+    "closing": "-1073.23",
+    "file_name": "22200-2026-02.csv",
+    "client_request_id": "snap-0126-import"
+   }
+  },
+  {
+   "tool": "books_app_statement_accept",
+   "args": {
+    "account": "22200",
+    "month": "2026-02",
+    "client_request_id": "snap-0127-accept"
+   }
+  },
+  {
+   "tool": "books_app_evidence_attach",
+   "args": {
+    "op": "part",
+    "upload": "doc-oid-0121",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggiBvaWQtMDEyMQ",
+    "client_request_id": "snap-0128-attach"
+   }
+  },
+  {
+   "tool": "books_app_evidence_attach",
+   "args": {
+    "op": "commit",
+    "upload": "doc-oid-0121",
+    "mime": "image/png",
+    "kind": "receipt",
+    "source": "user",
+    "client_request_id": "snap-0129-attach"
+   }
+  },
+  {
+   "tool": "books_app_evidence_attach",
+   "args": {
+    "op": "part",
+    "upload": "doc-oid-0122",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggiBvaWQtMDEyMg",
+    "client_request_id": "snap-0130-attach"
+   }
+  },
+  {
+   "tool": "books_app_evidence_attach",
+   "args": {
+    "op": "commit",
+    "upload": "doc-oid-0122",
+    "mime": "image/png",
+    "kind": "receipt",
+    "source": "user",
+    "client_request_id": "snap-0131-attach"
+   }
+  },
+  {
+   "tool": "books_app_evidence_attach",
+   "args": {
+    "op": "part",
+    "upload": "doc-oid-0123",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggiBvaWQtMDEyMw",
+    "client_request_id": "snap-0132-attach"
+   }
+  },
+  {
+   "tool": "books_app_evidence_attach",
+   "args": {
+    "op": "commit",
+    "upload": "doc-oid-0123",
+    "mime": "image/png",
+    "kind": "receipt",
+    "source": "user",
+    "client_request_id": "snap-0133-attach"
+   }
+  },
+  {
+   "tool": "books_app_evidence_attach",
+   "args": {
+    "op": "part",
+    "upload": "doc-oid-0124",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggiBvaWQtMDEyNA",
+    "client_request_id": "snap-0134-attach"
+   }
+  },
+  {
+   "tool": "books_app_evidence_attach",
+   "args": {
+    "op": "commit",
+    "upload": "doc-oid-0124",
+    "mime": "image/png",
+    "kind": "receipt",
+    "source": "user",
+    "client_request_id": "snap-0135-attach"
+   }
+  },
+  {
+   "tool": "books_app_evidence_attach",
+   "args": {
+    "op": "part",
+    "upload": "doc-oid-0153",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDY1Pj4Kc3RyZWFtCkJUIC9GMSAxMCBUZiA0MCA3MjAgVGQgKEludm9pY2UtI0lOVi0xMDQ3LUFXUy5wZGYjb2lkLTAxNTMpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PC9UeXBlL0ZvbnQvU3VidHlwZS9UeXBlMS9CYXNlRm9udC9IZWx2ZXRpY2E-PgplbmRvYmoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNTQgMDAwMDAgbiAKMDAwMDAwMDEwNSAwMDAwMCBuIAowMDAwMDAwMjE3IDAwMDAwIG4gCjAwMDAwMDAzMzAgMDAwMDAgbiAKdHJhaWxlcjw8L1NpemUgNi9Sb290IDEgMCBSPj4Kc3RhcnR4cmVmCjM5MwolJUVPRg",
+    "client_request_id": "snap-0136-attach"
+   }
+  },
+  {
+   "tool": "books_app_evidence_attach",
+   "args": {
+    "op": "commit",
+    "upload": "doc-oid-0153",
+    "mime": "application/pdf",
+    "kind": "bill",
+    "source": "user",
+    "client_request_id": "snap-0137-attach"
+   }
+  },
+  {
+   "tool": "books_app_evidence_attach",
+   "args": {
+    "op": "part",
+    "upload": "doc-oid-0155",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDY1Pj4Kc3RyZWFtCkJUIC9GMSAxMCBUZiA0MCA3MjAgVGQgKEludm9pY2UtI0lOVi0xMDQ3LUFXUy5wZGYjb2lkLTAxNTUpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PC9UeXBlL0ZvbnQvU3VidHlwZS9UeXBlMS9CYXNlRm9udC9IZWx2ZXRpY2E-PgplbmRvYmoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNTQgMDAwMDAgbiAKMDAwMDAwMDEwNSAwMDAwMCBuIAowMDAwMDAwMjE3IDAwMDAwIG4gCjAwMDAwMDAzMzAgMDAwMDAgbiAKdHJhaWxlcjw8L1NpemUgNi9Sb290IDEgMCBSPj4Kc3RhcnR4cmVmCjM5MwolJUVPRg",
+    "client_request_id": "snap-0138-attach"
+   }
+  },
+  {
+   "tool": "books_app_evidence_attach",
+   "args": {
+    "op": "commit",
+    "upload": "doc-oid-0155",
+    "mime": "application/pdf",
+    "kind": "bill",
+    "source": "user",
+    "client_request_id": "snap-0139-attach"
+   }
+  },
+  {
+   "tool": "books_app_evidence_attach",
+   "args": {
+    "op": "part",
+    "upload": "doc-oid-0156",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggiBvaWQtMDE1Ng",
+    "client_request_id": "snap-0140-attach"
+   }
+  },
+  {
+   "tool": "books_app_evidence_attach",
+   "args": {
+    "op": "commit",
+    "upload": "doc-oid-0156",
+    "mime": "image/png",
+    "kind": "receipt",
+    "source": "user",
+    "client_request_id": "snap-0141-attach"
+   }
+  }
+ ]
+}
