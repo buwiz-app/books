@@ -16,7 +16,7 @@ function Kpi(p: { label: string; shown: string; tone?: string; rows: Any[] }) {
         ? "text-[#ef4444] dark:text-[#f87171]"
         : C.ink;
   return (
-    <View class={`flex-1 rounded-xl border p-5 gap-1.5 bg-white dark:bg-slate-800 transition-shadow hover:shadow-sm ${C.line}`}>
+    <View class={`flex-1 rounded-xl border p-5 gap-1.5 bg-white dark:bg-[#131826] transition-shadow hover:shadow-sm ${C.line}`}>
       <Text class="text-xs font-medium uppercase tracking-wide text-[#94a3b8] dark:text-white/40">{p.label}</Text>
       <Text class={`mt-2 text-2xl font-semibold tabular-nums ${valTone}`}>{p.shown}</Text>
       <View class="gap-1.5 mt-1.5">
@@ -69,7 +69,7 @@ function Quick(p: { title: string; sub: string; onPress: () => void }) {
 function NavTile(p: { title: string; sub: string; onPress: () => void }) {
   return (
     <View
-      class={`w-[186px] rounded-xl border px-3.5 py-3 gap-0.5 bg-white transition-colors hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700/60 ${C.line}`}
+      class={`w-[186px] rounded-xl border px-3.5 py-3 gap-0.5 bg-white transition-colors hover:bg-slate-50 dark:bg-[#131826] dark:hover:bg-slate-700/60 ${C.line}`}
       onPress={p.onPress}
       activeStyle={{ opacity: 0.75 }}
     >
@@ -119,7 +119,7 @@ function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
             <Kpi label={t()?.unpaid.label || "Unpaid"} shown={`₱ ${t()?.unpaid.shown || "0.00"}`} rows={t()?.unpaid.rows} />
           </View>
           <View class="flex-row gap-5 items-start">
-            <View class={`flex-[1.25] rounded-xl border overflow-hidden bg-white dark:bg-slate-800 ${C.line}`}>
+            <View class={`flex-[1.25] rounded-xl border overflow-hidden bg-white dark:bg-[#131826] ${C.line}`}>
               <View class="flex-row items-center justify-between px-5 py-3.5">
                 <Text class={`text-[14px] font-semibold ${C.ink}`}>Needs you</Text>
                 <Text class={`text-[12px] ${C.dim}`}>
@@ -135,7 +135,7 @@ function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
                 {(n: Any) => <NeedRow n={n()} go={p.go} />}
               </Each>
             </View>
-            <View class={`flex-1 rounded-xl border overflow-hidden bg-white dark:bg-slate-800 ${C.line}`}>
+            <View class={`flex-1 rounded-xl border overflow-hidden bg-white dark:bg-[#131826] ${C.line}`}>
               <View class="flex-row items-center justify-between px-5 py-3.5">
                 <Text class={`text-[14px] font-semibold ${C.ink}`}>Quick entry</Text>
                 <Text class={`text-[12px] ${C.dim}`}>also in chat as /books</Text>
