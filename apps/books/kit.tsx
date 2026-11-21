@@ -233,6 +233,80 @@ function Panel(p: { children?: Any; pad?: boolean; class?: string }) {
   return <View class={`rounded-xl border ${C.panel} ${C.line} ${p.pad ? "p-3.5" : ""} ${p.class || ""}`}>{p.children}</View>;
 }
 
+/** The owner-approved right-panel rule (2026-11-21): on lg+ the side panel
+ *  is a quarter of the window, clamped to 340–520px; below lg it is a
+ *  full-screen sheet (no floating drawer, no backdrop gap, no list strip)
+ *  with the old drawer's ‹ Back row (CategoryManagerLayout.tsx:356). The
+ *  sheet anchors to the page's relative root, so mount this where the
+ *  column belongs and the overlay still covers the whole page. `body` is a
+ *  function so each mode mounts its own copy; `card` wraps the sheet copy
+ *  in the rounded panel chrome; `fill` drops the outer scroll so a body
+ *  with its own Scroll (Entry's tabs) fills the height. */
+function SidePanel(p: {
+  open: () => boolean;
+  onBack: () => void;
+  body: () => Any;
+  class?: string;
+  card?: boolean;
+  fill?: boolean;
+}) {
+  const sheetBody = () =>
+    p.card ? (
+      <View class={`rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>{p.body()}</View>
+    ) : (
+      p.body()
+    );
+  return (
+    <>
+      <View class={`hidden lg:flex flex-col w-1/4 min-w-[340px] max-w-[520px] shrink-0 ${p.class || ""}`}>{p.body()}</View>
+      <If when={p.open()}>
+        <View class="fixed inset-0 lg:hidden flex-col bg-[#e8f0f2] dark:bg-slate-900">
+          <View class="shrink-0 flex-row items-center px-2 py-1">
+            <View
+              accessibilityLabel="Back"
+              class="h-11 flex-row items-center gap-1.5 rounded-lg px-2 transition-colors hover:text-slate-800 dark:hover:text-slate-200"
+              onPress={p.onBack}
+              activeStyle={{ opacity: 0.7 }}
+            >
+              <Text class="text-[16px] text-slate-600 dark:text-slate-400">‹</Text>
+              <Text class="text-[14px] font-medium text-slate-600 dark:text-slate-400">Back</Text>
+            </View>
+          </View>
+          <If when={Boolean(p.fill)}>
+            <View class="flex-1 flex-col min-h-0 px-3 pb-3">{sheetBody()}</View>
+          </If>
+          <If when={!p.fill}>
+            <Scroll class="flex-1">
+              <View class="px-3 pb-3">{sheetBody()}</View>
+            </Scroll>
+          </If>
+        </View>
+      </If>
+    </>
+  );
+}
+
+/** The below-lg circular trigger for the hidden side panel (owner rule):
+ *  a teal FAB at the bottom right, only while the sheet is closed. */
+function PanelFab(p: { onPress: () => void; label: string; glyph: string; badge?: () => number }) {
+  const count = () => (p.badge ? p.badge() : 0);
+  return (
+    <View
+      accessibilityLabel={p.label}
+      class="fixed bottom-6 right-6 w-14 h-14 rounded-full items-center justify-center bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600 shadow-lg hover:shadow-xl transition-colors cursor-pointer lg:hidden focus-visible:ring-2 focus-visible:ring-teal-500/40 focus-visible:ring-offset-2"
+      onPress={p.onPress}
+      activeStyle={{ opacity: 0.85 }}
+    >
+      <Text class="text-[20px] text-white">{p.glyph}</Text>
+      <If when={count() > 0}>
+        <View class="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 rounded-full bg-white items-center justify-center">
+          <Text class="text-[10px] font-bold text-teal-700">{`${count()}`}</Text>
+        </View>
+      </If>
+    </View>
+  );
+}
+
 /** Set by the Books window: back to Home. Cards leave it unset, so they show no arrow. */
 let goBack: (() => void) | null = null;
 

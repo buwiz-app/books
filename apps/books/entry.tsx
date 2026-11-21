@@ -633,7 +633,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             </View>
           </View>
         </View>
-        <View class="flex-1 flex-row gap-6 p-6 pb-4 overflow-hidden">
+        <View class="flex-1 flex-row gap-6 p-6 pb-20 lg:pb-4 overflow-hidden">
         <View class="flex-1 min-h-0 rounded-2xl overflow-hidden flex-col bg-white dark:bg-[#1e293b] shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
             <View class={`shrink-0 px-6 pt-6 pb-12 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
               <View class="flex-row flex-wrap items-start gap-5">
@@ -1317,7 +1317,20 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               </View>
             </If>
         </View>
-        <View class="hidden lg:flex shrink-0"><EntrySide /></View>
+        <SidePanel
+          open={entrySideSheet}
+          onBack={() => entrySideSheet.set(false)}
+          body={() => <EntrySide />}
+          fill
+        />
+        <If when={!entrySideSheet()}>
+          <PanelFab
+            label="Open attachments and chat"
+            glyph="📎"
+            badge={() => entryStaged().length}
+            onPress={() => entrySideSheet.set(true)}
+          />
+        </If>
         <If when={typeMenuOpen()}>
           <Overlay
             anchor={typeMenuAnchor}

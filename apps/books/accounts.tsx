@@ -317,37 +317,19 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
           </If>
         </View>
 
-        {/* Right Side Panel — Filter by Type tiles or Category Detail (lg+ only) */}
-        <View class={`hidden lg:flex w-[340px] shrink-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
-          {sideInner()}
-        </View>
+        {/* Right Side Panel — Filter by Type tiles or Category Detail:
+            lg+ a quarter column, below lg a full-screen sheet (owner rule) */}
+        <SidePanel
+          open={() => Boolean(selected()) || mFilter()}
+          onBack={closeSide}
+          card
+          class={`rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}
+          body={sideInner}
+        />
+        <If when={!Boolean(selected()) && !mFilter()}>
+          <PanelFab label="Open details" glyph="☰" onPress={() => mFilter.set(true)} />
+        </If>
       </View>
-
-      {/* Below lg the side panel becomes a slide-in drawer, like the reference */}
-      <If when={Boolean(selected()) || mFilter()}>
-        <View class="absolute inset-0 lg:hidden">
-          <View class="absolute inset-0 bg-black/30" onPress={closeSide} />
-          <View class="absolute top-0 right-0 bottom-0 w-full max-w-[400px] flex-col shadow-2xl bg-[#e8f0f2] dark:bg-slate-900">
-            <View class="shrink-0 flex-row items-center px-2 py-1">
-              <View
-                class="h-11 flex-row items-center gap-1.5 rounded-lg px-2"
-                onPress={closeSide}
-                activeStyle={{ opacity: 0.7 }}
-              >
-                <Text class="text-[16px] text-slate-600 dark:text-slate-400">‹</Text>
-                <Text class="text-[14px] font-medium text-slate-600 dark:text-slate-400">Back</Text>
-              </View>
-            </View>
-            <Scroll class="flex-1">
-              <View class="px-3 pb-3">
-                <View class={`rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
-                  {sideInner()}
-                </View>
-              </View>
-            </Scroll>
-          </View>
-        </View>
-      </If>
 
       {/* "+ New Category" chevron menu */}
       <If when={catMenu()}>

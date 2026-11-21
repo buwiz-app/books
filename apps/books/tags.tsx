@@ -314,32 +314,17 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
           </If>
         </View>
 
-        {/* ── Right Card (lg+ only) ── */}
-        <View class="hidden lg:flex flex-col w-[340px] shrink-0">
-          {sideCards()}
-        </View>
+        {/* ── Right Card: lg+ a quarter column, below lg a full-screen
+              sheet (owner rule) ── */}
+        <SidePanel
+          open={() => sidePanel() !== "empty"}
+          onBack={closeSide}
+          body={sideCards}
+        />
+        <If when={sidePanel() === "empty"}>
+          <PanelFab label="Open details" glyph="☰" onPress={openNew} />
+        </If>
       </View>
-      {/* Below lg the side panel becomes a slide-in drawer, like the reference */}
-      <If when={sidePanel() !== "empty"}>
-        <View class="absolute inset-0 lg:hidden">
-          <View class="absolute inset-0 bg-black/30" onPress={closeSide} />
-          <View class="absolute top-0 right-0 bottom-0 w-full max-w-[400px] flex-col shadow-2xl bg-[#e8f0f2] dark:bg-slate-900">
-            <View class="shrink-0 flex-row items-center px-2 py-1">
-              <View
-                class="h-11 flex-row items-center gap-1.5 rounded-lg px-2"
-                onPress={closeSide}
-                activeStyle={{ opacity: 0.7 }}
-              >
-                <Text class="text-[16px] text-slate-600 dark:text-slate-400">‹</Text>
-                <Text class="text-[14px] font-medium text-slate-600 dark:text-slate-400">Back</Text>
-              </View>
-            </View>
-            <Scroll class="flex-1">
-              <View class="px-3 pb-3">{sideCards()}</View>
-            </Scroll>
-          </View>
-        </View>
-      </If>
     </View>
   );
 }
