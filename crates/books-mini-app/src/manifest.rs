@@ -129,7 +129,7 @@ fn app_entry(app: &apps::App) -> Value {
                 "type": "object",
                 "properties": {
                     TICKET_PROP: { "type": "string", "maxLength": 30 },
-                    "page": { "type": "string", "enum": ["today", "ledger", "unpaid", "reconcile", "reports", "forms", "people", "accounts", "tags", "payroll", "certificates", "settings", "import"] },
+                    "page": { "type": "string", "enum": ["today", "ledger", "transactions", "unpaid", "reconcile", "reports", "forms", "people", "accounts", "tags", "payroll", "certificates", "settings", "import"] },
                     // the BIR choices the assistant read from the BIR draft (owner decision): shown, never set
                     "form": { "type": "string", "enum": ["2551Q", "1601C", "1701MS"] },
                     "tax_option": { "type": "string", "enum": ["graduated", "eight_percent"] },
