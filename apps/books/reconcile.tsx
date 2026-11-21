@@ -285,12 +285,12 @@ function ReconcileGrid() {
       <Loading res={data} />
       <If when={Boolean(d())}>
         <View class="gap-4">
-          <View class={`flex-row rounded-xl border overflow-hidden ${C.panel} ${C.line}`}>
+          {/* Two-up below sm (like the reference's grid-cols-2), four-across from sm. */}
+          <View class={`flex-row flex-wrap rounded-xl border overflow-hidden ${C.panel} ${C.line}`}>
             <Each of={REC_TILES}>
               {(t: Any, i: Any) => (
                 <View
-                  class={`flex-1 flex-row items-center gap-3 px-5 py-4 ${i() < 3 ? `border-r ${C.line}` : ""} ${recFilter() === t().key ? t().activeBg : ""}`}
-                  hoverStyle={recFilter() === t().key ? undefined : { backgroundColor: "#f9fafb" }}
+                  class={`w-1/2 sm:w-auto sm:flex-1 flex-row items-center gap-3 px-5 py-4 cursor-pointer transition-colors ${i() < 3 ? `border-r ${C.line}` : ""} ${i() < 2 ? `border-b ${C.line} sm:border-b-0` : ""} ${recFilter() === t().key ? t().activeBg : "hover:bg-gray-50 dark:hover:bg-white/5"}`}
                   activeStyle={{ opacity: 0.7 }}
                   onPress={() => recFilter.set(recFilter() === t().key ? "" : String(t().key))}
                 >
@@ -335,8 +335,7 @@ function ReconcileGrid() {
             <Each of={REC_SORTS}>
               {(o: Any) => (
                 <View
-                  class={`flex-row items-center gap-2.5 px-3 py-2 ${recSort() === o()[0] ? "bg-emerald-50 dark:bg-emerald-900/20" : ""}`}
-                  hoverStyle={{ backgroundColor: "#f9fafb" }}
+                  class={`flex-row items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${recSort() === o()[0] ? "bg-emerald-50 dark:bg-emerald-900/20" : "hover:bg-gray-50 dark:hover:bg-white/5"}`}
                   activeStyle={{ opacity: 0.7 }}
                   onPress={() => {
                     if (recSort() === o()[0]) recSortDesc.set(!recSortDesc());
@@ -366,8 +365,7 @@ function ReconcileGrid() {
             <Each of={d()?.rows || []}>
               {(r: Any) => (
                 <View
-                  class="flex-row items-center gap-2.5 px-3 py-2"
-                  hoverStyle={{ backgroundColor: "#f9fafb" }}
+                  class="flex-row items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
                   activeStyle={{ opacity: 0.7 }}
                   onPress={() => {
                     recStartMenu.set(false);
@@ -387,7 +385,7 @@ function ReconcileGrid() {
       <If when={recKebabMenu()}>
         <Overlay anchor={recKebabAnchor} placement="bottom" align="end" offset={4} margin={8} onPressOutside={() => recKebabMenu.set(false)} onCancel={() => recKebabMenu.set(false)}>
           <View class={`w-52 rounded-xl border shadow-xl py-1 ${C.panel} ${C.line}`}>
-            <View class="flex-row items-center gap-2.5 px-3 py-2" hoverStyle={{ backgroundColor: "#f9fafb" }} activeStyle={{ opacity: 0.7 }}
+            <View class="flex-row items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-white/5" activeStyle={{ opacity: 0.7 }}
               onPress={() => {
                 recKebabMenu.set(false);
                 toast("Open a month's reconciliation first, then print it.");
@@ -431,8 +429,7 @@ function ReconcileAccount(p: { row: Any; onCell: (r: Any, c: Any) => void }) {
   return (
     <View>
       <View
-        class="flex-row items-center gap-3 px-4 py-3 border-b border-[#e2e8f0] dark:border-white/10"
-        hoverStyle={{ backgroundColor: "#f8fafc" }}
+        class="flex-row items-center gap-3 px-4 py-3 border-b border-[#e2e8f0] dark:border-white/10 cursor-pointer transition-colors hover:bg-[#f8fafc] dark:hover:bg-white/[0.02]"
         activeStyle={{ opacity: 0.7 }}
         onPress={() => recExpanded.set(open() ? recExpanded().filter((x) => x !== String(r().ticket)) : [...recExpanded(), String(r().ticket)])}
       >
@@ -468,7 +465,7 @@ function ReconcileAccount(p: { row: Any; onCell: (r: Any, c: Any) => void }) {
               const st = () => REC_STATE[String(c().state)] || REC_STATE.none;
               const empty = () => c().state === "none" || c().state === "todo";
               return (
-                <View class="flex-row items-center gap-3 px-4 py-2.5 pl-14 border-b border-[#f0f3f6] dark:border-white/5" hoverStyle={{ backgroundColor: "#ffffff" }}>
+                <View class="flex-row items-center gap-3 px-4 py-2.5 pl-14 border-b border-[#f0f3f6] dark:border-white/5 cursor-pointer transition-colors hover:bg-white dark:hover:bg-white/[0.03]">
                   <If when={empty()}>
                     <Text class="w-3 text-center text-[12px] text-gray-300 dark:text-white/20">◌</Text>
                   </If>
@@ -486,8 +483,7 @@ function ReconcileAccount(p: { row: Any; onCell: (r: Any, c: Any) => void }) {
                   <View class="shrink-0">
                     <If when={!empty()}>
                       <View
-                        class="flex-row items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500"
-                        hoverStyle={{ backgroundColor: "#059669" }}
+                        class="flex-row items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 cursor-pointer transition-colors hover:bg-emerald-600"
                         activeStyle={{ opacity: 0.7 }}
                         onPress={() => p.onCell(r(), c())}
                       >
@@ -496,8 +492,7 @@ function ReconcileAccount(p: { row: Any; onCell: (r: Any, c: Any) => void }) {
                     </If>
                     <If when={empty()}>
                       <View
-                        class="flex-row items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-white/5"
-                        hoverStyle={{ backgroundColor: "#e5e7eb" }}
+                        class="flex-row items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-white/5 cursor-pointer transition-colors hover:bg-gray-200 dark:hover:bg-white/10"
                         activeStyle={{ opacity: 0.7 }}
                         onPress={() => p.onCell(r(), c())}
                       >
@@ -691,8 +686,7 @@ function MatchView() {
                   />
                 </View>
                 <View
-                  class={`flex-row items-center gap-1.5 px-2 py-0.5 rounded-sm bg-[#e6f4ea] dark:bg-emerald-500/10 border ${recStat() === "m" ? "border-emerald-500" : "border-transparent"}`}
-                  hoverStyle={{ borderColor: "#6ee7b7" }}
+                  class={`flex-row items-center gap-1.5 px-2 py-0.5 rounded-sm bg-[#e6f4ea] dark:bg-emerald-500/10 border cursor-pointer transition-colors ${recStat() === "m" ? "border-emerald-500" : "border-transparent hover:border-emerald-300 dark:hover:border-emerald-600"}`}
                   activeStyle={{ opacity: 0.7 }}
                   onPress={() => recStat.set(recStat() === "m" ? "all" : "m")}
                 >
@@ -700,8 +694,7 @@ function MatchView() {
                   <Text class="text-[11px] font-bold text-[#1e8e3e] dark:text-emerald-400">✓</Text>
                 </View>
                 <View
-                  class={`flex-row items-center gap-1.5 px-2 py-0.5 rounded-sm bg-[#fef7e0] dark:bg-amber-500/10 border ${recStat() === "x" ? "border-amber-500" : "border-transparent"}`}
-                  hoverStyle={{ borderColor: "#fcd34d" }}
+                  class={`flex-row items-center gap-1.5 px-2 py-0.5 rounded-sm bg-[#fef7e0] dark:bg-amber-500/10 border cursor-pointer transition-colors ${recStat() === "x" ? "border-amber-500" : "border-transparent hover:border-amber-300 dark:hover:border-amber-600"}`}
                   activeStyle={{ opacity: 0.7 }}
                   onPress={() => recStat.set(recStat() === "x" ? "all" : "x")}
                 >
@@ -739,18 +732,13 @@ function MatchView() {
               <Each of={rowsView()} key={rowKey}>
                 {(r: Any) => (
                   <View
-                    class={`${side() ? "" : "flex-row items-center"} border-b ${
+                    class={`${side() ? "" : "flex-row items-center"} border-b cursor-pointer transition-colors ${
                       r().no === selectedLine()
                         ? "bg-[#eff6ff] dark:bg-blue-950/60 border-[#dbeafe] dark:border-blue-900/40"
                         : r().match === "m"
-                          ? "bg-emerald-50/40 dark:bg-emerald-950/10 border-emerald-100/50 dark:border-emerald-900/20"
-                          : "bg-orange-50/40 dark:bg-orange-950/10 border-orange-100/50 dark:border-orange-900/20"
+                          ? "bg-emerald-50/40 dark:bg-emerald-950/10 border-emerald-100/50 dark:border-emerald-900/20 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/25"
+                          : "bg-orange-50/40 dark:bg-orange-950/10 border-orange-100/50 dark:border-orange-900/20 hover:bg-orange-50/70 dark:hover:bg-orange-950/25"
                     }`}
-                    hoverStyle={
-                      r().match === "m"
-                        ? { backgroundColor: "rgba(209,250,229,0.55)" }
-                        : { backgroundColor: "rgba(255,237,213,0.55)" }
-                    }
                     onPress={() => pick(r())}
                   >
                     {/* left status bar: blue selected, emerald matched, orange unsettled */}
