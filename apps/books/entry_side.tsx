@@ -28,6 +28,21 @@ const SIDE_EXT: Record<string, string> = { pdf: "application/pdf", png: "image/p
 // enforces the same so the limit is told before a pick, not after one
 const SIDE_MAX_BYTES = 52428800;
 
+// The rail's tab icons: the old app's 16×16 stroke SVGs (transactions_.new.tsx),
+// as data URIs through Avatar — the SDK-1 sandbox has no Image import.
+const sideSvg = (inner: string, width: number) =>
+  `data:image/svg+xml,${encodeURIComponent(
+    `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`,
+  )}`;
+const SIDE_ICONS: Record<string, string> = {
+  attachments: sideSvg(
+    '<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
+    2,
+  ),
+  ai: sideSvg('<path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/>', 2),
+  activity: sideSvg('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>', 1.5),
+};
+
 function sideB64(bytes: Any): string {
   const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
   let out = "";
@@ -249,16 +264,22 @@ function EntrySide() {
   return (
     <View class="w-full shrink-0 rounded-[24px] border border-[#e2e8f0] dark:border-slate-600 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex-col h-full bg-white dark:bg-slate-800">
       <View class={`flex-row justify-evenly px-4 py-3 gap-2 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
-        <Each of={[["attachments", "📎"], ["ai", "✧"], ["activity", "◷"]]}>
+        <Each of={["attachments", "ai", "activity"]}>
           {(t: Any) => (
             <View
-              accessibilityLabel={t()[0] === "ai" ? "Assistant" : t()[0] === "attachments" ? "Attachments" : "Activity log"}
-              class={`relative w-[88px] h-11 rounded-full items-center justify-center transition-colors ${side() === t()[0] ? "bg-white/20" : "hover:bg-white/10"}`}
-              onPress={() => side.set(t()[0])}
+              accessibilityLabel={t() === "ai" ? "Assistant" : t() === "attachments" ? "Attachments" : "Activity log"}
+              class={`group relative w-[88px] h-11 rounded-full items-center justify-center transition-colors ${side() === t() ? "bg-white/20" : "hover:bg-white/10"}`}
+              onPress={() => side.set(t())}
               activeStyle={{ opacity: 0.7 }}
             >
-              <Text class={`text-[16px] ${side() === t()[0] ? "text-white" : "text-white/50 hover:text-white"}`}>{t()[1]}</Text>
-              <If when={t()[0] === "attachments" && entryStaged().length > 0}>
+              <Avatar
+                src={SIDE_ICONS[t()]}
+                accessibilityLabel=""
+                class="w-4 h-4"
+                fallbackDelay={Infinity}
+                imageClass={side() === t() ? "tint-white" : "tint-white/50 group-hover:tint-white"}
+              />
+              <If when={t() === "attachments" && entryStaged().length > 0}>
                 <View class="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-white items-center justify-center">
                   <Text class="text-[9px] font-bold text-[#1a6b3c]">{`${entryStaged().length}`}</Text>
                 </View>
