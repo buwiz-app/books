@@ -93,16 +93,119 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
     if (selected()) return "view";
     return "empty";
   };
+  const closeSide = () => {
+    selected.set(null);
+    mode.set("");
+  };
+  const sideCards = () => (
+    <View class="flex-col gap-3">
+      {/* Empty state */}
+      <If when={sidePanel() === "empty"}>
+        <View class={`rounded-[16px] border overflow-hidden items-center justify-center py-12 px-8 bg-white dark:bg-slate-800 ${C.line}`}>
+          <View class="w-16 h-16 rounded-2xl items-center justify-center bg-[#e8f5f0] dark:bg-[#134e4a]/40 mb-4">
+            <Text class="text-[30px] text-[#2a9d8f] dark:text-[#2dd4bf]">{tagGlyph(tagKind())}</Text>
+          </View>
+          <Text class={`text-[14px] font-medium ${C.ink}`}>{L().selectPrompt}</Text>
+          <Text class={`text-[12px] mt-1 text-center ${C.dim}`}>{L().selectHint}</Text>
+        </View>
+      </If>
+
+      {/* Detail card */}
+      <If when={sidePanel() === "view"}>
+        <View class={`rounded-[16px] border overflow-hidden bg-white dark:bg-slate-800 ${C.line}`}>
+          {/* Teal accent band */}
+          <View class="bg-[#2a9d8f] items-center pt-5 pb-1">
+            <View class="w-10 h-10 rounded-lg items-center justify-center bg-white/20">
+              <Text class="text-[18px] text-white">{tagGlyph(tagKind())}</Text>
+            </View>
+          </View>
+          {/* Header: teal icon + name + edit */}
+          <View class="px-5 pt-3 pb-4">
+            <View class="flex-row items-start gap-3">
+              <View class="w-10 h-10 rounded-lg items-center justify-center bg-[#2a9d8f] shrink-0">
+                <Text class="text-[16px] text-white">{tagGlyph(tagKind())}</Text>
+              </View>
+              <View class="flex-1 min-w-0">
+                <Text class={`text-[17px] font-bold ${C.ink}`}>{selected()?.name || ""}</Text>
+                <Text class={`text-[11px] mt-0.5 uppercase tracking-wider ${C.dim}`}>{L().noun}</Text>
+              </View>
+            </View>
+          </View>
+          {/* Activity box */}
+          <View class="mx-4 mb-4 rounded-xl bg-[#f5f7fb] dark:bg-slate-900 p-4">
+            <View class="flex-row items-center gap-2">
+              <Text class="text-[13px] text-[#2a9d8f]">{tagGlyph(tagKind())}</Text>
+              <Text class={`text-[13px] font-semibold ${C.ink}`}>{selected()?.name || ""}</Text>
+            </View>
+            <Text class={`text-[11px] mt-0.5 ${C.dim}`}>{d()?.month.label || ""}</Text>
+            <View class="flex-row items-baseline gap-4 mt-3">
+              <View>
+                <Text class={`text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Spent</Text>
+                <Text class={`text-[16px] font-semibold font-mono ${C.ink}`}>{selected()?.spent_shown || "₱ 0.00"}</Text>
+              </View>
+              <View>
+                <Text class={`text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Transactions</Text>
+                <Text class={`text-[16px] font-semibold font-mono ${C.ink}`}>{String(selected()?.count ?? 0)}</Text>
+              </View>
+            </View>
+          </View>
+          {/* Footer — the reference deactivates here; Books links the ledger instead */}
+          <View class="px-5 pb-4">
+            <View
+              class="h-[38px] rounded-lg border border-[#0d9488]/30 items-center justify-center transition-colors hover:bg-[#f0fdfa] dark:hover:bg-[#134e4a]/20"
+              onPress={() => p.go("ledger")}
+              activeStyle={{ opacity: 0.75 }}
+            >
+              <Text class="text-[13px] font-medium text-[#0d9488] dark:text-[#2dd4bf]">View in Ledger</Text>
+            </View>
+          </View>
+        </View>
+      </If>
+
+      {/* New form card */}
+      <If when={sidePanel() === "form"}>
+        <View class={`rounded-[16px] border overflow-hidden bg-white dark:bg-slate-800 ${C.line}`}>
+          <View class="bg-[#2a9d8f] px-5 py-4 flex-row items-center gap-3">
+            <Text class="text-[15px] font-bold text-white">+</Text>
+            <Text class="text-[15px] font-semibold text-white">{L().newEntity}</Text>
+          </View>
+          <View class="p-5 gap-4">
+            <View class="gap-1.5">
+              <Text class={`text-[11px] font-semibold uppercase tracking-wider ${C.dim}`}>{L().nameLabel}</Text>
+              <TextBox label={L().nameLabel} value={fname()} onChange={(v) => fname.set(v)} placeholder={L().namePlaceholder} entry />
+            </View>
+            <View class={`flex-row items-center justify-end gap-3 pt-4 border-t ${C.line}`}>
+              <View
+                class={`h-[38px] px-5 rounded-lg border items-center justify-center transition-colors ${C.line} hover:bg-[#f8fafc] dark:hover:bg-slate-700`}
+                onPress={closeSide}
+                activeStyle={{ opacity: 0.75 }}
+              >
+                <Text class={`text-[13px] font-medium ${C.ink}`}>Cancel</Text>
+              </View>
+              <View
+                class={`h-[38px] px-5 rounded-lg items-center justify-center transition-colors ${fname().trim() ? "bg-[#2a9d8f] hover:bg-[#0f766e]" : "bg-[#2a9d8f] opacity-50"}`}
+                onPress={save}
+                activeStyle={{ opacity: 0.85 }}
+              >
+                <Text class="text-[13px] font-semibold text-white">{busy() ? "Saving…" : "Save"}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </If>
+    </View>
+  );
   return (
-    <View class="flex-1 flex-col overflow-hidden">
+    <View class="flex-1 flex-col overflow-hidden relative">
       {/* Top Navigation — Back + New pill */}
-      <View class="shrink-0 flex-row items-center justify-between px-6 py-3.5">
+      <View class="shrink-0 flex-row items-center justify-between px-3 sm:px-6 py-2 sm:py-3">
         <View
           class="flex-row items-center gap-1.5 py-1.5 pr-2"
           onPress={() => p.go("today")}
           activeStyle={{ opacity: 0.7 }}
         >
-          <Text class={`text-[14px] font-medium transition-colors ${C.ink} hover:text-[#0d9488] dark:hover:text-[#2dd4bf]`}>‹ Back to Dashboard</Text>
+          <Text class={`text-[14px] font-medium transition-colors ${C.ink} hover:text-[#0d9488] dark:hover:text-[#2dd4bf]`}>‹</Text>
+          <Text class={`hidden sm:inline text-[14px] font-medium transition-colors ${C.ink} hover:text-[#0d9488] dark:hover:text-[#2dd4bf]`}>Back to Dashboard</Text>
         </View>
         <View
           class="h-[38px] flex-row items-center gap-1.5 rounded-full bg-[#0d9488] px-4 shadow-sm transition-colors hover:bg-[#0f766e]"
@@ -110,12 +213,13 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
           activeStyle={{ opacity: 0.85 }}
         >
           <Text class="text-[14px] font-bold text-white">+</Text>
-          <Text class="text-[13px] font-semibold text-white">{L().newEntity}</Text>
+          <Text class="sm:hidden text-[13px] font-semibold text-white">New</Text>
+          <Text class="hidden sm:inline text-[13px] font-semibold text-white">{L().newEntity}</Text>
         </View>
       </View>
 
       {/* Segment — Departments | Locations */}
-      <View class="shrink-0 px-6 pb-3">
+      <View class="shrink-0 px-3 sm:px-6 pb-3">
         <Seg
           options={[
             ["department", "Departments"],
@@ -127,7 +231,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
       </View>
 
       {/* Two-Panel Layout */}
-      <View class="flex-1 min-h-0 flex-row gap-6 px-6 pb-6 overflow-hidden">
+      <View class="flex-1 min-h-0 flex-row gap-6 px-3 pb-3 sm:px-6 sm:pb-6 overflow-hidden">
         {/* ── Left Card ── */}
         <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
           <View class="shrink-0 bg-[#2a9d8f] px-5 py-4 flex-row items-center gap-3">
@@ -210,107 +314,32 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
           </If>
         </View>
 
-        {/* ── Right Card ── */}
-        <View class="w-[340px] shrink-0">
-          {/* Empty state */}
-          <If when={sidePanel() === "empty"}>
-            <View class={`rounded-[16px] border overflow-hidden items-center justify-center py-12 px-8 bg-white dark:bg-slate-800 ${C.line}`}>
-              <View class="w-16 h-16 rounded-2xl items-center justify-center bg-[#e8f5f0] dark:bg-[#134e4a]/40 mb-4">
-                <Text class="text-[30px] text-[#2a9d8f] dark:text-[#2dd4bf]">{tagGlyph(tagKind())}</Text>
-              </View>
-              <Text class={`text-[14px] font-medium ${C.ink}`}>{L().selectPrompt}</Text>
-              <Text class={`text-[12px] mt-1 text-center ${C.dim}`}>{L().selectHint}</Text>
-            </View>
-          </If>
-
-          {/* Detail card */}
-          <If when={sidePanel() === "view"}>
-            <View class={`rounded-[16px] border overflow-hidden bg-white dark:bg-slate-800 ${C.line}`}>
-              {/* Teal accent band */}
-              <View class="bg-[#2a9d8f] items-center pt-5 pb-1">
-                <View class="w-10 h-10 rounded-lg items-center justify-center bg-white/20">
-                  <Text class="text-[18px] text-white">{tagGlyph(tagKind())}</Text>
-                </View>
-              </View>
-              {/* Header: teal icon + name + edit */}
-              <View class="px-5 pt-3 pb-4">
-                <View class="flex-row items-start gap-3">
-                  <View class="w-10 h-10 rounded-lg items-center justify-center bg-[#2a9d8f] shrink-0">
-                    <Text class="text-[16px] text-white">{tagGlyph(tagKind())}</Text>
-                  </View>
-                  <View class="flex-1 min-w-0">
-                    <Text class={`text-[17px] font-bold ${C.ink}`}>{selected()?.name || ""}</Text>
-                    <Text class={`text-[11px] mt-0.5 uppercase tracking-wider ${C.dim}`}>{L().noun}</Text>
-                  </View>
-                </View>
-              </View>
-              {/* Activity box */}
-              <View class="mx-4 mb-4 rounded-xl bg-[#f5f7fb] dark:bg-slate-900 p-4">
-                <View class="flex-row items-center gap-2">
-                  <Text class="text-[13px] text-[#2a9d8f]">{tagGlyph(tagKind())}</Text>
-                  <Text class={`text-[13px] font-semibold ${C.ink}`}>{selected()?.name || ""}</Text>
-                </View>
-                <Text class={`text-[11px] mt-0.5 ${C.dim}`}>{d()?.month.label || ""}</Text>
-                <View class="flex-row items-baseline gap-4 mt-3">
-                  <View>
-                    <Text class={`text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Spent</Text>
-                    <Text class={`text-[16px] font-semibold font-mono ${C.ink}`}>{selected()?.spent_shown || "₱ 0.00"}</Text>
-                  </View>
-                  <View>
-                    <Text class={`text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Transactions</Text>
-                    <Text class={`text-[16px] font-semibold font-mono ${C.ink}`}>{String(selected()?.count ?? 0)}</Text>
-                  </View>
-                </View>
-              </View>
-              {/* Footer — the reference deactivates here; Books links the ledger instead */}
-              <View class="px-5 pb-4">
-                <View
-                  class="h-[38px] rounded-lg border border-[#0d9488]/30 items-center justify-center transition-colors hover:bg-[#f0fdfa] dark:hover:bg-[#134e4a]/20"
-                  onPress={() => p.go("ledger")}
-                  activeStyle={{ opacity: 0.75 }}
-                >
-                  <Text class="text-[13px] font-medium text-[#0d9488] dark:text-[#2dd4bf]">View in Ledger</Text>
-                </View>
-              </View>
-            </View>
-          </If>
-
-          {/* New form card */}
-          <If when={sidePanel() === "form"}>
-            <View class={`rounded-[16px] border overflow-hidden bg-white dark:bg-slate-800 ${C.line}`}>
-              <View class="bg-[#2a9d8f] px-5 py-4 flex-row items-center gap-3">
-                <Text class="text-[15px] font-bold text-white">+</Text>
-                <Text class="text-[15px] font-semibold text-white">{L().newEntity}</Text>
-              </View>
-              <View class="p-5 gap-4">
-                <View class="gap-1.5">
-                  <Text class={`text-[11px] font-semibold uppercase tracking-wider ${C.dim}`}>{L().nameLabel}</Text>
-                  <TextBox label={L().nameLabel} value={fname()} onChange={(v) => fname.set(v)} placeholder={L().namePlaceholder} entry />
-                </View>
-                <View class={`flex-row items-center justify-end gap-3 pt-4 border-t ${C.line}`}>
-                  <View
-                    class={`h-[38px] px-5 rounded-lg border items-center justify-center transition-colors ${C.line} hover:bg-[#f8fafc] dark:hover:bg-slate-700`}
-                    onPress={() => {
-                      mode.set("");
-                      fname.set("");
-                    }}
-                    activeStyle={{ opacity: 0.75 }}
-                  >
-                    <Text class={`text-[13px] font-medium ${C.ink}`}>Cancel</Text>
-                  </View>
-                  <View
-                    class={`h-[38px] px-5 rounded-lg items-center justify-center transition-colors ${fname().trim() ? "bg-[#2a9d8f] hover:bg-[#0f766e]" : "bg-[#2a9d8f] opacity-50"}`}
-                    onPress={save}
-                    activeStyle={{ opacity: 0.85 }}
-                  >
-                    <Text class="text-[13px] font-semibold text-white">{busy() ? "Saving…" : "Save"}</Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </If>
+        {/* ── Right Card (lg+ only) ── */}
+        <View class="hidden lg:flex flex-col w-[340px] shrink-0">
+          {sideCards()}
         </View>
       </View>
+      {/* Below lg the side panel becomes a slide-in drawer, like the reference */}
+      <If when={sidePanel() !== "empty"}>
+        <View class="absolute inset-0 lg:hidden">
+          <View class="absolute inset-0 bg-black/30" onPress={closeSide} />
+          <View class="absolute top-0 right-0 bottom-0 w-full max-w-[400px] flex-col shadow-2xl bg-[#e8f0f2] dark:bg-slate-900">
+            <View class="shrink-0 flex-row items-center px-2 py-1">
+              <View
+                class="h-11 flex-row items-center gap-1.5 rounded-lg px-2"
+                onPress={closeSide}
+                activeStyle={{ opacity: 0.7 }}
+              >
+                <Text class="text-[16px] text-slate-600 dark:text-slate-400">‹</Text>
+                <Text class="text-[14px] font-medium text-slate-600 dark:text-slate-400">Back</Text>
+              </View>
+            </View>
+            <Scroll class="flex-1">
+              <View class="px-3 pb-3">{sideCards()}</View>
+            </Scroll>
+          </View>
+        </View>
+      </If>
     </View>
   );
 }
