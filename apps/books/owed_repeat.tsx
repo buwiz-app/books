@@ -20,14 +20,14 @@ function RepeatsDue(p: { rows: Any[] }) {
         </Text>
         <Each of={p.rows || []} key={(r: Any) => r.owed}>
           {(r: Any) => (
-            <View class={`flex-row items-center gap-3 px-3 py-2 border-b ${C.line}`}>
+            <View class={`flex-row items-center gap-3 px-3 py-2 border-b ${C.line} flex-wrap`}>
               <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
                 {r().who || ""}
               </Text>
-              <Text class={`w-[150px] text-[12.5px] ${C.ink} truncate`}>
+              <Text class={`w-[150px] hidden md:block text-[12.5px] ${C.ink} truncate`}>
                 {r().doc || ""}
               </Text>
-              <Text class={`w-[90px] text-[12.5px] font-mono ${C.ink}`}>{r().issued}</Text>
+              <Text class={`w-[90px] hidden md:block text-[12.5px] font-mono ${C.ink}`}>{r().issued}</Text>
               <Text class={`w-[110px] text-right text-[12.5px] font-mono ${C.ink}`}>{r().amount_shown}</Text>
               <Btn label="Add this month's copy" small onPress={() => add(r().owed)} />
               <Btn label="Stop repeating" small onPress={() => stop(r().owed)} />
