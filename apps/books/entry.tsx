@@ -1113,13 +1113,6 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                 </View>
               )}
             </Each>
-            <View
-              class={`flex-row items-center gap-2 px-3 py-1.5 border-t ${C.line} hover:bg-[#f1f5f9] dark:hover:bg-slate-700`}
-              activeStyle={{ opacity: 0.7 }}
-              onPress={() => { typeMenuOpen.set(false); p.close(); }}
-            >
-              <Text class="text-xs text-[#64748b] dark:text-slate-400">← Back</Text>
-            </View>
           </View>
           </Overlay>
         </If>
