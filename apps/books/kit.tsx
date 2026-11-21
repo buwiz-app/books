@@ -92,9 +92,19 @@ const ICONS: Record<string, string> = {
   arrowRight: svgIcon('<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>', 2),
   list: svgIcon('<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>', 2),
   circleX: svgIcon('<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>', 2.5),
+  // ReconSummary's card icons (dash for inflow/outflow, not-equal for Net)
+  // and row labels (lucide landmark / book-open).
+  dash: svgIcon('<path d="M5 12h14"/>', 2),
+  notEqual: svgIcon('<path d="M5 9h14M5 15h14m0-10L5 19"/>', 1.5),
+  bookOpen: svgIcon('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>', 2),
+  // Departments/locations pages: DeptIcon (building) and the accent band's
+  // table glyph; locations reuse the location pin.
+  building: svgIcon('<rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M16 6h.01M12 6h.01M8 10h.01M16 10h.01M12 10h.01M8 14h.01M16 14h.01M12 14h.01"/>', 1.5),
+  table: svgIcon('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>', 1.5),
 };
 
-const WEEKDAYS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+// Weekday labels by day number (0 = Sunday): the owner's "M T W Th F S Su".
+const WEEKDAYS = ["Su", "M", "T", "W", "Th", "F", "S"];
 
 /** The entry type's old-app tab icon (TABS in transactions/shared/constants.tsx). */
 const modeIcon = (mode: string) =>
@@ -679,34 +689,36 @@ function BooksDate(p: { value: string; onChange: (value: string) => void; today?
       onChange={({ value }) => p.onChange(typeof value === "string" ? value : "")}
       accessibilityLabel="Date"
       dateFormat="%B %-d, %Y"
-      presets={p.today ? [{ label: "Today", value: p.today }] : []}
+      presets={p.today ? [{ label: "Today", value: p.today }, { label: "Cancel", value: p.value || p.today }] : []}
       popupClass="rounded-xl border border-[#e2e8f0] bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
-      popupStyle={{ width: 280 }}
+      popupStyle={{ width: 264 }}
       contentClass="flex flex-col-reverse"
-      presetsClass="flex-row items-center border-t border-[#e2e8f0] dark:border-slate-700 mt-4 pt-3"
-      presetClass="text-xs font-medium text-[#27ae60] dark:text-[#2ecc71] hover:underline"
-      calendarClass="p-5"
-      headerClass="mb-3"
+      presetsClass="flex-row items-center justify-between border-t border-[#e2e8f0] dark:border-slate-700 mt-3 mx-4 mb-4 pt-3"
+      presetClass="text-xs font-medium transition-colors first:text-[#27ae60] first:dark:text-[#2ecc71] first:hover:underline last:px-4 last:py-1.5 last:text-[#64748b] last:dark:text-slate-400 last:hover:text-[#334155] last:dark:hover:text-slate-200"
+      calendarClass="p-4"
+      headerClass="mb-2"
+      rowClass="gap-y-1"
+      firstDayOfWeek={1}
       itemClass="group flex items-center justify-center data-outside:invisible"
       renderItem={(e: Any) => {
         const kind = String(e.kind || "");
         if (kind === "previous") {
           return (
-            <View class="w-7 h-7 rounded-md items-center justify-center transition-colors group-hover:bg-[#f1f5f9] dark:group-hover:bg-slate-800">
+            <View class="w-8 h-8 rounded-md items-center justify-center transition-colors group-hover:bg-[#f1f5f9] dark:group-hover:bg-slate-800">
               <Avatar src={ICONS.chevronLeft} class="w-3.5 h-3.5 group-disabled:opacity-30" imageClass="tint-[#64748b] dark:tint-slate-400" fallbackDelay={Infinity} accessibilityLabel="" />
             </View>
           );
         }
         if (kind === "next") {
           return (
-            <View class="w-7 h-7 rounded-md items-center justify-center transition-colors group-hover:bg-[#f1f5f9] dark:group-hover:bg-slate-800">
+            <View class="w-8 h-8 rounded-md items-center justify-center transition-colors group-hover:bg-[#f1f5f9] dark:group-hover:bg-slate-800">
               <Avatar src={ICONS.chevronRight} class="w-3.5 h-3.5 group-disabled:opacity-30" imageClass="tint-[#64748b] dark:tint-slate-400" fallbackDelay={Infinity} accessibilityLabel="" />
             </View>
           );
         }
         if (kind === "monthToggle" || kind === "month_toggle") {
           return (
-            <Text class="text-sm font-semibold text-[#1e293b] dark:text-white">
+            <Text class="flex-1 text-center text-sm font-semibold text-[#1e293b] dark:text-white">
               {`${MONTH_NAMES[Number(e.month || 1) - 1] || ""} ${e.year}`}
             </Text>
           );
@@ -715,9 +727,8 @@ function BooksDate(p: { value: string; onChange: (value: string) => void; today?
           return <View class="w-0 h-0 overflow-hidden" />;
         }
         if (kind === "weekday") {
-          // DayPicker: 7 equal centered cols, text-[11px] medium #94a3b8, py-0.5 mb-1.
           return (
-            <Text class="w-full pt-0.5 pb-1.5 text-center text-[11px] font-medium text-[#94a3b8] dark:text-slate-500">
+            <Text class="w-full py-0.5 text-center text-[11px] font-medium text-[#94a3b8] dark:text-slate-500">
               {WEEKDAYS[Number(e.value || 0) % 7] || ""}
             </Text>
           );
@@ -741,9 +752,9 @@ function BooksDate(p: { value: string; onChange: (value: string) => void; today?
             </View>
           );
         }
-        // Day (outside days are hidden by the item's data-outside:invisible).
+        // Day: a fixed 32px square centred in its column, the states on the square.
         return (
-          <View class="w-full py-1.5 rounded-md items-center justify-center transition-colors group-selected:bg-[#27ae60] group-hover:bg-[#f1f5f9] dark:group-hover:bg-slate-700 group-selected:group-hover:bg-[#27ae60] group-data-today:ring-1 group-data-today:ring-inset group-data-today:ring-[#27ae60] dark:group-data-today:ring-[#2ecc71]">
+          <View class="w-8 h-8 rounded-md items-center justify-center transition-colors group-selected:bg-[#27ae60] group-hover:bg-[#f1f5f9] dark:group-hover:bg-slate-700 group-selected:group-hover:bg-[#27ae60] group-data-today:ring-1 group-data-today:ring-inset group-data-today:ring-[#27ae60] dark:group-data-today:ring-[#2ecc71]">
             <Text class="text-[13px] text-[#334155] dark:text-slate-300 group-selected:text-white group-selected:font-semibold group-data-today:text-[#27ae60] group-data-today:font-medium dark:group-data-today:text-[#2ecc71] group-selected:group-data-today:text-white">
               {e.value}
             </Text>
