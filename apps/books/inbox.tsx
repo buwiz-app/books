@@ -287,7 +287,7 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
         <View class={`${inboxOpen() ? "flex" : "hidden lg:flex"} flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-900 ${C.line}`}>
           <View class={`lg:hidden shrink-0 flex-row items-center border-b px-2 py-1 ${C.line}`}>
             <View class="h-9 flex-row items-center gap-1.5 rounded-lg px-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800" onPress={() => inboxOpen.set("")} activeStyle={{ opacity: 0.7 }}>
-              <Text class={`text-[13px] font-semibold ${C.mute}`}>‹ Back to list</Text>
+              <Text class={`text-[13px] font-semibold ${C.mute}`}>‹ Back to queue</Text>
             </View>
           </View>
           <If when={Boolean(selectedTicket())}>
