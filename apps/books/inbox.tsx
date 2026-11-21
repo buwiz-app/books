@@ -211,7 +211,7 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
                 value={query()}
                 placeholder="Search inbox items..."
                 onChange={(e: Any) => query.set(typeof e === "string" ? e : e.value)}
-                class="flex-1 pl-2 bg-transparent border-none outline-none text-base sm:text-sm text-[#0f172a] dark:text-slate-100 placeholder-[#94a3b8]"
+                class="flex-1 pl-2 bg-transparent border-none outline-none text-base sm:text-sm text-[#0f172a] dark:text-slate-100 placeholder:text-[#94a3b8]"
               />
             </View>
             <View class="flex-row gap-1.5 flex-wrap">

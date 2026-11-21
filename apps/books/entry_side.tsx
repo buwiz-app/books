@@ -361,9 +361,16 @@ const sideTopEffort = () => {
 const sideModelInputs = () => sideShownModel()?.inputs || ["text"];
 const sideFileKind = (mime: string) => (mime === "application/pdf" ? "pdf" : mime.startsWith("image/") ? "image" : "other");
 
-/** Loads the catalogue once, plus the stored chat.model / chat.effort choice. */
+/** The live catalogue answered with nothing: the pill hides and sends copy to the Bot chat. */
+const sideCatalogEmpty = () => {
+  const r = sideModels();
+  return Boolean(r) && (r?.models || []).length === 0;
+};
+
+/** Loads the catalogue (an empty or failed answer is asked again on the next
+ *  mount), plus the stored chat.model / chat.effort choice. */
 function sideLoadModels() {
-  if (sideModelsAsked()) return;
+  if (sideModelsAsked() && (sideModels()?.models || []).length > 0) return;
   sideModelsAsked.set(true);
   buwiz
     .models?.()
@@ -487,7 +494,7 @@ async function sideSend() {
   const text = sideComposer().trim();
   const files = sideFiles();
   if ((!text && files.length === 0) || sideStream()) return;
-  if (!sideApi()) {
+  if (!sideApi() || sideCatalogEmpty()) {
     return sideSendCopy();
   }
   const inputs = sideModelInputs();
@@ -671,7 +678,7 @@ function SideModelCard() {
           />
         </View>
         <Scroll class="max-h-64 p-1.5">
-          <If when={!q()}>
+          <If when={!q() && Boolean(sideModels()?.default)}>
             <View
               class={`px-2.5 py-1.5 rounded-lg cursor-pointer ${sideModel() === "" ? "bg-[#1e86fc]/10" : "hover:bg-black/[0.04] dark:hover:bg-white/5"}`}
               accessibilityLabel="Default model"
@@ -741,7 +748,7 @@ function SideAssistant() {
   const msgs = sideChat;
   const canSend = () => Boolean(sideComposer().trim()) || sideFiles().length > 0;
   // files only go to the chat when the picked model takes images or PDFs
-  const filesOk = () => !sideApi() || sideModelInputs().some((k: string) => k === "image" || k === "pdf");
+  const filesOk = () => !sideApi() || sideCatalogEmpty() || sideModelInputs().some((k: string) => k === "image" || k === "pdf");
   if (sideApi()) sideLoadModels();
   return (
     <View class="flex-1 flex-col min-h-0">
@@ -831,6 +838,9 @@ function SideAssistant() {
         </Each>
       </View>
       <View class="p-3 border-t border-[#e2e8f0] dark:border-slate-700">
+        <If when={sideApi() && sideCatalogEmpty()}>
+          <Text class="text-xs text-[#94a3b8] dark:text-slate-500 pb-2">No AI models available. Connect one in Buwiz Bot settings.</Text>
+        </If>
         <View class="rounded-xl border border-[#e2e8f0] dark:border-slate-600 bg-[#f8f9fb] dark:bg-slate-800 px-3 py-2 gap-2 focus-within:border-[#2a9d8f] focus-within:ring-1 focus-within:ring-[#2a9d8f] transition-colors">
           <If when={sideFiles().length > 0}>
             <View class="flex-row gap-1.5 flex-wrap">
@@ -871,7 +881,7 @@ function SideAssistant() {
               >
                 <Avatar src={SIDE_GLYPHS.clip} accessibilityLabel="" class="w-4 h-4" fallbackDelay={Infinity} />
               </View>
-              <If when={sideApi()}>
+              <If when={sideApi() && !sideCatalogEmpty()}>
                 <View
                   class="flex-row items-center gap-1 h-7 pl-1.5 pr-2 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/10 transition-colors cursor-pointer"
                   accessibilityLabel="Select model"
