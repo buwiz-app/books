@@ -640,10 +640,10 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
         <View class="flex-1 flex-row gap-6 p-6 pb-4 overflow-hidden">
         <View class="flex-1 min-h-0 rounded-2xl overflow-hidden flex-col bg-white dark:bg-[#1e293b] shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
             <View class={`shrink-0 px-6 pt-6 pb-12 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
-              <View class="flex-row items-start gap-5">
-                <View class="flex-row items-center gap-5 flex-1">
-                  <View class="w-12 h-12 rounded-full items-center justify-center bg-white/15">
-                    <Text class="text-[20px] text-white">{mode() === "journal" ? "≡" : mode() === "transfer" ? "⇄" : mode() === "money_in" ? "↓" : "↑"}</Text>
+              <View class="flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
+                <View class="flex-row items-center gap-5 flex-1 min-w-[280px]">
+                  <View class="w-14 h-14 rounded-full border-2 border-white/30 items-center justify-center bg-white/20 shrink-0">
+                    <Text class="text-[24px] text-white">{mode() === "journal" ? "≡" : mode() === "transfer" ? "⇄" : mode() === "money_in" ? "↓" : "↑"}</Text>
                   </View>
                   <View class="gap-1">
                     <If when={mode() === "money_in" || mode() === "money_out"}>
@@ -685,7 +685,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                     />
                   </View>
                 </View>
-                <View class="flex-col items-end gap-1">
+                <View class="flex-col items-end gap-1 ml-auto shrink-0">
                   <If when={mode() === "transfer"}>
                     <View class="flex-row items-center justify-end gap-1 border border-white/20 rounded-lg px-3 py-1.5 bg-white/10 focus-within:border-white/40">
                       <Text class="text-xl font-semibold text-white/60">₱</Text>
@@ -710,13 +710,22 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                 </View>
               </View>
             </View>
-            <Scroll class="flex-1 min-h-0">
-              <View class="px-6" style={{ marginTop: -44 }}>
-              <Text class="text-[12px] font-semibold text-white mb-2 pl-1">≡ Memo</Text>
-              <View class="rounded-xl border p-3 min-h-16 bg-white dark:bg-slate-800 border-[#e2e8f0] dark:border-slate-600 shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
-                <TextBox label="Memo" value={memo()} onChange={(v) => memo.set(v)} placeholder="Add a memo..." entry />
+            <View class="px-6 shrink-0" style={{ marginTop: -48 }}>
+              <View class="flex-row items-center gap-1.5 mb-2 pl-1">
+                <Text class="text-[14px] text-white">✎</Text>
+                <Text class="text-[12px] font-semibold text-white">Memo</Text>
+              </View>
+              <View class="rounded-xl border p-4 min-h-16 bg-white dark:bg-slate-800 border-[#e2e8f0] dark:border-slate-700 shadow-sm">
+                <Input
+                  accessibilityLabel="Memo"
+                  value={memo()}
+                  placeholder="Add a memo..."
+                  onChange={(e: Any) => memo.set(typeof e === "string" ? e : e.value)}
+                  class="w-full bg-transparent border-none outline-none px-1 py-1 text-[14px] text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-500"
+                />
               </View>
             </View>
+            <Scroll class="flex-1 min-h-0">
             <View class="px-6 py-4 gap-3.5 bg-[#f8f9fb] dark:bg-slate-800/70 flex-1 flex-col">
               <If when={mode() !== "journal"}>
                 <View class="gap-3.5">
@@ -828,25 +837,28 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                 </View>
               </If>
               <If when={mode() === "journal"}>
-                <View class="gap-1">
-                  <View class="flex-row items-center gap-2 pb-1">
-                    <View class="w-5 shrink-0" />
-                    <Text class="flex-1 text-[12px] font-semibold text-[#475569] dark:text-slate-400">≡ Lines</Text>
-                    <Text class="w-20 text-right text-[12px] font-medium text-[#64748b] dark:text-slate-400">Debit</Text>
-                    <Text class="w-20 text-right text-[12px] font-medium text-[#64748b] dark:text-slate-400">Credit</Text>
+                <View class="gap-0">
+                  <View class="flex-row items-center justify-between gap-2 pb-1 mb-2">
+                    <Text class="text-[12px] font-semibold text-[#475569] dark:text-slate-400 shrink-0">≡ Lines</Text>
+                    <View class="hidden lg:flex lg:flex-row gap-8 shrink-0">
+                      <Text class="w-20 text-right text-[12px] font-medium text-[#64748b] dark:text-slate-400">Debit</Text>
+                      <Text class="w-20 text-right text-[12px] font-medium text-[#64748b] dark:text-slate-400">Credit</Text>
+                    </View>
                   </View>
                   <Each of={jl()}>
                     {(l: Any, i: Any) => (
-                      <View class="border-b border-[#f0f2f5] dark:border-slate-700 py-3 gap-2">
+                      <View class="gap-2 rounded-xl border border-[#e2e8f0] dark:border-slate-700 bg-[#fafbfc] dark:bg-slate-800/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)] mb-3 md:rounded-none md:border-0 md:border-b md:border-[#f0f2f5] md:dark:border-slate-700 md:bg-transparent md:dark:bg-transparent md:shadow-none md:px-0 md:py-3 md:mb-0">
+                        {/* Desktop (md+): two compact rows */}
+                        <View class="hidden md:flex md:flex-col gap-2">
                         <View class="flex-row gap-2 items-center">
-                          <Text class="w-5 text-[11px] font-semibold text-center text-[#94a3b8] dark:text-slate-500">{String(i() + 1)}</Text>
-                          <View class="flex-1">
+                          <Text class="w-5 shrink-0 text-[11px] font-semibold text-center text-[#94a3b8] dark:text-slate-500">{String(i() + 1)}</Text>
+                          <View class="flex-1 min-w-[120px]">
                             <TextBox label="Line description" value={l().memo()} onChange={(v: string) => l().memo.set(v)} placeholder="Add description for this item..." entry />
                           </View>
-                          <View class="w-20">
+                          <View class="w-20 shrink-0">
                             <TextBox label="Debit" value={l().debit()} onChange={(v: string) => { l().debit.set(v); err.set(""); }} placeholder="₱0.00" entry />
                           </View>
-                          <View class="w-20">
+                          <View class="w-20 shrink-0">
                             <TextBox label="Credit" value={l().credit()} onChange={(v: string) => { l().credit.set(v); err.set(""); }} placeholder="₱0.00" entry />
                           </View>
                         </View>
@@ -926,13 +938,115 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                             </View>
                           </View>
                         </View>
+                        </View>
+                        {/* Mobile (below md): stacked card layout */}
+                        <View class="md:hidden flex-col">
+                          <View class="flex-row items-center gap-2 px-3 pt-3 pb-2">
+                            <View class="w-6 h-6 rounded-full bg-[#2a9d8f] items-center justify-center shrink-0">
+                              <Text class="text-[11px] font-bold text-white">{String(i() + 1)}</Text>
+                            </View>
+                            <View class="flex-1 min-w-0">
+                              <Input
+                                accessibilityLabel="Line description"
+                                value={l().memo()}
+                                placeholder="Line description..."
+                                onChange={(e: Any) => l().memo.set(typeof e === "string" ? e : e.value)}
+                                class="w-full bg-transparent border-none outline-none px-1 py-1 text-[14px] text-[#1e293b] dark:text-slate-200 placeholder-[#94a3b8] dark:placeholder-slate-500"
+                              />
+                            </View>
+                          </View>
+                          <View class="grid grid-cols-2 gap-2 px-3 pb-2">
+                            <View>
+                              <Text class="text-[10px] font-medium text-[#94a3b8] dark:text-slate-500 uppercase mb-1">Debit</Text>
+                              <TextBox label="Debit" value={l().debit()} onChange={(v: string) => { l().debit.set(v); err.set(""); }} placeholder="₱0.00" entry />
+                            </View>
+                            <View>
+                              <Text class="text-[10px] font-medium text-[#94a3b8] dark:text-slate-500 uppercase mb-1">Credit</Text>
+                              <TextBox label="Credit" value={l().credit()} onChange={(v: string) => { l().credit.set(v); err.set(""); }} placeholder="₱0.00" entry />
+                            </View>
+                          </View>
+                          <View class="px-3 pb-2">
+                            <BooksCombo
+                              label="Account"
+                              value={l().account()}
+                              options={() => groupedOptions(o()?.all || [])}
+                              onPick={(account: Any) => { l().account.set(account.ticket || ""); l().query.set(""); err.set(""); }}
+                              query={() => l().query()}
+                              onQuery={(query: string) => l().query.set(query)}
+                              onSuggestion={(suggestion: Any) => startCategoryCreate(suggestion.name, suggestion, (ticket) => { l().account.set(ticket); l().query.set(""); err.set(""); })}
+                              onCreate={(query: string) => startCategoryCreate(query, undefined, (ticket) => { l().account.set(ticket); l().query.set(""); err.set(""); })}
+                              placeholder="Category"
+                              group="Accounts"
+                            />
+                          </View>
+                          <View class="px-3 pb-2">
+                            <BooksCombo
+                              label="Party"
+                              value={l().person()}
+                              options={() => partyOptions()}
+                              onPick={(person: Any) => { l().person.set(person.ticket || ""); l().partyQuery.set(""); }}
+                              query={() => l().partyQuery()}
+                              onQuery={(query: string) => l().partyQuery.set(query)}
+                              onCreate={(query: string) => createParty(partyKindFor(l().account(), "vendors"), query, (ticket) => { l().person.set(ticket); l().partyQuery.set(""); })}
+                              createLabel="vendor or customer"
+                              placeholder="Party"
+                              group="People"
+                            />
+                          </View>
+                          <View class="px-3 pb-2">
+                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { l().department.set(tag.ticket || ""); l().deptQuery.set(""); }} query={() => l().deptQuery()} onQuery={(query: string) => l().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { l().department.set(ticket); l().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" />
+                          </View>
+                          <View class="flex-row items-center gap-2 px-3 pb-3">
+                            <View class="flex-1 min-w-0">
+                              <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { l().location.set(tag.ticket || ""); l().locQuery.set(""); }} query={() => l().locQuery()} onQuery={(query: string) => l().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { l().location.set(ticket); l().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" />
+                            </View>
+                            <View class="flex-row items-center gap-0.5 shrink-0">
+                              <If when={jl().length > 2}>
+                                <View
+                                  accessibilityLabel="Delete line"
+                                  class="w-8 h-8 rounded-lg items-center justify-center text-[#94a3b8] hover:bg-[#fef2f2]"
+                                  activeStyle={{ opacity: 0.7 }}
+                                  onPress={() => { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); }}
+                                >
+                                  <Text class="text-[15px] text-[#94a3b8] hover:text-[#f87171]">🗑</Text>
+                                </View>
+                              </If>
+                              <View
+                                accessibilityLabel="Copy line"
+                                class="w-8 h-8 rounded-lg items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700"
+                                activeStyle={{ opacity: 0.7 }}
+                                onPress={() => {
+                                  const copy = journalLine();
+                                  copy.account.set(l().account());
+                                  copy.query.set(l().query());
+                                  copy.debit.set(l().debit());
+                                  copy.credit.set(l().credit());
+                                  copy.memo.set(l().memo());
+                                  copy.person.set(l().person());
+                                  copy.department.set(l().department());
+                                  copy.location.set(l().location());
+                                  const next = [...jl()];
+                                  next.splice(i() + 1, 0, copy);
+                                  jl.set(next);
+                                  err.set("");
+                                }}
+                              >
+                                <Text class="text-[15px] text-[#94a3b8] hover:text-[#475569]">⧉</Text>
+                              </View>
+                              <View
+                                accessibilityLabel="Add line below"
+                                class="w-8 h-8 rounded-lg items-center justify-center hover:bg-[#f0fdfa] dark:hover:bg-slate-700"
+                                activeStyle={{ opacity: 0.7 }}
+                                onPress={() => { const next = [...jl()]; next.splice(i() + 1, 0, journalLine()); jl.set(next); err.set(""); }}
+                              >
+                                <Text class="text-[15px] font-semibold text-[#94a3b8] hover:text-[#2a9d8f]">+</Text>
+                              </View>
+                            </View>
+                          </View>
+                        </View>
                       </View>
                     )}
                   </Each>
-                  <View class="flex-row items-center gap-2 pt-2">
-                    <Btn label="+ Add line" small onPress={() => jl.set([...jl(), journalLine()])} />
-                    <Text class={`flex-1 text-[12px] ${C.dim}`}>Debits must equal credits.</Text>
-                  </View>
                 </View>
               </If>
             </View>
@@ -963,7 +1077,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               </View>
             </If>
         </View>
-        <EntrySide />
+        <View class="hidden lg:flex shrink-0"><EntrySide /></View>
         <If when={saveMenuOpen()}>
           <View class={`absolute right-6 top-[66px] w-40 rounded-lg border py-1 shadow-lg ${C.panel} ${C.line}`}>
             <View class="px-3 py-2 hover:bg-[#f9fafb] dark:hover:bg-slate-800" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false); }}>
