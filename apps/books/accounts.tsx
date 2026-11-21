@@ -313,6 +313,8 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
               <If when={Boolean(d()?.note)}>
                 <Text class={`text-[12px] px-4 py-3 ${C.dim}`}>{d()?.note || ""}</Text>
               </If>
+              {/* Extra room below lg so the last row scrolls clear of the FAB */}
+              <View class="h-24 lg:hidden" />
             </Scroll>
           </If>
         </View>

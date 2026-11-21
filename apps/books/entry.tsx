@@ -49,7 +49,7 @@ function EntryDrawer() {
         <Btn label="✕" small onPress={() => drawerEntry.set("")} />
       </View>
       <Scroll class="flex-1">
-        <View class="p-3.5 gap-3">
+        <View class="px-3.5 pt-3.5 pb-24 lg:pb-3.5 gap-3">
           <Loading res={data} />
           <If when={Boolean(e())}>
             <View class="gap-3">
@@ -724,7 +724,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               </View>
             </View>
             <Scroll class="flex-1 min-h-0">
-            <View class="px-6 py-4 gap-3.5 bg-[#f8f9fb] dark:bg-slate-800/70 flex-1 flex-col">
+            <View class="px-6 pt-4 pb-24 lg:pb-4 gap-3.5 bg-[#f8f9fb] dark:bg-slate-800/70 flex-1 flex-col">
               <If when={mode() !== "journal"}>
                 <View class="gap-3.5">
                   <If when={mode() === "transfer"}>
