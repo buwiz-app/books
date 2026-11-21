@@ -312,6 +312,143 @@ fn m4_october_matches_the_bank_and_a_closed_month_refuses_changes() {
     }
 }
 
+const SNAPSHOT: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../fixtures/demo/old-app-snapshot-seed.json"
+);
+
+/// The Ledger figures a statement view shows are the account's posted
+/// movement in the statement's month, not only the matched lines.
+#[test]
+fn m4_statement_books_movement_is_the_posted_totals() {
+    books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
+    let dir = TempDir::new("m4-movement");
+    let mut books = Books::new(Paths::in_dir(dir.0.join("store")));
+    let b = &mut books;
+    let seed_book: Value =
+        serde_json::from_str(&std::fs::read_to_string(SNAPSHOT).unwrap()).unwrap();
+    demo::seed(b, &seed_book).unwrap();
+
+    // the seeded Jan 2026 checking statement sits on 11200; the snapshot's
+    // entries post to the parent 11000, so the account starts at 0.00
+    let st = ok(
+        b,
+        "books_statement_get",
+        json!({ "account": "11200", "month": "2026-01" }),
+    );
+    assert_eq!(
+        (
+            st["statement"]["books_in_shown"].as_str(),
+            st["statement"]["books_out_shown"].as_str()
+        ),
+        (Some("0.00"), Some("0.00"))
+    );
+
+    // posted money in and out on that account inside January move them
+    ok(
+        b,
+        "books_app_post_entry",
+        json!({ "client_request_id": "m4m-in-00001", "form": "money_in", "date": "2026-01-10", "amount": "1000.00", "account": "11200", "category": "40000" }),
+    );
+    ok(
+        b,
+        "books_app_post_entry",
+        json!({ "client_request_id": "m4m-out-0001", "form": "money_out", "date": "2026-01-20", "amount": "250.00", "account": "11200", "category": "68300" }),
+    );
+    // outside the statement's month they do not
+    ok(
+        b,
+        "books_app_post_entry",
+        json!({ "client_request_id": "m4m-feb-0001", "form": "money_in", "date": "2026-02-10", "amount": "500.00", "account": "11200", "category": "40000" }),
+    );
+    let st = ok(
+        b,
+        "books_statement_get",
+        json!({ "account": "11200", "month": "2026-01" }),
+    );
+    assert_eq!(
+        (
+            st["statement"]["books_in_shown"].as_str(),
+            st["statement"]["books_out_shown"].as_str()
+        ),
+        (Some("1,000.00"), Some("250.00"))
+    );
+
+    // a voided deposit leaves no trace in either gross figure
+    let deposit = ok(
+        b,
+        "books_app_post_entry",
+        json!({ "client_request_id": "m4m-void-001", "form": "money_in", "date": "2026-01-25", "amount": "400.00", "account": "11200", "category": "40000" }),
+    );
+    ok(
+        b,
+        "books_app_void_entry",
+        json!({ "client_request_id": "m4m-void-002", "entry": deposit["entry"] }),
+    );
+    let st = ok(
+        b,
+        "books_statement_get",
+        json!({ "account": "11200", "month": "2026-01" }),
+    );
+    assert_eq!(
+        (
+            st["statement"]["books_in_shown"].as_str(),
+            st["statement"]["books_out_shown"].as_str()
+        ),
+        (Some("1,000.00"), Some("250.00")),
+        "the voided deposit counts in neither figure"
+    );
+}
+
+/// A draft on the account is in no total, so the movement stays put.
+#[test]
+fn m4_statement_books_movement_ignores_drafts() {
+    books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
+    let dir = TempDir::new("m4-movement-draft");
+    let mut books = Books::new(Paths::in_dir(dir.0.join("store")));
+    let b = &mut books;
+    let seed_book: Value =
+        serde_json::from_str(&std::fs::read_to_string(SNAPSHOT).unwrap()).unwrap();
+    demo::seed(b, &seed_book).unwrap();
+
+    let st = ok(
+        b,
+        "books_statement_get",
+        json!({ "account": "11200", "month": "2026-01" }),
+    );
+    let before = (
+        st["statement"]["books_in_shown"]
+            .as_str()
+            .unwrap()
+            .to_string(),
+        st["statement"]["books_out_shown"]
+            .as_str()
+            .unwrap()
+            .to_string(),
+    );
+    ok(
+        b,
+        "books_entry_draft",
+        json!({ "client_request_id": "m4m-draft-01", "form": "money_out", "date": "2026-01-15", "amount": "777.00", "account": "11200", "category": "68300" }),
+    );
+    let st = ok(
+        b,
+        "books_statement_get",
+        json!({ "account": "11200", "month": "2026-01" }),
+    );
+    let after = (
+        st["statement"]["books_in_shown"]
+            .as_str()
+            .unwrap()
+            .to_string(),
+        st["statement"]["books_out_shown"]
+            .as_str()
+            .unwrap()
+            .to_string(),
+    );
+    assert_eq!(after, before, "a draft changes no posted movement");
+}
+
 #[test]
 fn m4_grid_year_gives_twelve_months_and_the_default_is_unchanged() {
     books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));

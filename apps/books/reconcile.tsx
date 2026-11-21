@@ -5,6 +5,29 @@
 
 const recAccount = signal("");
 const recMonth = signal("");
+const recQ = signal("");
+const recStat = signal("all"); // "all" | "m" matched | "x" unsettled (suggested or missing)
+const recFiltMenu = signal(false);
+let recFiltAnchor: ViewRef | undefined;
+
+/** "1,234.56" or "+42.18" -> centavos, string math only (integer centavos, no float). */
+function centsOf(text: string): bigint {
+  const t = String(text ?? "0");
+  const neg = /^[-−–]/.test(t.trim()) || /^\(.*\)$/.test(t.trim());
+  const cleaned = t.replace(/[^0-9.]/g, "");
+  const [w = "", f = ""] = cleaned.split(".");
+  const c = BigInt(w || "0") * 100n + BigInt((f + "00").slice(0, 2) || "0");
+  return neg ? -c : c;
+}
+
+/** Centavos -> "1,234.56", `+` ahead when pos and the sum is in. */
+function centsShown(c: bigint, pos = false): string {
+  const neg = c < 0n;
+  const a = neg ? -c : c;
+  const w = (a / 100n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const f = (a % 100n).toString().padStart(2, "0");
+  return (neg ? "-" : pos ? "+" : "") + w + "." + f;
+}
 /** The account a statement document was just kept for: its note stays up until the screen is left. */
 const keptFor = signal("");
 
@@ -492,7 +515,63 @@ function ReconcileAccount(p: { row: Any; onCell: (r: Any, c: Any) => void }) {
   );
 }
 
-const MARK: Record<string, string> = { m: "=", s: "≈", x: "?" };
+const MARK: Record<string, string> = { m: "✓", s: "≈", x: "◷" };
+
+/** One glass card of the green summary strip (old app's SummaryCard). */
+function RecSumCard(p: { title: string; glyph: string; highlight?: string; rows: [string, string][] }) {
+  return (
+    <View class="flex-1 min-w-[140px] rounded-xl px-4 py-3 gap-1.5" style={{ backgroundColor: "rgba(255,255,255,0.10)", borderWidth: 1, borderColor: "rgba(255,255,255,0.10)" }}>
+      <View class="flex-row items-center justify-between">
+        <View class="flex-row items-center gap-2">
+          <View class="w-5 h-5 rounded-full bg-white/20 items-center justify-center">
+            <Text class="text-[11px] font-bold text-white">{p.glyph}</Text>
+          </View>
+          <Text class="text-[13px] font-semibold text-white">{p.title}</Text>
+        </View>
+        <Text class="text-[13px] font-bold text-white">{p.highlight || ""}</Text>
+      </View>
+      <Each of={[0, 1]}>
+        {(i: Any) => (
+          <View class="flex-row items-center justify-between">
+            <View class="flex-row items-center gap-2">
+              <Text class="text-[11px] text-white/60">{p.rows[i()][0] === "Bank" ? "▤" : "▦"}</Text>
+              <Text class="text-[12px] font-medium text-white/60">{p.rows[i()][0]}</Text>
+            </View>
+            <Text class="text-[13px] font-medium text-white">{p.rows[i()][1]}</Text>
+          </View>
+        )}
+      </Each>
+    </View>
+  );
+}
+
+/** The funnel's status menu: the same three states the counters toggle. */
+function RecFilterMenu() {
+  const item = (key: string, label: string) => (
+    <View
+      class={`flex-row items-center gap-2 px-3 py-2 ${recStat() === key ? C.hover : ""}`}
+      hoverStyle={{ backgroundColor: "rgba(148,163,184,0.15)" }}
+      activeStyle={{ opacity: 0.7 }}
+      onPress={() => {
+        recStat.set(key);
+        recFiltMenu.set(false);
+      }}
+    >
+      <Text class={`w-[16px] text-[12px] ${recStat() === key ? C.green : "text-transparent"}`}>✓</Text>
+      <Text class={`text-[12.5px] ${C.ink}`}>{label}</Text>
+    </View>
+  );
+  return (
+    <Overlay anchor={recFiltAnchor} placement="bottom" align="end" offset={2} margin={8} open={recFiltMenu()} onPressOutside={() => recFiltMenu.set(false)} onCancel={() => recFiltMenu.set(false)}>
+      <View class={`w-[170px] rounded-lg ${C.panel} border ${C.line} py-1`}>
+        <Text class={`px-3 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Status</Text>
+        {item("all", "All lines")}
+        {item("m", "Matched")}
+        {item("x", "Unsettled")}
+      </View>
+    </Overlay>
+  );
+}
 
 function MatchView() {
   const data = resource(
@@ -511,18 +590,50 @@ function MatchView() {
   };
   // the snapshot on the left and the lines on the right; with none, the full-width list
   const side = () => snapShown(s());
+  // ── old-app detail page: light header, green summary strip, search bar, tinted rows ──
+  const q = () => recQ().trim().toLowerCase();
+  const rowsAll = () => (s()?.rows || []) as Any[];
+  const matched = () => rowsAll().filter((r: Any) => r.match === "m").length;
+  const unsettled = () => rowsAll().filter((r: Any) => r.match !== "m").length;
+  const rowsView = () =>
+    rowsAll().filter((r: Any) => {
+      if (recStat() === "m" && r.match !== "m") return false;
+      if (recStat() === "x" && r.match === "m") return false;
+      if (q() && ![r.description, r.books?.title, r.books?.sub, r.why].some((t: Any) => String(t || "").toLowerCase().includes(q()))) return false;
+      return true;
+    });
+  // summary strip sums, in centavos (Bank = the statement's own totals, Ledger = the matched entries)
+  const sumOf = (f: (r: Any) => boolean, pick: (r: Any) => Any) =>
+    rowsAll().filter(f).reduce((a: bigint, r: Any) => a + centsOf(String(pick(r) || "0")), 0n);
+  const depBank = () => sumOf((r) => centsOf(r.amount_shown) > 0n, (r) => r.amount_shown);
+  const wdBank = () => sumOf((r) => centsOf(r.amount_shown) < 0n, (r) => r.amount_shown);
+  const depLeg = () => String(s()?.books_in_shown || "—");
+  const wdLeg = () => String(s()?.books_out_shown || "—");
+  const isCard = /card|credit/i.test(String(d()?.account?.name || ""));
+  const hdrBtnCls = "flex-row items-center gap-1.5 px-3 py-1.5 rounded-lg";
   return (
-    <View class="gap-3.5">
-      <Head title={`Match ${d()?.month?.short || ""} · ${d()?.account?.name || ""}`} sub="statement vs Books">
-        <View class="flex-row gap-2">
-          <If when={Boolean(s())}>
-            <Btn label={`Accept ${String(s()?.suggested || 0)} suggestion${s()?.suggested === 1 ? "" : "s"}`} disabled={!s()?.suggested} onPress={() => call("books_app_statement_accept")} />
-          </If>
-          <If when={s()?.status !== "finished"}>
-            <Btn label="Import statement" onPress={() => importStatement(recAccount())} />
-          </If>
-        </View>
-      </Head>
+    <View class="gap-0">
+      {/* light header: account · period, status pill, actions — no Back (the window's × closes) */}
+      <View class={`flex-row items-center gap-2 px-4 py-2 rounded-t-xl ${C.panel} border-b ${C.line}`}>
+        <Text class={`text-[13px] font-semibold ${C.ink}`}>{d()?.account?.name || ""}</Text>
+        <Text class={`text-[12px] ${C.mute}`}>{`· ${d()?.month?.label || ""}`}</Text>
+        <If when={Boolean(s())}>
+          <View class={`rounded-full px-2 py-0.5 ${s()?.status === "finished" ? "bg-emerald-50 dark:bg-emerald-500/10" : "bg-amber-50 dark:bg-amber-500/10"}`}>
+            <Text class={`text-[11px] font-medium ${s()?.status === "finished" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>{s()?.status === "finished" ? "Finalized" : "In Progress"}</Text>
+          </View>
+        </If>
+        <View class="flex-1" />
+        <If when={Boolean(s())}>
+          <View class={`${hdrBtnCls} bg-gray-100 dark:bg-white/5`} hoverStyle={{ backgroundColor: "rgba(148,163,184,0.25)" }} activeStyle={{ opacity: 0.7 }} onPress={() => call("books_app_statement_accept")}>
+            <Text class={`text-[12px] font-medium ${C.mute}`}>{`Accept ${String(s()?.suggested || 0)} suggestion${s()?.suggested === 1 ? "" : "s"}`}</Text>
+          </View>
+        </If>
+        <If when={s()?.status !== "finished"}>
+          <View class={`${hdrBtnCls} bg-gray-100 dark:bg-white/5`} hoverStyle={{ backgroundColor: "rgba(148,163,184,0.25)" }} activeStyle={{ opacity: 0.7 }} onPress={() => importStatement(recAccount())}>
+            <Text class={`text-[12px] font-medium ${C.mute}`}>Import statement</Text>
+          </View>
+        </If>
+      </View>
       <Loading res={data} />
       <If when={Boolean(d()?.draft)}>
         <DraftBanner account={recAccount()} month={recMonth()} draft={d()?.draft} />
@@ -543,6 +654,12 @@ function MatchView() {
           <If when={(s()?.flags || []).length > 0}>
             <FlagsNote flags={s()?.flags || []} />
           </If>
+          {/* green summary strip: inflow / outflow / Net glass cards (old app's SummaryRow) */}
+          <View class="flex-row gap-3 rounded-xl px-4 py-3" style={{ backgroundImage: "linear-gradient(to right,#1a6b3c,#27ae60)" }}>
+            <RecSumCard title={isCard ? "Charges" : "Deposits"} glyph="↓" rows={[["Bank", centsShown(depBank(), true)], ["Ledger", depLeg()]]} />
+            <RecSumCard title={isCard ? "Payments" : "Withdrawals"} glyph="↑" rows={[["Bank", centsShown(wdBank())], ["Ledger", wdLeg()]]} />
+            <RecSumCard title="Net" glyph="≈" highlight={s()?.difference_shown} rows={[["Bank", String(s()?.closing_shown || "—")], ["Ledger", String(s()?.books_shown || "—")]]} />
+          </View>
           <View class={side() ? "flex-row items-start gap-3.5" : "gap-3.5"}>
             <If when={side()}>
               <SnapshotPane
@@ -561,6 +678,54 @@ function MatchView() {
               />
             </If>
             <Panel class={side() ? "flex-1" : ""}>
+              {/* search / filter bar inside the card (old app's ReconciliationSearchBar): magnifier, borderless input, counters, funnel, + */}
+              <View class={`flex-row items-center gap-2 px-4 py-2.5 border-b ${C.line}`}>
+                <Text class={`text-[13px] ${C.dim}`}>⌕</Text>
+                <View class="flex-1">
+                  <Input
+                    accessibilityLabel="Filter transactions"
+                    value={recQ()}
+                    placeholder="Filter transactions…"
+                    onChange={(e: Any) => recQ.set(typeof e === "string" ? e : e.value)}
+                    class={`h-7 text-[13px] bg-transparent border-none outline-none placeholder:text-[#8e8e93] focus:ring-0 ${C.ink}`}
+                  />
+                </View>
+                <View
+                  class={`flex-row items-center gap-1.5 px-2 py-0.5 rounded-sm bg-[#e6f4ea] dark:bg-emerald-500/10 border ${recStat() === "m" ? "border-emerald-500" : "border-transparent"}`}
+                  hoverStyle={{ borderColor: "#6ee7b7" }}
+                  activeStyle={{ opacity: 0.7 }}
+                  onPress={() => recStat.set(recStat() === "m" ? "all" : "m")}
+                >
+                  <Text class="text-[12px] font-semibold text-[#1e8e3e] dark:text-emerald-400">{String(matched())}</Text>
+                  <Text class="text-[11px] font-bold text-[#1e8e3e] dark:text-emerald-400">✓</Text>
+                </View>
+                <View
+                  class={`flex-row items-center gap-1.5 px-2 py-0.5 rounded-sm bg-[#fef7e0] dark:bg-amber-500/10 border ${recStat() === "x" ? "border-amber-500" : "border-transparent"}`}
+                  hoverStyle={{ borderColor: "#fcd34d" }}
+                  activeStyle={{ opacity: 0.7 }}
+                  onPress={() => recStat.set(recStat() === "x" ? "all" : "x")}
+                >
+                  <Text class="text-[12px] font-semibold text-[#f9ab00] dark:text-amber-400">{String(unsettled())}</Text>
+                  <Text class="text-[11px] font-bold text-[#f9ab00] dark:text-amber-400">◷</Text>
+                </View>
+                <View
+                  ref={recFiltAnchor}
+                  class={`w-8 h-6 rounded-sm items-center justify-center ${recStat() !== "all" || recQ() ? "bg-[#ccece8] dark:bg-teal-900/40" : ""}`}
+                  hoverStyle={{ backgroundColor: "rgba(148,163,184,0.2)" }}
+                  activeStyle={{ opacity: 0.7 }}
+                  onPress={() => recFiltMenu.set(!recFiltMenu())}
+                >
+                  <Text class={`text-[12px] ${recStat() !== "all" || recQ() ? "text-teal-600 dark:text-teal-400" : C.dim}`}>⏷</Text>
+                </View>
+                <View
+                  class="w-8 h-6 rounded-sm items-center justify-center"
+                  hoverStyle={{ backgroundColor: "rgba(148,163,184,0.2)" }}
+                  activeStyle={{ opacity: 0.7 }}
+                  onPress={() => importStatement(recAccount())}
+                >
+                  <Text class={`text-[14px] font-bold ${C.dim}`}>+</Text>
+                </View>
+              </View>
               <If when={!side()}>
                 <View class={`flex-row border-b ${C.line}`}>
                   <Text class={`flex-1 px-3 py-2.5 text-[11px] uppercase tracking-wider ${C.dim}`}>Bank statement</Text>
@@ -571,19 +736,36 @@ function MatchView() {
               <If when={side()}>
                 <Text class={`px-3 py-2.5 text-[11px] uppercase tracking-wider border-b ${C.line} ${C.dim}`}>Statement lines and Books entries</Text>
               </If>
-              <Each of={s()?.rows || []} key={rowKey}>
+              <Each of={rowsView()} key={rowKey}>
                 {(r: Any) => (
                   <View
-                    class={`${side() ? "" : "flex-row items-center"} border-b ${C.line} ${r().no === selectedLine() ? C.hover : ""}`}
+                    class={`${side() ? "" : "flex-row items-center"} border-b ${
+                      r().no === selectedLine()
+                        ? "bg-[#eff6ff] dark:bg-blue-950/60 border-[#dbeafe] dark:border-blue-900/40"
+                        : r().match === "m"
+                          ? "bg-emerald-50/40 dark:bg-emerald-950/10 border-emerald-100/50 dark:border-emerald-900/20"
+                          : "bg-orange-50/40 dark:bg-orange-950/10 border-orange-100/50 dark:border-orange-900/20"
+                    }`}
+                    hoverStyle={
+                      r().match === "m"
+                        ? { backgroundColor: "rgba(209,250,229,0.55)" }
+                        : { backgroundColor: "rgba(255,237,213,0.55)" }
+                    }
                     onPress={() => pick(r())}
                   >
-                    <View class={`${side() ? "" : "flex-1"} flex-row items-center gap-2 px-3 py-2 min-h-[38px]`}>
+                    {/* left status bar: blue selected, emerald matched, orange unsettled */}
+                    <View class={`w-[3px] self-stretch ${r().no === selectedLine() ? "bg-blue-500" : r().match === "m" ? "bg-emerald-400" : "bg-orange-400"}`} />
+                    {/* date block: "Oct 15" over the year, like the old row */}
+                    <View class="w-[58px] items-center py-2 shrink-0">
+                      <Text class={`text-[12.5px] font-semibold ${C.ink}`}>{r().date_short}</Text>
+                      <Text class={`text-[10px] ${C.dim}`}>{String(d()?.month?.key || "").slice(0, 4)}</Text>
+                    </View>
+                    <View class={`${side() ? "" : "flex-1"} flex-row items-center gap-2 px-2 py-2 min-h-[38px]`}>
                       <If when={side()}>
-                        <Text class={`w-[18px] text-center font-bold ${r().match === "m" ? C.green : r().match === "s" ? C.amber : C.red}`}>{MARK[r().match]}</Text>
+                        <Text class={`w-[18px] text-center font-bold ${r().match === "m" ? C.green : r().match === "s" ? C.amber : C.dim}`}>{MARK[r().match]}</Text>
                       </If>
-                      <Text class={`w-[52px] text-[12px] font-mono ${C.ink}`}>{r().date_short}</Text>
                       <If when={Boolean(r().flag)}>
-                        <View class="w-[7px] h-[7px] rounded-full bg-[#f3b64c]" />
+                        <Text class="text-[10px] text-rose-600 dark:text-rose-400">⚑</Text>
                       </If>
                       <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
                         {r().description}
@@ -591,10 +773,10 @@ function MatchView() {
                       <If when={Boolean(r().low)}>
                         <Pill tone="draft" label={`read ${String(r().confidence)}%`} />
                       </If>
-                      <Text class={`text-[12.5px] font-mono ${C.ink}`}>{r().amount_shown}</Text>
+                      <Text class={`text-[12.5px] font-mono font-semibold ${String(r().amount_shown || "").startsWith("+") ? "text-[#16a34a] dark:text-emerald-400" : C.ink}`}>{r().amount_shown}</Text>
                     </View>
                     <If when={!side()}>
-                      <Text class={`w-[28px] text-center font-bold ${r().match === "m" ? C.green : r().match === "s" ? C.amber : C.red}`}>{MARK[r().match]}</Text>
+                      <Text class={`w-[28px] text-center font-bold ${r().match === "m" ? C.green : r().match === "s" ? C.amber : C.dim}`}>{MARK[r().match]}</Text>
                     </If>
                     <View class={`${side() ? "" : "flex-1"} px-3 py-2 gap-1.5 ${r().match === "x" ? PILL.rev : r().match === "s" ? PILL.draft : ""}`} onPress={() => {
                       // a press here does not reach the row, so it picks the line too
@@ -665,6 +847,9 @@ function MatchView() {
             <ReopenFooter onReopen={(reason: string) => call("books_app_statement_finish", { reopen: true, reason })} />
           </If>
         </View>
+      </If>
+      <If when={recFiltMenu()}>
+        <RecFilterMenu />
       </If>
     </View>
   );
