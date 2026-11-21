@@ -599,7 +599,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
           <View
             ref={typeMenuAnchor}
             accessibilityLabel="Entry type"
-            class={`h-9 flex-row items-center gap-2 rounded-lg border ${C.line} px-3 hover:bg-[#f1f5f9] dark:hover:bg-slate-800`}
+            class={`h-9 shrink-0 flex-row items-center gap-2 rounded-lg border ${C.line} px-3 hover:bg-[#f1f5f9] dark:hover:bg-slate-800`}
             activeStyle={{ opacity: 0.7 }}
             onPress={() => { typeMenuOpen.set(!typeMenuOpen()); saveMenuOpen.set(false); }}
           >
@@ -607,11 +607,13 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             <Text class={`text-[13px] font-medium ${C.ink}`}>{modeName()}</Text>
             <Text class="text-[12px] opacity-50">⌄</Text>
           </View>
-          <View class="flex-1" />
           <If when={Boolean(err())}>
-            <Text class="text-[12px] font-medium text-[#ef4444]" numberOfLines={1}>{err()}</Text>
+            <Text class="flex-1 min-w-0 truncate text-[12px] font-medium text-[#ef4444]">{err()}</Text>
           </If>
-          <View ref={saveMenuAnchor} class="relative flex-row items-stretch">
+          <If when={!Boolean(err())}>
+            <View class="flex-1" />
+          </If>
+          <View ref={saveMenuAnchor} class="relative shrink-0 flex-row items-stretch">
             <View
               class={`items-center justify-center rounded-l-lg px-5 py-2.5 hover:bg-[#248f82] ${busy() ? "opacity-50" : ""}`}
               style={{ backgroundColor: "#2a9d8f" }}
