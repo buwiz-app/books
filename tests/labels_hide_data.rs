@@ -164,5 +164,5 @@ fn no_picker_of_people_or_tags_goes_without_a_fixed_label() {
             }
         }
     }
-    assert_eq!(found, 5, "a list of people came or went: pin it here");
+    assert_eq!(found, 6, "a list of people came or went: pin it here");
 }

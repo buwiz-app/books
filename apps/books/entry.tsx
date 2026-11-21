@@ -401,6 +401,31 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
       .catch((e: Any) => categoryCreateError.set(errText(e)))
       .finally(() => categoryCreating.set(false));
   };
+  const namedCreate = signal<Any>(null);
+  const startNamedCreate = (label: string, kind: string, name: string, apply: (ticket: string) => void) => {
+    namedCreate.set({ label, kind, name: name || "", apply, error: "", busy: false });
+  };
+  const namedCreateTitle = () => {
+    const d = namedCreate() || {};
+    return d.label === "party" ? "New party" : d.label === "department" ? "New department" : "New location";
+  };
+  const PERSON_KINDS = ["customers", "vendors", "employees", "owners", "lenders", "government"];
+  const submitNamedCreate = () => {
+    const d = namedCreate();
+    if (!d) return;
+    const name = String(d.name || "").trim();
+    if (!name) return namedCreate.set({ ...d, error: `Enter a ${d.label} name.` });
+    namedCreate.set({ ...d, busy: true, error: "" });
+    const tool = d.label === "party" ? "books_app_person_create" : "books_app_tag_create";
+    act(tool, { kind: d.kind, name })
+      .then((r: Any) => {
+        const ticket = d.label === "party" ? r.person || "" : r.tag || "";
+        d.apply(ticket);
+        namedCreate.set(null);
+        toast(`${name} added`);
+      })
+      .catch((e: Any) => namedCreate.set({ ...namedCreate(), busy: false, error: errText(e) }));
+  };
   const amt = computed(() => moneyText(amount()));
   const centsOf = (typed: string): bigint => {
     const text = moneyText(typed);
@@ -623,7 +648,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               <View class="flex-row gap-3">
                 <View class="w-[150px] gap-1">
                   <Text class="text-[13px] font-medium text-white/85">Date</Text>
-                  <BooksDate value={date() || o()?.today || ""} today={o()?.today} onChange={(v) => date.set(v)} />
+                  <BooksDate value={date() || o()?.today || ""} today={o()?.today} onChange={(v) => date.set(v)} variant="header" />
                 </View>
                 <View class="flex-1 gap-1">
                   <Text class="text-[13px] font-medium text-white/85">Reference number</Text>
@@ -648,6 +673,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                           payee.set(query);
                         }
                       }}
+                      onCreate={(query: string) => startNamedCreate("party", mode() === "money_in" ? "customers" : "vendors", query, (ticket) => { payeeTicket.set(ticket); payee.set(query); partyQuery.set(""); })}
+                      createLabel={mode() === "money_in" ? "customer" : mode() === "money_out" ? "vendor" : "party"}
                       query={partyQuery()}
                       placeholder={payee() || (mode() === "money_in" ? "Customer" : "Vendor")}
                       group={mode() === "money_in" ? "Customers" : mode() === "money_out" ? "Vendors" : "People"}
@@ -679,6 +706,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                           onPick={(person: Any) => { fromPerson.set(person.ticket || ""); fromPartyQuery.set(""); }}
                           query={() => fromPartyQuery()}
                           onQuery={(query: string) => { fromPartyQuery.set(query); if (query) fromPerson.set(""); }}
+                          onCreate={(query: string) => startNamedCreate("party", "customers", query, (ticket) => { fromPerson.set(ticket); fromPartyQuery.set(""); })}
+                          createLabel="party"
                           placeholder="Party"
                           group="People"
                         />
@@ -695,6 +724,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                           onPick={(person: Any) => { toPerson.set(person.ticket || ""); toPartyQuery.set(""); }}
                           query={() => toPartyQuery()}
                           onQuery={(query: string) => { toPartyQuery.set(query); if (query) toPerson.set(""); }}
+                          onCreate={(query: string) => startNamedCreate("party", "vendors", query, (ticket) => { toPerson.set(ticket); toPartyQuery.set(""); })}
+                          createLabel="party"
                           placeholder="Party"
                           group="People"
                         />
@@ -745,15 +776,17 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 onPick={(person: Any) => { line().person.set(person.ticket || ""); line().partyQuery.set(""); }}
                                 query={() => line().partyQuery()}
                                 onQuery={(query: string) => line().partyQuery.set(query)}
+                                onCreate={(query: string) => startNamedCreate("party", mode() === "money_in" ? "customers" : "vendors", query, (ticket) => { line().person.set(ticket); line().partyQuery.set(""); })}
+                                createLabel={mode() === "money_in" ? "customer" : "vendor"}
                                 placeholder="Party"
                                 group={mode() === "money_in" ? "Customers" : "Vendors"}
                               />
                             </View>
                             <View class="flex-1">
-                              <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => line().department.set(tag.ticket || "")} placeholder="Department" group="Departments" />
+                              <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => line().department.set(tag.ticket || "")} onCreate={(query: string) => startNamedCreate("department", "department", query, (ticket) => line().department.set(ticket))} createLabel="department" placeholder="Department" group="Departments" />
                             </View>
                             <View class="flex-1">
-                              <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => line().location.set(tag.ticket || "")} placeholder="Location" group="Locations" />
+                              <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => line().location.set(tag.ticket || "")} onCreate={(query: string) => startNamedCreate("location", "location", query, (ticket) => line().location.set(ticket))} createLabel="location" placeholder="Location" group="Locations" />
                             </View>
                           </View>
                           <TextBox label="Allocation memo" value={line().memo()} onChange={(value: string) => line().memo.set(value)} placeholder="Description for this category" entry />
@@ -835,15 +868,17 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               onPick={(person: Any) => { l().person.set(person.ticket || ""); l().partyQuery.set(""); }}
                               query={() => l().partyQuery()}
                               onQuery={(query: string) => l().partyQuery.set(query)}
+                              onCreate={(query: string) => startNamedCreate("party", "customers", query, (ticket) => { l().person.set(ticket); l().partyQuery.set(""); })}
+                              createLabel="party"
                               placeholder="Party"
                               group="People"
                             />
                           </View>
                           <View class="flex-1">
-                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => l().department.set(tag.ticket || "")} placeholder="Department" group="Departments" />
+                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => l().department.set(tag.ticket || "")} onCreate={(query: string) => startNamedCreate("department", "department", query, (ticket) => l().department.set(ticket))} createLabel="department" placeholder="Department" group="Departments" />
                           </View>
                           <View class="flex-1">
-                            <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => l().location.set(tag.ticket || "")} placeholder="Location" group="Locations" />
+                            <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => l().location.set(tag.ticket || "")} onCreate={(query: string) => startNamedCreate("location", "location", query, (ticket) => l().location.set(ticket))} createLabel="location" placeholder="Location" group="Locations" />
                           </View>
                         </View>
                       </View>
@@ -1010,6 +1045,42 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             <View class="flex-row justify-end gap-2">
               <Btn label="Cancel" disabled={categoryCreating()} onPress={() => categoryCreateOpen.set(false)} />
               <Btn label={categoryCreating() ? "Adding…" : "Add category"} tone="go" disabled={categoryCreating()} onPress={createCategory} />
+            </View>
+          </View>
+        </Overlay>
+      </If>
+      <If when={Boolean(namedCreate())}>
+        <Overlay
+          anchor={{ x: 24, y: 120 }}
+          placement="bottom"
+          align="start"
+          offset={4}
+          margin={8}
+          onCancel={() => namedCreate.set(null)}
+          onPressOutside={() => namedCreate.set(null)}
+        >
+          <View class={`w-[360px] gap-3 p-4 rounded-xl border shadow-lg ${C.panel} ${C.line}`}>
+            <Text class={`text-[14px] font-bold ${C.ink}`}>{namedCreateTitle()}</Text>
+            <Field label="Name">
+              <TextBox value={namedCreate()?.name || ""} onChange={(value: string) => namedCreate.set({ ...namedCreate(), name: value })} placeholder={`${namedCreateTitle().slice(4)} name`} />
+            </Field>
+            <If when={namedCreate()?.label === "party"}>
+              <Field label="Kind" plain>
+                <Pick
+                  value={namedCreate()?.kind || "customers"}
+                  options={PERSON_KINDS.map((k: string) => ({ ticket: k, label: k, name: k }))}
+                  onPick={(o: Any) => namedCreate.set({ ...namedCreate(), kind: o.ticket })}
+                  placeholder="Kind"
+                  optionSaid="Choose this kind"
+                />
+              </Field>
+            </If>
+            <If when={Boolean(namedCreate()?.error)}>
+              <Text class={`text-[12px] ${C.red}`}>{namedCreate()?.error || ""}</Text>
+            </If>
+            <View class="flex-row justify-end gap-2">
+              <Btn label="Cancel" disabled={Boolean(namedCreate()?.busy)} onPress={() => namedCreate.set(null)} />
+              <Btn label={namedCreate()?.busy ? "Adding…" : `Add ${namedCreate()?.label || ""}`} tone="go" disabled={Boolean(namedCreate()?.busy)} onPress={submitNamedCreate} />
             </View>
           </View>
         </Overlay>
