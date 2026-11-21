@@ -794,6 +794,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 onCreate={(query: string) => startCategoryCreate(query, undefined, (ticket) => { line().category.set(ticket); line().query.set(""); err.set(""); })}
                                 placeholder="Category"
                                 group={mode() === "money_in" ? "Income categories" : "Expense categories"}
+                                trigger="chip"
+                                icon="▤"
                               />
                             </View>
                             <View class="w-[120px]">
@@ -816,13 +818,15 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 createLabel={mode() === "money_in" ? "customer" : "vendor"}
                                 placeholder="Party"
                                 group={mode() === "money_in" ? "Customers" : "Vendors"}
+                                trigger="chip"
+                                icon="♟"
                               />
                             </View>
                             <View class="flex-1">
-                              <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { line().department.set(tag.ticket || ""); line().deptQuery.set(""); }} query={() => line().deptQuery()} onQuery={(query: string) => line().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { line().department.set(ticket); line().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" />
+                              <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { line().department.set(tag.ticket || ""); line().deptQuery.set(""); }} query={() => line().deptQuery()} onQuery={(query: string) => line().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { line().department.set(ticket); line().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="⌂" />
                             </View>
                             <View class="flex-1">
-                              <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { line().location.set(tag.ticket || ""); line().locQuery.set(""); }} query={() => line().locQuery()} onQuery={(query: string) => line().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { line().location.set(ticket); line().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" />
+                              <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { line().location.set(tag.ticket || ""); line().locQuery.set(""); }} query={() => line().locQuery()} onQuery={(query: string) => line().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { line().location.set(ticket); line().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="⚲" />
                             </View>
                           </View>
                           <TextBox label="Allocation memo" value={line().memo()} onChange={(value: string) => line().memo.set(value)} placeholder="Description for this category" entry />
@@ -875,6 +879,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               onCreate={(query: string) => startCategoryCreate(query, undefined, (ticket) => { l().account.set(ticket); l().query.set(""); err.set(""); })}
                               placeholder="Category"
                               group="Accounts"
+                              trigger="chip"
+                              icon="▤"
                             />
                           </View>
                           <View class="flex-1">
@@ -889,13 +895,15 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               createLabel="vendor or customer"
                               placeholder="Party"
                               group="People"
+                              trigger="chip"
+                              icon="♟"
                             />
                           </View>
                           <View class="flex-1">
-                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { l().department.set(tag.ticket || ""); l().deptQuery.set(""); }} query={() => l().deptQuery()} onQuery={(query: string) => l().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { l().department.set(ticket); l().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" />
+                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { l().department.set(tag.ticket || ""); l().deptQuery.set(""); }} query={() => l().deptQuery()} onQuery={(query: string) => l().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { l().department.set(ticket); l().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="⌂" />
                           </View>
                           <View class="flex-1">
-                            <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { l().location.set(tag.ticket || ""); l().locQuery.set(""); }} query={() => l().locQuery()} onQuery={(query: string) => l().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { l().location.set(ticket); l().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" />
+                            <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { l().location.set(tag.ticket || ""); l().locQuery.set(""); }} query={() => l().locQuery()} onQuery={(query: string) => l().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { l().location.set(ticket); l().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="⚲" />
                           </View>
                           <View class="flex-row items-center gap-1 shrink-0">
                             <View

@@ -11,6 +11,19 @@ import { buwiz } from "buwiz";
 type Any = any;
 const PROPS = (buwiz.props || {}) as { ticket?: string; page?: string; account?: string; month?: string; filter?: string; form?: string; tax_option?: string; deduction?: string };
 
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+/** "2026-10-29" → "October 29, 2026", for display only: the stored value
+ *  stays ISO (the old web app's formatDisplay, without a locale API). */
+const longDate = (iso: string) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
+  if (!m) return iso;
+  return `${MONTH_NAMES[Number(m[2]) - 1] || m[2]} ${String(Number(m[3]))}, ${m[1]}`;
+};
+
 /** Colors: a dark palette, with a light twin for each. */
 const C = {
   bg: "bg-white dark:bg-[#0a0a0b]",
@@ -350,6 +363,11 @@ function BooksCombo(p: {
   placeholder?: string;
   label?: string;
   group?: string;
+  /** "chip": the reference's rounded, bordered field with a leading icon
+   *  (tag for category, user for party, building for department, pin for
+   *  location) and a trailing chevron, instead of a bare filter input. */
+  trigger?: "chip";
+  icon?: string;
 }) {
   const CREATE_VALUE = "__books_create__";
   const open = signal(false);
@@ -372,31 +390,68 @@ function BooksCombo(p: {
       ? [{ value: CREATE_VALUE, title: `${queryValue().trim()}`, group: "Create New" }]
       : []),
   ]);
+  // "chip": the nsh Combobox borders its input alone (prefix, input and the
+  // trigger button are siblings in one row), so the reference's one bordered
+  // trigger is a View drawn under the Combobox: the input covers it invisibly,
+  // so a press focuses it and toggles the list (the chip's own press is the
+  // fallback), and typing filters as before.
+  const chip = p.trigger === "chip";
+  const chipTitle = () =>
+    items().find((i: Any) => i.value === p.value)?.title || p.placeholder || "Select...";
   return (
-    <Combobox
-      items={items()}
-      open={open()}
-      onOpenChange={({ open: next }) => open.set(next)}
-      value={p.value ? [p.value] : []}
-      query={queryValue()}
-      onChange={({ value }) => {
-        const selected = value[0] || "";
-        if (selected === CREATE_VALUE) {
-          p.onCreate?.(queryValue().trim());
-          return;
+    <View class={chip ? "relative" : ""}>
+      {chip && (
+        <View
+          class="absolute inset-0 flex-row items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 hover:border-[#d1d5db] dark:border-slate-600 dark:bg-slate-800 dark:hover:border-[#64748b] cursor-pointer"
+          onPress={() => open.set(!open())}
+        >
+          <If when={Boolean(p.icon)}>
+            <View class="w-5 h-5 items-center justify-center shrink-0">
+              <Text class="text-[14px] text-[#94a3b8] dark:text-slate-500">{p.icon || ""}</Text>
+            </View>
+          </If>
+          <Text
+            class={`flex-1 text-sm ${p.value ? "text-[#1e293b] dark:text-slate-100" : "text-[#94a3b8] dark:text-slate-500"}`}
+            numberOfLines={1}
+          >
+            {chipTitle()}
+          </Text>
+          <Text class="shrink-0 text-[15px] text-[#1e293b] opacity-40 dark:text-slate-100">⌄</Text>
+        </View>
+      )}
+      <Combobox
+        items={items()}
+        open={open()}
+        onOpenChange={({ open: next }) => open.set(next)}
+        value={p.value ? [p.value] : []}
+        query={queryValue()}
+        onChange={({ value }) => {
+          const selected = value[0] || "";
+          if (selected === CREATE_VALUE) {
+            p.onCreate?.(queryValue().trim());
+            return;
+          }
+          if (selected.startsWith("__books_suggested_")) {
+            const index = Number(selected.slice("__books_suggested_".length).replace(/__/g, ""));
+            p.onSuggestion?.(suggestionRows()[index] || {});
+            return;
+          }
+          p.onPick(optionRows().find((o: Any) => String(o.ticket) === selected) || {});
+        }}
+        onQueryChange={({ query }) => p.onQuery?.(query)}
+        accessibilityLabel={p.label || p.placeholder || "Account"}
+        placeholder={p.placeholder || "Select..."}
+        prefix={
+          !chip && p.icon ? (
+            <Text class="text-[14px] text-[#94a3b8] dark:text-slate-500">{p.icon}</Text>
+          ) : undefined
         }
-        if (selected.startsWith("__books_suggested_")) {
-          const index = Number(selected.slice("__books_suggested_".length).replace(/__/g, ""));
-          p.onSuggestion?.(suggestionRows()[index] || {});
-          return;
+        inputClass={
+          chip
+            ? "w-full px-3 py-2 text-sm opacity-0"
+            : "min-h-10 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-[13px] text-[#0f172a] focus:border-[#2a9d8f] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         }
-        p.onPick(optionRows().find((o: Any) => String(o.ticket) === selected) || {});
-      }}
-      onQueryChange={({ query }) => p.onQuery?.(query)}
-      accessibilityLabel={p.label || p.placeholder || "Account"}
-      placeholder={p.placeholder || "Select..."}
-      inputClass="min-h-10 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-[13px] text-[#0f172a] focus:border-[#2a9d8f] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-      popupClass="rounded-xl border border-[#e2e8f0] bg-white shadow-xl overflow-hidden dark:border-slate-700 dark:bg-slate-800"
+        popupClass={`rounded-xl border border-[#e2e8f0] bg-white shadow-xl overflow-hidden dark:border-slate-700 dark:bg-slate-800${chip ? " min-w-[240px]" : ""}`}
       popupStartingClass="opacity-0"
       listClass="max-h-[280px]"
       groupClass="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#94a3b8] bg-[#f8fafc] border-t border-[#e2e8f0] dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700"
@@ -404,7 +459,9 @@ function BooksCombo(p: {
       searchAccessibilityLabel={`Find ${p.label || p.placeholder || "account"}`}
       searchPlaceholder="Type to filter..."
       empty={<Text class="px-4 py-2.5 text-[13px] text-[#94a3b8]">No matches found</Text>}
-      triggerButton={<Text class="text-[16px] text-[#94a3b8] opacity-60">⌄</Text>}
+        triggerButton={
+          chip ? <View class="w-0 h-0" /> : <Text class="text-[16px] text-[#94a3b8] opacity-60">⌄</Text>
+        }
       renderItem={(item) => {
         const suggested = item.value.startsWith("__books_suggested_");
         const create = item.value === CREATE_VALUE;
@@ -464,6 +521,7 @@ function BooksCombo(p: {
         );
       }}
     />
+    </View>
   );
 }
 
@@ -486,13 +544,13 @@ function BooksDate(p: { value: string; onChange: (value: string) => void; today?
       itemClass="rounded-md py-1.5 text-[13px] text-[#334155] dark:text-slate-300 selected:bg-[#27ae60] selected:text-white selected:font-semibold data-today:ring-1 data-today:ring-[#27ae60] data-today:text-[#27ae60] dark:data-today:text-[#2ecc71] data-today:font-medium data-outside:text-[#cbd5e1] dark:data-outside:text-slate-600"
       trigger={
         header ? (
-          <View class="flex-row items-center justify-center gap-1.5 rounded-md bg-black/20 px-3 py-1.5">
-            <Text class="text-sm font-medium text-white/90">{p.value || p.today || "Select date"}</Text>
+          <View class="flex-row items-center justify-center gap-1.5 rounded-md bg-black/20 px-3 py-1.5 hover:bg-black/30">
+            <Text class="text-sm font-medium text-white/90">{longDate(p.value || p.today || "Select date")}</Text>
             <Text class="text-[14px] text-white/90">▦</Text>
           </View>
         ) : (
           <View class="min-h-10 flex-row items-center justify-between rounded-lg border border-[#e2e8f0] bg-[#f9fafb] px-3 py-2.5 dark:border-white/10 dark:bg-white/5">
-            <Text class="text-[13px] font-medium text-[#1f2937] dark:text-white">{p.value || p.today || "Select date"}</Text>
+            <Text class="text-[13px] font-medium text-[#1f2937] dark:text-white">{longDate(p.value || p.today || "Select date")}</Text>
             <Text class="text-[16px] text-[#9ca3af] dark:text-white/40">▦</Text>
           </View>
         )
