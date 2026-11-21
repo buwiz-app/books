@@ -436,7 +436,7 @@ function sideChatTurn() {
   handle.onDelta((t: string) => patch((m) => ({ ...m, text: m.text + t })));
   handle.done
     .then((r: Any) => {
-      patch((m) => ({ ...m, text: m.text || String(r?.text || ""), streaming: false }));
+      patch((m) => ({ ...m, text: m.text || String(r?.text || ""), streaming: false, stopped: r?.stop_reason === "stopped" }));
       sideStream.set(null);
     })
     .catch((e: Any) => {
@@ -509,6 +509,12 @@ async function sideSend() {
   sideFiles.set([]);
   sidePromptError.set("");
   sideFeedRef?.scrollToEnd?.({ animated: true });
+  sideChatTurn();
+}
+
+/** Re-ask after a stop or failure: drop the interrupted answer so the history ends on the person's turn. */
+function sideRetry(mid: Any) {
+  sideChat.set(sideChat().filter((m: Any) => m.id !== mid));
   sideChatTurn();
 }
 
@@ -670,6 +676,11 @@ function SideModelCard() {
         <View class="flex-row items-center gap-1.5 h-8 mx-2 mt-2 px-2 rounded-lg bg-[#f1f5f9] dark:bg-slate-800">
           <Avatar src={SIDE_GLYPHS.search} accessibilityLabel="" class="w-3.5 h-3.5" fallbackDelay={Infinity} />
           <Input
+            ref={(e: Any) => {
+              try {
+                e?.focus?.();
+              } catch {}
+            }}
             accessibilityLabel="Search models"
             value={sidePickerQ()}
             placeholder="Search models…"
@@ -788,7 +799,20 @@ function SideAssistant() {
                     <SideMd text={m().text} />
                   </View>
                 </If>
-                <If when={Boolean(m().at)}>
+                <If when={Boolean(m().stopped)}>
+                  <View class="flex-row items-center gap-2">
+                    <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">Stopped</Text>
+                    <View
+                      class="px-2 py-0.5 rounded-md bg-[#f1f5f9] dark:bg-slate-700 cursor-pointer"
+                      accessibilityLabel="Retry"
+                      onPress={() => sideRetry(m().id)}
+                      activeStyle={{ opacity: 0.7 }}
+                    >
+                      <Text class="text-[10px] font-medium text-[#64748b] dark:text-slate-300">Retry</Text>
+                    </View>
+                  </View>
+                </If>
+                <If when={Boolean(m().at) && !m().stopped}>
                   <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">{m().streaming ? "…" : m().at}</Text>
                 </If>
               </View>
@@ -800,7 +824,7 @@ function SideAssistant() {
                     <View
                       class="px-2 py-0.5 rounded-md bg-red-100 dark:bg-red-900/40 cursor-pointer"
                       accessibilityLabel="Retry"
-                      onPress={() => sideChatTurn()}
+                      onPress={() => sideRetry(m().id)}
                       activeStyle={{ opacity: 0.7 }}
                     >
                       <Text class="text-[10px] font-medium text-red-700 dark:text-red-300">Retry</Text>
