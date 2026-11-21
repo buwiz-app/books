@@ -407,7 +407,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
                         class={`flex-row items-center gap-1.5 rounded-lg border px-2.5 py-1.5 transition-colors ${
                           ncType() === t()[0]
                             ? "border-[#0d9488] bg-[#f0fdfa] dark:bg-[#134e4a]/30"
-                            : `${C.line} hover:border-[#cbd5e1]`
+                            : `${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]`
                         }`}
                         onPress={() => ncType.set(t()[0])}
                         activeStyle={{ opacity: 0.7 }}
