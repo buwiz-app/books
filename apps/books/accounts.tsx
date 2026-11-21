@@ -729,7 +729,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
         <View class="shrink-0 bg-[#2a9d8f] px-5 py-4 flex-row items-center gap-2.5">
           <Text class="text-[15px] font-semibold text-white">{editing ? "Edit Category" : "New Category"}</Text>
         </View>
-        <Scroll class="flex-1 min-h-0">
+        <Scroll class="max-h-[640px]">
           <View class="p-5 gap-3.5">
             <View class="gap-1.5">
               <Text class={`text-[11px] font-medium ${C.mute}`}>Category Name</Text>
