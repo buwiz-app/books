@@ -284,9 +284,9 @@ pub fn scope(store: &books_store::Store, book: &books_store::books::Book, value:
     drop(stmt);
     let mut choices = Vec::new();
     for e in rows {
-        let t = plumbing::ticket_for(conn, "evidence", e.id)?;
         let label = label(&e);
         if label.to_lowercase().contains(&value.to_lowercase()) {
+            let t = plumbing::ticket_for(conn, "evidence", e.id)?;
             choices.push(json!({"label":label,"value":t}));
         }
         if choices.len() == 20 {
