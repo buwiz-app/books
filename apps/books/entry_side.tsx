@@ -8,6 +8,7 @@
 const entryStaged = signal<Any[]>([]);
 const entryStagedBusy = signal(false);
 const entrySide = signal("attachments");
+const entrySideSheet = signal(false);
 const sideComposer = signal("");
 const sidePromptError = signal("");
 
@@ -246,7 +247,7 @@ function SideActivity() {
 function EntrySide() {
   const side = entrySide;
   return (
-    <View class="w-[360px] shrink-0 rounded-[24px] border border-[#e2e8f0] dark:border-slate-600 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex-col h-full bg-white dark:bg-slate-800">
+    <View class="w-full shrink-0 rounded-[24px] border border-[#e2e8f0] dark:border-slate-600 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex-col h-full bg-white dark:bg-slate-800">
       <View class={`flex-row justify-evenly px-4 py-3 gap-2 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
         <Each of={[["attachments", "📎"], ["ai", "✧"], ["activity", "◷"]]}>
           {(t: Any) => (
