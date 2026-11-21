@@ -409,16 +409,6 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
     }
   };
 
-  const navigateTo = (a: Any) => {
-    if (selected()?.ticket === a.ticket) {
-      catDetailTicket.set(String(a.ticket));
-      p.go("category");
-    } else {
-      selected.set(a);
-      mode.set("");
-    }
-  };
-
   const chip = (label: string, dot: string, onX: () => void) => (
     <View class="flex-row items-center gap-1.5 px-2.5 py-0.5 rounded-[20px] border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700">
       <View class="w-2 h-2 rounded-full" style={{ backgroundColor: dot }} />
@@ -561,8 +551,11 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
           {iconBtn(
             a,
             isSel() ? ACCT_ICONS.upRight : ACCT_ICONS.chevR,
-            isSel() ? "Open category" : "Select category",
-            () => navigateTo(a),
+            "Open category",
+            () => {
+              catDetailTicket.set(String(a.ticket));
+              p.go("category");
+            },
             "opacity-0 group-hover:opacity-70",
           )}
         </View>
@@ -693,9 +686,9 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
       <Text class={`text-[11px] font-medium ${C.mute}`}>Sub-type</Text>
       <View
         ref={kindAnchor}
-        class={`flex-row items-center justify-between h-[38px] rounded-lg border px-3 transition-colors ${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]`}
-        onPress={() => kindMenu.set(true)}
-        activeStyle={{ opacity: 0.7 }}
+        class={`flex-row items-center justify-between h-[38px] rounded-lg border px-3 transition-colors ${C.line} ${mode() === "edit" ? "" : "hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]"}`}
+        onPress={() => (mode() === "edit" ? null : kindMenu.set(true))}
+        activeStyle={mode() === "edit" ? undefined : { opacity: 0.7 }}
       >
         <Text class={`text-[13px] ${C.ink}`}>{acctKindLabel(ncKind())}</Text>
         <Avatar src={ACCT_ICONS.chevD} class="w-3.5 h-3.5" imageClass="tint-slate-400" fallbackDelay={Infinity} accessibilityLabel="" />
@@ -740,11 +733,25 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
           <View class="p-5 gap-3.5">
             <View class="gap-1.5">
               <Text class={`text-[11px] font-medium ${C.mute}`}>Category Name</Text>
-              <TextBox label="Category name" value={ncName()} onChange={(v) => ncName.set(v)} placeholder="e.g., Office Supplies" entry />
+              <If when={editing}>
+                <View class={`rounded-lg border px-3 py-2 ${C.line}`}>
+                  <Text class={`text-[13px] ${C.ink}`}>{ncName()}</Text>
+                </View>
+              </If>
+              <If when={!editing}>
+                <TextBox label="Category name" value={ncName()} onChange={(v) => ncName.set(v)} placeholder="e.g., Office Supplies" entry />
+              </If>
             </View>
             <View class="gap-1.5">
               <Text class={`text-[11px] font-medium ${C.mute}`}>Account Number</Text>
-              <TextBox label="Account number" value={ncNumber()} onChange={(v) => ncNumber.set(String(v).replace(/[^0-9]/g, "").slice(0, 12))} placeholder="e.g., 61000" entry />
+              <If when={editing}>
+                <View class={`rounded-lg border px-3 py-2 ${C.line}`}>
+                  <Text class={`text-[13px] font-mono ${C.ink}`}>{ncNumber()}</Text>
+                </View>
+              </If>
+              <If when={!editing}>
+                <TextBox label="Account number" value={ncNumber()} onChange={(v) => ncNumber.set(String(v).replace(/[^0-9]/g, "").slice(0, 12))} placeholder="e.g., 61000" entry />
+              </If>
             </View>
             {kindField()}
             <View class="gap-1.5">
@@ -756,10 +763,12 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
                       class={`flex-row items-center gap-1.5 rounded-lg border px-2.5 py-1.5 transition-colors ${
                         ncType() === t()[0]
                           ? "border-[#0d9488] bg-[#f0fdfa] dark:bg-[#134e4a]/30"
-                          : `${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]`
+                          : editing
+                            ? `${C.line}`
+                            : `${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]`
                       }`}
-                      onPress={() => ncType.set(t()[0])}
-                      activeStyle={{ opacity: 0.7 }}
+                      onPress={() => (editing ? null : ncType.set(t()[0]))}
+                      activeStyle={editing ? undefined : { opacity: 0.7 }}
                     >
                       <Avatar src={ACCT_TYPE_ICONS[t()[0]]} class="w-3.5 h-3.5" imageClass={`tint-[${t()[2]}]`} fallbackDelay={Infinity} accessibilityLabel="" />
                       <Text class={`text-[11.5px] ${ncType() === t()[0] ? `font-semibold ${C.ink}` : C.mute}`}>{t()[1]}</Text>
@@ -775,19 +784,19 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
             </If>
             <View class="flex-row gap-2 pt-1">
               <View class="flex-1">
-                <Btn label="Cancel" onPress={() => mode.set("")} />
+                <Btn label={editing ? "Close" : "Cancel"} onPress={() => mode.set("")} />
               </View>
-              <View
-                class={`flex-1 h-[34px] rounded-lg items-center justify-center transition-colors ${
-                  !editing && ncName().trim() ? "bg-[#0d9488] hover:bg-[#0f766e]" : "bg-[#0d9488] opacity-40"
-                }`}
-                onPress={editing ? undefined : createCategory}
-                activeStyle={editing ? undefined : { opacity: 0.85 }}
-              >
-                <Text class="text-[13px] font-semibold text-white">
-                  {editing ? "Save Changes" : ncBusy() ? "Creating…" : "Create Category"}
-                </Text>
-              </View>
+              <If when={!editing}>
+                <View
+                  class={`flex-1 h-[34px] rounded-lg items-center justify-center transition-colors ${
+                    ncName().trim() ? "bg-[#0d9488] hover:bg-[#0f766e]" : "bg-[#0d9488] opacity-40"
+                  }`}
+                  onPress={createCategory}
+                  activeStyle={{ opacity: 0.85 }}
+                >
+                  <Text class="text-[13px] font-semibold text-white">{ncBusy() ? "Creating…" : "Create Category"}</Text>
+                </View>
+              </If>
             </View>
           </View>
         </Scroll>
@@ -806,16 +815,8 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
 
   return (
     <View class="flex-1 flex-col overflow-hidden relative">
-      {/* Top Navigation — Back + New Category split pill */}
-      <View class="shrink-0 flex-row items-center justify-between px-3 sm:px-6 py-2 sm:py-3">
-        <View
-          class="flex-row items-center gap-1.5 py-1.5 pr-2"
-          onPress={() => p.go("today")}
-          activeStyle={{ opacity: 0.7 }}
-        >
-          <Text class={`text-[14px] font-medium transition-colors ${C.ink} hover:text-[#0d9488] dark:hover:text-[#2dd4bf]`}>‹</Text>
-          <Text class={`hidden sm:inline text-[14px] font-medium transition-colors ${C.ink} hover:text-[#0d9488] dark:hover:text-[#2dd4bf]`}>Back to Dashboard</Text>
-        </View>
+      {/* Top bar — New Category split pill (no Back row: the Bot window's × closes it) */}
+      <View class="shrink-0 flex-row items-center justify-end px-3 sm:px-6 py-2 sm:py-3">
         <View ref={catMenuAnchor} class="relative flex-row items-stretch rounded-full bg-[#0d9488] shadow-sm">
           <View
             class="px-4 pl-5 h-[38px] flex-row items-center gap-1.5 rounded-l-full transition-colors hover:bg-[#0f766e]"
