@@ -603,9 +603,9 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             activeStyle={{ opacity: 0.7 }}
             onPress={() => { typeMenuOpen.set(!typeMenuOpen()); saveMenuOpen.set(false); }}
           >
-            <Text class="text-[14px]" style={{ color: "#2a9d8f" }}>{mode() === "money_in" ? "↓" : mode() === "money_out" ? "↑" : mode() === "transfer" ? "⇄" : "≡"}</Text>
+            <Avatar src={modeIcon(mode())} class="w-4 h-4" imageClass="tint-[#2a9d8f] dark:tint-[#2dd4bf]" fallbackDelay={Infinity} accessibilityLabel="" />
             <Text class={`text-[13px] font-medium ${C.ink}`}>{modeName()}</Text>
-            <Text class="text-[12px] opacity-50">⌄</Text>
+            <Avatar src={ICONS.chevronDown} class="w-3.5 h-3.5 opacity-50" imageClass="tint-[#1e293b] dark:tint-slate-100" fallbackDelay={Infinity} accessibilityLabel="" />
           </View>
           <If when={Boolean(err())}>
             <Text class="flex-1 min-w-0 truncate text-[12px] font-medium text-[#ef4444]">{err()}</Text>
@@ -629,7 +629,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               accessibilityLabel="More save options"
               onPress={() => { saveMenuOpen.set(!saveMenuOpen()); typeMenuOpen.set(false); }}
             >
-              <Text class="text-[12px] text-white">⌄</Text>
+              <Avatar src={ICONS.chevronDown} class="w-3.5 h-3.5" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
             </View>
           </View>
         </View>
@@ -639,7 +639,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               <View class="flex-row flex-wrap items-start gap-5">
                 <View class="flex-row items-center gap-5 flex-1 min-w-[280px]">
                   <View class="w-14 h-14 rounded-full border-2 border-white/30 items-center justify-center bg-white/20 shrink-0">
-                    <Text class="text-[24px] text-white">{mode() === "journal" ? "≡" : mode() === "transfer" ? "⇄" : mode() === "money_in" ? "↓" : "↑"}</Text>
+                    <Avatar src={modeIcon(mode())} class="w-6 h-6" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
                   </View>
                   <View class="gap-1">
                     <If when={mode() === "money_in" || mode() === "money_out"}>
@@ -700,7 +700,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                     <BooksDate value={date() || o()?.today || ""} today={o()?.today} onChange={(v) => date.set(v)} variant="header" />
                   </View>
                   <View class="flex-row items-center gap-2 px-3 py-1.5 rounded-lg mt-4 bg-black/20 shadow-sm">
-                    <Text class="text-[14px] text-white">{mode() === "journal" ? "≡" : mode() === "transfer" ? "⇄" : "◈"}</Text>
+                    <Avatar src={modeIcon(mode())} class="w-3.5 h-3.5" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
                     <Text class="text-[12px] font-semibold text-white">{TYPE_LABEL[mode()] || modeName()}</Text>
                   </View>
                 </View>
@@ -747,8 +747,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                         />
                       </View>
                       <View class="flex-row items-center justify-center py-1 md:pt-8 md:py-0">
-                        <Text class="md:hidden text-[24px] text-[#94a3b8]">↓</Text>
-                        <Text class="hidden md:block text-[24px] text-[#94a3b8]">→</Text>
+                        <Avatar src={ICONS.arrowDown} class="md:hidden w-5 h-5" imageClass="tint-[#94a3b8]" fallbackDelay={Infinity} accessibilityLabel="" />
+                        <Avatar src={ICONS.arrowRight} class="hidden md:block w-5 h-5" imageClass="tint-[#94a3b8]" fallbackDelay={Infinity} accessibilityLabel="" />
                       </View>
                       <View class="flex-1 gap-2">
                         <Field label="Transfer To" plain>
@@ -806,7 +806,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 placeholder="Category"
                                 group={mode() === "money_in" ? "Income categories" : "Expense categories"}
                                 trigger="chip"
-                                icon="▤"
+                                icon="category"
                               />
                               <BooksCombo
                                 label="Party"
@@ -820,10 +820,10 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 placeholder="Party"
                                 group={mode() === "money_in" ? "Customers" : "Vendors"}
                                 trigger="chip"
-                                icon="♟"
+                                icon="party"
                               />
-                              <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { line().department.set(tag.ticket || ""); line().deptQuery.set(""); }} query={() => line().deptQuery()} onQuery={(query: string) => line().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { line().department.set(ticket); line().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="⌂" />
-                              <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { line().location.set(tag.ticket || ""); line().locQuery.set(""); }} query={() => line().locQuery()} onQuery={(query: string) => line().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { line().location.set(ticket); line().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="⚲" />
+                              <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { line().department.set(tag.ticket || ""); line().deptQuery.set(""); }} query={() => line().deptQuery()} onQuery={(query: string) => line().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { line().department.set(ticket); line().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="department" />
+                              <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { line().location.set(tag.ticket || ""); line().locQuery.set(""); }} query={() => line().locQuery()} onQuery={(query: string) => line().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { line().location.set(ticket); line().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="location" />
                             </View>
                             <View class="flex-row items-center gap-0.5 shrink-0 ml-auto">
                               <If when={allocations().length > 1}>
@@ -894,7 +894,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 placeholder="Category"
                                 group={mode() === "money_in" ? "Income categories" : "Expense categories"}
                                 trigger="chip"
-                                icon="▤"
+                                icon="category"
                               />
                             </View>
                             <View class="gap-2 pb-2">
@@ -910,14 +910,14 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 placeholder="Party"
                                 group={mode() === "money_in" ? "Customers" : "Vendors"}
                                 trigger="chip"
-                                icon="♟"
+                                icon="party"
                               />
                             </View>
                             <View class="gap-2 pb-2">
-                              <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { line().department.set(tag.ticket || ""); line().deptQuery.set(""); }} query={() => line().deptQuery()} onQuery={(query: string) => line().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { line().department.set(ticket); line().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="⌂" />
+                              <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { line().department.set(tag.ticket || ""); line().deptQuery.set(""); }} query={() => line().deptQuery()} onQuery={(query: string) => line().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { line().department.set(ticket); line().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="department" />
                             </View>
                             <View class="gap-2 pb-2">
-                              <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { line().location.set(tag.ticket || ""); line().locQuery.set(""); }} query={() => line().locQuery()} onQuery={(query: string) => line().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { line().location.set(ticket); line().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="⚲" />
+                              <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { line().location.set(tag.ticket || ""); line().locQuery.set(""); }} query={() => line().locQuery()} onQuery={(query: string) => line().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { line().location.set(ticket); line().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="location" />
                             </View>
                             <View class="flex-row items-center gap-1 pb-1">
                               <If when={allocations().length > 1}>
@@ -972,7 +972,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               <If when={mode() === "journal"}>
                 <View class="gap-0">
                   <View class="flex md:hidden lg:flex flex-row items-center justify-between gap-2 pb-1 mb-2">
-                    <Text class="text-[12px] font-semibold text-[#475569] dark:text-slate-400 shrink-0">≡ Lines</Text>
+                    <View class="flex-row items-center gap-1.5 shrink-0"><Avatar src={ICONS.list} class="w-3.5 h-3.5" imageClass="tint-[#475569] dark:tint-slate-400" fallbackDelay={Infinity} accessibilityLabel="" /><Text class="text-[12px] font-semibold text-[#475569] dark:text-slate-400">Lines</Text></View>
                     <View class="hidden lg:flex lg:flex-row gap-8 shrink-0">
                       <Text class="w-20 text-right text-[12px] font-medium text-[#64748b] dark:text-slate-400">Debit</Text>
                       <Text class="w-20 text-right text-[12px] font-medium text-[#64748b] dark:text-slate-400">Credit</Text>
@@ -981,7 +981,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                   <View class="hidden md:flex lg:hidden flex-row items-center gap-2 mb-3">
                     <Text class="w-5 shrink-0" />
                     <View class="flex-[2] min-w-0">
-                      <Text class="text-[12px] font-semibold text-[#475569] dark:text-slate-400">≡ Lines</Text>
+                      <View class="flex-row items-center gap-1.5"><Avatar src={ICONS.list} class="w-3.5 h-3.5" imageClass="tint-[#475569] dark:tint-slate-400" fallbackDelay={Infinity} accessibilityLabel="" /><Text class="text-[12px] font-semibold text-[#475569] dark:text-slate-400">Lines</Text></View>
                     </View>
                     <Text class="flex-1 min-w-0 text-left text-[12px] font-medium text-[#64748b] dark:text-slate-400">Debit</Text>
                     <Text class="flex-1 min-w-0 text-left text-[12px] font-medium text-[#64748b] dark:text-slate-400">Credit</Text>
@@ -1017,7 +1017,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               placeholder="Category"
                               group="Accounts"
                               trigger="chip"
-                              icon="▤"
+                              icon="category"
                             />
                           </View>
                           <View class="flex-1">
@@ -1033,16 +1033,16 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               placeholder="Party"
                               group="People"
                               trigger="chip"
-                              icon="♟"
+                              icon="party"
                             />
                           </View>
                         </View>
                         <View class="flex-row items-center gap-2 pl-7">
                           <View class="flex-1">
-                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { l().department.set(tag.ticket || ""); l().deptQuery.set(""); }} query={() => l().deptQuery()} onQuery={(query: string) => l().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { l().department.set(ticket); l().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="⌂" />
+                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { l().department.set(tag.ticket || ""); l().deptQuery.set(""); }} query={() => l().deptQuery()} onQuery={(query: string) => l().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { l().department.set(ticket); l().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="department" />
                           </View>
                           <View class="flex-1">
-                            <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { l().location.set(tag.ticket || ""); l().locQuery.set(""); }} query={() => l().locQuery()} onQuery={(query: string) => l().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { l().location.set(ticket); l().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="⚲" />
+                            <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { l().location.set(tag.ticket || ""); l().locQuery.set(""); }} query={() => l().locQuery()} onQuery={(query: string) => l().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { l().location.set(ticket); l().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="location" />
                           </View>
                           <View class="flex-row items-center gap-1 shrink-0">
                             <View
@@ -1114,7 +1114,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               placeholder="Category"
                               group="Accounts"
                               trigger="chip"
-                              icon="▤"
+                              icon="category"
                             />
                             <BooksCombo
                               label="Party"
@@ -1128,10 +1128,10 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               placeholder="Party"
                               group="People"
                               trigger="chip"
-                              icon="♟"
+                              icon="party"
                             />
-                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { l().department.set(tag.ticket || ""); l().deptQuery.set(""); }} query={() => l().deptQuery()} onQuery={(query: string) => l().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { l().department.set(ticket); l().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="⌂" />
-                            <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { l().location.set(tag.ticket || ""); l().locQuery.set(""); }} query={() => l().locQuery()} onQuery={(query: string) => l().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { l().location.set(ticket); l().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="⚲" />
+                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { l().department.set(tag.ticket || ""); l().deptQuery.set(""); }} query={() => l().deptQuery()} onQuery={(query: string) => l().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { l().department.set(ticket); l().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="department" />
+                            <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { l().location.set(tag.ticket || ""); l().locQuery.set(""); }} query={() => l().locQuery()} onQuery={(query: string) => l().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { l().location.set(ticket); l().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="location" />
                           </View>
                           <View class="flex-row items-center gap-1 shrink-0">
                             <View
@@ -1214,7 +1214,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               placeholder="Category"
                               group="Accounts"
                               trigger="chip"
-                              icon="▤"
+                              icon="category"
                             />
                           </View>
                           <View class="px-3 pb-2">
@@ -1230,15 +1230,15 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               placeholder="Party"
                               group="People"
                               trigger="chip"
-                              icon="♟"
+                              icon="party"
                             />
                           </View>
                           <View class="px-3 pb-2">
-                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { l().department.set(tag.ticket || ""); l().deptQuery.set(""); }} query={() => l().deptQuery()} onQuery={(query: string) => l().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { l().department.set(ticket); l().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="⌂" />
+                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { l().department.set(tag.ticket || ""); l().deptQuery.set(""); }} query={() => l().deptQuery()} onQuery={(query: string) => l().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { l().department.set(ticket); l().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="department" />
                           </View>
                           <View class="flex-row items-center gap-2 px-3 pb-3">
                             <View class="flex-1 min-w-0">
-                              <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { l().location.set(tag.ticket || ""); l().locQuery.set(""); }} query={() => l().locQuery()} onQuery={(query: string) => l().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { l().location.set(ticket); l().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="⚲" />
+                              <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { l().location.set(tag.ticket || ""); l().locQuery.set(""); }} query={() => l().locQuery()} onQuery={(query: string) => l().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { l().location.set(ticket); l().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="location" />
                             </View>
                             <View class="flex-row items-center gap-0.5 shrink-0">
                               <If when={jl().length > 2}>
@@ -1294,9 +1294,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             <If when={mode() === "journal"}>
               <View class={`shrink-0 px-6 py-3 border-t flex-col md:flex-row md:items-center justify-between gap-1 md:gap-4 ${C.line}`}>
                 <View class="flex-row items-center gap-1.5 min-w-0 shrink">
-                  <Text class={`text-[14px] font-bold ${journalTotals().balanced ? "text-[#14b8a6]" : "text-[#ef4444]"}`}>
-                    {journalTotals().balanced ? "✓" : "⊗"}
-                  </Text>
+                  <Avatar src={journalTotals().balanced ? ICONS.check : ICONS.circleX} class="w-3.5 h-3.5" imageClass={journalTotals().balanced ? "tint-[#14b8a6]" : "tint-[#ef4444]"} fallbackDelay={Infinity} accessibilityLabel="" />
                   <Text class={`text-xs font-medium ${journalTotals().balanced ? "text-[#14b8a6]" : "text-[#ef4444]"}`}>
                     {shownCents(journalTotals().debit)}
                   </Text>
@@ -1326,7 +1324,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
         <If when={!entrySideSheet()}>
           <PanelFab
             label="Open attachments and chat"
-            glyph="📎"
+            icon="paperclip"
             badge={() => entryStaged().length}
             onPress={() => entrySideSheet.set(true)}
           />
@@ -1349,11 +1347,11 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                   activeStyle={{ opacity: 0.7 }}
                   onPress={() => { typeMenuOpen.set(false); switchMode(m()[0]); }}
                 >
-                  <Text class={`text-[12px] ${mode() === m()[0] ? "text-[#2a9d8f] dark:text-[#2a9d8f]" : "text-[#64748b] dark:text-slate-400"}`}>{m()[0] === "money_in" ? "↓" : m()[0] === "money_out" ? "↑" : m()[0] === "transfer" ? "⇄" : "≡"}</Text>
+                  <Avatar src={modeIcon(m()[0])} class="w-4 h-4" imageClass={mode() === m()[0] ? "tint-[#2a9d8f]" : "tint-[#64748b] dark:tint-slate-400"} fallbackDelay={Infinity} accessibilityLabel="" />
                   <Text class={`text-xs ${mode() === m()[0] ? "text-[#2a9d8f] dark:text-[#2a9d8f]" : "text-[#374151] dark:text-slate-200"}`}>{m()[1]}</Text>
                   <View class="flex-1" />
                   <If when={mode() === m()[0]}>
-                    <Text class="text-xs text-[#2a9d8f] dark:text-[#2a9d8f]">✓</Text>
+                    <Avatar src={ICONS.check} class="w-3.5 h-3.5" imageClass="tint-[#2a9d8f] dark:tint-[#2a9d8f]" fallbackDelay={Infinity} accessibilityLabel="" />
                   </If>
                 </View>
               )}

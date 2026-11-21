@@ -513,13 +513,13 @@ function ReconcileAccount(p: { row: Any; onCell: (r: Any, c: Any) => void }) {
 const MARK: Record<string, string> = { m: "✓", s: "≈", x: "◷" };
 
 /** One glass card of the green summary strip (old app's SummaryCard). */
-function RecSumCard(p: { title: string; glyph: string; highlight?: string; rows: [string, string][] }) {
+function RecSumCard(p: { title: string; icon: string; highlight?: string; rows: [string, string][] }) {
   return (
     <View class="flex-1 min-w-[140px] rounded-xl px-4 py-3 gap-1.5" style={{ backgroundColor: "rgba(255,255,255,0.10)", borderWidth: 1, borderColor: "rgba(255,255,255,0.10)" }}>
       <View class="flex-row items-center justify-between">
         <View class="flex-row items-center gap-2">
           <View class="w-5 h-5 rounded-full bg-white/20 items-center justify-center">
-            <Text class="text-[11px] font-bold text-white">{p.glyph}</Text>
+            <Avatar src={ICONS[p.icon]} class="w-3 h-3" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
           </View>
           <Text class="text-[13px] font-semibold text-white">{p.title}</Text>
         </View>
@@ -529,7 +529,7 @@ function RecSumCard(p: { title: string; glyph: string; highlight?: string; rows:
         {(i: Any) => (
           <View class="flex-row items-center justify-between">
             <View class="flex-row items-center gap-2">
-              <Text class="text-[11px] text-white/60">{p.rows[i()][0] === "Bank" ? "▤" : "▦"}</Text>
+              <Avatar src={p.rows[i()][0] === "Bank" ? ICONS.landmark : ICONS.bookOpen} class="w-[13px] h-[13px] opacity-60" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
               <Text class="text-[12px] font-medium text-white/60">{p.rows[i()][0]}</Text>
             </View>
             <Text class="text-[13px] font-medium text-white">{p.rows[i()][1]}</Text>
@@ -651,9 +651,9 @@ function MatchView() {
           </If>
           {/* green summary strip: inflow / outflow / Net glass cards (old app's SummaryRow) */}
           <View class="flex-row gap-3 rounded-xl px-4 py-3" style={{ backgroundImage: "linear-gradient(to right,#1a6b3c,#27ae60)" }}>
-            <RecSumCard title={isCard ? "Charges" : "Deposits"} glyph="↓" rows={[["Bank", centsShown(depBank(), true)], ["Ledger", depLeg()]]} />
-            <RecSumCard title={isCard ? "Payments" : "Withdrawals"} glyph="↑" rows={[["Bank", centsShown(wdBank())], ["Ledger", wdLeg()]]} />
-            <RecSumCard title="Net" glyph="≈" highlight={s()?.difference_shown} rows={[["Bank", String(s()?.closing_shown || "—")], ["Ledger", String(s()?.books_shown || "—")]]} />
+            <RecSumCard title={isCard ? "Charges" : "Deposits"} icon="dash" rows={[["Bank", centsShown(depBank(), true)], ["Ledger", depLeg()]]} />
+            <RecSumCard title={isCard ? "Payments" : "Withdrawals"} icon="dash" rows={[["Bank", centsShown(wdBank())], ["Ledger", wdLeg()]]} />
+            <RecSumCard title="Net" icon="notEqual" highlight={s()?.difference_shown} rows={[["Bank", String(s()?.closing_shown || "—")], ["Ledger", String(s()?.books_shown || "—")]]} />
           </View>
           <View class={side() ? "flex-row items-start gap-3.5" : "gap-3.5"}>
             <If when={side()}>

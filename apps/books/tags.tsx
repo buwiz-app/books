@@ -8,7 +8,13 @@
 
 const tagKind = signal("department");
 
-const tagGlyph = (kind: string) => (kind === "department" ? "⌂" : "⚲");
+// Page icon = the old app's DeptIcon (building) / MapPinIcon; the accent
+// band shows departments' table glyph, locations keep the pin.
+const tagIcon = (kind: string, accent = false) =>
+  accent ? (kind === "department" ? "table" : "location") : kind === "department" ? "building" : "location";
+const tagAvatar = (kind: string, cls: string, tint: string, accent = false) => (
+  <Avatar src={ICONS[tagIcon(kind, accent)]} class={cls} imageClass={tint} fallbackDelay={Infinity} accessibilityLabel="" />
+);
 const tagNouns = (kind: string) =>
   kind === "department"
     ? {
@@ -103,7 +109,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
       <If when={sidePanel() === "empty"}>
         <View class={`rounded-[16px] border overflow-hidden items-center justify-center py-12 px-8 bg-white dark:bg-slate-800 ${C.line}`}>
           <View class="w-16 h-16 rounded-2xl items-center justify-center bg-[#e8f5f0] dark:bg-[#134e4a]/40 mb-4">
-            <Text class="text-[30px] text-[#2a9d8f] dark:text-[#2dd4bf]">{tagGlyph(tagKind())}</Text>
+            {tagAvatar(tagKind(), "w-[30px] h-[30px]", "tint-[#2a9d8f] dark:tint-[#2dd4bf]")}
           </View>
           <Text class={`text-[14px] font-medium ${C.ink}`}>{L().selectPrompt}</Text>
           <Text class={`text-[12px] mt-1 text-center ${C.dim}`}>{L().selectHint}</Text>
@@ -116,14 +122,14 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
           {/* Teal accent band */}
           <View class="bg-[#2a9d8f] items-center pt-5 pb-1">
             <View class="w-10 h-10 rounded-lg items-center justify-center bg-white/20">
-              <Text class="text-[18px] text-white">{tagGlyph(tagKind())}</Text>
+              {tagAvatar(tagKind(), "w-[18px] h-[18px]", "tint-white", true)}
             </View>
           </View>
           {/* Header: teal icon + name + edit */}
           <View class="px-5 pt-3 pb-4">
             <View class="flex-row items-start gap-3">
               <View class="w-10 h-10 rounded-lg items-center justify-center bg-[#2a9d8f] shrink-0">
-                <Text class="text-[16px] text-white">{tagGlyph(tagKind())}</Text>
+                {tagAvatar(tagKind(), "w-[16px] h-[16px]", "tint-white")}
               </View>
               <View class="flex-1 min-w-0">
                 <Text class={`text-[17px] font-bold ${C.ink}`}>{selected()?.name || ""}</Text>
@@ -134,7 +140,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
           {/* Activity box */}
           <View class="mx-4 mb-4 rounded-xl bg-[#f5f7fb] dark:bg-slate-900 p-4">
             <View class="flex-row items-center gap-2">
-              <Text class="text-[13px] text-[#2a9d8f]">{tagGlyph(tagKind())}</Text>
+              {tagAvatar(tagKind(), "w-[13px] h-[13px]", "tint-[#2a9d8f] dark:tint-[#2dd4bf]")}
               <Text class={`text-[13px] font-semibold ${C.ink}`}>{selected()?.name || ""}</Text>
             </View>
             <Text class={`text-[11px] mt-0.5 ${C.dim}`}>{d()?.month.label || ""}</Text>
@@ -235,7 +241,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
         {/* ── Left Card ── */}
         <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
           <View class="shrink-0 bg-[#2a9d8f] px-5 py-4 flex-row items-center gap-3">
-            <Text class="text-[16px] text-white">{tagGlyph(tagKind())}</Text>
+            {tagAvatar(tagKind(), "w-[16px] h-[16px]", "tint-white", true)}
             <Text class="text-[16px] font-semibold text-white">{L().plural}</Text>
           </View>
 
@@ -286,7 +292,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
                     activeStyle={{ opacity: 0.75 }}
                   >
                     <View class="w-9 h-9 rounded-lg items-center justify-center shrink-0 bg-[#e8f5f0] dark:bg-[#134e4a]/40">
-                      <Text class="text-[14px] text-[#2a9d8f] dark:text-[#2dd4bf]">{tagGlyph(tagKind())}</Text>
+                      {tagAvatar(tagKind(), "w-[14px] h-[14px]", "tint-[#2a9d8f] dark:tint-[#2dd4bf]")}
                     </View>
                     <View class="flex-1 min-w-0">
                       <Text class={`text-[14px] font-semibold truncate ${C.ink}`}>{r().name}</Text>
@@ -299,7 +305,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
               </Each>
               <If when={rows().length === 0}>
                 <View class="items-center gap-1.5 py-16">
-                  <Text class="text-[40px] text-[#e2e8f0] dark:text-slate-700">{tagGlyph(tagKind())}</Text>
+                  {tagAvatar(tagKind(), "w-[40px] h-[40px]", "tint-[#e2e8f0] dark:tint-slate-700")}
                   <Text class={`text-[14px] font-medium ${C.mute}`}>
                     {find().trim() ? L().emptySearch : L().emptyList}
                   </Text>
@@ -324,7 +330,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
           body={sideCards}
         />
         <If when={sidePanel() === "empty"}>
-          <PanelFab label="Open details" glyph="☰" onPress={openNew} />
+          <PanelFab label="Open details" icon="panelRight" onPress={openNew} />
         </If>
       </View>
     </View>
