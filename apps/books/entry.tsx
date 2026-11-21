@@ -699,7 +699,6 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                   <View class="flex-row items-center justify-end gap-2 mt-1">
                     <BooksDate value={date() || o()?.today || ""} today={o()?.today} onChange={(v) => date.set(v)} variant="header" />
                   </View>
-                  </View>
                   <View class="flex-row items-center gap-2 px-3 py-1.5 rounded-lg mt-4 bg-black/20">
                     <Text class="text-[14px] text-white">{mode() === "journal" ? "≡" : mode() === "transfer" ? "⇄" : "◈"}</Text>
                     <Text class="text-[12px] font-semibold text-white">{TYPE_LABEL[mode()] || modeName()}</Text>
