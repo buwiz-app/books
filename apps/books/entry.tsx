@@ -303,6 +303,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
   const busy = signal(false);
   const err = signal("");
   const saveMenuOpen = signal(false);
+  const typeMenuOpen = signal(false);
   const mode = () => String(p.mode());
   const switchMode = (next: string) => {
     if (next !== mode()) {
@@ -591,27 +592,17 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
   const modeName = () => (MODES.find((m) => m[0] === mode()) || ["", "New entry"])[1];
   return (
     <View class="flex-1 flex-row bg-[#f0f2f5] dark:bg-slate-950">
-      <View class="w-16 shrink-0 bg-[#f7f8fa] dark:bg-slate-900 border-r border-[#e2e8f0] dark:border-slate-700 flex-col items-center pt-4 gap-1">
-          <Each of={MODES}>
-            {(m: Any) => (
-              <View
-                class={`w-14 flex-col items-center gap-1 py-2.5 rounded-lg border transition-all ${mode() === m()[0] ? `bg-white dark:bg-slate-800 shadow-sm ${C.line}` : "border-transparent"}`}
-                style={mode() === m()[0] ? { color: "#2a9d8f" } : undefined}
-                onPress={() => switchMode(m()[0])}
-                activeStyle={{ opacity: 0.7 }}
-              >
-                <Text class={`text-[16px] ${mode() === m()[0] ? "text-[#2a9d8f] dark:text-[#2a9d8f]" : "text-[#64748b] dark:text-slate-500"}`}>
-                  {m()[0] === "money_in" ? "↓" : m()[0] === "money_out" ? "↑" : m()[0] === "transfer" ? "⇄" : "≡"}
-                </Text>
-                <Text class={`text-[10px] font-medium ${mode() === m()[0] ? "text-[#2a9d8f] dark:text-[#2a9d8f]" : "text-[#64748b] dark:text-slate-500"}`}>{m()[1]}</Text>
-              </View>
-            )}
-          </Each>
-      </View>
       <View class="flex-1 flex-col overflow-hidden relative">
         <View class={`flex-row items-center gap-3 px-6 py-3 border-b bg-white dark:bg-slate-900 ${C.line}`}>
-          <View accessibilityLabel="Go back" class="w-9 h-9 rounded-lg items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-800" onPress={p.close} activeStyle={{ opacity: 0.7 }}>
-            <Text class={`text-[18px] ${C.mute} hover:text-[#1e293b] dark:hover:text-slate-200`}>←</Text>
+          <View
+            accessibilityLabel="Entry type"
+            class={`h-9 flex-row items-center gap-2 rounded-lg border ${C.line} px-3 hover:bg-[#f1f5f9] dark:hover:bg-slate-800`}
+            activeStyle={{ opacity: 0.7 }}
+            onPress={() => { typeMenuOpen.set(!typeMenuOpen()); saveMenuOpen.set(false); }}
+          >
+            <Text class="text-[14px]" style={{ color: "#2a9d8f" }}>{mode() === "money_in" ? "↓" : mode() === "money_out" ? "↑" : mode() === "transfer" ? "⇄" : "≡"}</Text>
+            <Text class={`text-[13px] font-medium ${C.ink}`}>{modeName()}</Text>
+            <Text class="text-[12px] opacity-50">⌄</Text>
           </View>
           <View class="flex-1" />
           <If when={Boolean(err())}>
@@ -631,7 +622,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               style={{ backgroundColor: "#2a9d8f" }}
               activeStyle={{ opacity: 0.7 }}
               accessibilityLabel="More save options"
-              onPress={() => saveMenuOpen.set(!saveMenuOpen())}
+              onPress={() => { saveMenuOpen.set(!saveMenuOpen()); typeMenuOpen.set(false); }}
             >
               <Text class="text-[12px] text-white">⌄</Text>
             </View>
@@ -1090,6 +1081,33 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             </If>
         </View>
         <View class="hidden lg:flex shrink-0"><EntrySide /></View>
+        <If when={typeMenuOpen()}>
+          <View class={`absolute left-6 top-[58px] w-48 rounded-lg border py-1 shadow-lg bg-white dark:bg-slate-800 ${C.line}`}>
+            <Each of={MODES}>
+              {(m: Any) => (
+                <View
+                  class="flex-row items-center gap-2 px-3 py-1.5 hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
+                  activeStyle={{ opacity: 0.7 }}
+                  onPress={() => { typeMenuOpen.set(false); switchMode(m()[0]); }}
+                >
+                  <Text class={`text-[12px] ${mode() === m()[0] ? "text-[#2a9d8f] dark:text-[#2a9d8f]" : "text-[#64748b] dark:text-slate-400"}`}>{m()[0] === "money_in" ? "↓" : m()[0] === "money_out" ? "↑" : m()[0] === "transfer" ? "⇄" : "≡"}</Text>
+                  <Text class={`text-xs ${mode() === m()[0] ? "text-[#2a9d8f] dark:text-[#2a9d8f]" : "text-[#374151] dark:text-slate-200"}`}>{m()[1]}</Text>
+                  <View class="flex-1" />
+                  <If when={mode() === m()[0]}>
+                    <Text class="text-xs text-[#2a9d8f] dark:text-[#2a9d8f]">✓</Text>
+                  </If>
+                </View>
+              )}
+            </Each>
+            <View
+              class={`flex-row items-center gap-2 px-3 py-1.5 border-t ${C.line} hover:bg-[#f1f5f9] dark:hover:bg-slate-800`}
+              activeStyle={{ opacity: 0.7 }}
+              onPress={() => { typeMenuOpen.set(false); p.close(); }}
+            >
+              <Text class="text-xs text-[#64748b] dark:text-slate-400">← Back</Text>
+            </View>
+          </View>
+        </If>
         <If when={saveMenuOpen()}>
           <View class={`absolute right-6 top-[66px] w-40 rounded-lg border py-1 shadow-lg ${C.panel} ${C.line}`}>
             <View class="px-3 py-2 hover:bg-[#f9fafb] dark:hover:bg-slate-800" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false); }}>
