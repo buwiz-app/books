@@ -285,12 +285,12 @@ function ReconcileGrid() {
       <Loading res={data} />
       <If when={Boolean(d())}>
         <View class="gap-4">
-          <View class={`flex-row rounded-xl border overflow-hidden ${C.panel} ${C.line}`}>
+          {/* Two-up below sm (like the reference's grid-cols-2), four-across from sm. */}
+          <View class={`flex-row flex-wrap rounded-xl border overflow-hidden ${C.panel} ${C.line}`}>
             <Each of={REC_TILES}>
               {(t: Any, i: Any) => (
                 <View
-                  class={`flex-1 flex-row items-center gap-3 px-5 py-4 ${i() < 3 ? `border-r ${C.line}` : ""} ${recFilter() === t().key ? t().activeBg : ""}`}
-                  hoverStyle={recFilter() === t().key ? undefined : { backgroundColor: "#f9fafb" }}
+                  class={`w-1/2 sm:w-auto sm:flex-1 flex-row items-center gap-3 px-5 py-4 cursor-pointer transition-colors ${i() < 3 ? `border-r ${C.line}` : ""} ${i() < 2 ? `border-b ${C.line} sm:border-b-0` : ""} ${recFilter() === t().key ? t().activeBg : "hover:bg-gray-50 dark:hover:bg-white/5"}`}
                   activeStyle={{ opacity: 0.7 }}
                   onPress={() => recFilter.set(recFilter() === t().key ? "" : String(t().key))}
                 >
