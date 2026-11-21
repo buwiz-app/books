@@ -31,6 +31,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
   const selected = signal(null as Any);
   const catMenu = signal(false);
   const newCat = signal(false);
+  const mFilter = signal(false);
   const ncName = signal("");
   const ncNumber = signal("");
   const ncType = signal("asset");
@@ -93,16 +94,99 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
       ncBusy.set(false);
     }
   };
+  const closeSide = () => {
+    selected.set(null);
+    mFilter.set(false);
+  };
+  const sideInner = () => (
+    <View class="flex-1 flex-col">
+      <If when={Boolean(selected())}>
+        <View class="flex-1 flex-col">
+          <View class={`flex-row items-center justify-between px-5 py-4 border-b ${C.line}`}>
+            <View class="flex-1 gap-0.5">
+              <Text class={`text-[15px] font-semibold ${C.ink} truncate`}>
+                {selected()?.name || ""}
+              </Text>
+              <Text class={`text-[12px] font-mono ${C.dim}`}>{selected()?.number || ""}</Text>
+            </View>
+            <Btn label="✕" small onPress={closeSide} />
+          </View>
+          <View class="p-5 gap-4 flex-1">
+            <View class="gap-1">
+              <Text class={`text-[11px] font-semibold uppercase tracking-wider ${C.dim}`}>Current Balance</Text>
+              <Text class={`text-[24px] font-semibold font-mono ${C.ink}`}>{selected()?.balance_shown || "₱ 0.00"}</Text>
+            </View>
+            <View class="flex-row items-center gap-2">
+              <View class={`rounded-[5px] px-2 py-0.5 ${TAG[selected()?.tag] || PILL.mute}`}>
+                <Text class={`text-[11px] font-bold uppercase tracking-wider ${TAG[selected()?.tag] || PILL.mute}`}>
+                  {selected()?.tag_label || ""}
+                </Text>
+              </View>
+              <If when={Boolean(selected()?.off)}>
+                <Pill tone="mute" label="Accrual only" />
+              </If>
+            </View>
+            <If when={!selected()?.off}>
+              <View class="gap-2 pt-2">
+                <View
+                  class="h-[38px] rounded-[10px] bg-[#0d9488] items-center justify-center transition-colors hover:bg-[#0f766e]"
+                  onPress={() => accountDrawer.set(selected()?.ticket || "")}
+                  activeStyle={{ opacity: 0.85 }}
+                >
+                  <Text class="text-[13px] font-semibold text-white">View Monthly Activity</Text>
+                </View>
+                <Btn
+                  label="Open in Ledger"
+                  onPress={() => openLedger({ account: selected()?.ticket || "" })}
+                />
+              </View>
+            </If>
+          </View>
+        </View>
+      </If>
+      <If when={!selected()}>
+        <View class="flex-1 flex-col">
+          <View class={`shrink-0 px-5 py-4 border-b ${C.line}`}>
+            <Text class={`text-[15px] font-semibold ${C.ink}`}>Filter by Type</Text>
+          </View>
+          <View class="p-4 gap-2 flex-row flex-wrap">
+            <Each of={CAT_TYPES}>
+              {(t: Any) => {
+                const on = () => typeFilter() === t()[0];
+                return (
+                  <View
+                    class={`w-[calc(50%-4px)] rounded-[10px] border items-center gap-1.5 px-2 py-3 transition-colors ${
+                      on()
+                        ? "border-[#0d9488] bg-[#f0fdfa] dark:bg-[#134e4a]/30"
+                        : `${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46] hover:bg-[#f8f9fb] dark:hover:bg-[#26262a]`
+                    }`}
+                    onPress={() => typeFilter.set(on() ? "" : t()[0])}
+                    activeStyle={{ opacity: 0.7 }}
+                  >
+                    <View class="w-8 h-8 rounded-lg items-center justify-center" style={{ backgroundColor: `${t()[3]}1c` }}>
+                      <Text class="text-[15px]" style={{ color: t()[3] }}>{t()[2]}</Text>
+                    </View>
+                    <Text class={`text-[11px] font-medium text-center ${on() ? "text-[#0d9488] dark:text-[#2dd4bf]" : C.mute}`}>{t()[1]}</Text>
+                  </View>
+                );
+              }}
+            </Each>
+          </View>
+        </View>
+      </If>
+    </View>
+  );
   return (
-    <View class="flex-1 flex-col overflow-hidden">
+    <View class="flex-1 flex-col overflow-hidden relative">
       {/* Top Navigation — Back + New Category split pill */}
-      <View class="shrink-0 flex-row items-center justify-between px-6 py-3.5">
+      <View class="shrink-0 flex-row items-center justify-between px-3 sm:px-6 py-2 sm:py-3">
         <View
           class="flex-row items-center gap-1.5 py-1.5 pr-2"
           onPress={() => p.go("today")}
           activeStyle={{ opacity: 0.7 }}
         >
-          <Text class={`text-[14px] font-medium transition-colors ${C.ink} hover:text-[#0d9488] dark:hover:text-[#2dd4bf]`}>‹ Back to Dashboard</Text>
+          <Text class={`text-[14px] font-medium transition-colors ${C.ink} hover:text-[#0d9488] dark:hover:text-[#2dd4bf]`}>‹</Text>
+          <Text class={`hidden sm:inline text-[14px] font-medium transition-colors ${C.ink} hover:text-[#0d9488] dark:hover:text-[#2dd4bf]`}>Back to Dashboard</Text>
         </View>
         <View ref={catMenuAnchor} class="relative flex-row items-stretch rounded-full bg-[#0d9488] shadow-sm">
           <View
@@ -125,7 +209,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
       </View>
 
       {/* Two-Panel Layout — fills remaining height */}
-      <View class="flex-1 min-h-0 flex-row gap-6 px-6 pb-6 overflow-hidden">
+      <View class="flex-1 min-h-0 flex-row gap-6 px-3 pb-3 sm:px-6 sm:pb-6 overflow-hidden">
         {/* Main Panel — rounded-2xl card with teal Category Manager header */}
         <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
           <View class="shrink-0 bg-[#2a9d8f] px-5 py-4 flex-row items-center justify-between">
@@ -137,9 +221,18 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
 
           {/* Search row — funnel, status chip, Lookup input, Clear */}
           <View class={`shrink-0 flex-row items-center gap-2 px-4 py-2.5 border-b bg-white dark:bg-slate-800 ${C.line}`}>
-            <Text class={`text-[13px] ${C.dim}`}>⏷</Text>
+            <View class="hidden lg:flex">
+              <Text class={`text-[13px] ${C.dim}`}>⏷</Text>
+            </View>
             <View
-              class={`flex-row items-center gap-1 rounded-full border px-2 py-0.5 transition-colors ${activeOnly() ? "border-[#0d9488] bg-[#f0fdfa] dark:bg-[#134e4a]/30" : `${C.line} hover:border-[#cbd5e1]`}`}
+              class="lg:hidden h-9 w-9 items-center justify-center rounded-md"
+              onPress={() => mFilter.set(true)}
+              activeStyle={{ opacity: 0.7 }}
+            >
+              <Text class={`text-[13px] transition-colors ${C.dim} hover:text-[#0d9488]`}>⏷</Text>
+            </View>
+            <View
+              class={`flex-row items-center gap-1 rounded-full border px-2 py-0.5 transition-colors ${activeOnly() ? "border-[#0d9488] bg-[#f0fdfa] dark:bg-[#134e4a]/30" : `${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]`}`}
               onPress={() => activeOnly.set(!activeOnly())}
               activeStyle={{ opacity: 0.7 }}
             >
@@ -224,84 +317,37 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
           </If>
         </View>
 
-        {/* Right Side Panel — Filter by Type tiles or Category Detail */}
-        <View class={`w-[340px] shrink-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
-          <If when={Boolean(selected())}>
-            <View class="flex-1 flex-col">
-              <View class={`flex-row items-center justify-between px-5 py-4 border-b ${C.line}`}>
-                <View class="flex-1 gap-0.5">
-                  <Text class={`text-[15px] font-semibold ${C.ink} truncate`}>
-                    {selected()?.name || ""}
-                  </Text>
-                  <Text class={`text-[12px] font-mono ${C.dim}`}>{selected()?.number || ""}</Text>
-                </View>
-                <Btn label="✕" small onPress={() => selected.set(null)} />
-              </View>
-              <View class="p-5 gap-4 flex-1">
-                <View class="gap-1">
-                  <Text class={`text-[11px] font-semibold uppercase tracking-wider ${C.dim}`}>Current Balance</Text>
-                  <Text class={`text-[24px] font-semibold font-mono ${C.ink}`}>{selected()?.balance_shown || "₱ 0.00"}</Text>
-                </View>
-                <View class="flex-row items-center gap-2">
-                  <View class={`rounded-[5px] px-2 py-0.5 ${TAG[selected()?.tag] || PILL.mute}`}>
-                    <Text class={`text-[11px] font-bold uppercase tracking-wider ${TAG[selected()?.tag] || PILL.mute}`}>
-                      {selected()?.tag_label || ""}
-                    </Text>
-                  </View>
-                  <If when={Boolean(selected()?.off)}>
-                    <Pill tone="mute" label="Accrual only" />
-                  </If>
-                </View>
-                <If when={!selected()?.off}>
-                  <View class="gap-2 pt-2">
-                    <View
-                      class="h-[38px] rounded-[10px] bg-[#0d9488] items-center justify-center transition-colors hover:bg-[#0f766e]"
-                      onPress={() => accountDrawer.set(selected()?.ticket || "")}
-                      activeStyle={{ opacity: 0.85 }}
-                    >
-                      <Text class="text-[13px] font-semibold text-white">View Monthly Activity</Text>
-                    </View>
-                    <Btn
-                      label="Open in Ledger"
-                      onPress={() => openLedger({ account: selected()?.ticket || "" })}
-                    />
-                  </View>
-                </If>
-              </View>
-            </View>
-          </If>
-          <If when={!selected()}>
-            <View class="flex-1 flex-col">
-              <View class={`shrink-0 px-5 py-4 border-b ${C.line}`}>
-                <Text class={`text-[15px] font-semibold ${C.ink}`}>Filter by Type</Text>
-              </View>
-              <View class="p-4 gap-2 flex-row flex-wrap">
-                <Each of={CAT_TYPES}>
-                  {(t: Any) => {
-                    const on = () => typeFilter() === t()[0];
-                    return (
-                      <View
-                        class={`w-[calc(50%-4px)] rounded-[10px] border items-center gap-1.5 px-2 py-3 transition-colors ${
-                          on()
-                            ? "border-[#0d9488] bg-[#f0fdfa] dark:bg-[#134e4a]/30"
-                            : `${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46] hover:bg-[#f8f9fb] dark:hover:bg-[#26262a]`
-                        }`}
-                        onPress={() => typeFilter.set(on() ? "" : t()[0])}
-                        activeStyle={{ opacity: 0.7 }}
-                      >
-                        <View class="w-8 h-8 rounded-lg items-center justify-center" style={{ backgroundColor: `${t()[3]}1c` }}>
-                          <Text class="text-[15px]" style={{ color: t()[3] }}>{t()[2]}</Text>
-                        </View>
-                        <Text class={`text-[11px] font-medium text-center ${on() ? "text-[#0d9488] dark:text-[#2dd4bf]" : C.mute}`}>{t()[1]}</Text>
-                      </View>
-                    );
-                  }}
-                </Each>
-              </View>
-            </View>
-          </If>
+        {/* Right Side Panel — Filter by Type tiles or Category Detail (lg+ only) */}
+        <View class={`hidden lg:flex w-[340px] shrink-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
+          {sideInner()}
         </View>
       </View>
+
+      {/* Below lg the side panel becomes a slide-in drawer, like the reference */}
+      <If when={Boolean(selected()) || mFilter()}>
+        <View class="absolute inset-0 lg:hidden">
+          <View class="absolute inset-0 bg-black/30" onPress={closeSide} />
+          <View class="absolute top-0 right-0 bottom-0 w-full max-w-[400px] flex-col shadow-2xl bg-[#e8f0f2] dark:bg-slate-900">
+            <View class="shrink-0 flex-row items-center px-2 py-1">
+              <View
+                class="h-11 flex-row items-center gap-1.5 rounded-lg px-2"
+                onPress={closeSide}
+                activeStyle={{ opacity: 0.7 }}
+              >
+                <Text class="text-[16px] text-slate-600 dark:text-slate-400">‹</Text>
+                <Text class="text-[14px] font-medium text-slate-600 dark:text-slate-400">Back</Text>
+              </View>
+            </View>
+            <Scroll class="flex-1">
+              <View class="px-3 pb-3">
+                <View class={`rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
+                  {sideInner()}
+                </View>
+              </View>
+            </Scroll>
+          </View>
+        </View>
+      </If>
 
       {/* "+ New Category" chevron menu */}
       <If when={catMenu()}>
