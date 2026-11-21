@@ -6,7 +6,7 @@
 const PAGES: { id: string; label: string; sub?: string; group?: string; hidden?: boolean }[] = [
   { id: "today", label: "Home" },
   { id: "inbox", label: "Inbox", sub: "Drafts waiting to be booked", group: "Money" },
-  { id: "ledger", label: "Ledger", sub: "Every entry, by account", group: "Money" },
+  { id: "transactions", label: "Transactions", sub: "Every entry, by account", group: "Money" },
   { id: "unpaid", label: "Unpaid", sub: "Invoices and bills", group: "Money" },
   { id: "reconcile", label: "Reconcile", sub: "Match the bank statement", group: "Money" },
   { id: "reports", label: "Reports", sub: "P&L, balance sheet, cash flow", group: "Results" },
@@ -145,10 +145,13 @@ export default function Books() {
         <If when={page() === "inbox"}>
           <InboxPage go={go} sheet={newEntry} />
         </If>
+        <If when={page() === "transactions"}>
+          <TransactionsPage go={go} sheet={newEntry} />
+        </If>
         <If when={page() === "tags"}>
           <TagsPage go={go} />
         </If>
-        <If when={page() !== "new" && page() !== "accounts" && page() !== "inbox" && page() !== "tags"}>
+        <If when={page() !== "new" && page() !== "accounts" && page() !== "inbox" && page() !== "tags" && page() !== "transactions"}>
           <Scroll class="flex-1">
             <View class="p-6 gap-5">
               <If when={page() === "today"}>
