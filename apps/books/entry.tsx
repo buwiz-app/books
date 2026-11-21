@@ -1060,8 +1060,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             </View>
             </Scroll>
             <If when={mode() === "journal"}>
-              <View class={`shrink-0 px-6 py-3 border-t flex-row items-center justify-between ${C.line}`}>
-                <View class="flex-row items-center gap-1.5">
+              <View class={`shrink-0 px-6 py-3 border-t flex-col md:flex-row md:items-center justify-between gap-1 md:gap-4 ${C.line}`}>
+                <View class="flex-row items-center gap-1.5 min-w-0 shrink">
                   <Text class={`text-[14px] font-bold ${journalTotals().balanced ? "text-[#14b8a6]" : "text-[#ef4444]"}`}>
                     {journalTotals().balanced ? "✓" : "⊗"}
                   </Text>
@@ -1072,7 +1072,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                     <Text class={`text-[12px] ${C.dim}`}>{`Difference ${shownCents(journalTotals().difference)}`}</Text>
                   </If>
                 </View>
-                <View class="flex-row gap-6">
+                <View class="flex-row gap-6 justify-end">
                   <View class="flex-row gap-1">
                     <Text class="text-xs text-[#94a3b8] dark:text-slate-500">Debit</Text>
                     <Text class="text-xs font-semibold text-[#1e293b] dark:text-white tabular-nums">{shownCents(journalTotals().debit)}</Text>
