@@ -716,7 +716,13 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                 <Text class="text-[12px] font-semibold text-white">Memo</Text>
               </View>
               <View class="rounded-xl border p-4 min-h-16 bg-white dark:bg-slate-800 border-[#e2e8f0] dark:border-slate-700 shadow-sm">
-                <TextBox label="Memo" value={memo()} onChange={(v) => memo.set(v)} placeholder="Add a memo..." entry />
+                <Input
+                  accessibilityLabel="Memo"
+                  value={memo()}
+                  placeholder="Add a memo..."
+                  onChange={(e: Any) => memo.set(typeof e === "string" ? e : e.value)}
+                  class="w-full bg-transparent border-none outline-none px-1 py-1 text-[14px] text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-500"
+                />
               </View>
             </View>
             <Scroll class="flex-1 min-h-0">
@@ -841,7 +847,9 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                   </View>
                   <Each of={jl()}>
                     {(l: Any, i: Any) => (
-                      <View class="border-b border-[#f0f2f5] dark:border-slate-700 py-3 gap-2">
+                      <View class="gap-2 rounded-xl border border-[#e2e8f0] dark:border-slate-700 bg-[#fafbfc] dark:bg-slate-800/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)] mb-3 md:rounded-none md:border-0 md:border-b md:border-[#f0f2f5] md:dark:border-slate-700 md:bg-transparent md:dark:bg-transparent md:shadow-none md:px-0 md:py-3 md:mb-0">
+                        {/* Desktop (md+): two compact rows */}
+                        <View class="hidden md:flex md:flex-col gap-2">
                         <View class="flex-row gap-2 items-center">
                           <Text class="w-5 shrink-0 text-[11px] font-semibold text-center text-[#94a3b8] dark:text-slate-500">{String(i() + 1)}</Text>
                           <View class="flex-1 min-w-[120px]">
@@ -854,7 +862,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                             <TextBox label="Credit" value={l().credit()} onChange={(v: string) => { l().credit.set(v); err.set(""); }} placeholder="₱0.00" entry />
                           </View>
                         </View>
-                        <View class="grid grid-cols-2 gap-2 lg:flex lg:flex-row lg:items-center lg:pl-7">
+                        <View class="flex-row items-center gap-2 pl-7">
                           <View class="flex-1">
                             <BooksCombo
                               label="Account"
@@ -889,7 +897,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                           <View class="flex-1">
                             <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { l().location.set(tag.ticket || ""); l().locQuery.set(""); }} query={() => l().locQuery()} onQuery={(query: string) => l().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { l().location.set(ticket); l().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" />
                           </View>
-                          <View class="flex-row items-center gap-1 shrink-0 col-span-2 justify-self-end lg:col-span-1">
+                          <View class="flex-row items-center gap-1 shrink-0">
                             <View
                               accessibilityLabel="Delete line"
                               class={`w-8 h-8 rounded items-center justify-center ${jl().length <= 2 ? "opacity-0" : "hover:bg-[#fef2f2]"}`}
@@ -927,6 +935,112 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               onPress={() => { const next = [...jl()]; next.splice(i() + 1, 0, journalLine()); jl.set(next); err.set(""); }}
                             >
                               <Text class="text-[16px] font-semibold text-[#94a3b8] hover:text-[#2a9d8f]">+</Text>
+                            </View>
+                          </View>
+                        </View>
+                        </View>
+                        {/* Mobile (below md): stacked card layout */}
+                        <View class="md:hidden flex-col">
+                          <View class="flex-row items-center gap-2 px-3 pt-3 pb-2">
+                            <View class="w-6 h-6 rounded-full bg-[#2a9d8f] items-center justify-center shrink-0">
+                              <Text class="text-[11px] font-bold text-white">{String(i() + 1)}</Text>
+                            </View>
+                            <View class="flex-1 min-w-0">
+                              <Input
+                                accessibilityLabel="Line description"
+                                value={l().memo()}
+                                placeholder="Line description..."
+                                onChange={(e: Any) => l().memo.set(typeof e === "string" ? e : e.value)}
+                                class="w-full bg-transparent border-none outline-none px-1 py-1 text-[14px] text-[#1e293b] dark:text-slate-200 placeholder-[#94a3b8] dark:placeholder-slate-500"
+                              />
+                            </View>
+                          </View>
+                          <View class="grid grid-cols-2 gap-2 px-3 pb-2">
+                            <View>
+                              <Text class="text-[10px] font-medium text-[#94a3b8] dark:text-slate-500 uppercase mb-1">Debit</Text>
+                              <TextBox label="Debit" value={l().debit()} onChange={(v: string) => { l().debit.set(v); err.set(""); }} placeholder="₱0.00" entry />
+                            </View>
+                            <View>
+                              <Text class="text-[10px] font-medium text-[#94a3b8] dark:text-slate-500 uppercase mb-1">Credit</Text>
+                              <TextBox label="Credit" value={l().credit()} onChange={(v: string) => { l().credit.set(v); err.set(""); }} placeholder="₱0.00" entry />
+                            </View>
+                          </View>
+                          <View class="px-3 pb-2">
+                            <BooksCombo
+                              label="Account"
+                              value={l().account()}
+                              options={() => groupedOptions(o()?.all || [])}
+                              onPick={(account: Any) => { l().account.set(account.ticket || ""); l().query.set(""); err.set(""); }}
+                              query={() => l().query()}
+                              onQuery={(query: string) => l().query.set(query)}
+                              onSuggestion={(suggestion: Any) => startCategoryCreate(suggestion.name, suggestion, (ticket) => { l().account.set(ticket); l().query.set(""); err.set(""); })}
+                              onCreate={(query: string) => startCategoryCreate(query, undefined, (ticket) => { l().account.set(ticket); l().query.set(""); err.set(""); })}
+                              placeholder="Category"
+                              group="Accounts"
+                            />
+                          </View>
+                          <View class="px-3 pb-2">
+                            <BooksCombo
+                              label="Party"
+                              value={l().person()}
+                              options={() => partyOptions()}
+                              onPick={(person: Any) => { l().person.set(person.ticket || ""); l().partyQuery.set(""); }}
+                              query={() => l().partyQuery()}
+                              onQuery={(query: string) => l().partyQuery.set(query)}
+                              onCreate={(query: string) => createParty(partyKindFor(l().account(), "vendors"), query, (ticket) => { l().person.set(ticket); l().partyQuery.set(""); })}
+                              createLabel="vendor or customer"
+                              placeholder="Party"
+                              group="People"
+                            />
+                          </View>
+                          <View class="px-3 pb-2">
+                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { l().department.set(tag.ticket || ""); l().deptQuery.set(""); }} query={() => l().deptQuery()} onQuery={(query: string) => l().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { l().department.set(ticket); l().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" />
+                          </View>
+                          <View class="flex-row items-center gap-2 px-3 pb-3">
+                            <View class="flex-1 min-w-0">
+                              <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { l().location.set(tag.ticket || ""); l().locQuery.set(""); }} query={() => l().locQuery()} onQuery={(query: string) => l().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { l().location.set(ticket); l().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" />
+                            </View>
+                            <View class="flex-row items-center gap-0.5 shrink-0">
+                              <If when={jl().length > 2}>
+                                <View
+                                  accessibilityLabel="Delete line"
+                                  class="w-8 h-8 rounded-lg items-center justify-center text-[#94a3b8] hover:bg-[#fef2f2]"
+                                  activeStyle={{ opacity: 0.7 }}
+                                  onPress={() => { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); }}
+                                >
+                                  <Text class="text-[15px] text-[#94a3b8] hover:text-[#f87171]">🗑</Text>
+                                </View>
+                              </If>
+                              <View
+                                accessibilityLabel="Copy line"
+                                class="w-8 h-8 rounded-lg items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700"
+                                activeStyle={{ opacity: 0.7 }}
+                                onPress={() => {
+                                  const copy = journalLine();
+                                  copy.account.set(l().account());
+                                  copy.query.set(l().query());
+                                  copy.debit.set(l().debit());
+                                  copy.credit.set(l().credit());
+                                  copy.memo.set(l().memo());
+                                  copy.person.set(l().person());
+                                  copy.department.set(l().department());
+                                  copy.location.set(l().location());
+                                  const next = [...jl()];
+                                  next.splice(i() + 1, 0, copy);
+                                  jl.set(next);
+                                  err.set("");
+                                }}
+                              >
+                                <Text class="text-[15px] text-[#94a3b8] hover:text-[#475569]">⧉</Text>
+                              </View>
+                              <View
+                                accessibilityLabel="Add line below"
+                                class="w-8 h-8 rounded-lg items-center justify-center hover:bg-[#f0fdfa] dark:hover:bg-slate-700"
+                                activeStyle={{ opacity: 0.7 }}
+                                onPress={() => { const next = [...jl()]; next.splice(i() + 1, 0, journalLine()); jl.set(next); err.set(""); }}
+                              >
+                                <Text class="text-[15px] font-semibold text-[#94a3b8] hover:text-[#2a9d8f]">+</Text>
+                              </View>
                             </View>
                           </View>
                         </View>
