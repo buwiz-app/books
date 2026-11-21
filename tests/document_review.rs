@@ -2,7 +2,7 @@
 use books_core::date::Date;
 use books_core::ledger::Basis;
 use books_mini_app::{
-    b64,
+    b64, cards,
     service::{Books, Origin},
     tools::{self, document_review as dr},
 };
@@ -80,6 +80,94 @@ fn assistant_proposal_never_changes_the_kind() {
     assert_eq!(rows.as_array().unwrap().len(), 1);
     assert_eq!(rows[0]["confidence"], 87);
     assert_eq!(rows[0]["route"], "ledger_draft");
+}
+
+#[test]
+fn uninstall_reissues_evidence_and_proposal_handles_on_reads() {
+    let (_tmp, mut b, _) = setup();
+    let first = add(&mut b, "document-a", "image/png", PNG);
+    let second = add(
+        &mut b,
+        "document-b",
+        "image/png",
+        b"\x89PNG\r\n\x1a\nsynthetic-image-b",
+    );
+    let old_list = ok(&mut b, tools::EVIDENCE_LIST, json!({}));
+    assert_eq!(old_list["items"].as_array().unwrap().len(), 2);
+    let old_first = old_list["items"][0]["evidence"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let old_second = old_list["items"][1]["evidence"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    assert!(old_first == first);
+    assert!(old_second == second);
+    assert!(old_first != old_second);
+
+    let proposal = propose(&mut b, "classify-reticket", &first, "receipt", json!(87));
+    assert_eq!(proposal["isError"], false, "{proposal}");
+    let old_proposal = proposal["structuredContent"]["proposal"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    b.forget_tickets();
+
+    let invalid_evidence = call(&mut b, tools::EVIDENCE_LIST, json!({"evidence":old_first}));
+    assert_eq!(invalid_evidence["isError"], true);
+    let invalid_proposal = call(
+        &mut b,
+        tools::EVIDENCE_REVIEW,
+        json!({"proposal":old_proposal}),
+    );
+    assert_eq!(invalid_proposal["isError"], true);
+
+    let scoped = cards::scope(b.store().unwrap(), "evidence", "PNG");
+    assert_eq!(scoped["result"], "choices");
+    assert_eq!(scoped["choices"].as_array().unwrap().len(), 2);
+
+    let new_list = ok(&mut b, tools::EVIDENCE_LIST, json!({}));
+    let items = new_list["items"].as_array().unwrap();
+    assert_eq!(items.len(), 2);
+    let new_first = items[0]["evidence"].as_str().unwrap();
+    let new_second = items[1]["evidence"].as_str().unwrap();
+    assert!(new_first != old_first);
+    assert!(new_second != old_second);
+    assert!(new_first != new_second);
+    let scoped_tickets = scoped["choices"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|choice| choice["value"].as_str().unwrap())
+        .collect::<Vec<_>>();
+    assert!(scoped_tickets == vec![new_first, new_second]);
+    let repeated_list = ok(&mut b, tools::EVIDENCE_LIST, json!({}));
+    let repeated_items = repeated_list["items"].as_array().unwrap();
+    assert_eq!(repeated_items.len(), 2);
+    assert!(repeated_items[0]["evidence"] == new_first);
+    assert!(repeated_items[1]["evidence"] == new_second);
+
+    let page = ok(&mut b, tools::EVIDENCE_LIST, json!({"limit":1}));
+    assert!(page["items"][0]["evidence"] == new_first);
+    assert!(page["next_cursor"] == new_first);
+    let next_page = ok(
+        &mut b,
+        tools::EVIDENCE_LIST,
+        json!({"limit":1,"cursor":page["next_cursor"]}),
+    );
+    assert!(next_page["items"][0]["evidence"] == new_second);
+
+    let review = ok(&mut b, tools::EVIDENCE_REVIEW, json!({}));
+    let rows = review["rows"].as_array().unwrap();
+    assert_eq!(rows.len(), 1);
+    assert!(rows[0]["proposal"] != old_proposal);
+    assert!(rows[0]["evidence"] == new_first);
+    let repeated_review = ok(&mut b, tools::EVIDENCE_REVIEW, json!({}));
+    let repeated_rows = repeated_review["rows"].as_array().unwrap();
+    assert_eq!(repeated_rows.len(), 1);
+    assert!(repeated_rows[0]["proposal"] == rows[0]["proposal"]);
+    assert!(repeated_rows[0]["evidence"] == rows[0]["evidence"]);
 }
 
 #[test]

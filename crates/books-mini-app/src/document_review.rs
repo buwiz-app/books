@@ -202,7 +202,7 @@ pub fn decide(books: &mut Books, name: &str, origin: Origin, args: &Map<String, 
 }
 
 /// `books_app_evidence_review`: proposals as generic kind, confidence and status.
-/// Read-only: tickets were issued by the writes that made the subjects.
+/// Reads may re-issue handles for existing subjects.
 pub fn review(conn: &Connection, args: &Map<String, Value>) -> Answer {
     known(args, REVIEW_KEYS)?;
     let book = writes::book_in(conn, args)?;
@@ -233,23 +233,11 @@ pub fn review(conn: &Connection, args: &Map<String, Value>) -> Answer {
         .map_err(books_store::StoreError::from)?;
     let mut out = Vec::new();
     for (id, ev, kind, confidence, status, accepted, linked) in rows {
-        let (Some(p), Some(e)) = (ticket_of(conn, PROPOSAL, id)?, lookup(conn, ev)?) else {
-            continue;
-        };
+        let p = plumbing::ticket_for(conn, PROPOSAL, id)?;
+        let e = plumbing::ticket_for(conn, "evidence", ev)?;
         out.push(json!({ "proposal": p, "evidence": e, "kind": kind, "confidence": confidence, "status": status, "accepted_kind": accepted, "links": linked, "route": route(accepted.as_deref().unwrap_or(&kind)) }));
     }
     Ok(json!({ "rows": out }))
-}
-
-fn ticket_of(conn: &Connection, kind: &str, id: i64) -> Result<Option<String>, Refusal> {
-    Ok(conn
-        .query_row(
-            "SELECT ticket FROM ticket WHERE subject_kind=?1 AND subject_id=?2 AND revoked_at IS NULL",
-            params![kind, id],
-            |r| r.get(0),
-        )
-        .optional()
-        .map_err(books_store::StoreError::from)?)
 }
 
 /// Escapes text for HTML element content and attribute values.
