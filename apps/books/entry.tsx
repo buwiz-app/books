@@ -643,7 +643,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                   </View>
                   <View class="gap-1">
                     <If when={mode() === "money_in" || mode() === "money_out"}>
-                      <View class="w-[200px]">
+                      <View class="w-full min-w-0">
                         <BooksCombo
                           label={mode() === "money_in" ? "Customer" : "Vendor"}
                           value={payeeTicket()}
@@ -790,9 +790,9 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               <Input accessibilityLabel="Allocation amount" value={line().amount()} onChange={(e: Any) => { line().amount.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
                             </View>
                           </View>
-                          {/* Desktop (md+): combo rows — 2 rows at md–lg, one at lg+ */}
-                          <View class="hidden md:flex flex-row flex-wrap items-center gap-2 pl-7">
-                            <View class="flex-1 min-w-[45%] lg:min-w-0">
+                          {/* Desktop (md+): combos 2×2 at md–lg, one row at lg+, icons on the right */}
+                          <View class="hidden md:flex flex-row items-center gap-2 pl-7">
+                            <View class="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-1 min-w-0">
                               <BooksCombo
                                 label="Category"
                                 value={line().category()}
@@ -808,8 +808,6 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 trigger="chip"
                                 icon="▤"
                               />
-                            </View>
-                            <View class="flex-1 min-w-[45%] lg:min-w-0">
                               <BooksCombo
                                 label="Party"
                                 value={line().person()}
@@ -824,18 +822,49 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 trigger="chip"
                                 icon="♟"
                               />
-                            </View>
-                            <View class="flex-1 min-w-[45%] lg:min-w-0">
                               <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { line().department.set(tag.ticket || ""); line().deptQuery.set(""); }} query={() => line().deptQuery()} onQuery={(query: string) => line().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { line().department.set(ticket); line().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="⌂" />
-                            </View>
-                            <View class="flex-1 min-w-[45%] lg:min-w-0">
                               <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { line().location.set(tag.ticket || ""); line().locQuery.set(""); }} query={() => line().locQuery()} onQuery={(query: string) => line().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { line().location.set(ticket); line().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="⚲" />
                             </View>
-                            <If when={allocations().length > 1}>
-                              <View class="ml-auto">
-                                <Btn label="×" small onPress={() => { allocations.set(allocations().filter((_: Any, i: number) => i !== index())); err.set(""); }} />
+                            <View class="flex-row items-center gap-0.5 shrink-0 ml-auto">
+                              <If when={allocations().length > 1}>
+                                <View
+                                  accessibilityLabel="Delete allocation"
+                                  class="w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center hover:bg-[#fef2f2] dark:hover:bg-slate-700 transition-colors"
+                                  activeStyle={{ opacity: 0.7 }}
+                                  onPress={() => { allocations.set(allocations().filter((_: Any, i: number) => i !== index())); err.set(""); }}
+                                >
+                                  <Text class="text-[15px] text-[#94a3b8] hover:text-[#f87171]">×</Text>
+                                </View>
+                              </If>
+                              <View
+                                accessibilityLabel="Copy allocation"
+                                class="w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700 transition-colors"
+                                activeStyle={{ opacity: 0.7 }}
+                                onPress={() => {
+                                  const copy = allocationLine();
+                                  copy.category.set(line().category()); copy.query.set(line().query());
+                                  copy.amount.set(line().amount());
+                                  copy.person.set(line().person()); copy.partyQuery.set(line().partyQuery());
+                                  copy.memo.set(line().memo());
+                                  copy.department.set(line().department()); copy.deptQuery.set(line().deptQuery());
+                                  copy.location.set(line().location()); copy.locQuery.set(line().locQuery());
+                                  const next = [...allocations()];
+                                  next.splice(index() + 1, 0, copy);
+                                  allocations.set(next);
+                                  err.set("");
+                                }}
+                              >
+                                <Text class="text-[15px] text-[#94a3b8] hover:text-[#475569] dark:hover:text-slate-300">⧉</Text>
                               </View>
-                            </If>
+                              <View
+                                accessibilityLabel="Add allocation below"
+                                class="w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center hover:bg-[#f0fdfa] dark:hover:bg-slate-700 transition-colors"
+                                activeStyle={{ opacity: 0.7 }}
+                                onPress={() => { const next = [...allocations()]; next.splice(index() + 1, 0, allocationLine()); allocations.set(next); err.set(""); }}
+                              >
+                                <Text class="text-[16px] font-semibold text-[#94a3b8] hover:text-[#2a9d8f]">+</Text>
+                              </View>
+                            </View>
                           </View>
                           {/* Mobile (below md): stacked card */}
                           <View class="md:hidden flex-col">
@@ -890,16 +919,50 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                             <View class="gap-2 pb-2">
                               <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { line().location.set(tag.ticket || ""); line().locQuery.set(""); }} query={() => line().locQuery()} onQuery={(query: string) => line().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { line().location.set(ticket); line().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="⚲" />
                             </View>
-                            <If when={allocations().length > 1}>
-                              <View class="flex-row items-center gap-2">
-                                <Btn label="×" small onPress={() => { allocations.set(allocations().filter((_: Any, i: number) => i !== index())); err.set(""); }} />
+                            <View class="flex-row items-center gap-1 pb-1">
+                              <If when={allocations().length > 1}>
+                                <View
+                                  accessibilityLabel="Delete allocation"
+                                  class="w-8 h-8 min-h-11 min-w-11 rounded items-center justify-center hover:bg-[#fef2f2] dark:hover:bg-slate-700 transition-colors"
+                                  activeStyle={{ opacity: 0.7 }}
+                                  onPress={() => { allocations.set(allocations().filter((_: Any, i: number) => i !== index())); err.set(""); }}
+                                >
+                                  <Text class="text-[15px] text-[#94a3b8] hover:text-[#f87171]">×</Text>
+                                </View>
+                              </If>
+                              <View
+                                accessibilityLabel="Copy allocation"
+                                class="w-8 h-8 min-h-11 min-w-11 rounded items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700 transition-colors"
+                                activeStyle={{ opacity: 0.7 }}
+                                onPress={() => {
+                                  const copy = allocationLine();
+                                  copy.category.set(line().category()); copy.query.set(line().query());
+                                  copy.amount.set(line().amount());
+                                  copy.person.set(line().person()); copy.partyQuery.set(line().partyQuery());
+                                  copy.memo.set(line().memo());
+                                  copy.department.set(line().department()); copy.deptQuery.set(line().deptQuery());
+                                  copy.location.set(line().location()); copy.locQuery.set(line().locQuery());
+                                  const next = [...allocations()];
+                                  next.splice(index() + 1, 0, copy);
+                                  allocations.set(next);
+                                  err.set("");
+                                }}
+                              >
+                                <Text class="text-[15px] text-[#94a3b8] hover:text-[#475569] dark:hover:text-slate-300">⧉</Text>
                               </View>
-                            </If>
+                              <View
+                                accessibilityLabel="Add allocation below"
+                                class="w-8 h-8 min-h-11 min-w-11 rounded items-center justify-center hover:bg-[#f0fdfa] dark:hover:bg-slate-700 transition-colors"
+                                activeStyle={{ opacity: 0.7 }}
+                                onPress={() => { const next = [...allocations()]; next.splice(index() + 1, 0, allocationLine()); allocations.set(next); err.set(""); }}
+                              >
+                                <Text class="text-[16px] font-semibold text-[#94a3b8] hover:text-[#2a9d8f]">+</Text>
+                              </View>
+                            </View>
                           </View>
                         </View>
                       )}
                     </Each>
-                    <Btn label="+ Add allocation" small onPress={() => allocations.set([...allocations(), allocationLine()])} />
                     <If when={allocationRemaining() === 0n && centsOf(amount()) > 0n}>
                       <Text class={`text-[12px] font-semibold ${C.green}`}>Allocations match the amount.</Text>
                     </If>
@@ -1038,7 +1101,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                           </View>
                         </View>
                         <View class="flex-row items-center gap-2 pl-7">
-                          <View class="flex-1">
+                          <View class="grid grid-cols-4 gap-2 flex-1 min-w-0">
                             <BooksCombo
                               label="Account"
                               value={l().account()}
@@ -1053,8 +1116,6 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               trigger="chip"
                               icon="▤"
                             />
-                          </View>
-                          <View class="flex-1">
                             <BooksCombo
                               label="Party"
                               value={l().person()}
@@ -1069,11 +1130,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               trigger="chip"
                               icon="♟"
                             />
-                          </View>
-                          <View class="flex-1">
                             <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => { l().department.set(tag.ticket || ""); l().deptQuery.set(""); }} query={() => l().deptQuery()} onQuery={(query: string) => l().deptQuery.set(query)} onCreate={(query: string) => createTag("department", query, (ticket) => { l().department.set(ticket); l().deptQuery.set(""); })} createLabel="department" placeholder="Department" group="Departments" trigger="chip" icon="⌂" />
-                          </View>
-                          <View class="flex-1">
                             <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { l().location.set(tag.ticket || ""); l().locQuery.set(""); }} query={() => l().locQuery()} onQuery={(query: string) => l().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { l().location.set(ticket); l().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="⚲" />
                           </View>
                           <View class="flex-row items-center gap-1 shrink-0">
