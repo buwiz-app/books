@@ -46,7 +46,7 @@ function InboxDetail(p: { ticket: string; row?: Any }) {
     <View>
       <Loading res={data} />
       <If when={Boolean(e())}>
-        <View class="bg-slate-950 px-6 py-6">
+        <View class="bg-slate-950 px-6 py-6 border-b border-slate-200 dark:border-slate-800">
           <View class="flex-row items-start justify-between gap-4">
             <View class="min-w-0 flex-1 gap-0.5">
               <Text class="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-300">{src()}</Text>
@@ -201,7 +201,7 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
       {/* Split Review Workspace — Queue on left, Source & Suggested Entry on right */}
       <View class="flex-1 min-h-0 flex-row gap-5 px-6 pb-6 overflow-hidden">
         {/* Left Queue Panel */}
-        <View class={`w-[420px] shrink-0 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
+        <View class={`w-[420px] shrink-0 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-900 ${C.line}`}>
           <View class={`shrink-0 px-3.5 py-3 gap-2 border-b ${C.line}`}>
             <View class="h-10 flex-row items-center rounded-md border border-slate-200 bg-white pl-3 pr-2 transition-colors focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/15 dark:border-slate-700 dark:bg-slate-900">
               <Text class="text-[14px] text-slate-400 dark:text-slate-500">⌕</Text>
@@ -284,7 +284,7 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
         </View>
 
         {/* Right Detail & Source Preview Pane */}
-        <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
+        <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-900 ${C.line}`}>
           <If when={Boolean(selectedTicket())}>
             <Scroll class="flex-1 min-h-0">
               <InboxDetail

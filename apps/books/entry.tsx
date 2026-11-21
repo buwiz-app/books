@@ -906,7 +906,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                           <View class="flex-row items-center gap-1 shrink-0">
                             <View
                               accessibilityLabel="Delete line"
-                              class={`w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center transition-colors ${jl().length <= 2 ? "opacity-0" : "hover:bg-[#fef2f2]"}`}
+                              class={`w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center transition-colors ${jl().length <= 2 ? "opacity-0" : "hover:bg-[#fef2f2] dark:hover:bg-red-900/20"}`}
                               activeStyle={jl().length > 2 ? { opacity: 0.7 } : undefined}
                               onPress={() => { if (jl().length > 2) { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); } }}
                             >
@@ -932,7 +932,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 err.set("");
                               }}
                             >
-                              <Text class="text-[15px] text-[#94a3b8] hover:text-[#475569]">⧉</Text>
+                              <Text class="text-[15px] text-[#94a3b8] hover:text-[#475569] dark:hover:text-slate-300">⧉</Text>
                             </View>
                             <View
                               accessibilityLabel="Add line below"
@@ -1014,7 +1014,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               <If when={jl().length > 2}>
                                 <View
                                   accessibilityLabel="Delete line"
-                                  class="w-11 h-11 rounded items-center justify-center text-[#94a3b8] hover:bg-[#fef2f2] transition-colors"
+                                  class="w-11 h-11 rounded items-center justify-center text-[#94a3b8] hover:bg-[#fef2f2] dark:hover:bg-red-900/20 transition-colors"
                                   activeStyle={{ opacity: 0.7 }}
                                   onPress={() => { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); }}
                                 >
@@ -1041,7 +1041,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                   err.set("");
                                 }}
                               >
-                                <Text class="text-[15px] text-[#94a3b8] hover:text-[#475569]">⧉</Text>
+                                <Text class="text-[15px] text-[#94a3b8] hover:text-[#475569] dark:hover:text-slate-300">⧉</Text>
                               </View>
                               <View
                                 accessibilityLabel="Add line below"
@@ -1102,7 +1102,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             <Each of={MODES}>
               {(m: Any) => (
                 <View
-                  class="flex-row items-center gap-2 px-3 py-1.5 hover:bg-[#f1f5f9] dark:hover:bg-slate-700 transition-colors"
+                  class="flex-row items-center gap-2 px-3 py-1.5 hover:bg-[#f1f5f9] dark:hover:bg-slate-800 transition-colors"
                   activeStyle={{ opacity: 0.7 }}
                   onPress={() => { typeMenuOpen.set(false); switchMode(m()[0]); }}
                 >
