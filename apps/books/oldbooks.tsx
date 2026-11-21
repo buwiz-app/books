@@ -124,7 +124,7 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
                 <View class="w-[230px]">
                   <Pick value={m().kind} options={(d()?.kinds || {})[m().side] || []} onPick={(k: Any) => act("books_app_account_match", { account: m().ticket, kind: k.ticket }).catch(() => null)} />
                 </View>
-                <Text class={`w-[170px] text-[12px] ${C.mute} truncate`}>
+                <Text class={`w-[170px] text-[12px] ${C.mute} line-clamp-2`}>
                   {m().feeds}
                 </Text>
                 <View class="w-[96px] gap-1">

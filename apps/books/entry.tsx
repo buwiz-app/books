@@ -158,7 +158,7 @@ function Kv(p: { k: string; v: Any }) {
   return (
     <View class="flex-row gap-2.5">
       <Text class={`w-[96px] text-[12.5px] ${C.dim}`}>{p.k}</Text>
-      <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
+      <Text class={`flex-1 text-[12.5px] ${C.ink} line-clamp-2`}>
         {String(p.v ?? "—")}
       </Text>
     </View>

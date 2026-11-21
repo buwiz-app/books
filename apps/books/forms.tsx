@@ -122,7 +122,7 @@ function FormsPage(p: { go: (page: string, filter?: string) => void }) {
                 <View class="flex-1 gap-0.5">
                   <Text class={`text-[13px] font-semibold ${C.ink}`}>{r().measure}</Text>
                   <If when={Boolean(r().sub)}>
-                    <Text class={`text-[11.5px] ${C.mute} truncate`}>
+                    <Text class={`text-[11.5px] ${C.mute} line-clamp-2`}>
                       {r().sub || ""}
                     </Text>
                   </If>
@@ -130,7 +130,7 @@ function FormsPage(p: { go: (page: string, filter?: string) => void }) {
                     <Text class={`text-[11.5px] ${C.amber}`}>{r().flag || ""}</Text>
                   </If>
                   <If when={Boolean(r().held && r().why)}>
-                    <Text class={`text-[11.5px] ${C.amber} truncate`}>
+                    <Text class={`text-[11.5px] ${C.amber} line-clamp-2`}>
                       {`Held: ${String(r().why || "")}`}
                     </Text>
                   </If>
