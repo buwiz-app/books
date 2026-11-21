@@ -21,8 +21,11 @@ const SIDE_KIND: Record<string, string> = {
   tax_form: "Tax form",
   other: "Other document",
 };
-const SIDE_MIME: Record<string, string> = { "application/pdf": "PDF", "image/png": "PNG", "image/jpeg": "JPEG", "image/webp": "WebP" };
-const SIDE_EXT: Record<string, string> = { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" };
+const SIDE_MIME: Record<string, string> = { "application/pdf": "PDF", "image/png": "PNG", "image/jpeg": "JPEG" };
+const SIDE_EXT: Record<string, string> = { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg" };
+// the manifest's pick_file grant caps a file at 50 MiB; the upload path
+// enforces the same so the limit is told before a pick, not after one
+const SIDE_MAX_BYTES = 52428800;
 
 function sideB64(bytes: Any): string {
   const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
@@ -52,7 +55,8 @@ async function sideUpload() {
   if (!file) return;
   const ext = String(file.name || "").split(".").pop()?.toLowerCase() || "";
   const mime = SIDE_EXT[ext] || String(file.type || "");
-  if (!SIDE_MIME[mime]) return toast("Books keeps PDF, PNG, JPEG and WebP documents.");
+  if (!SIDE_MIME[mime]) return toast("Books keeps PDF, PNG and JPEG documents.");
+  if (Number(file.size || 0) > SIDE_MAX_BYTES) return toast("A file is at most 50 MB.");
   entryStagedBusy.set(true);
   try {
     const bytes = await file.read();
@@ -79,7 +83,7 @@ function SideAttachments() {
       <Text class={`text-[13px] font-semibold ${C.ink}`}>Attachments</Text>
       <View
         class="flex-col items-center justify-center gap-2 px-4 py-6 rounded-xl border-2 border-dashed border-[#cbd5e1] cursor-pointer transition-all dark:border-slate-600 hover:border-[#2a9d8f] hover:bg-[#f8fafb] dark:hover:bg-slate-800/50"
-        accessibilityLabel="Browse or drag and drop an attachment"
+        accessibilityLabel="Browse for an attachment"
         onPress={() => sideUpload()}
         activeStyle={{ opacity: 0.75 }}
       >
@@ -87,8 +91,8 @@ function SideAttachments() {
           <Text class="text-[20px]">⇧</Text>
         </View>
         <View class="items-center">
-          <Text class="text-[12px] font-medium text-[#2a9d8f]">{entryStagedBusy() ? "Uploading…" : "Browse"}<Text class="font-normal text-[#94a3b8] dark:text-slate-500"> or Drag & Drop</Text></Text>
-          <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">Images or PDF — max 20MB</Text>
+          <Text class="text-[12px] font-medium text-[#2a9d8f]">{entryStagedBusy() ? "Uploading…" : "Browse"}</Text>
+          <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">Images or PDF — max 50MB</Text>
         </View>
       </View>
       <If when={entryStaged().length > 0}>

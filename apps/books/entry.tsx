@@ -516,12 +516,21 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     busy.set(true);
     act(post ? "books_app_post_entry" : "books_entry_draft", a)
       .then(async (r: Any) => {
-        toast(post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`);
-        // a document staged in the side panel links to the entry it was kept for
+        // a document staged in the side panel links to the entry it was kept
+        // for; one that fails stays staged so nothing vanishes
+        let firstLinkError = "";
+        const failed: Any[] = [];
         for (const d of entryStaged()) {
-          await act("books_app_evidence_attach", { op: "link", evidence: d.evidence, target: { kind: "entry", ticket: r.entry } }).catch(() => null);
+          try {
+            await act("books_app_evidence_attach", { op: "link", evidence: d.evidence, target: { kind: "entry", ticket: r.entry } });
+          } catch (e: Any) {
+            if (!firstLinkError) firstLinkError = errText(e);
+            failed.push(d);
+          }
         }
-        entryStaged.set([]);
+        entryStaged.set(failed);
+        if (failed.length === 0) toast(post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`);
+        else toast(`${post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`}. ${failed.length} document${failed.length === 1 ? "" : "s"} couldn't be linked: ${firstLinkError}`);
         if (close || fresh) {
           amount.set("");
           date.set("");
