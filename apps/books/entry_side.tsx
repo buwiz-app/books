@@ -86,7 +86,7 @@ function SideAttachments() {
   return (
     <View class="p-3 gap-3">
       <View
-        class="flex-col items-center justify-center gap-2 px-4 py-6 rounded-xl border-2 border-dashed border-[#cbd5e1] cursor-pointer transition-all dark:border-slate-600 hover:border-[#2a9d8f] hover:bg-[#f8fafb] dark:hover:bg-slate-800/50"
+        class="flex-col items-center justify-center gap-2 px-4 py-6 rounded-xl border-2 border-dashed border-[#cbd5e1] cursor-pointer transition-all dark:border-slate-600 hover:border-[#2a9d8f] dark:hover:border-[#2a9d8f] hover:bg-[#f8fafb] dark:hover:bg-slate-800/50"
         accessibilityLabel="Browse for an attachment"
         onPress={() => sideUpload()}
         activeStyle={{ opacity: 0.75 }}
@@ -102,7 +102,7 @@ function SideAttachments() {
       <If when={entryStaged().length > 0}>
         <Each of={entryStaged()} key={rowKey}>
           {(d: Any, i: Any) => (
-            <View class="group flex-row items-center gap-2.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 hover:border-[#2a9d8f]/40 transition-colors">
+            <View class="group flex-row items-center gap-2.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 hover:border-[#2a9d8f]/40 dark:hover:border-[#2a9d8f]/40 transition-colors">
               <View class="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 items-center justify-center shrink-0">
                 <Text class="text-[14px] text-[#ef4444]">{String(d().mime).startsWith("image/") ? "▦" : "🗎"}</Text>
               </View>
@@ -123,13 +123,13 @@ function SideAttachments() {
         </Each>
       </If>
       <View
-        class="flex-row items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-white/10 hover:bg-[#f8fafc] dark:hover:bg-white/5 transition-colors cursor-pointer"
+        class="flex-row items-center justify-center gap-1.5 px-3 py-2 rounded-lg group border border-[#e2e8f0] dark:border-white/10 hover:bg-[#f8fafc] dark:hover:bg-white/5 transition-colors cursor-pointer"
         accessibilityLabel="Browse existing documents"
         onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)}
         activeStyle={{ opacity: 0.7 }}
       >
         <Text class="text-[13px] text-[#64748b] dark:text-white/50">📁</Text>
-        <Text class="text-xs font-medium text-[#64748b] dark:text-white/50 hover:text-[#1e293b] dark:hover:text-white">Browse existing documents</Text>
+        <Text class="text-xs font-medium text-[#64748b] dark:text-white/50 group-hover:text-[#1e293b] dark:group-hover:text-white">Browse existing documents</Text>
       </View>
       <If when={entryStaged().length === 0}>
         <View class="flex-1 flex-col items-center justify-center py-8 opacity-60 gap-0">
