@@ -93,6 +93,14 @@ fn permissions(app: &apps::App) -> Value {
         if app.id == "books" && source.contains("app: \"evidence\"") {
             p["open"] = json!({ "apps": ["ledger", "evidence"] });
         }
+        // the New Entry chat tab lists models and talks to the assistant
+        if app.id == "books" && source.contains("buwiz.models") {
+            p["models"] = json!({});
+        }
+        // ... and remembers the pick
+        if app.id == "books" && source.contains("buwiz.storage") {
+            p["storage"] = json!({});
+        }
     }
     p
 }
