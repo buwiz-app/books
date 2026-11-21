@@ -231,16 +231,6 @@ const MODE_SUB: Record<string, string> = {
   journal: "Any balanced set of lines",
 };
 
-/** What to ask the assistant in the chat: it saves a draft, which lands in the Inbox. */
-const ASK: [string, string][] = [
-  ["Pay expense", "Draft a money-out entry in Books: I paid [who] [amount] for [what] from [bank or cash]."],
-  ["Receive payment", "Draft a money-in entry in Books: [who] paid me [amount] for [what] into [bank or cash]."],
-  ["Transfer", "Draft a transfer in Books: moved [amount] from [account] to [account]."],
-  ["Journal", "Draft a journal entry in Books: debit [account] [amount], credit [account] [amount], for [what]."],
-  ["Rent", "Draft a money-out entry in Books: paid this month's rent of [amount] from [bank]."],
-  ["Utility", "Draft a money-out entry in Books: paid the [electric or water] bill of [amount] from [bank]."],
-];
-
 /** The new-entry page: the type rail, the entry, and the assistant beside it. `mode` is the open mode. */
 function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => void }) {
   const opts = resource(
@@ -525,8 +515,13 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     if (!a) return;
     busy.set(true);
     act(post ? "books_app_post_entry" : "books_entry_draft", a)
-      .then((r: Any) => {
+      .then(async (r: Any) => {
         toast(post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`);
+        // a document staged in the side panel links to the entry it was kept for
+        for (const d of entryStaged()) {
+          await act("books_app_evidence_attach", { op: "link", evidence: d.evidence, target: { kind: "entry", ticket: r.entry } }).catch(() => null);
+        }
+        entryStaged.set([]);
         if (close || fresh) {
           amount.set("");
           date.set("");
@@ -550,19 +545,6 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
       })
       .catch((e: Any) => err.set(errText(e)))
       .finally(() => busy.set(false));
-  };
-  const side = signal("ai");
-  const composer = signal("");
-  const ask = (text: string) => {
-    if (!buwiz.copy) return toast("This Buwiz Bot cannot copy. Type it in the chat.");
-    buwiz.copy(text);
-    toast("Copied. Paste it in the chat; the draft lands in your Inbox.");
-  };
-  const applyPrompt = () => {
-    const text = composer().trim();
-    if (!text) return;
-    ask(text);
-    composer.set("");
   };
   const modeName = () => (MODES.find((m) => m[0] === mode()) || ["", "New entry"])[1];
   return (
@@ -912,77 +894,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               </View>
             </View>
         </View>
-        <View class="w-[360px] shrink-0 rounded-[24px] border border-[#e2e8f0] dark:border-slate-600 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex-col h-full bg-white dark:bg-slate-800">
-          <View class={`flex-row justify-evenly px-4 py-3 gap-2 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
-            <Each of={[["attachments", "⌁"], ["ai", "✧"], ["activity", "◷"]]}>
-              {(t: Any) => (
-                <View
-                  accessibilityLabel={t()[0] === "ai" ? "Assistant" : t()[0] === "attachments" ? "Attachments" : "Activity log"}
-                  class={`w-[88px] h-11 rounded-full items-center justify-center ${side() === t()[0] ? "bg-white/20" : ""}`}
-                  onPress={() => side.set(t()[0])}
-                >
-                  <Text class={`text-[16px] ${side() === t()[0] ? "text-white" : "text-white/50"}`}>{t()[1]}</Text>
-                </View>
-              )}
-            </Each>
-          </View>
-          <If when={side() === "ai"}>
-            <View class="p-3 gap-2.5">
-              <Text class={`text-[12.5px] ${C.mute}`}>Tell the assistant in the chat what happened. It saves a draft, which waits in your Inbox for you to post.</Text>
-              <View class="flex-row items-center gap-2 rounded-xl border border-[#e2e8f0] bg-white p-2 dark:border-slate-600 dark:bg-slate-800">
-                <View class="flex-1">
-                  <TextBox label="Assistant prompt" value={composer()} onChange={(value) => composer.set(value)} placeholder="Ask the assistant..." entry />
-                </View>
-                <Btn label="Apply" tone="go" small onPress={applyPrompt} />
-              </View>
-              <View class="flex-row gap-1.5 flex-wrap">
-                <Each of={ASK}>
-                  {(q: Any) => (
-                    <View class={`rounded-full border px-2.5 py-1 ${C.raise} ${C.line}`} onPress={() => ask(q()[1])} activeStyle={{ opacity: 0.7 }}>
-                      <Text class={`text-[12px] ${C.ink}`}>{q()[0]}</Text>
-                    </View>
-                  )}
-                </Each>
-              </View>
-              <Text class={`text-[11.5px] ${C.dim}`}>A press copies a sentence to fill in and send. The assistant never posts.</Text>
-            </View>
-          </If>
-          <If when={side() === "attachments"}>
-            <View class="p-3 gap-2.5">
-              <Text class={`text-[13px] font-semibold ${C.ink}`}>Attachments</Text>
-              <View
-                class="flex-col items-center justify-center gap-2 px-4 py-6 rounded-xl border-2 border-dashed border-[#cbd5e1] cursor-pointer transition-all dark:border-slate-600 hover:border-[#2a9d8f] hover:bg-[#f8fafb] dark:hover:bg-slate-800/50"
-                accessibilityLabel="Browse or drag and drop an attachment"
-                onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)}
-                activeStyle={{ opacity: 0.75 }}
-              >
-                <View class="w-10 h-10 rounded-full flex items-center justify-center bg-[#f1f5f9] text-[#94a3b8] dark:bg-slate-800 dark:text-slate-500">
-                  <Text class="text-[20px]">⇧</Text>
-                </View>
-                <View class="items-center">
-                  <Text class="text-[12px] font-medium text-[#2a9d8f]">Browse<Text class="font-normal text-[#94a3b8] dark:text-slate-500"> or Drag & Drop</Text></Text>
-                  <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">Images or PDF — max 20MB</Text>
-                </View>
-              </View>
-              <Btn label="Browse existing documents" onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)} />
-              <Text class={`text-[11.5px] ${C.dim}`}>Choose an existing document in Books. This draft does not upload or link files directly.</Text>
-            </View>
-          </If>
-          <If when={side() === "activity"}>
-            <View class="p-3 gap-2.5">
-              <Text class={`text-[14px] font-semibold ${C.ink}`}>Activity Log</Text>
-              <View class="flex-row items-start gap-2">
-                <View class="w-6 h-6 rounded-full items-center justify-center" style={{ backgroundColor: "#2a9d8f" }}>
-                  <Text class="text-[10px] font-bold text-white">U</Text>
-                </View>
-                <View class="gap-0.5">
-                  <Text class={`text-[12px] ${C.ink}`}>You · Just now</Text>
-                  <Text class={`text-[11px] ${C.mute}`}>Creating transaction.</Text>
-                </View>
-              </View>
-            </View>
-          </If>
-        </View>
+        <EntrySide />
       </View>
       </View>
       <If when={categoryCreateOpen()}>
