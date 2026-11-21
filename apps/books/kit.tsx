@@ -268,23 +268,23 @@ function Dot(p: { color: string }) {
 }
 
 /** A label above a value or a control (the sheet's fields). */
-function Field(p: { label: string; children?: Any; grow?: boolean }) {
+function Field(p: { label: string; children?: Any; grow?: boolean; plain?: boolean }) {
   return (
     <View class={`gap-1 ${p.grow ? "flex-1" : ""}`}>
-      <Text class={`text-[11px] uppercase tracking-wider ${C.dim}`}>{p.label}</Text>
+      <Text class={p.plain ? `text-[12px] font-medium ${C.mute}` : `text-[11px] uppercase tracking-wider ${C.dim}`}>{p.label}</Text>
       {p.children}
     </View>
   );
 }
 
-function TextBox(p: { value: string; onChange: (v: string) => void; placeholder?: string; big?: boolean; label?: string }) {
+function TextBox(p: { value: string; onChange: (v: string) => void; placeholder?: string; big?: boolean; label?: string; entry?: boolean }) {
   return (
     <Input
       accessibilityLabel={p.label}
       value={p.value}
       placeholder={p.placeholder || ""}
       onChange={(e: Any) => p.onChange(typeof e === "string" ? e : e.value)}
-      class={`placeholder:text-[#8e8e93] rounded-lg border px-2.5 ${p.big ? "h-10 text-[18px] font-mono" : "h-8 text-[13px]"} ${C.bg} ${C.line} ${C.ink}`}
+      class={`placeholder:text-[#8e8e93] ${p.entry ? "rounded-md" : "rounded-lg"} border px-2.5 ${p.big ? "h-10 text-[18px] font-mono" : "h-8 text-[13px]"} ${p.entry ? "bg-white dark:bg-slate-700 border-[#e2e8f0] dark:border-slate-600 text-[#0f172a] dark:text-slate-100" : `${C.bg} ${C.line} ${C.ink}`}`}
     />
   );
 }
@@ -338,11 +338,11 @@ function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; plac
 
 function BooksCombo(p: {
   value: string;
-  options: Any[];
+  options: Any[] | (() => Any[]);
   onPick: (o: Any) => void;
   onQuery?: (query: string) => void;
-  query?: string;
-  suggestions?: Any[];
+  query?: string | (() => string);
+  suggestions?: Any[] | (() => Any[]);
   onSuggestion?: (o: Any) => void;
   onCreate?: (query: string) => void;
   placeholder?: string;
@@ -350,55 +350,62 @@ function BooksCombo(p: {
   group?: string;
 }) {
   const CREATE_VALUE = "__books_create_category__";
-  const items = [
-    ...(p.options || []).map((o: Any) => ({
+  const open = signal(false);
+  const optionRows = () => (typeof p.options === "function" ? p.options() : p.options) || [];
+  const suggestionRows = () => (typeof p.suggestions === "function" ? p.suggestions() : p.suggestions) || [];
+  const queryValue = () => (typeof p.query === "function" ? p.query() : p.query) || "";
+  const items = computed(() => [
+    ...optionRows().map((o: Any) => ({
       value: String(o.ticket),
       title: String(o.label || o.name || ""),
       group: String(o.group || p.group || "Accounts"),
     })),
-    ...(p.suggestions || []).map((o: Any, index: number) => ({
+    ...suggestionRows().map((o: Any, index: number) => ({
       value: `__books_suggested_${index}__`,
       title: `${String(o.name || o.label || "")} ${String((o.keywords || []).join(" "))}`,
       group: "Suggested",
     })),
-    ...(p.onCreate && p.query?.trim()
-      ? [{ value: CREATE_VALUE, title: `Create new category ${p.query.trim()}`, group: "Create new" }]
+    ...(p.onCreate && queryValue().trim()
+      ? [{ value: CREATE_VALUE, title: `${queryValue().trim()} Create new category`, group: "Create new" }]
       : []),
-  ];
+  ]);
   return (
     <Combobox
-      items={items}
+      items={items()}
+      open={open()}
+      onOpenChange={({ open: next }) => open.set(next)}
       value={p.value ? [p.value] : []}
-      query={p.query}
+      query={queryValue()}
       onChange={({ value }) => {
         const selected = value[0] || "";
         if (selected === CREATE_VALUE) {
-          p.onCreate?.(p.query?.trim() || "");
+          p.onCreate?.(queryValue().trim());
           return;
         }
         if (selected.startsWith("__books_suggested_")) {
           const index = Number(selected.slice("__books_suggested_".length).replace(/__/g, ""));
-          p.onSuggestion?.((p.suggestions || [])[index] || {});
+          p.onSuggestion?.(suggestionRows()[index] || {});
           return;
         }
-        p.onPick((p.options || []).find((o: Any) => String(o.ticket) === selected) || {});
+        p.onPick(optionRows().find((o: Any) => String(o.ticket) === selected) || {});
       }}
       onQueryChange={({ query }) => p.onQuery?.(query)}
       accessibilityLabel={p.label || p.placeholder || "Account"}
       placeholder={p.placeholder || "Select..."}
-      inputClass="h-8 rounded-md border border-[#e2e8f0] bg-white px-3 text-[13px] text-[#0f172a] dark:border-[#2a2a2d] dark:bg-[#141416] dark:text-[#fafafa]"
-      popupClass="rounded-md border border-[#e2e8f0] bg-white shadow-lg dark:border-[#2a2a2d] dark:bg-[#141416]"
+      inputClass="h-8 rounded-md border border-[#e2e8f0] bg-white px-3 text-[13px] text-[#0f172a] dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+      popupClass="rounded-md border border-[#e2e8f0] bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800"
       listClass="max-h-[260px] p-1"
       groupClass="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#94a3b8]"
-      itemClass="rounded px-2 py-1.5 text-[13px] text-[#0f172a] focus:bg-[#f1f5f9] selected:bg-[#dcfce7] dark:text-[#fafafa] dark:focus:bg-[#1c1c1f] dark:selected:bg-[#14532d]"
+      itemClass="rounded px-2 py-1.5 text-[13px] text-[#0f172a] focus:bg-[#f1f5f9] selected:bg-[#dcfce7] dark:text-slate-100 dark:focus:bg-slate-700 dark:selected:bg-green-900"
       searchAccessibilityLabel={`Find ${p.label || p.placeholder || "account"}`}
       searchPlaceholder="Type to filter..."
+      empty={<Text class="px-3 py-2 text-[13px] text-[#64748b] dark:text-slate-400">No results</Text>}
       triggerButton={<Text class="text-[12px] text-[#94a3b8]">⌄</Text>}
       renderItem={(item) => {
         const suggested = item.value.startsWith("__books_suggested_");
         const create = item.value === CREATE_VALUE;
         const suggestion = suggested
-          ? (p.suggestions || [])[Number(item.value.slice("__books_suggested_".length).replace(/__/g, ""))]
+          ? suggestionRows()[Number(item.value.slice("__books_suggested_".length).replace(/__/g, ""))]
           : null;
         const group = String(item.group || "").toLowerCase();
         const income = group.includes("revenue") || group.includes("income");
@@ -432,7 +439,7 @@ function BooksCombo(p: {
               <Text class="text-[11px] font-semibold" style={{ color }}>{icon}</Text>
             </View>
             <View class="flex-1 gap-0.5">
-              <Text class="text-[13px]">{create ? `Create new category “${p.query?.trim() || ""}”` : suggestion?.name || item.title}</Text>
+              <Text class="text-[13px]">{create ? `Create new category “${queryValue().trim()}”` : suggestion?.name || item.title}</Text>
               <If when={Boolean(suggestion?.description)}>
                 <Text class="text-[11px] text-[#94a3b8]" numberOfLines={1}>{suggestion?.description || ""}</Text>
               </If>
@@ -445,17 +452,20 @@ function BooksCombo(p: {
 }
 
 function BooksDate(p: { value: string; onChange: (value: string) => void; today?: string }) {
+  const open = signal(false);
   return (
     <DatePicker
       value={p.value || null}
+      open={open()}
+      onOpenChange={({ open: next }) => open.set(next)}
       onChange={({ value }) => p.onChange(typeof value === "string" ? value : "")}
       accessibilityLabel="Date"
       dateFormat="%B %-d, %Y"
-      popupClass="rounded-lg border border-[#e2e8f0] bg-white shadow-lg dark:border-[#2a2a2d] dark:bg-[#141416]"
+      popupClass="rounded-lg border border-[#e2e8f0] bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800"
       calendarClass="p-2"
       trigger={
-        <View class="h-8 flex-row items-center justify-between rounded-md border border-[#e2e8f0] bg-white px-3 dark:border-[#2a2a2d] dark:bg-[#141416]">
-          <Text class="text-[13px] text-[#0f172a] dark:text-[#fafafa]">{p.value || p.today || "Select date"}</Text>
+        <View class="h-8 flex-row items-center justify-between rounded-md border border-[#e2e8f0] bg-white px-3 dark:border-slate-600 dark:bg-slate-700">
+          <Text class="text-[13px] text-[#0f172a] dark:text-slate-100">{p.value || p.today || "Select date"}</Text>
           <Text class="text-[12px] text-[#94a3b8]">⌄</Text>
         </View>
       }
