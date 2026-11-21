@@ -51,11 +51,11 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
       <Head title="Settings" />
       <Loading res={data} />
       <If when={Boolean(d())}>
-        <View class="flex-row gap-3 items-start">
-          <Panel class="w-[180px] p-1.5 gap-0.5">
+        <View class="flex-col md:flex-row gap-3 items-start">
+          <Panel class="w-full flex-row flex-wrap md:w-[180px] md:flex-col md:flex-nowrap p-1.5 gap-0.5">
             <Each of={SET_TABS}>
               {(t: Any) => (
-                <View class={`rounded-[7px] px-2.5 py-1.5 ${setTab() === t()[0] ? C.raise : ""}`} onPress={() => {
+                <View class={`rounded-[7px] px-2.5 py-1.5 ${setTab() === t()[0] ? C.raise : "hover:bg-[#f1f5f9] dark:hover:bg-slate-800"}`} onPress={() => {
                     err.set("");
                     setTab.set(t()[0]);
                   }}>
@@ -70,7 +70,7 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
             </If>
             <If when={setTab() === "book"}>
               <Panel pad class="gap-3.5">
-                <View class="flex-row gap-3">
+                <View class="flex-col md:flex-row gap-3">
                   <Field label="Name shown in the Buwiz Bot" grow>
                     <View class="flex-row gap-2">
                       <View class="flex-1">
@@ -84,7 +84,7 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
                   </Field>
                 </View>
                 <Field label="Accounting basis">
-                  <View class="flex-row gap-2">
+                  <View class="flex-col md:flex-row gap-2">
                     <Opt id="cash" title="Cash (default)" sub="Money counts when it moves. Simplest." />
                     <Opt id="accrual" title="Accrual" sub="Counts at invoice and bill. Adds receivables, payables, aging." />
                   </View>
@@ -140,7 +140,7 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
                   <Panel>
                     <Each of={d()?.events || []} key={rowKey}>
                       {(e: Any) => (
-                        <View class={`flex-row gap-3 px-3 py-2 border-b ${C.line}`}>
+                        <View class={`flex-row flex-wrap gap-3 px-3 py-2 border-b ${C.line}`}>
                           <Text class={`w-[130px] text-[12.5px] ${C.ink}`}>{e().month}</Text>
                           <Pill tone={e().event === "close" ? "ok" : "draft"} label={e().event === "close" ? "Closed" : "Reopened"} />
                           <Text class={`flex-1 text-[12.5px] ${C.mute} truncate`}>
@@ -164,14 +164,14 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
                       </View>
                       <Each of={g().rows}>
                         {(r: Any) => (
-                          <View class={`flex-row items-center gap-2 px-3 py-2 border-t ${C.line} ${r().off ? "opacity-50" : ""}`}>
-                            <View class="w-[170px]">
+                          <View class={`flex-col md:flex-row md:items-center gap-2 px-3 py-2 border-t ${C.line} ${r().off ? "opacity-50" : ""}`}>
+                            <View class="w-full md:w-[170px]">
                               <Text class={`text-[13px] ${C.ink}`}>{r().label}</Text>
                               <If when={r().off}>
                                 <Text class={`text-[11px] ${C.dim}`}>accrual books only</Text>
                               </If>
                             </View>
-                            <Text class={C.dim}>→</Text>
+                            <Text class={`hidden md:block ${C.dim}`}>→</Text>
                             <View class="flex-1">
                               <Pick
                                 value={r().account?.ticket || ""}
