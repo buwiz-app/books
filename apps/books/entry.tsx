@@ -599,7 +599,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
           <View
             ref={typeMenuAnchor}
             accessibilityLabel="Entry type"
-            class={`h-9 shrink-0 flex-row items-center gap-2 rounded-lg border ${C.line} px-3 hover:bg-[#f1f5f9] dark:hover:bg-slate-800`}
+            class={`h-9 shrink-0 flex-row items-center gap-2 rounded-lg border ${C.line} px-3 hover:bg-[#f1f5f9] dark:hover:bg-slate-800 transition-colors`}
             activeStyle={{ opacity: 0.7 }}
             onPress={() => { typeMenuOpen.set(!typeMenuOpen()); saveMenuOpen.set(false); }}
           >
@@ -615,7 +615,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
           </If>
           <View ref={saveMenuAnchor} class="relative shrink-0 flex-row items-stretch">
             <View
-              class={`items-center justify-center rounded-l-lg px-5 py-2.5 hover:bg-[#248f82] ${busy() ? "opacity-50" : ""}`}
+              class={`items-center justify-center rounded-l-lg px-5 py-2.5 hover:bg-[#248f82] transition-colors ${busy() ? "opacity-50" : ""}`}
               style={{ backgroundColor: "#2a9d8f" }}
               activeStyle={{ opacity: 0.7 }}
               onPress={() => { if (!busy()) save(false, true); }}
@@ -623,7 +623,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               <Text class="text-[13px] font-medium text-white">{busy() ? "Saving..." : "Save & Close"}</Text>
             </View>
             <View
-              class="w-10 items-center justify-center rounded-r-lg border-l border-white/25 hover:bg-[#248f82]"
+              class="w-10 items-center justify-center rounded-r-lg border-l border-white/25 hover:bg-[#248f82] transition-colors"
               style={{ backgroundColor: "#2a9d8f" }}
               activeStyle={{ opacity: 0.7 }}
               accessibilityLabel="More save options"
@@ -676,21 +676,21 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                       value={reference()}
                       placeholder="Reference Number"
                       onChange={(e: Any) => reference.set(typeof e === "string" ? e : e.value)}
-                      class="w-[200px] h-9 rounded-md px-2 text-[12px] text-white placeholder-white/50 border-none outline-none focus:bg-black/30"
-                      style={{ backgroundColor: "rgba(0,0,0,0.2)" }}
+                      class="w-[200px] min-h-11 lg:min-h-0 rounded-md px-2 text-base sm:text-xs text-white placeholder-white/50 border-none outline-none bg-black/20 focus:bg-black/30 transition-colors"
                     />
                   </View>
                 </View>
                 <View class="flex-col items-end gap-1 ml-auto shrink-0">
                   <If when={mode() === "transfer"}>
-                    <View class="flex-row items-center justify-end gap-1 border border-white/20 rounded-lg px-3 py-1.5 bg-white/10 focus-within:border-white/40">
+                    <View class="flex-row items-center justify-end gap-1 border border-white/20 rounded-lg px-3 py-1.5 bg-white/10 focus-within:border-white/40 focus-within:ring-1 focus-within:ring-white/30 transition-colors">
                       <Text class="text-xl font-semibold text-white/60">₱</Text>
                       <TextBox label="Amount" value={amount()} onChange={(v) => { amount.set(v); err.set(""); }} placeholder="0.00" transferAmount />
                     </View>
                   </If>
                   <If when={mode() === "money_in" || mode() === "money_out"}>
-                    <View class="w-[200px]">
-                      <TextBox label="Amount" value={amount()} onChange={(v) => { amount.set(v); err.set(""); }} placeholder="₱ 0.00" big entry />
+                    <View class="flex-row items-center justify-end gap-1 border border-white/20 rounded-lg px-3 py-1.5 bg-white/10 focus-within:border-white/40 focus-within:ring-1 focus-within:ring-white/30 transition-colors">
+                      <Text class="text-xl font-semibold text-white/60">₱</Text>
+                      <TextBox label="Amount" value={amount()} onChange={(v) => { amount.set(v); err.set(""); }} placeholder="0.00" transferAmount />
                     </View>
                   </If>
                   <If when={mode() === "journal"}>
@@ -699,7 +699,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                   <View class="flex-row items-center justify-end gap-2 mt-1">
                     <BooksDate value={date() || o()?.today || ""} today={o()?.today} onChange={(v) => date.set(v)} variant="header" />
                   </View>
-                  <View class="flex-row items-center gap-2 px-3 py-1.5 rounded-lg mt-4 bg-black/20">
+                  <View class="flex-row items-center gap-2 px-3 py-1.5 rounded-lg mt-4 bg-black/20 shadow-sm">
                     <Text class="text-[14px] text-white">{mode() === "journal" ? "≡" : mode() === "transfer" ? "⇄" : "◈"}</Text>
                     <Text class="text-[12px] font-semibold text-white">{TYPE_LABEL[mode()] || modeName()}</Text>
                   </View>
@@ -712,13 +712,15 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                 <Text class="text-[12px] font-semibold text-white">Memo</Text>
               </View>
               <View class="rounded-xl border p-4 min-h-16 bg-white dark:bg-slate-800 border-[#e2e8f0] dark:border-slate-700 shadow-sm">
+                <View class="border-b border-transparent focus-within:border-[#2a9d8f] transition-colors">
                 <Input
                   accessibilityLabel="Memo"
                   value={memo()}
                   placeholder="Add a memo..."
                   onChange={(e: Any) => memo.set(typeof e === "string" ? e : e.value)}
-                  class="w-full bg-transparent border-none outline-none px-1 py-1 text-[14px] text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-500"
+                  class="w-full bg-transparent border-none outline-none pb-1 text-base sm:text-sm text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-500"
                 />
+                </View>
               </View>
             </View>
             <Scroll class="flex-1 min-h-0">
@@ -795,7 +797,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               />
                             </View>
                             <View class="w-[120px]">
-                              <TextBox label="Allocation amount" value={line().amount()} onChange={(value: string) => { line().amount.set(value); err.set(""); }} placeholder="₱ 0.00" entry />
+                              <Input accessibilityLabel="Allocation amount" value={line().amount()} onChange={(e: Any) => { line().amount.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱ 0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
                             </View>
                             <If when={allocations().length > 1}>
                               <Btn label="×" small onPress={() => { allocations.set(allocations().filter((_: Any, i: number) => i !== index())); err.set(""); }} />
@@ -825,7 +827,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => { line().location.set(tag.ticket || ""); line().locQuery.set(""); }} query={() => line().locQuery()} onQuery={(query: string) => line().locQuery.set(query)} onCreate={(query: string) => createTag("location", query, (ticket) => { line().location.set(ticket); line().locQuery.set(""); })} createLabel="location" placeholder="Location" group="Locations" trigger="chip" icon="⚲" />
                             </View>
                           </View>
-                          <TextBox label="Allocation memo" value={line().memo()} onChange={(value: string) => line().memo.set(value)} placeholder="Description for this category" entry />
+                          <Input accessibilityLabel="Allocation memo" value={line().memo()} onChange={(e: Any) => line().memo.set(typeof e === "string" ? e : e.value)} placeholder="Description for this category" class="w-full bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
                         </View>
                       )}
                     </Each>
@@ -852,14 +854,14 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                         <View class="hidden md:flex md:flex-col gap-2">
                         <View class="flex-row gap-2 items-center">
                           <Text class="w-5 shrink-0 text-[11px] font-semibold text-center text-[#94a3b8] dark:text-slate-500">{String(i() + 1)}</Text>
-                          <View class="flex-1 min-w-[120px]">
-                            <TextBox label="Line description" value={l().memo()} onChange={(v: string) => l().memo.set(v)} placeholder="Add description for this item..." entry />
+                          <View class="flex-[2] min-w-[120px]">
+                            <Input accessibilityLabel="Line description" value={l().memo()} onChange={(e: Any) => l().memo.set(typeof e === "string" ? e : e.value)} placeholder="Add description for this item..." class="w-full min-w-0 bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
                           </View>
                           <View class="w-20 shrink-0">
-                            <TextBox label="Debit" value={l().debit()} onChange={(v: string) => { l().debit.set(v); err.set(""); }} placeholder="₱0.00" entry />
+                            <Input accessibilityLabel="Debit" value={l().debit()} onChange={(e: Any) => { l().debit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
                           </View>
                           <View class="w-20 shrink-0">
-                            <TextBox label="Credit" value={l().credit()} onChange={(v: string) => { l().credit.set(v); err.set(""); }} placeholder="₱0.00" entry />
+                            <Input accessibilityLabel="Credit" value={l().credit()} onChange={(e: Any) => { l().credit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
                           </View>
                         </View>
                         <View class="flex-row items-center gap-2 pl-7">
@@ -904,7 +906,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                           <View class="flex-row items-center gap-1 shrink-0">
                             <View
                               accessibilityLabel="Delete line"
-                              class={`w-8 h-8 rounded items-center justify-center ${jl().length <= 2 ? "opacity-0" : "hover:bg-[#fef2f2]"}`}
+                              class={`w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center transition-colors ${jl().length <= 2 ? "opacity-0" : "hover:bg-[#fef2f2]"}`}
                               activeStyle={jl().length > 2 ? { opacity: 0.7 } : undefined}
                               onPress={() => { if (jl().length > 2) { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); } }}
                             >
@@ -912,7 +914,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                             </View>
                             <View
                               accessibilityLabel="Copy line"
-                              class="w-8 h-8 rounded items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700"
+                              class="w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700 transition-colors"
                               activeStyle={{ opacity: 0.7 }}
                               onPress={() => {
                                 const copy = journalLine();
@@ -934,7 +936,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                             </View>
                             <View
                               accessibilityLabel="Add line below"
-                              class="w-8 h-8 rounded items-center justify-center hover:bg-[#f0fdfa] dark:hover:bg-slate-700"
+                              class="w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center hover:bg-[#f0fdfa] dark:hover:bg-slate-700 transition-colors"
                               activeStyle={{ opacity: 0.7 }}
                               onPress={() => { const next = [...jl()]; next.splice(i() + 1, 0, journalLine()); jl.set(next); err.set(""); }}
                             >
@@ -955,18 +957,18 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 value={l().memo()}
                                 placeholder="Line description..."
                                 onChange={(e: Any) => l().memo.set(typeof e === "string" ? e : e.value)}
-                                class="w-full bg-transparent border-none outline-none px-1 py-1 text-[14px] text-[#1e293b] dark:text-slate-200 placeholder-[#94a3b8] dark:placeholder-slate-500"
+                                class="w-full bg-transparent border-none outline-none px-1 py-1 text-base sm:text-sm text-[#1e293b] dark:text-slate-200 placeholder-[#94a3b8] dark:placeholder-slate-500"
                               />
                             </View>
                           </View>
                           <View class="grid grid-cols-2 gap-2 px-3 pb-2">
                             <View>
                               <Text class="text-[10px] font-medium text-[#94a3b8] dark:text-slate-500 uppercase mb-1">Debit</Text>
-                              <TextBox label="Debit" value={l().debit()} onChange={(v: string) => { l().debit.set(v); err.set(""); }} placeholder="₱0.00" entry />
+                              <Input accessibilityLabel="Debit" value={l().debit()} onChange={(e: Any) => { l().debit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-lg px-3 py-2 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] focus:ring-1 focus:ring-[#2a9d8f] transition-colors" />
                             </View>
                             <View>
                               <Text class="text-[10px] font-medium text-[#94a3b8] dark:text-slate-500 uppercase mb-1">Credit</Text>
-                              <TextBox label="Credit" value={l().credit()} onChange={(v: string) => { l().credit.set(v); err.set(""); }} placeholder="₱0.00" entry />
+                              <Input accessibilityLabel="Credit" value={l().credit()} onChange={(e: Any) => { l().credit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-lg px-3 py-2 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder-[#cbd5e1] dark:placeholder-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] focus:ring-1 focus:ring-[#2a9d8f] transition-colors" />
                             </View>
                           </View>
                           <View class="px-3 pb-2">
@@ -1012,7 +1014,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               <If when={jl().length > 2}>
                                 <View
                                   accessibilityLabel="Delete line"
-                                  class="w-8 h-8 rounded-lg items-center justify-center text-[#94a3b8] hover:bg-[#fef2f2]"
+                                  class="w-11 h-11 rounded items-center justify-center text-[#94a3b8] hover:bg-[#fef2f2] transition-colors"
                                   activeStyle={{ opacity: 0.7 }}
                                   onPress={() => { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); }}
                                 >
@@ -1021,7 +1023,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               </If>
                               <View
                                 accessibilityLabel="Copy line"
-                                class="w-8 h-8 rounded-lg items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700"
+                                class="w-11 h-11 rounded items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700 transition-colors"
                                 activeStyle={{ opacity: 0.7 }}
                                 onPress={() => {
                                   const copy = journalLine();
@@ -1043,7 +1045,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               </View>
                               <View
                                 accessibilityLabel="Add line below"
-                                class="w-8 h-8 rounded-lg items-center justify-center hover:bg-[#f0fdfa] dark:hover:bg-slate-700"
+                                class="w-11 h-11 rounded items-center justify-center hover:bg-[#f0fdfa] dark:hover:bg-slate-700 transition-colors"
                                 activeStyle={{ opacity: 0.7 }}
                                 onPress={() => { const next = [...jl()]; next.splice(i() + 1, 0, journalLine()); jl.set(next); err.set(""); }}
                               >
@@ -1100,7 +1102,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             <Each of={MODES}>
               {(m: Any) => (
                 <View
-                  class="flex-row items-center gap-2 px-3 py-1.5 hover:bg-[#f1f5f9] dark:hover:bg-slate-700"
+                  class="flex-row items-center gap-2 px-3 py-1.5 hover:bg-[#f1f5f9] dark:hover:bg-slate-700 transition-colors"
                   activeStyle={{ opacity: 0.7 }}
                   onPress={() => { typeMenuOpen.set(false); switchMode(m()[0]); }}
                 >
@@ -1127,13 +1129,13 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             onCancel={() => saveMenuOpen.set(false)}
           >
           <View class={`w-40 rounded-lg border py-1 shadow-lg ${C.panel} ${C.line}`}>
-            <View class="px-3 py-2 hover:bg-[#f9fafb] dark:hover:bg-slate-800" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false); }}>
+            <View class="px-3 py-2 rounded-t-lg hover:bg-[#f9fafb] dark:hover:bg-slate-800 transition-colors" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false); }}>
               <Text class="text-xs text-[#374151] dark:text-slate-200">Save</Text>
             </View>
-            <View class="px-3 py-2 hover:bg-[#f9fafb] dark:hover:bg-slate-800" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false, true); }}>
+            <View class="px-3 py-2 hover:bg-[#f9fafb] dark:hover:bg-slate-800 transition-colors" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false, true); }}>
               <Text class="text-xs text-[#374151] dark:text-slate-200">Save & New</Text>
             </View>
-            <View class={`px-3 py-2 border-t hover:bg-[#f9fafb] dark:hover:bg-slate-800 ${C.line}`} activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(true, true); }}>
+            <View class={`px-3 py-2 border-t rounded-b-lg hover:bg-[#f9fafb] dark:hover:bg-slate-800 transition-colors ${C.line}`} activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(true, true); }}>
               <Text class="text-xs text-[#374151] dark:text-slate-200">Post</Text>
             </View>
           </View>
