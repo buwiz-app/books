@@ -42,7 +42,7 @@ Settings: `BOOKS_DATA_DIR` (default `~/Library/Application Support/app.buwiz.boo
 
 `SKIP_BOT=1` skips the Bot host test (the run then isn't green). Gates sign with a throwaway key (`books-test-01`) and a
 file keystore, never the publisher key or a Keychain. Read [AGENTS.md](AGENTS.md) before changing a rule; the
-protocol is [buwiz-sdk `docs/protocol-1.0.md`](https://github.com/buwiz-app/buwiz-sdk/blob/8f95537270815e75d0a23488ca12d175138c6d91/docs/protocol-1.0.md).
+protocol is [buwiz-sdk `docs/protocol-1.0.md`](https://github.com/buwiz-app/buwiz-sdk/blob/4299bf2f5468dfe035e6e2aef48aaa3e1c9a801e/docs/protocol-1.0.md).
 
 ## Releases
 
