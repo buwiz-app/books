@@ -568,6 +568,32 @@ pub fn difference(conn: &Connection, book: &Book, s: &Statement) -> Result<(i64,
     Ok((ours, s.closing - ours))
 }
 
+/// Posted gross debit and credit movement on one account inside a period,
+/// in centavos. Voids stay in: each one's reversal cancels it, the same way
+/// `difference`'s balance counts them. Drafts are not ledger movement.
+pub fn account_movement(
+    conn: &Connection,
+    book_id: i64,
+    account_id: i64,
+    period: &Period,
+) -> Result<(i64, i64)> {
+    conn.query_row(
+        "SELECT coalesce(sum(l.debit), 0), coalesce(sum(l.credit), 0)
+         FROM line l JOIN entry e ON e.entry_id = l.entry_id
+         WHERE e.book_id = ?1 AND l.account_id = ?2
+           AND e.status IN ('posted', 'voided')
+           AND e.entry_date >= ?3 AND e.entry_date <= ?4",
+        params![
+            book_id,
+            account_id,
+            period.start.to_string(),
+            period.end.to_string()
+        ],
+        |r| Ok((r.get(0)?, r.get(1)?)),
+    )
+    .map_err(Into::into)
+}
+
 /// Finish a month: every line matched and the difference 0.00.
 pub fn finish(conn: &Connection, book: &Book, account_id: i64, key: &str) -> Result<()> {
     let (s, lines) = open_statement(conn, book, account_id, key)?;

@@ -239,6 +239,15 @@ pub fn statement_view(
         rows.push(row);
     }
     let (ours, diff) = months::difference(store.conn(), &book, &s)?;
+    // the book's gross movement on the account inside the statement's
+    // month: "in" rises the balance in the account's own sense (deposits on
+    // a bank account, charges on a card), "out" lowers it
+    let (debit, credit) = months::account_movement(store.conn(), book.id, account.id, &month)?;
+    let (books_in, books_out) = if account.account_type.debit_normal() {
+        (debit, credit)
+    } else {
+        (credit, debit)
+    };
     let hints_used = crate::match_assist::view_extra(
         store, &book, account.id, &lines, &found, &mut rows, origin,
     )?;
@@ -248,6 +257,8 @@ pub fn statement_view(
         "file_name": s.source_name,
         "closing_shown": money::display(s.closing),
         "books_shown": money::display(ours),
+        "books_in_shown": money::display(books_in),
+        "books_out_shown": money::display(books_out),
         "difference": money::format(diff),
         "difference_shown": money::display(diff),
         "suggested": suggested,

@@ -794,7 +794,7 @@ pub const TOOLS: &[Tool] = &[
         reach: Reach::Everyone,
         write: false,
         schema: statement_ref,
-        description: "One imported statement beside the ledger: each line's match (same, suggested, missing) and the difference.",
+        description: "One imported statement beside the ledger: each line's match (same, suggested, missing), the difference, and the account's posted in and out movement in the statement's month.",
     },
     Tool {
         name: SETTINGS_GET,

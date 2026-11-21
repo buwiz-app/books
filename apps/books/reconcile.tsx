@@ -607,8 +607,8 @@ function MatchView() {
     rowsAll().filter(f).reduce((a: bigint, r: Any) => a + centsOf(String(pick(r) || "0")), 0n);
   const depBank = () => sumOf((r) => centsOf(r.amount_shown) > 0n, (r) => r.amount_shown);
   const wdBank = () => sumOf((r) => centsOf(r.amount_shown) < 0n, (r) => r.amount_shown);
-  const depLeg = () => sumOf((r) => r.match === "m" && centsOf(r.amount_shown) > 0n, (r) => r.books?.amount_shown);
-  const wdLeg = () => sumOf((r) => r.match === "m" && centsOf(r.amount_shown) < 0n, (r) => r.books?.amount_shown);
+  const depLeg = () => String(s()?.books_in_shown || "—");
+  const wdLeg = () => String(s()?.books_out_shown || "—");
   const isCard = /card|credit/i.test(String(d()?.account?.name || ""));
   const hdrBtnCls = "flex-row items-center gap-1.5 px-3 py-1.5 rounded-lg";
   return (
@@ -656,8 +656,8 @@ function MatchView() {
           </If>
           {/* green summary strip: inflow / outflow / Net glass cards (old app's SummaryRow) */}
           <View class="flex-row gap-3 rounded-xl px-4 py-3" style={{ backgroundImage: "linear-gradient(to right,#1a6b3c,#27ae60)" }}>
-            <RecSumCard title={isCard ? "Charges" : "Deposits"} glyph="↓" rows={[["Bank", centsShown(depBank(), true)], ["Ledger", centsShown(depLeg(), true)]]} />
-            <RecSumCard title={isCard ? "Payments" : "Withdrawals"} glyph="↑" rows={[["Bank", centsShown(wdBank())], ["Ledger", centsShown(wdLeg())]]} />
+            <RecSumCard title={isCard ? "Charges" : "Deposits"} glyph="↓" rows={[["Bank", centsShown(depBank(), true)], ["Ledger", depLeg()]]} />
+            <RecSumCard title={isCard ? "Payments" : "Withdrawals"} glyph="↑" rows={[["Bank", centsShown(wdBank())], ["Ledger", wdLeg()]]} />
             <RecSumCard title="Net" glyph="≈" highlight={s()?.difference_shown} rows={[["Bank", String(s()?.closing_shown || "—")], ["Ledger", String(s()?.books_shown || "—")]]} />
           </View>
           <View class={side() ? "flex-row items-start gap-3.5" : "gap-3.5"}>
