@@ -72,7 +72,7 @@ function AccountDrawer(p: { ticket: string; onClose: () => void; go: (page: stri
           </View>
           <Each of={d()?.rows || []} key={(r: Any) => String(r.entry)}>
             {(r: Any) => (
-              <View class={`flex-row items-center gap-2 px-3.5 py-2 border-b ${C.line}`} onPress={() => ledger(r().entry)} activeStyle={{ opacity: 0.75 }}>
+              <View class={`flex-row items-center gap-2 px-3.5 py-2 border-b ${C.line} cursor-pointer hover:bg-[#fafbfc] dark:hover:bg-slate-800 transition-colors`} onPress={() => ledger(r().entry)} activeStyle={{ opacity: 0.75 }}>
                 <Text class={`w-[52px] text-[12px] ${C.mute}`}>{r().date_shown}</Text>
                 <Text class={`flex-1 text-[12.5px] ${r().reversal ? C.dim : C.ink} truncate`}>
                   {r().what}
