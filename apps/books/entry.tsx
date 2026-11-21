@@ -304,6 +304,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
   const err = signal("");
   const saveMenuOpen = signal(false);
   const typeMenuOpen = signal(false);
+  let typeMenuAnchor: ViewRef | undefined;
+  let saveMenuAnchor: ViewRef | undefined;
   const mode = () => String(p.mode());
   const switchMode = (next: string) => {
     if (next !== mode()) {
@@ -595,6 +597,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
       <View class="flex-1 flex-col overflow-hidden relative">
         <View class={`flex-row items-center gap-3 px-6 py-3 border-b bg-white dark:bg-slate-900 ${C.line}`}>
           <View
+            ref={typeMenuAnchor}
             accessibilityLabel="Entry type"
             class={`h-9 flex-row items-center gap-2 rounded-lg border ${C.line} px-3 hover:bg-[#f1f5f9] dark:hover:bg-slate-800`}
             activeStyle={{ opacity: 0.7 }}
@@ -608,7 +611,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
           <If when={Boolean(err())}>
             <Text class="text-[12px] font-medium text-[#ef4444]" numberOfLines={1}>{err()}</Text>
           </If>
-          <View class="relative flex-row items-stretch">
+          <View ref={saveMenuAnchor} class="relative flex-row items-stretch">
             <View
               class={`items-center justify-center rounded-l-lg px-5 py-2.5 hover:bg-[#248f82] ${busy() ? "opacity-50" : ""}`}
               style={{ backgroundColor: "#2a9d8f" }}
@@ -1082,7 +1085,16 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
         </View>
         <View class="hidden lg:flex shrink-0"><EntrySide /></View>
         <If when={typeMenuOpen()}>
-          <View class={`absolute left-6 top-[58px] w-48 rounded-lg border py-1 shadow-lg bg-white dark:bg-slate-800 ${C.line}`}>
+          <Overlay
+            anchor={typeMenuAnchor}
+            placement="bottom"
+            align="start"
+            offset={2}
+            margin={8}
+            onPressOutside={() => typeMenuOpen.set(false)}
+            onCancel={() => typeMenuOpen.set(false)}
+          >
+          <View class={`w-48 rounded-lg border py-1 shadow-lg bg-white dark:bg-slate-800 ${C.line}`}>
             <Each of={MODES}>
               {(m: Any) => (
                 <View
@@ -1107,9 +1119,19 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               <Text class="text-xs text-[#64748b] dark:text-slate-400">← Back</Text>
             </View>
           </View>
+          </Overlay>
         </If>
         <If when={saveMenuOpen()}>
-          <View class={`absolute right-6 top-[66px] w-40 rounded-lg border py-1 shadow-lg ${C.panel} ${C.line}`}>
+          <Overlay
+            anchor={saveMenuAnchor}
+            placement="bottom"
+            align="end"
+            offset={2}
+            margin={8}
+            onPressOutside={() => saveMenuOpen.set(false)}
+            onCancel={() => saveMenuOpen.set(false)}
+          >
+          <View class={`w-40 rounded-lg border py-1 shadow-lg ${C.panel} ${C.line}`}>
             <View class="px-3 py-2 hover:bg-[#f9fafb] dark:hover:bg-slate-800" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false); }}>
               <Text class="text-xs text-[#374151] dark:text-slate-200">Save</Text>
             </View>
@@ -1120,6 +1142,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               <Text class="text-xs text-[#374151] dark:text-slate-200">Post</Text>
             </View>
           </View>
+          </Overlay>
         </If>
       </View>
       </View>
