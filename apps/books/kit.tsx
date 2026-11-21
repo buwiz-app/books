@@ -394,8 +394,11 @@ function BooksCombo(p: {
   // trigger button are siblings in one row), so the reference's one bordered
   // trigger is a View drawn under the Combobox: the input covers it invisibly,
   // so a press focuses it and toggles the list (the chip's own press is the
-  // fallback), and typing filters as before.
+  // fallback), and typing filters as before. While the list is open or a
+  // query is typed the input turns visible over the label, like the
+  // reference, so what is typed is read in the field.
   const chip = p.trigger === "chip";
+  const typing = () => open() || queryValue().trim().length > 0;
   const chipTitle = () =>
     items().find((i: Any) => i.value === p.value)?.title || p.placeholder || "Select...";
   return (
@@ -410,12 +413,14 @@ function BooksCombo(p: {
               <Text class="text-[14px] text-[#94a3b8] dark:text-slate-500">{p.icon || ""}</Text>
             </View>
           </If>
-          <Text
-            class={`flex-1 text-sm ${p.value ? "text-[#1e293b] dark:text-slate-100" : "text-[#94a3b8] dark:text-slate-500"}`}
-            numberOfLines={1}
-          >
-            {chipTitle()}
-          </Text>
+          <If when={!typing()}>
+            <Text
+              class={`flex-1 min-w-0 text-sm ${p.value ? "text-[#1e293b] dark:text-slate-100" : "text-[#94a3b8] dark:text-slate-500"}`}
+              numberOfLines={1}
+            >
+              {chipTitle()}
+            </Text>
+          </If>
           <Text class="shrink-0 text-[15px] text-[#1e293b] opacity-40 dark:text-slate-100">⌄</Text>
         </View>
       )}
@@ -448,7 +453,7 @@ function BooksCombo(p: {
         }
         inputClass={
           chip
-            ? "w-full px-3 py-2 text-sm opacity-0"
+            ? `w-full py-2 text-sm ${p.icon ? "pl-[38px] pr-3" : "px-3"} ${typing() ? "text-[#1e293b] dark:text-slate-100" : "opacity-0"}`
             : "min-h-10 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-[13px] text-[#0f172a] focus:border-[#2a9d8f] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         }
         popupClass={`rounded-xl border border-[#e2e8f0] bg-white shadow-xl overflow-hidden dark:border-slate-700 dark:bg-slate-800${chip ? " min-w-[240px]" : ""}`}
