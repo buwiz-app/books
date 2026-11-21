@@ -310,6 +310,8 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
                   </If>
                 </View>
               </If>
+              {/* Extra room below lg so the last row scrolls clear of the FAB */}
+              <View class="h-24 lg:hidden" />
             </Scroll>
           </If>
         </View>
