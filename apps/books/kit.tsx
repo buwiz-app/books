@@ -4,7 +4,7 @@
 // data comes from buwiz.call alone, and every tool called is in the app's
 // permissions.tools. Money arrives as display text from Books: the app
 // never does arithmetic on an amount (invariant 2).
-import { signal, computed, platform, resource, Text, View, Scroll, Input, Overlay } from "nsh";
+import { signal, computed, resource, Text, View, Scroll, Input, Overlay } from "nsh";
 import { Avatar, Combobox, DatePicker } from "nsh/base";
 import { buwiz } from "buwiz";
 
@@ -455,7 +455,7 @@ function BooksCombo(p: {
               </If>
             </View>
             <If when={create}>
-              <Text class="text-[10px] text-[#94a3b8]">{platform.os === "macos" ? "⌘ ↵" : "Ctrl ↵"}</Text>
+              <Text class="text-[10px] text-[#94a3b8]">Ctrl ⌘ ↵</Text>
             </If>
             <If when={pickedRow}>
               <Text class="text-[16px]" style={{ color: "#2a9d8f" }}>✓</Text>
