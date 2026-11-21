@@ -311,3 +311,57 @@ fn m4_october_matches_the_bank_and_a_closed_month_refuses_changes() {
         );
     }
 }
+
+#[test]
+fn m4_grid_year_gives_twelve_months_and_the_default_is_unchanged() {
+    books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
+    let dir = TempDir::new("m4-year");
+    let mut books = Books::new(Paths::in_dir(dir.0.join("store")));
+    let b = &mut books;
+    let demo_book: Value = serde_json::from_str(&std::fs::read_to_string(DEMO).unwrap()).unwrap();
+    demo::seed(b, &demo_book).unwrap();
+    let csv = std::fs::read(STATEMENT).unwrap();
+    ok(
+        b,
+        "books_app_statement_import",
+        json!({ "client_request_id": "m4y-import-0001", "account": "11010", "csv_base64": books_mini_app::b64::encode(&csv), "file_name": "bank-4021-2026-10.csv" }),
+    );
+    // no year: four months ending at today, no kind/type on rows, as before
+    let grid = ok(b, "books_reconcile_grid", json!({}));
+    assert_eq!(grid["months"].as_array().unwrap().len(), 4);
+    assert_eq!(grid["months"][0]["key"], "2026-07");
+    assert_eq!(grid["months"][3]["key"], "2026-10");
+    assert_eq!(grid["year"], 2026);
+    assert!(grid["rows"][0].get("kind").is_none());
+    assert!(grid["rows"][0].get("type").is_none());
+
+    // a year: its twelve months, kind and type on every row
+    let grid = ok(b, "books_reconcile_grid", json!({ "year": 2026 }));
+    let months = grid["months"].as_array().unwrap();
+    assert_eq!(months.len(), 12);
+    assert_eq!(months[0]["key"], "2026-01");
+    assert_eq!(months[11]["key"], "2026-12");
+    assert_eq!(grid["year"], 2026);
+    let bank = grid["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["name"] == "Bank •••• 4021")
+        .unwrap();
+    let states: Vec<&str> = bank["cells"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["state"].as_str().unwrap())
+        .collect();
+    assert_eq!(states[9], "draft", "October has an open statement");
+    assert_eq!(states[8], "todo", "September has entries and no statement");
+    assert!(bank["kind"].as_str().is_some());
+    assert!(bank["type"].as_str().is_some());
+
+    // a bad year refuses
+    assert_eq!(
+        refused(b, "books_reconcile_grid", json!({ "year": "yesterday" })),
+        "invalid_args"
+    );
+}

@@ -236,7 +236,7 @@ pub fn pack(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
     let bs = report(store, &book, args, "bs", &month)?;
     let cf = report(store, &book, args, "cf", &month)?;
     let tb = report(store, &book, args, "tb", &month)?;
-    let grid = reconcile::grid(store, book.clone())?;
+    let grid = reconcile::grid(store, book.clone(), &Map::new())?;
     let drafts = count(
         store,
         "SELECT count(*) FROM entry WHERE book_id = ?1 AND status = 'draft' AND needs_review = 0
