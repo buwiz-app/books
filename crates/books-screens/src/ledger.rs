@@ -768,13 +768,14 @@ fn account_row(
     let background = if active {
         "bg-[#f0f0ee] dark:bg-[#262626]"
     } else {
-        ""
+        "hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
     };
     view()
         .app_class(Some(
-            format!("flex-row justify-between gap-1.5 px-2 py-1.5 rounded-[7px] {background}")
+            format!("flex-row justify-between gap-1.5 px-2 py-1.5 rounded-[7px] cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2a9d8f] {background}")
                 .into(),
         ))
+        .focusable(true)
         .on_press(on_press)
         .child(
             text(name.to_owned())
@@ -808,7 +809,8 @@ fn month_button(
     target: String,
 ) -> nsh_core::element::View {
     view()
-        .app_class(Some("px-2 py-1".into()))
+        .app_class(Some("px-2 py-1 rounded-md cursor-pointer transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/40".into()))
+        .focusable(true)
         .on_press(move || {
             if target.is_empty() {
                 return;
@@ -837,9 +839,9 @@ fn tx_row(
     let ticket = text_value(row.get("ticket"), "").to_owned();
     let selected = drawer_entry.get() == ticket;
     let bg = if selected {
-        "bg-[#f0f0ee] dark:bg-[#262626]"
+        "bg-[#f0fdfa] dark:bg-teal-950/30 border-[#99f6e4] dark:border-teal-900/50"
     } else {
-        ""
+        "border-black/10 dark:border-[#2b2b2b] hover:bg-[#fafbfc] dark:hover:bg-slate-800"
     };
     let tone = match text_value(row.get("tone"), "") {
         "pos" => "text-[#157a48] dark:text-[#3fcf89]",
@@ -863,7 +865,8 @@ fn tx_row(
         what = what.child(badges);
     }
     let result = view()
-        .app_class(Some(format!("flex-row items-center gap-3 px-3 py-2.5 border-b border-black/10 dark:border-[#2b2b2b] {bg}").into()))
+        .app_class(Some(format!("flex-row items-center gap-3 px-3 py-2.5 border-b cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2a9d8f] {bg}").into()))
+        .focusable(true)
         .active(|style| style.opacity(0.75))
         .on_press(move || {
             drawer_entry.set(ticket.clone());
@@ -1408,11 +1411,12 @@ fn drawer_data(
                     view()
                         .app_class(Some(
                             format!(
-                                "rounded-full border px-2.5 py-1 bg-[#f0f0ee] dark:bg-[#262626] {}",
+                                "rounded-full border px-2.5 py-1 bg-[#f0f0ee] dark:bg-[#262626] cursor-pointer transition-colors hover:bg-[#e4e4e1] dark:hover:bg-[#333333] focus-visible:ring-2 focus-visible:ring-[#2a9d8f] {}",
                                 kit::K_LINE
                             )
                             .into(),
                         ))
+                        .focusable(true)
                         .on_press(move || {
                             let category = category_for_action.clone();
                             let call_bridge = bridge_for_action.clone();
@@ -1660,11 +1664,12 @@ fn review_panel(
                 view()
                     .app_class(Some(
                         format!(
-                            "flex-row gap-2 rounded-[8px] border px-2.5 py-1.5 {}",
+                            "flex-row gap-2 rounded-[8px] border px-2.5 py-1.5 cursor-pointer transition-colors hover:bg-[#fafbfc] dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-[#2a9d8f] {}",
                             kit::K_LINE
                         )
                         .into(),
                     ))
+                    .focusable(true)
                     .on_press(move || open_entry(ticket.clone()))
                     .child(
                         text(format!(
@@ -2557,7 +2562,8 @@ fn picker(
         .app_class(Some("gap-1".into()))
         .child(
             view()
-                .app_class(Some(format!("flex-row items-center rounded-lg border px-2.5 h-8 bg-[#f6f6f4] dark:bg-[#151515] {}", kit::K_LINE).into()))
+                .app_class(Some(format!("flex-row items-center rounded-lg border px-2.5 h-8 bg-[#f6f6f4] dark:bg-[#151515] cursor-pointer transition-colors hover:border-black/25 dark:hover:border-[#3a3a3a] focus-visible:ring-2 focus-visible:ring-[#2a9d8f] {}", kit::K_LINE).into()))
+                .focusable(true)
                 .on_press(move || open.set(!open.get()))
                 .child(text(current).app_class(Some(format!("flex-1 text-[13px] {}", kit::C_DIM).into())).number_of_lines(1))
                 .child(text("⌄").app_class(Some(kit::C_DIM.into()))),
@@ -2577,7 +2583,8 @@ fn picker(
             let on_pick = on_pick.clone();
             options_view = options_view.child(
                 view()
-                    .app_class(Some("px-2.5 py-1.5".into()))
+                    .app_class(Some("px-2.5 py-1.5 cursor-pointer transition-colors hover:bg-[#f1f5f9] dark:hover:bg-[#262626] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2a9d8f]".into()))
+                    .focusable(true)
                     .on_press(move || {
                         on_pick(ticket.clone());
                         open.set(false);
@@ -2599,30 +2606,28 @@ fn picker(
 }
 
 fn button(label: &str, tone: &str, on_press: impl Fn() + 'static) -> nsh_core::element::View {
-    let (background, border, ink) = match tone {
+    let (background, border, ink, feedback) = match tone {
         "go" => (
             "bg-[#157a48] dark:bg-[#3fcf89]",
             "border-[#157a48] dark:border-[#3fcf89]",
             "text-white dark:text-[#06281a]",
-        ),
-        "selected" => (
-            "bg-[#f0f0ee] dark:bg-[#262626]",
-            "border-black/10 dark:border-[#2b2b2b]",
-            "text-[#1c1c1c] dark:text-[#f0f0f0]",
+            "hover:opacity-90 transition-opacity",
         ),
         _ => (
             "bg-[#f0f0ee] dark:bg-[#262626]",
             "border-black/10 dark:border-[#2b2b2b]",
             "text-[#1c1c1c] dark:text-[#f0f0f0]",
+            "hover:bg-[#e4e4e1] dark:hover:bg-[#333333] transition-colors",
         ),
     };
     view()
         .app_class(Some(
             format!(
-                "rounded-lg border px-3 py-1.5 items-center justify-center {background} {border}"
+                "rounded-lg border px-3 py-1.5 items-center justify-center cursor-pointer focus-visible:ring-2 focus-visible:ring-[#2a9d8f] {background} {border} {feedback}"
             )
             .into(),
         ))
+        .focusable(true)
         .active(|style| style.opacity(0.7))
         .on_press(on_press)
         .child(
@@ -2653,8 +2658,9 @@ fn chip(
     };
     view()
         .app_class(Some(
-            format!("rounded-full px-2.5 py-1 border flex-row gap-1 {background} {border}").into(),
+            format!("rounded-full px-2.5 py-1 border flex-row gap-1 cursor-pointer transition-colors hover:bg-[#f1f5f9] dark:hover:bg-[#2a2a2a] focus-visible:ring-2 focus-visible:ring-[#2a9d8f] {background} {border}").into(),
         ))
+        .focusable(true)
         .on_press(on_press)
         .child(text(label.to_owned()).app_class(Some(format!("text-[12px] {ink}").into())))
         .child(text(count).app_class(Some(format!("text-[12px] opacity-70 {ink}").into())))
