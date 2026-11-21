@@ -373,6 +373,31 @@ fn m4_statement_books_movement_is_the_posted_totals() {
         ),
         (Some("1,000.00"), Some("250.00"))
     );
+
+    // a voided deposit leaves no trace in either gross figure
+    let deposit = ok(
+        b,
+        "books_app_post_entry",
+        json!({ "client_request_id": "m4m-void-001", "form": "money_in", "date": "2026-01-25", "amount": "400.00", "account": "11200", "category": "40000" }),
+    );
+    ok(
+        b,
+        "books_app_void_entry",
+        json!({ "client_request_id": "m4m-void-002", "entry": deposit["entry"] }),
+    );
+    let st = ok(
+        b,
+        "books_statement_get",
+        json!({ "account": "11200", "month": "2026-01" }),
+    );
+    assert_eq!(
+        (
+            st["statement"]["books_in_shown"].as_str(),
+            st["statement"]["books_out_shown"].as_str()
+        ),
+        (Some("1,000.00"), Some("250.00")),
+        "the voided deposit counts in neither figure"
+    );
 }
 
 /// A draft on the account is in no total, so the movement stays put.
