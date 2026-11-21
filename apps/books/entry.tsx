@@ -218,10 +218,10 @@ function ExtractionPanel(p: { entry: Any }) {
 }
 
 const MODES: [string, string][] = [
+  ["journal", "Journal"],
   ["money_in", "Pay In"],
   ["money_out", "Pay Out"],
   ["transfer", "Transfer"],
-  ["journal", "Journal"],
 ];
 
 const MODE_SUB: Record<string, string> = {
@@ -277,15 +277,33 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
   const newCategoryNumber = signal("");
   const newCategoryType = signal("expense");
   const newCategoryKind = signal("unsure");
+  const categoryCreateApply = signal<Any>(null);
   const journalLine = () => ({
     account: signal(""),
     query: signal(""),
     debit: signal(""),
     credit: signal(""),
+    memo: signal(""),
+    person: signal(""),
+    partyQuery: signal(""),
+    department: signal(""),
+    location: signal(""),
+  });
+  const allocationLine = () => ({
+    category: signal(""),
+    query: signal(""),
+    amount: signal(""),
+    memo: signal(""),
+    person: signal(""),
+    partyQuery: signal(""),
+    department: signal(""),
+    location: signal(""),
   });
   const jl = signal<Any[]>([journalLine(), journalLine()]);
+  const allocations = signal<Any[]>([allocationLine()]);
   const busy = signal(false);
   const err = signal("");
+  const saveMenuOpen = signal(false);
   const mode = () => String(p.mode());
   const switchMode = (next: string) => {
     if (next !== mode()) {
@@ -298,9 +316,27 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     p.setMode(next);
   };
   const people = resource(
-    () => ({ v: ver(), kind: mode() === "money_in" ? "customers" : "vendors" }),
-    (key: Any) => buwiz.call("books_people_list", { kind: key.kind }),
+    () => ({
+      v: ver(),
+      kind: mode() === "money_in" ? "customers" : mode() === "money_out" ? "vendors" : "",
+    }),
+    (key: Any) => buwiz.call("books_people_list", key.kind ? { kind: key.kind } : {}),
   );
+  const departments = resource(
+    () => ({ v: ver() }),
+    () => buwiz.call("books_tags_list", { kind: "department" }),
+  );
+  const locations = resource(
+    () => ({ v: ver() }),
+    () => buwiz.call("books_tags_list", { kind: "location" }),
+  );
+  const tagOptions = (res: Any) =>
+    (res()?.rows || []).map((tag: Any) => ({
+      ticket: tag.ticket,
+      name: tag.name,
+      label: tag.name,
+      group: tag.kind === "location" ? "Locations" : "Departments",
+    }));
   const partyOptions = () =>
     (people()?.rows || []).map((person: Any) => ({
       ticket: person.ticket,
@@ -308,8 +344,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
       label: person.name,
       group: mode() === "money_in" ? "Customers" : "Vendors",
     }));
-  const categorySuggestions = () => {
-    const query = categoryQuery().trim().toLowerCase();
+  const suggestionsFor = (rawQuery: string) => {
+    const query = rawQuery.trim().toLowerCase();
     if (!query || (mode() !== "money_in" && mode() !== "money_out")) return [];
     const types =
       mode() === "money_in"
@@ -325,11 +361,13 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
       return types.includes(suggestion.accountType) && !cashAccrualOnly && text.includes(query) && !existing.has(String(suggestion.name).toLowerCase());
     }).slice(0, 8);
   };
-  const startCategoryCreate = (name: string, suggestion?: Any) => {
+  const categorySuggestions = () => suggestionsFor(categoryQuery());
+  const startCategoryCreate = (name: string, suggestion?: Any, apply?: (ticket: string) => void) => {
     newCategoryName.set(name || suggestion?.name || "");
     newCategoryNumber.set("");
     newCategoryType.set(suggestion?.accountType || (mode() === "money_in" ? "revenue" : "expense"));
     newCategoryKind.set(suggestion?.subtype || "unsure");
+    categoryCreateApply.set(apply || null);
     categoryCreateError.set("");
     categoryCreateOpen.set(true);
   };
@@ -347,8 +385,11 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
       type: newCategoryType(),
     })
       .then((result: Any) => {
-        category.set(result.account || "");
+        const ticket = result.account || "";
+        if (categoryCreateApply()) categoryCreateApply()(ticket);
+        else category.set(ticket);
         categoryQuery.set("");
+        categoryCreateApply.set(null);
         categoryCreateOpen.set(false);
         toast(`${name} added`);
       })
@@ -356,6 +397,16 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
       .finally(() => categoryCreating.set(false));
   };
   const amt = computed(() => moneyText(amount()));
+  const centsOf = (typed: string): bigint => {
+    const text = moneyText(typed);
+    if (!text) return 0n;
+    const [whole, cents] = text.split(".");
+    return BigInt(whole) * 100n + BigInt(cents);
+  };
+  const allocationTotal = computed(() =>
+    allocations().reduce((sum: bigint, line: Any) => sum + centsOf(line.amount()), 0n),
+  );
+  const allocationRemaining = computed(() => centsOf(amount()) - allocationTotal());
   const journalTotals = computed(() => {
     let debit = 0n;
     let credit = 0n;
@@ -371,7 +422,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
         credit += BigInt(whole) * 100n + BigInt(cents);
       }
     }
-    return { debit, credit, difference: debit - credit, balanced: debit > 0n && debit === credit };
+    return { debit, credit, difference: debit - credit, balanced: debit === credit };
   });
   const shownCents = (value: bigint) => {
     const negative = value < 0n;
@@ -380,18 +431,6 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     const cents = String(absolute % 100n).padStart(2, "0");
     return `${negative ? "−" : ""}₱${whole}.${cents}`;
   };
-  const moneyName = computed(() => ((o()?.money || []).find((a: Any) => a.ticket === money()) || {}).label || "the bank");
-  const catName = computed(() => (((mode() === "money_in" ? o()?.income : o()?.expense) || []).find((a: Any) => a.ticket === category()) || {}).label || "the category");
-  const behind = computed(() => {
-    const a = amt() ? grouped(amt() as string) : "0.00";
-    if (mode() === "money_in") return `Dr ${moneyName()} ${a} · Cr ${catName()} ${a}`;
-    if (mode() === "money_out") return `Dr ${catName()} ${a} · Cr ${moneyName()} ${a}`;
-    if (mode() === "transfer") {
-      const to = ((o()?.money || []).find((x: Any) => x.ticket === toAccount()) || {}).label || "the other account";
-      return `Dr ${to} ${a} · Cr ${moneyName()} ${a}`;
-    }
-    return "";
-  });
   const args = (): Record<string, Any> | null => {
     err.set("");
     const base: Record<string, Any> = { form: mode() };
@@ -400,7 +439,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     if (memo()) base.memo = memo();
     if (reference()) base.reference = reference();
     if (mode() === "journal") {
-      if (!journalTotals().balanced) {
+      if (!journalTotals().balanced || journalTotals().debit === 0n) {
         err.set("Debits and credits must be equal before saving.");
         return null;
       }
@@ -412,6 +451,10 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
           const cr = moneyText(l.credit());
           if (dr) line.debit = dr;
           if (cr) line.credit = cr;
+          if (l.memo()) line.memo = l.memo();
+          if (l.person()) line.person = l.person();
+          if (l.department()) line.department = l.department();
+          if (l.location()) line.location = l.location();
           return line;
         });
       if (lines.length < 2) {
@@ -442,35 +485,73 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
       }
       base.to_account = toAccount();
     } else {
-      if (!category()) {
-        err.set("Pick a category.");
+      const rows = allocations()
+        .filter((line: Any) => centsOf(line.amount()) > 0n || line.category())
+        .map((line: Any) => {
+          const row: Record<string, string> = { category: line.category() };
+          const value = moneyText(line.amount());
+          if (value) row.amount = value;
+          if (line.memo()) row.memo = line.memo();
+          if (line.person()) row.person = line.person();
+          if (line.department()) row.department = line.department();
+          if (line.location()) row.location = line.location();
+          return row;
+        });
+      if (!rows.length) {
+        err.set("Add at least one category allocation.");
         return null;
       }
-      base.category = category();
+      if (rows.some((row) => !row.category || !row.amount)) {
+        err.set("Choose a category and enter an amount for each allocation.");
+        return null;
+      }
+      if (allocationRemaining() !== 0n) {
+        err.set("Allocation amounts must add up exactly to the transaction amount.");
+        return null;
+      }
+      base.allocations = rows;
     }
     return base;
   };
-  const save = (post: boolean) => {
+  const save = (post: boolean, close = true, fresh = false) => {
     const a = args();
     if (!a) return;
     busy.set(true);
     act(post ? "books_app_post_entry" : "books_entry_draft", a)
       .then((r: Any) => {
         toast(post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`);
-        amount.set("");
-        memo.set("");
-        reference.set("");
-        payee.set("");
-        p.close();
+        if (close || fresh) {
+          amount.set("");
+          date.set("");
+          memo.set("");
+          reference.set("");
+          payee.set("");
+          payeeTicket.set("");
+          partyQuery.set("");
+          money.set("");
+          toAccount.set("");
+          category.set("");
+          categoryQuery.set("");
+          allocations.set([allocationLine()]);
+          jl.set([journalLine(), journalLine()]);
+        }
+        if (close) p.close();
       })
       .catch((e: Any) => err.set(errText(e)))
       .finally(() => busy.set(false));
   };
   const side = signal("ai");
+  const composer = signal("");
   const ask = (text: string) => {
     if (!buwiz.copy) return toast("This Buwiz Bot cannot copy. Type it in the chat.");
     buwiz.copy(text);
     toast("Copied. Paste it in the chat; the draft lands in your Inbox.");
+  };
+  const applyPrompt = () => {
+    const text = composer().trim();
+    if (!text) return;
+    ask(text);
+    composer.set("");
   };
   const modeName = () => (MODES.find((m) => m[0] === mode()) || ["", "New entry"])[1];
   return (
@@ -497,44 +578,46 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
           <View accessibilityLabel="Go back" class="w-9 h-9 rounded-lg items-center justify-center" onPress={p.close} activeStyle={{ opacity: 0.7 }}>
             <Text class={`text-[18px] ${C.mute}`}>‹</Text>
           </View>
+          <Text class={`text-[16px] font-semibold ${C.ink}`}>{`New ${modeName()}`}</Text>
           <View class="flex-1" />
-          <If when={Boolean(err())}>
-            <Text class={`text-[12px] font-medium ${C.red}`} numberOfLines={1}>{err()}</Text>
-          </If>
-          <Btn label="Save" disabled={busy()} onPress={() => save(false)} />
-          <Btn label="Save & post" tone="go" disabled={busy()} onPress={() => save(true)} />
         </View>
-        <View class="flex-1 flex-row gap-5 p-5 overflow-hidden">
-        <Scroll class="flex-1">
-          <View class={`rounded-2xl border overflow-hidden ${C.panel} ${C.line}`}>
+        <View class="flex-1 flex-row gap-6 p-6 pb-0 overflow-hidden">
+        <Scroll class="flex-1 min-h-0">
+          <View class={`rounded-[24px] border overflow-hidden min-h-full flex-col bg-white dark:bg-slate-800 ${C.line}`}>
             <View class={`px-4 pt-3.5 pb-4 gap-3 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
               <View class="flex-row items-center gap-3">
+                <View class="w-12 h-12 rounded-full items-center justify-center bg-white/15">
+                  <Text class="text-[20px] text-white">{mode() === "journal" ? "≡" : mode() === "transfer" ? "⇄" : mode() === "money_in" ? "↓" : "↑"}</Text>
+                </View>
                 <View class="flex-1 gap-0.5">
-                  <Text class={`text-[18px] font-bold ${ON_ACC}`}>{modeName()}</Text>
+                  <Text class={`text-[24px] font-bold ${ON_ACC}`}>{modeName()}</Text>
                   <Text class="text-[12px] text-white/80">{MODE_SUB[mode()] || ""}</Text>
                 </View>
                 <If when={mode() !== "journal"}>
                   <View class="w-[200px]">
-                    <TextBox label="Amount" value={amount()} onChange={(v) => amount.set(v)} placeholder="₱ 0.00" big />
+                    <TextBox label="Amount" value={amount()} onChange={(v) => amount.set(v)} placeholder="₱ 0.00" big entry />
                   </View>
+                </If>
+                <If when={mode() === "journal"}>
+                  <Text class="text-[20px] font-semibold text-white tabular-nums">{shownCents(journalTotals().debit)}</Text>
                 </If>
               </View>
               <View class="flex-row gap-3">
                 <View class="w-[150px] gap-1">
-                  <Text class="text-[11px] uppercase tracking-wider text-white/80">Date</Text>
+                  <Text class="text-[13px] font-medium text-white/85">Date</Text>
                   <BooksDate value={date() || o()?.today || ""} today={o()?.today} onChange={(v) => date.set(v)} />
                 </View>
                 <View class="flex-1 gap-1">
-                  <Text class="text-[11px] uppercase tracking-wider text-white/80">Reference number</Text>
-                  <TextBox label="Reference" value={reference()} onChange={(v) => reference.set(v)} placeholder="Invoice 0143" />
+                  <Text class="text-[13px] font-medium text-white/85">Reference number</Text>
+                  <TextBox label="Reference" value={reference()} onChange={(v) => reference.set(v)} placeholder="Invoice 0143" entry />
                 </View>
                 <If when={mode() !== "transfer"}>
                   <View class="flex-1 gap-1">
-                    <Text class="text-[11px] uppercase tracking-wider text-white/80">{mode() === "money_in" ? "Received from" : mode() === "money_out" ? "Paid to" : "Party"}</Text>
+                    <Text class="text-[13px] font-medium text-white/85">{mode() === "money_in" ? "Received from" : mode() === "money_out" ? "Paid to" : "Party"}</Text>
                     <BooksCombo
-                      label={mode() === "money_in" ? "Customer" : "Vendor"}
+                      label={mode() === "money_in" ? "Customer" : mode() === "money_out" ? "Vendor" : "Party"}
                       value={payeeTicket()}
-                      options={partyOptions()}
+                      options={() => partyOptions()}
                       onPick={(person: Any) => {
                         payeeTicket.set(person.ticket || "");
                         payee.set(person.name || person.label || "");
@@ -549,57 +632,95 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                       }}
                       query={partyQuery()}
                       placeholder={payee() || (mode() === "money_in" ? "Customer" : "Vendor")}
-                      group={mode() === "money_in" ? "Customers" : "Vendors"}
+                      group={mode() === "money_in" ? "Customers" : mode() === "money_out" ? "Vendors" : "People"}
                     />
                   </View>
                 </If>
               </View>
             </View>
-            <View class="px-6 relative z-10 -mt-12">
-              <Text class="text-[12px] font-semibold text-white mb-2 pl-1">Memo</Text>
-              <View class={`rounded-xl shadow-sm border p-4 min-h-16 ${C.panel} ${C.line}`}>
-                <TextBox label="Memo" value={memo()} onChange={(v) => memo.set(v)} placeholder="Add a memo..." />
+              <View class="px-6 pt-4">
+              <Text class={`text-[13px] font-semibold ${C.ink} mb-2 pl-1`}>Memo</Text>
+              <View class="rounded-xl border p-3 min-h-16 bg-white dark:bg-slate-800 border-[#e2e8f0] dark:border-slate-600">
+                <TextBox label="Memo" value={memo()} onChange={(v) => memo.set(v)} placeholder="Add a memo..." entry />
               </View>
             </View>
-            <View class="px-6 py-4 pb-12 gap-3.5 bg-[#f8f9fb] dark:bg-slate-950/40">
+            <View class="px-6 py-4 gap-3.5 bg-[#f8f9fb] dark:bg-slate-800/70 flex-1 flex-col">
               <If when={mode() !== "journal"}>
                 <View class="gap-3.5">
-                  <View class="flex-row gap-3">
-                    <Field label={mode() === "money_in" ? "Into" : mode() === "transfer" ? "From" : "Paid from"} grow>
-                      <BooksCombo label="Account" value={money()} options={groupedOptions(o()?.money || [])} onPick={(a: Any) => money.set(a.ticket)} placeholder="Bank, cash or card" group="Cash, bank & card" />
-                    </Field>
-                    <If when={mode() === "transfer"}>
-                      <Field label="To" grow>
-                        <BooksCombo label="To account" value={toAccount()} options={groupedOptions(o()?.money || [])} onPick={(a: Any) => toAccount.set(a.ticket)} placeholder="Bank, cash or card" group="Cash, bank & card" />
-                      </Field>
-                    </If>
-                    <If when={mode() !== "transfer"}>
-                      <Field label="Category" grow>
-                        <BooksCombo
-                          label="Category"
-                          value={category()}
-                          options={groupedOptions((mode() === "money_in" ? o()?.income : o()?.expense) || [])}
-                          onPick={(a: Any) => {
-                            category.set(a.ticket);
-                            categoryQuery.set("");
-                          }}
-                          query={categoryQuery()}
-                          onQuery={(query: string) => categoryQuery.set(query)}
-                          suggestions={categorySuggestions()}
-                          onSuggestion={(suggestion: Any) => startCategoryCreate(suggestion.name, suggestion)}
-                          onCreate={(query: string) => startCategoryCreate(query)}
-                          placeholder="Pick a category"
-                          group={mode() === "money_in" ? "Income categories" : "Expense categories"}
-                        />
-                      </Field>
-                    </If>
-                  </View>
-                  <View class={`rounded-[10px] border border-dashed p-2.5 gap-1.5 ${C.line}`}>
-                    <Text class={`text-[12px] font-bold ${C.mute}`}>Behind the scenes</Text>
-                    <Text class={`text-[12px] font-mono ${C.ink}`}>{behind()}</Text>
-                  </View>
                   <If when={mode() === "transfer"}>
-                    <Text class={`text-[12px] ${C.dim}`}>Not income, not an expense. Reports leave it out of the P&L.</Text>
+                    <View class="flex-row items-end gap-5">
+                      <Field label="Transfer From" grow plain>
+                        <BooksCombo label="Transfer From" value={money()} options={() => groupedOptions(o()?.money || [])} onPick={(a: Any) => money.set(a.ticket)} placeholder="Select account" group="Cash, bank & card" />
+                      </Field>
+                      <Text class="pb-2 text-[24px] text-[#94a3b8]">→</Text>
+                      <Field label="Transfer To" grow plain>
+                        <BooksCombo label="Transfer To" value={toAccount()} options={() => groupedOptions(o()?.money || [])} onPick={(a: Any) => toAccount.set(a.ticket)} placeholder="Select account" group="Cash, bank & card" />
+                      </Field>
+                    </View>
+                  </If>
+                  <If when={mode() === "money_in" || mode() === "money_out"}>
+                    <Field label={mode() === "money_in" ? "Into" : "Paid from"} plain>
+                      <BooksCombo label="Money account" value={money()} options={() => groupedOptions(o()?.money || [])} onPick={(a: Any) => money.set(a.ticket)} placeholder="Bank, cash or card" group="Cash, bank & card" />
+                    </Field>
+                    <View class="flex-row items-center justify-between">
+                      <Text class={`text-[15px] font-semibold ${C.ink}`}>{mode() === "money_in" ? "Allocate this payment" : "Allocate this expense"}</Text>
+                      <Text class={`text-[12px] ${C.mute}`}>{`Remaining ${shownCents(allocationRemaining())}`}</Text>
+                    </View>
+                    <Each of={allocations()}>
+                      {(line: Any, index: Any) => (
+                        <View class="rounded-xl border border-[#e2e8f0] dark:border-slate-600 bg-white dark:bg-slate-800 p-3 gap-2.5">
+                          <View class="flex-row items-center gap-2">
+                            <Text class="w-5 text-[11px] font-semibold text-[#94a3b8]">{String(index() + 1)}</Text>
+                            <View class="flex-1">
+                              <BooksCombo
+                                label="Category"
+                                value={line().category()}
+                                options={() => groupedOptions((mode() === "money_in" ? o()?.income : o()?.expense) || [])}
+                                onPick={(account: Any) => { line().category.set(account.ticket || ""); line().query.set(""); }}
+                                query={() => line().query()}
+                                onQuery={(query: string) => line().query.set(query)}
+                                suggestions={() => suggestionsFor(line().query())}
+                                onSuggestion={(suggestion: Any) => startCategoryCreate(suggestion.name, suggestion, (ticket) => { line().category.set(ticket); line().query.set(""); })}
+                                onCreate={(query: string) => startCategoryCreate(query, undefined, (ticket) => { line().category.set(ticket); line().query.set(""); })}
+                                placeholder="Category"
+                                group={mode() === "money_in" ? "Income categories" : "Expense categories"}
+                              />
+                            </View>
+                            <View class="w-[120px]">
+                              <TextBox label="Allocation amount" value={line().amount()} onChange={(value: string) => line().amount.set(value)} placeholder="₱ 0.00" entry />
+                            </View>
+                            <If when={allocations().length > 1}>
+                              <Btn label="×" small onPress={() => allocations.set(allocations().filter((_: Any, i: number) => i !== index()))} />
+                            </If>
+                          </View>
+                          <View class="flex-row gap-2">
+                            <View class="flex-1">
+                              <BooksCombo
+                                label="Party"
+                                value={line().person()}
+                                options={() => partyOptions()}
+                                onPick={(person: Any) => { line().person.set(person.ticket || ""); line().partyQuery.set(""); }}
+                                query={() => line().partyQuery()}
+                                onQuery={(query: string) => line().partyQuery.set(query)}
+                                placeholder="Party"
+                                group={mode() === "money_in" ? "Customers" : "Vendors"}
+                              />
+                            </View>
+                            <View class="flex-1">
+                              <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments)} onPick={(tag: Any) => line().department.set(tag.ticket || "")} placeholder="Department" group="Departments" />
+                            </View>
+                            <View class="flex-1">
+                              <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations)} onPick={(tag: Any) => line().location.set(tag.ticket || "")} placeholder="Location" group="Locations" />
+                            </View>
+                          </View>
+                          <TextBox label="Allocation memo" value={line().memo()} onChange={(value: string) => line().memo.set(value)} placeholder="Description for this category" entry />
+                        </View>
+                      )}
+                    </Each>
+                    <Btn label="+ Add allocation" small onPress={() => allocations.set([...allocations(), allocationLine()])} />
+                    <If when={allocationRemaining() === 0n && centsOf(amount()) > 0n}>
+                      <Text class={`text-[12px] font-semibold ${C.green}`}>Allocations match the amount.</Text>
+                    </If>
                   </If>
                 </View>
               </If>
@@ -607,55 +728,97 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                 <View class="gap-2">
                   <View class="flex-row gap-2">
                     <Text class={`w-5 text-[10.5px] uppercase tracking-wider ${C.dim}`}>#</Text>
-                    <Text class={`flex-1 text-[10.5px] uppercase tracking-wider ${C.dim}`}>Account</Text>
-                    <Text class={`w-[120px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Debit</Text>
-                    <Text class={`w-[120px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Credit</Text>
-                    <View class="w-7" />
+                    <Text class={`flex-1 text-[11px] font-semibold ${C.mute}`}>Line description</Text>
+                    <Text class={`w-[100px] text-[11px] font-semibold text-right ${C.mute}`}>Debit</Text>
+                    <Text class={`w-[100px] text-[11px] font-semibold text-right ${C.mute}`}>Credit</Text>
+                    <View class="w-[104px]" />
                   </View>
                   <Each of={jl()}>
                     {(l: Any, i: Any) => (
-                      <View class="flex-row gap-2 items-start">
-                        <Text class={`w-5 pt-2 text-[12px] font-mono ${C.dim}`}>{String(i() + 1)}</Text>
-                        <View class="flex-1">
-                          <BooksCombo
-                            value={l().account()}
-                            options={groupedOptions(o()?.all || [])}
-                            onPick={(a: Any) => {
-                              l().account.set(a.ticket);
-                              l().query.set("");
-                            }}
-                            query={l().query()}
-                            onQuery={(query: string) => l().query.set(query)}
-                            placeholder="Account"
-                            group="Accounts"
-                          />
+                      <View class="rounded-xl border border-[#e2e8f0] dark:border-slate-600 bg-white dark:bg-slate-800/60 p-3 gap-2 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                        <View class="flex-row gap-2 items-center">
+                          <Text class={`w-5 text-[11px] font-semibold text-center ${C.dim}`}>{String(i() + 1)}</Text>
+                          <View class="flex-1">
+                            <TextBox label="Line description" value={l().memo()} onChange={(v: string) => l().memo.set(v)} placeholder="Add description for this item..." entry />
+                          </View>
+                          <View class="w-[100px]">
+                            <TextBox label="Debit" value={l().debit()} onChange={(v: string) => l().debit.set(v)} placeholder="₱ 0.00" entry />
+                          </View>
+                          <View class="w-[100px]">
+                            <TextBox label="Credit" value={l().credit()} onChange={(v: string) => l().credit.set(v)} placeholder="₱ 0.00" entry />
+                          </View>
+                          <View class="flex-row items-center gap-1">
+                            <If when={jl().length > 2}>
+                              <Btn label="×" small onPress={() => jl.set(jl().filter((_: Any, j: number) => j !== i()))} />
+                            </If>
+                            <Btn label="⧉" small onPress={() => {
+                              const copy = journalLine();
+                              copy.account.set(l().account());
+                              copy.query.set(l().query());
+                              copy.debit.set(l().debit());
+                              copy.credit.set(l().credit());
+                              copy.memo.set(l().memo());
+                              copy.person.set(l().person());
+                              copy.department.set(l().department());
+                              copy.location.set(l().location());
+                              const next = [...jl()];
+                              next.splice(i() + 1, 0, copy);
+                              jl.set(next);
+                            }} />
+                            <Btn label="+" small onPress={() => { const next = [...jl()]; next.splice(i() + 1, 0, journalLine()); jl.set(next); }} />
+                          </View>
                         </View>
-                        <View class="w-[120px]">
-                          <TextBox value={l().debit()} onChange={(v: string) => l().debit.set(v)} placeholder="Debit" />
-                        </View>
-                        <View class="w-[120px]">
-                          <TextBox value={l().credit()} onChange={(v: string) => l().credit.set(v)} placeholder="Credit" />
-                        </View>
-                        <View class="w-7 pt-1">
-                          <If when={jl().length > 2}>
-                            <Btn label="✕" small onPress={() => jl.set(jl().filter((_: Any, j: number) => j !== i()))} />
-                          </If>
+                        <View class="flex-row gap-2 pl-7">
+                          <View class="flex-1">
+                            <BooksCombo
+                              label="Account"
+                              value={l().account()}
+                              options={() => groupedOptions(o()?.all || [])}
+                              onPick={(account: Any) => { l().account.set(account.ticket || ""); l().query.set(""); }}
+                              query={() => l().query()}
+                              onQuery={(query: string) => l().query.set(query)}
+                              onSuggestion={(suggestion: Any) => startCategoryCreate(suggestion.name, suggestion, (ticket) => { l().account.set(ticket); l().query.set(""); })}
+                              onCreate={(query: string) => startCategoryCreate(query, undefined, (ticket) => { l().account.set(ticket); l().query.set(""); })}
+                              placeholder="Category"
+                              group="Accounts"
+                            />
+                          </View>
+                          <View class="flex-1">
+                            <BooksCombo
+                              label="Party"
+                              value={l().person()}
+                              options={() => partyOptions()}
+                              onPick={(person: Any) => { l().person.set(person.ticket || ""); l().partyQuery.set(""); }}
+                              query={() => l().partyQuery()}
+                              onQuery={(query: string) => l().partyQuery.set(query)}
+                              placeholder="Party"
+                              group="People"
+                            />
+                          </View>
+                          <View class="flex-1">
+                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments)} onPick={(tag: Any) => l().department.set(tag.ticket || "")} placeholder="Department" group="Departments" />
+                          </View>
+                          <View class="flex-1">
+                            <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations)} onPick={(tag: Any) => l().location.set(tag.ticket || "")} placeholder="Location" group="Locations" />
+                          </View>
                         </View>
                       </View>
                     )}
                   </Each>
                   <View class="flex-row items-center gap-2">
-                    <Btn label="+ Line" small onPress={() => jl.set([...jl(), journalLine()])} />
+                    <Btn label="+ Add line" small onPress={() => jl.set([...jl(), journalLine()])} />
                     <Text class={`flex-1 text-[12px] ${C.dim}`}>Debits must equal credits.</Text>
                   </View>
-                  <View class={`flex-row items-center justify-between rounded-md border px-3 py-2 ${journalTotals().balanced ? "border-[#86efac] bg-[#f0fdf4] dark:border-[#166534] dark:bg-[#14532d]" : "border-[#e2e8f0] bg-[#f8fafc] dark:border-[#2a2a2d] dark:bg-[#141416]"}`}>
-                    <Text class={`text-[12px] font-semibold ${journalTotals().balanced ? "text-[#15803d] dark:text-[#86efac]" : C.mute}`}>
-                      {journalTotals().balanced ? "Balanced" : "Difference"}
-                    </Text>
-                    <View class="flex-row gap-4">
+                  <View class="mt-auto flex-row items-center justify-between border-t border-[#e2e8f0] dark:border-slate-600 px-1 py-3">
+                    <View class="flex-row items-center gap-2">
+                      <Text class={`text-[16px] font-bold ${journalTotals().balanced ? "text-[#16a34a] dark:text-[#4ade80]" : "text-[#ef4444]"}`}>{journalTotals().balanced ? "✓" : "!"}</Text>
+                      <Text class={`text-[12px] font-semibold tabular-nums ${journalTotals().balanced ? "text-[#16a34a] dark:text-[#4ade80]" : "text-[#ef4444]"}`}>
+                        {journalTotals().balanced ? shownCents(journalTotals().debit) : `Difference ${shownCents(journalTotals().difference)}`}
+                      </Text>
+                    </View>
+                    <View class="flex-row gap-6">
                       <Text class={`text-[12px] ${C.mute}`}>{`Debit ${shownCents(journalTotals().debit)}`}</Text>
                       <Text class={`text-[12px] ${C.mute}`}>{`Credit ${shownCents(journalTotals().credit)}`}</Text>
-                      <Text class={`text-[12px] font-semibold ${journalTotals().balanced ? "text-[#15803d] dark:text-[#86efac]" : "text-[#ef4444]"}`}>{shownCents(journalTotals().difference)}</Text>
                     </View>
                   </View>
                 </View>
@@ -664,9 +827,49 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                 <Text class={`text-[12.5px] ${C.red}`}>{err()}</Text>
               </If>
             </View>
+            <View class={`shrink-0 flex-row items-center justify-between border-t px-6 py-3 bg-white dark:bg-slate-800 ${C.line}`}>
+              <View class="flex-1">
+                <If when={Boolean(err())}>
+                  <Text class={`text-[12px] ${C.red}`} numberOfLines={1}>{err()}</Text>
+                </If>
+                <If when={!err() && mode() === "money_in" || !err() && mode() === "money_out"}>
+                  <Text class={`text-[12px] ${allocationRemaining() === 0n ? "text-[#14b8a6]" : C.mute}`}>{`Remaining ${shownCents(allocationRemaining())}`}</Text>
+                </If>
+              </View>
+              <View class="relative flex-row items-stretch">
+                <View
+                  class="items-center justify-center rounded-l-lg bg-[#2a9d8f] px-5 py-2.5"
+                  activeStyle={{ opacity: 0.7 }}
+                  onPress={() => { if (!busy()) save(false, true); }}
+                >
+                  <Text class="text-[13px] font-medium text-white">{busy() ? "Saving..." : "Save & Close"}</Text>
+                </View>
+                <View
+                  class="w-10 items-center justify-center rounded-r-lg border-l border-white/25 bg-[#2a9d8f]"
+                  activeStyle={{ opacity: 0.7 }}
+                  accessibilityLabel="More save options"
+                  onPress={() => saveMenuOpen.set(!saveMenuOpen())}
+                >
+                  <Text class="text-[12px] text-white">⌄</Text>
+                </View>
+                <If when={saveMenuOpen()}>
+                  <View class={`absolute right-0 bottom-full z-50 mb-1 w-[160px] rounded-lg border py-1 shadow-lg ${C.panel} ${C.line}`}>
+                    <View class="px-3 py-2" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false); }}>
+                      <Text class={`text-[12px] ${C.ink}`}>Save</Text>
+                    </View>
+                    <View class="px-3 py-2" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false, true); }}>
+                      <Text class={`text-[12px] ${C.ink}`}>Save & New</Text>
+                    </View>
+                    <View class={`px-3 py-2 border-t ${C.line}`} activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(true, true); }}>
+                      <Text class={`text-[12px] ${C.ink}`}>Post</Text>
+                    </View>
+                  </View>
+                </If>
+              </View>
+            </View>
           </View>
         </Scroll>
-        <View class={`w-[360px] shrink-0 rounded-2xl border overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex-col h-full ${C.panel} ${C.line}`}>
+        <View class="w-[360px] shrink-0 rounded-[24px] border border-[#e2e8f0] dark:border-slate-600 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex-col h-full bg-white dark:bg-slate-800">
           <View class={`flex-row justify-evenly px-4 py-3 gap-2 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
             <Each of={[["attachments", "⌁"], ["ai", "✧"], ["activity", "◷"]]}>
               {(t: Any) => (
@@ -683,6 +886,12 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
           <If when={side() === "ai"}>
             <View class="p-3 gap-2.5">
               <Text class={`text-[12.5px] ${C.mute}`}>Tell the assistant in the chat what happened. It saves a draft, which waits in your Inbox for you to post.</Text>
+              <View class="flex-row items-center gap-2 rounded-xl border border-[#e2e8f0] bg-white p-2 dark:border-slate-600 dark:bg-slate-800">
+                <View class="flex-1">
+                  <TextBox label="Assistant prompt" value={composer()} onChange={(value) => composer.set(value)} placeholder="Ask the assistant..." entry />
+                </View>
+                <Btn label="Apply" tone="go" small onPress={applyPrompt} />
+              </View>
               <View class="flex-row gap-1.5 flex-wrap">
                 <Each of={ASK}>
                   {(q: Any) => (
@@ -698,12 +907,22 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
           <If when={side() === "attachments"}>
             <View class="p-3 gap-2.5">
               <Text class={`text-[13px] font-semibold ${C.ink}`}>Attachments</Text>
-              <View class={`rounded-xl border border-dashed p-4 gap-2 items-center ${C.line} ${C.raise}`}>
-                <Text class={`text-[22px] ${C.dim}`}>⌁</Text>
-                <Text class={`text-[12.5px] text-center ${C.mute}`}>Add a receipt or document to Books before asking the assistant to read it.</Text>
-                <Btn label="Browse documents" onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)} />
+              <View
+                class="flex-col items-center justify-center gap-2 px-4 py-6 rounded-xl border-2 border-dashed border-[#cbd5e1] cursor-pointer transition-all dark:border-slate-600 hover:border-[#2a9d8f] hover:bg-[#f8fafb] dark:hover:bg-slate-800/50"
+                accessibilityLabel="Browse or drag and drop an attachment"
+                onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)}
+                activeStyle={{ opacity: 0.75 }}
+              >
+                <View class="w-10 h-10 rounded-full flex items-center justify-center bg-[#f1f5f9] text-[#94a3b8] dark:bg-slate-800 dark:text-slate-500">
+                  <Text class="text-[20px]">⇧</Text>
+                </View>
+                <View class="items-center">
+                  <Text class="text-[12px] font-medium text-[#2a9d8f]">Browse<Text class="font-normal text-[#94a3b8] dark:text-slate-500"> or Drag & Drop</Text></Text>
+                  <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">Images or PDF — max 20MB</Text>
+                </View>
               </View>
-              <Text class={`text-[11.5px] ${C.dim}`}>Documents are stored in Books and can be attached to a chat. This entry draft does not yet link a document directly.</Text>
+              <Btn label="Browse existing documents" onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)} />
+              <Text class={`text-[11.5px] ${C.dim}`}>Choose an existing document in Books. This draft does not upload or link files directly.</Text>
             </View>
           </If>
           <If when={side() === "activity"}>
