@@ -22,7 +22,7 @@ function inboxSource(r: Any): [string, string] {
   return ["mute", "You"];
 }
 
-function InboxDetail(p: { ticket: string }) {
+function InboxDetail(p: { ticket: string; row?: Any }) {
   const data = resource(
     () => ({ v: ver(), e: p.ticket }),
     (k: Any) => buwiz.call("books_entry_get", { entry: k.e }),
@@ -41,11 +41,26 @@ function InboxDetail(p: { ticket: string }) {
       .finally(() => busy.set(false));
   };
   const has = (a: string) => (e()?.actions || []).includes(a);
+  const src = () => (p.row ? inboxSource(p.row)[1] : "");
   return (
-    <View class={`px-3.5 py-3 gap-3 border-b ${C.raise} ${C.line}`}>
+    <View>
       <Loading res={data} />
       <If when={Boolean(e())}>
-        <View class="flex-row gap-3 items-start">
+        <View class="bg-slate-950 px-6 py-6">
+          <View class="flex-row items-start justify-between gap-4">
+            <View class="min-w-0 flex-1 gap-0.5">
+              <Text class="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-300">{src()}</Text>
+              <Text class="mt-2 text-[20px] font-semibold text-white" numberOfLines={1}>
+                {p.row ? String(p.row.title || "") : ""}
+              </Text>
+              <Text class="mt-1 text-[13px] text-slate-300">{`${e()?.date_label || ""} · ${e()?.big || ""}`}</Text>
+            </View>
+            <View class="rounded-full bg-white/10 px-2.5 py-1">
+              <Text class="text-[12px] font-medium text-white">{p.row ? String(p.row.status_label || "") : ""}</Text>
+            </View>
+          </View>
+        </View>
+        <View class="flex-row gap-3 items-start px-3.5 py-3">
           <Panel pad class="w-[260px] gap-2">
             <Text class={`text-[10.5px] uppercase tracking-wider ${C.dim}`}>Source</Text>
             <If when={!e()?.extraction && (e()?.evidence || []).length === 0}>
@@ -174,11 +189,11 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
           <Text class={`text-[12.5px] font-semibold ${C.ink}`}>{month().label || ""}</Text>
           <Btn label="›" small onPress={() => (month().next ? inboxMonth.set(month().next) : null)} />
           <View
-            class="h-[34px] px-4 rounded-full bg-[#0d9488] items-center justify-center"
+            class="h-10 px-4 rounded-md bg-teal-700 hover:bg-teal-800 transition-colors items-center justify-center"
             onPress={() => p.sheet("money_out")}
             activeStyle={{ opacity: 0.85 }}
           >
-            <Text class="text-[12.5px] font-semibold text-white">+ New entry</Text>
+            <Text class="text-[13px] font-semibold text-white">+ New entry</Text>
           </View>
         </View>
       </View>
@@ -188,13 +203,16 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
         {/* Left Queue Panel */}
         <View class={`w-[420px] shrink-0 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
           <View class={`shrink-0 px-3.5 py-3 gap-2 border-b ${C.line}`}>
-            <TextBox
-              label="Search inbox"
-              value={query()}
-              onChange={(v) => query.set(v)}
-              placeholder="Search inbox items..."
-              entry
-            />
+            <View class="h-10 flex-row items-center rounded-md border border-slate-200 bg-white pl-3 pr-2 transition-colors focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/15 dark:border-slate-700 dark:bg-slate-900">
+              <Text class="text-[14px] text-slate-400 dark:text-slate-500">⌕</Text>
+              <Input
+                accessibilityLabel="Search inbox"
+                value={query()}
+                placeholder="Search inbox items..."
+                onChange={(e: Any) => query.set(typeof e === "string" ? e : e.value)}
+                class="flex-1 pl-2 bg-transparent border-none outline-none text-base sm:text-sm text-[#0f172a] dark:text-slate-100 placeholder-[#94a3b8]"
+              />
+            </View>
             <View class="flex-row gap-1.5 flex-wrap">
               <Each of={INBOX_FILTERS}>
                 {(f: Any) => (
@@ -212,19 +230,30 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
           <If when={Boolean(rv())}>
             <Scroll class="flex-1 min-h-0">
               <If when={visibleRows().length === 0}>
-                <Text class={`text-[12.5px] px-4 py-5 ${C.dim}`}>
-                  Nothing waits in this month. Bank lines, receipts a routine reads from your mail and drafts from chat show up here.
-                </Text>
+                <View class="min-h-[300px] items-center justify-center p-8 gap-1">
+                  <Text class={`text-[26px] ${query().trim() ? C.dim : "text-[#14b8a6]"}`}>{query().trim() ? "⌕" : "✓"}</Text>
+                  <Text class={`text-[15px] font-semibold ${C.ink}`}>{query().trim() ? "No matching transactions" : "This queue is clear"}</Text>
+                  <Text class={`text-[12.5px] text-center ${C.mute}`}>
+                    {query().trim()
+                      ? "Try a different transaction, vendor, or source name."
+                      : "Bank lines, receipts a routine reads from your mail and drafts from chat show up here."}
+                  </Text>
+                </View>
               </If>
               <Each of={visibleRows()} key={(r: Any) => r.ticket}>
                 {(r: Any) => (
                   <View
-                    class={`px-4 py-3 border-b gap-1.5 ${C.line} ${
-                      selectedTicket() === r().ticket ? "bg-[#f0fdfa] dark:bg-slate-700" : ""
+                    class={`relative px-5 py-4 border-b gap-1.5 transition-colors ${C.line} ${
+                      selectedTicket() === r().ticket
+                        ? "bg-teal-50/70 dark:bg-teal-950/30"
+                        : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
                     }`}
                     onPress={() => inboxOpen.set(r().ticket)}
                     activeStyle={{ opacity: 0.75 }}
                   >
+                    <If when={selectedTicket() === r().ticket}>
+                      <View class="absolute left-0 top-0 bottom-0 w-[3px] bg-[#0f766e]" />
+                    </If>
                     <View class="flex-row items-center justify-between gap-2">
                       <View class="flex-row items-center gap-1.5">
                         <Pill tone={inboxSource(r())[0]} label={inboxSource(r())[1]} />
@@ -258,11 +287,15 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
         <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
           <If when={Boolean(selectedTicket())}>
             <Scroll class="flex-1 min-h-0">
-              <InboxDetail ticket={selectedTicket()} />
+              <InboxDetail
+                ticket={selectedTicket()}
+                row={visibleRows().find((r: Any) => r.ticket === selectedTicket())}
+              />
             </Scroll>
           </If>
           <If when={!selectedTicket()}>
-            <View class="flex-1 items-center justify-center p-8 gap-2">
+            <View class="flex-1 items-center justify-center p-8 gap-1">
+              <Text class="text-[26px] text-[#14b8a6]">✓</Text>
               <Text class={`text-[15px] font-semibold ${C.ink}`}>Inbox is clear</Text>
               <Text class={`text-[13px] text-center ${C.mute}`}>
                 Filled by bank statement imports, routines and drafts from chat. Nothing posts until you accept it.
