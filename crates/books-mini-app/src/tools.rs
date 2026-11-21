@@ -198,6 +198,8 @@ fn draft_schema() -> Value {
             "amount": { "type": "string", "description": "Decimal text with two places, e.g. \"1350.00\"." },
             "account": { "type": "string", "description": "The bank, cash or card account (ticket or number); for a transfer, where the money leaves." },
             "to_account": { "type": "string", "description": "Transfer only: where the money goes." },
+            "from_person": { "type": "string", "description": "Transfer only: a person ticket linked to the from-line." },
+            "to_person": { "type": "string", "description": "Transfer only: a person ticket linked to the to-line." },
             "category": { "type": "string", "description": "The income or expense account (ticket or number)." },
             "payee": { "type": "string" },
             "memo": { "type": "string", "description": "What it was for. Never a TIN." },

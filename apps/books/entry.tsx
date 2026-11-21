@@ -263,6 +263,10 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
   const date = signal("");
   const money = signal("");
   const toAccount = signal("");
+  const fromPerson = signal("");
+  const toPerson = signal("");
+  const fromPartyQuery = signal("");
+  const toPartyQuery = signal("");
   const category = signal("");
   const categoryQuery = signal("");
   const payee = signal("");
@@ -342,7 +346,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
       ticket: person.ticket,
       name: person.name,
       label: person.name,
-      group: mode() === "money_in" ? "Customers" : "Vendors",
+      group: mode() === "money_in" ? "Customers" : mode() === "money_out" ? "Vendors" : "People",
     }));
   const suggestionsFor = (rawQuery: string) => {
     const query = rawQuery.trim().toLowerCase();
@@ -484,6 +488,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
         return null;
       }
       base.to_account = toAccount();
+      if (fromPerson()) base.from_person = fromPerson();
+      if (toPerson()) base.to_person = toPerson();
     } else {
       const rows = allocations()
         .filter((line: Any) => centsOf(line.amount()) > 0n || line.category())
@@ -530,6 +536,10 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
           partyQuery.set("");
           money.set("");
           toAccount.set("");
+          fromPerson.set("");
+          toPerson.set("");
+          fromPartyQuery.set("");
+          toPartyQuery.set("");
           category.set("");
           categoryQuery.set("");
           allocations.set([allocationLine()]);
@@ -594,9 +604,17 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                   <Text class="text-[12px] text-white/80">{MODE_SUB[mode()] || ""}</Text>
                 </View>
                 <If when={mode() !== "journal"}>
-                  <View class="w-[200px]">
-                    <TextBox label="Amount" value={amount()} onChange={(v) => amount.set(v)} placeholder="₱ 0.00" big entry />
-                  </View>
+                  <If when={mode() === "transfer"}>
+                    <View class="w-[200px] flex-row items-center justify-end gap-1 border border-white/20 rounded-lg px-3 py-1.5 bg-white/10 focus-within:border-white/40 focus-within:ring-1 focus-within:ring-white/30 transition-colors">
+                      <Text class="text-xl font-semibold text-white/60">₱</Text>
+                      <TextBox label="Amount" value={amount()} onChange={(v) => amount.set(v)} placeholder="0.00" transferAmount />
+                    </View>
+                  </If>
+                  <If when={mode() !== "transfer"}>
+                    <View class="w-[200px]">
+                      <TextBox label="Amount" value={amount()} onChange={(v) => amount.set(v)} placeholder="₱ 0.00" big entry />
+                    </View>
+                  </If>
                 </If>
                 <If when={mode() === "journal"}>
                   <Text class="text-[20px] font-semibold text-white tabular-nums">{shownCents(journalTotals().debit)}</Text>
@@ -648,14 +666,38 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               <If when={mode() !== "journal"}>
                 <View class="gap-3.5">
                   <If when={mode() === "transfer"}>
-                    <View class="flex-row items-end gap-5">
-                      <Field label="Transfer From" grow plain>
-                        <BooksCombo label="Transfer From" value={money()} options={() => groupedOptions(o()?.money || [])} onPick={(a: Any) => money.set(a.ticket)} placeholder="Select account" group="Cash, bank & card" />
-                      </Field>
-                      <Text class="pb-2 text-[24px] text-[#94a3b8]">→</Text>
-                      <Field label="Transfer To" grow plain>
-                        <BooksCombo label="Transfer To" value={toAccount()} options={() => groupedOptions(o()?.money || [])} onPick={(a: Any) => toAccount.set(a.ticket)} placeholder="Select account" group="Cash, bank & card" />
-                      </Field>
+                    <View class="flex-row items-start gap-5">
+                      <View class="flex-1 gap-2">
+                        <Field label="Transfer From" plain>
+                          <BooksCombo label="Transfer From" value={money()} options={() => groupedOptions(o()?.money || [])} onPick={(a: Any) => money.set(a.ticket)} placeholder="Select account" group="Cash, bank & card" />
+                        </Field>
+                        <BooksCombo
+                          label="Transfer From party"
+                          value={fromPerson()}
+                          options={() => partyOptions()}
+                          onPick={(person: Any) => { fromPerson.set(person.ticket || ""); fromPartyQuery.set(""); }}
+                          query={() => fromPartyQuery()}
+                          onQuery={(query: string) => { fromPartyQuery.set(query); if (query) fromPerson.set(""); }}
+                          placeholder="Party"
+                          group="People"
+                        />
+                      </View>
+                      <Text class="pt-6 text-[24px] text-[#94a3b8]">→</Text>
+                      <View class="flex-1 gap-2">
+                        <Field label="Transfer To" plain>
+                          <BooksCombo label="Transfer To" value={toAccount()} options={() => groupedOptions(o()?.money || [])} onPick={(a: Any) => toAccount.set(a.ticket)} placeholder="Select account" group="Cash, bank & card" />
+                        </Field>
+                        <BooksCombo
+                          label="Transfer To party"
+                          value={toPerson()}
+                          options={() => partyOptions()}
+                          onPick={(person: Any) => { toPerson.set(person.ticket || ""); toPartyQuery.set(""); }}
+                          query={() => toPartyQuery()}
+                          onQuery={(query: string) => { toPartyQuery.set(query); if (query) toPerson.set(""); }}
+                          placeholder="Party"
+                          group="People"
+                        />
+                      </View>
                     </View>
                   </If>
                   <If when={mode() === "money_in" || mode() === "money_out"}>

@@ -277,14 +277,16 @@ function Field(p: { label: string; children?: Any; grow?: boolean; plain?: boole
   );
 }
 
-function TextBox(p: { value: string; onChange: (v: string) => void; placeholder?: string; big?: boolean; label?: string; entry?: boolean }) {
+function TextBox(p: { value: string; onChange: (v: string) => void; placeholder?: string; big?: boolean; label?: string; entry?: boolean; transferAmount?: boolean }) {
   return (
     <Input
       accessibilityLabel={p.label}
       value={p.value}
       placeholder={p.placeholder || ""}
       onChange={(e: Any) => p.onChange(typeof e === "string" ? e : e.value)}
-      class={`placeholder:text-[#8e8e93] ${p.entry ? "rounded-md" : "rounded-lg"} border px-2.5 ${p.big ? "h-10 text-[18px] font-mono" : "h-8 text-[13px]"} ${p.entry ? "bg-white dark:bg-slate-700 border-[#e2e8f0] dark:border-slate-600 text-[#0f172a] dark:text-slate-100" : `${C.bg} ${C.line} ${C.ink}`}`}
+      class={p.transferAmount
+        ? "w-28 h-8 text-right text-xl font-semibold text-white tabular-nums bg-transparent border-none outline-none placeholder-white/40 focus:ring-0"
+        : `placeholder:text-[#8e8e93] ${p.entry ? "rounded-md" : "rounded-lg"} border px-2.5 ${p.big ? "h-10 text-[18px] font-mono" : "h-8 text-[13px]"} ${p.entry ? "bg-white dark:bg-slate-700 border-[#e2e8f0] dark:border-slate-600 text-[#0f172a] dark:text-slate-100" : `${C.bg} ${C.line} ${C.ink}`}`}
     />
   );
 }

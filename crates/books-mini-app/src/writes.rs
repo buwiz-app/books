@@ -103,23 +103,36 @@ fn money_side(a: &Account) -> bool {
 
 type LinkIds = (Option<i64>, Option<i64>, Option<i64>);
 
+fn person_link(
+    conn: &Connection,
+    book: &Book,
+    args: &Map<String, Value>,
+    key: &str,
+) -> Result<Option<i64>, Refusal> {
+    let Some(ticket) = text(args, key) else {
+        return Ok(None);
+    };
+    let id = match plumbing::subject(conn, ticket)? {
+        Some((kind, id)) if kind == "person" => id,
+        _ => {
+            return Err(Refusal::new(
+                "not_found",
+                "That person ticket is not one Books issued.",
+            ));
+        }
+    };
+    if !people::person(conn, id)?.is_some_and(|person| person.book_id == book.id) {
+        return Err(Refusal::invalid("That person is not in this book."));
+    }
+    Ok(Some(id))
+}
+
 fn line_links(
     conn: &Connection,
     book: &Book,
     args: &Map<String, Value>,
 ) -> Result<LinkIds, Refusal> {
-    let person = match text(args, "person") {
-        Some(ticket) => match plumbing::subject(conn, ticket)? {
-            Some((kind, id)) if kind == "person" => Some(id),
-            _ => {
-                return Err(Refusal::new(
-                    "not_found",
-                    "That person ticket is not one Books issued.",
-                ));
-            }
-        },
-        None => None,
-    };
+    let person = person_link(conn, book, args, "person")?;
     let tag = |key: &str, kind: &str| -> Result<Option<i64>, Refusal> {
         let Some(value) = text(args, key)
             .map(str::trim)
@@ -169,6 +182,15 @@ pub(crate) fn draft_input(
     let form = Form::parse(service::required(args, "form")?)
         .filter(|f| *f != Form::Reversal)
         .ok_or_else(|| Refusal::invalid("`form` is money_in, money_out, transfer or journal."))?;
+    if form != Form::Transfer
+        && ["from_person", "to_person"]
+            .iter()
+            .any(|key| args.contains_key(*key))
+    {
+        return Err(Refusal::invalid(
+            "`from_person` and `to_person` are transfer-only.",
+        ));
+    }
     let lines = match form {
         Form::MoneyIn | Form::MoneyOut => {
             let c = amount(args, "amount")?;
@@ -279,13 +301,15 @@ pub(crate) fn draft_input(
                     "A transfer moves money between two bank, cash or card accounts.",
                 ));
             }
+            let from_person = person_link(conn, book, args, "from_person")?;
+            let to_person = person_link(conn, book, args, "to_person")?;
             vec![
                 LineInput {
                     account_id: to.id,
                     debit: c,
                     credit: 0,
                     facts: Facts::default(),
-                    person_id: None,
+                    person_id: to_person,
                     department_id: None,
                     location_id: None,
                     memo: None,
@@ -295,7 +319,7 @@ pub(crate) fn draft_input(
                     debit: 0,
                     credit: c,
                     facts: Facts::default(),
-                    person_id: None,
+                    person_id: from_person,
                     department_id: None,
                     location_id: None,
                     memo: None,

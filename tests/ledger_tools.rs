@@ -923,3 +923,177 @@ fn allocations_keep_effective_links_in_entry_and_report_views() {
         "Office Supplies"
     );
 }
+
+#[test]
+fn transfer_parties_persist_show_in_views_and_refuse_foreign_books() {
+    let dir = TempDir::new("transfer-line-people");
+    let mut bot = Bot::new(&dir);
+    let book = app_data(
+        &mut bot,
+        "books_app_book_create",
+        json!({ "client_request_id": "transfer-book-01", "label": "Synthetic Transfer Book" }),
+    )["book"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let make_person = |bot: &mut Bot, request_id: &str, book: &str, kind: &str, name: &str| {
+        app_data(
+            bot,
+            "books_app_person_create",
+            json!({
+                "client_request_id": request_id, "book": book, "kind": kind, "name": name
+            }),
+        )["person"]
+            .as_str()
+            .unwrap()
+            .to_string()
+    };
+    let from_person = make_person(
+        &mut bot,
+        "transfer-source-01",
+        &book,
+        "vendors",
+        "Synthetic Transfer Source",
+    );
+    let to_person = make_person(
+        &mut bot,
+        "transfer-target-01",
+        &book,
+        "customers",
+        "Synthetic Transfer Destination",
+    );
+    app_data(
+        &mut bot,
+        "books_app_account_create",
+        json!({
+            "client_request_id": "transfer-account-01", "book": book,
+            "number": "11010", "name": "Synthetic Transfer Bank",
+            "kind": "bank_accounts", "type": "asset"
+        }),
+    );
+    let accounts = app_data(&mut bot, "books_accounts_list", json!({ "book": book }));
+    assert!(
+        accounts["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|account| account["number"] == "11000")
+    );
+    assert!(
+        accounts["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|account| account["number"] == "11010")
+    );
+    let draft_args = json!({
+        "client_request_id": "transfer-draft-01", "book": book, "form": "transfer",
+        "date": "2026-10-18", "amount": "75.00", "account": "11000", "to_account": "11010",
+        "from_person": from_person, "to_person": to_person
+    });
+    let card = app_data(
+        &mut bot,
+        "books_app_press_card",
+        json!({ "book": book, "tool": "books_app_post_entry", "args": draft_args }),
+    );
+    let card_lines = card["lines"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(Value::as_str)
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(card_lines.contains("Transfer to party: Synthetic Transfer Destination"));
+    assert!(card_lines.contains("Transfer from party: Synthetic Transfer Source"));
+    assert!(!card_lines.contains(from_person.as_str()));
+    assert!(!card_lines.contains(to_person.as_str()));
+
+    let draft_args = json!({
+        "client_request_id": "transfer-draft-01", "book": book, "form": "transfer",
+        "date": "2026-10-18", "amount": "75.00", "account": "11000", "to_account": "11010",
+        "from_person": from_person, "to_person": to_person
+    });
+    let draft = bot.app("books_entry_draft", draft_args.clone());
+    assert_eq!(data(&draft)["status"], "draft");
+    assert_eq!(bot.app("books_entry_draft", draft_args.clone()), draft);
+    let mut changed = draft_args.clone();
+    changed["from_person"] = json!(to_person);
+    assert_eq!(
+        code(&bot.app("books_entry_draft", changed)),
+        "request_id_reused"
+    );
+
+    let entry = data(&draft)["entry"].as_str().unwrap().to_string();
+    let detail = app_data(&mut bot, "books_entry_get", json!({ "entry": entry }));
+    assert_eq!(detail["lines"].as_array().unwrap().len(), 2);
+    assert_eq!(detail["lines"][0]["debit_shown"], "75.00");
+    assert_eq!(detail["lines"][0]["person"]["ticket"], to_person);
+    assert_eq!(
+        detail["lines"][0]["person"]["name"],
+        "Synthetic Transfer Destination"
+    );
+    assert_eq!(detail["lines"][1]["credit_shown"], "75.00");
+    assert_eq!(detail["lines"][1]["person"]["ticket"], from_person);
+    assert_eq!(
+        detail["lines"][1]["person"]["name"],
+        "Synthetic Transfer Source"
+    );
+
+    let unsupported_entry_link = bot.app(
+        "books_app_press_card",
+        json!({
+            "tool": "books_app_post_entry",
+            "args": {
+                "client_request_id": "transfer-entry-card-01",
+                "entry": entry,
+                "from_person": from_person
+            }
+        }),
+    );
+    assert_eq!(code(&unsupported_entry_link), "permission_denied");
+
+    let foreign_book = app_data(
+        &mut bot,
+        "books_app_book_create",
+        json!({
+            "client_request_id": "transfer-book-02", "label": "Synthetic Foreign Transfer Book"
+        }),
+    )["book"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let foreign_person = make_person(
+        &mut bot,
+        "transfer-foreign-01",
+        &foreign_book,
+        "vendors",
+        "Synthetic Foreign Transfer Person",
+    );
+    for (request_id, field) in [
+        ("transfer-foreign-from", "from_person"),
+        ("transfer-foreign-to", "to_person"),
+    ] {
+        let mut args = json!({
+            "client_request_id": request_id, "book": book, "form": "transfer",
+            "date": "2026-10-18", "amount": "75.00", "account": "11000", "to_account": "11010"
+        });
+        args[field] = json!(foreign_person);
+        assert_eq!(code(&bot.app("books_entry_draft", args)), "invalid_args");
+    }
+
+    drop(bot);
+    let store = books_store::Store::open(&Paths::in_dir(dir.0.join("store"))).unwrap();
+    let (kind, entry_id) = books_store::plumbing::subject(store.conn(), &entry)
+        .unwrap()
+        .unwrap();
+    assert_eq!(kind, "entry");
+    let (_, from_person_id) = books_store::plumbing::subject(store.conn(), &from_person)
+        .unwrap()
+        .unwrap();
+    let (_, to_person_id) = books_store::plumbing::subject(store.conn(), &to_person)
+        .unwrap()
+        .unwrap();
+    let lines = books_store::entries::lines(store.conn(), entry_id).unwrap();
+    assert_eq!(lines[0].person_id, Some(to_person_id));
+    assert_eq!(lines[1].person_id, Some(from_person_id));
+}

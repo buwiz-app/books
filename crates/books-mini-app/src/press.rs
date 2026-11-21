@@ -79,7 +79,7 @@ const BATCH_DUPLICATES: &str = "Posts duplicates: entries that look like others 
 /// person didn't read: `client_request_id` changes nothing that posts, and
 /// each of the others is on the card.
 pub const POST_ENTRY_ARGS: [&str; 4] = ["client_request_id", "book", "entry", "keep_both"];
-pub const POST_NEW_ARGS: [&str; 17] = [
+pub const POST_NEW_ARGS: [&str; 19] = [
     "client_request_id",
     "book",
     "form",
@@ -87,6 +87,8 @@ pub const POST_NEW_ARGS: [&str; 17] = [
     "amount",
     "account",
     "to_account",
+    "from_person",
+    "to_person",
     "category",
     "payee",
     "memo",
@@ -368,6 +370,21 @@ fn new_entry(
     lines.extend(line("With", input.payee.as_deref()));
     lines.extend(person_line(store, call)?);
     lines.extend(rows);
+    if input.form == entries::Form::Transfer {
+        for (index, line) in input.lines.iter().enumerate() {
+            if let Some(person_id) = line.person_id {
+                let person = people::person(store.conn(), person_id)?.ok_or_else(|| {
+                    Refusal::new("not_found", "That line links to a missing person.")
+                })?;
+                let label = if index == 0 {
+                    "Transfer to party"
+                } else {
+                    "Transfer from party"
+                };
+                lines.push(format!("{label}: {}", person.name));
+            }
+        }
+    }
     lines.extend(line("For", input.memo.as_deref()));
     lines.extend(line("Reference", input.reference.as_deref()));
     for (label, key) in [("Department", "department"), ("Location", "location")] {
@@ -606,7 +623,16 @@ mod tests {
             assert!(accounted(&call(arg), &POST_NEW_ARGS).is_err(), "{arg}");
             assert!(accounted(&call(arg), &POST_ENTRY_ARGS).is_err(), "{arg}");
         }
-        for arg in ["date", "amount", "memo", "person", "department", "lines"] {
+        for arg in [
+            "date",
+            "amount",
+            "memo",
+            "person",
+            "department",
+            "lines",
+            "from_person",
+            "to_person",
+        ] {
             assert!(
                 accounted(&call(arg), &POST_ENTRY_ARGS).is_err(),
                 "an entry's post takes no `{arg}`: it wouldn't use it"
