@@ -5,11 +5,13 @@
 
 const peopleKind = signal("vendors");
 const personPick = signal("");
+const personSearch = signal("");
+const personSortDesc = signal(false);
 
 function PersonAvatar(p: { initials: string; color: string; big?: boolean }) {
   return (
-    <View class={`${p.big ? "w-10 h-10" : "w-8 h-8"} rounded-full items-center justify-center`} style={{ backgroundColor: p.color }}>
-      <Text class={`${p.big ? "text-[14px]" : "text-[11px]"} font-bold text-white`}>{p.initials}</Text>
+    <View class={`${p.big ? "w-10 h-10" : "w-9 h-9"} rounded-full items-center justify-center shrink-0`} style={{ backgroundColor: p.color }}>
+      <Text class={`${p.big ? "text-[14px]" : "text-[13px]"} font-bold text-white`}>{p.initials}</Text>
     </View>
   );
 }
@@ -119,7 +121,7 @@ function Statement(p: { person: string }) {
           </If>
           <Each of={s()?.activity?.rows || []} key={rowKey}>
             {(r: Any) => (
-              <View class={`flex-row gap-3 py-1.5 border-t ${C.line}`} onPress={() => drawerEntry.set(r().entry)}>
+              <View class={`flex-row gap-3 py-1.5 border-t ${C.line} cursor-pointer hover:bg-[#f8fafc] dark:hover:bg-white/5 transition-colors`} onPress={() => drawerEntry.set(r().entry)} activeStyle={{ opacity: 0.75 }}>
                 <Text class={`w-[52px] text-[12.5px] font-mono ${C.ink}`}>{r().date_shown}</Text>
                 <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
                   {r().what}
@@ -155,6 +157,20 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
     (k: Any) => (k.t ? buwiz.call("books_person_get", { person: k.t }) : Promise.resolve(null)),
   );
   const d = () => detail() as Any;
+  const personKindLabel = () =>
+    (l()?.kinds || []).find((k: Any) => k.id === peopleKind())?.label || peopleKind();
+  const peopleRows = () => {
+    const q = personSearch().trim().toLowerCase();
+    let rows = (l()?.rows || []).filter(
+      (r: Any) => !q || String(r.name).toLowerCase().includes(q) || String(r.sub || "").toLowerCase().includes(q),
+    );
+    rows = [...rows].sort((a: Any, b: Any) =>
+      personSortDesc()
+        ? String(b.name).localeCompare(String(a.name))
+        : String(a.name).localeCompare(String(b.name)),
+    );
+    return rows;
+  };
   const adding = signal(false);
   const name = signal("");
   const add = () => {
@@ -200,28 +216,53 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
       <Loading res={list} />
       <If when={Boolean(l())}>
         <View class="flex-row gap-3 items-start">
-          <Panel class="w-[260px]">
-            <If when={(l()?.rows || []).length === 0}>
-              <Text class={`text-[12.5px] p-3 ${C.dim}`}>Nobody here yet.</Text>
+          <Panel class="w-[300px] p-3">
+            <View class={`flex-row items-center gap-1.5 border rounded-lg px-2.5 ${C.line} dark:border-white/10`}>
+              <Text class="text-[13px] text-[#94a3b8] dark:text-white/40">⌕</Text>
+              <TextBox label="Search people" value={personSearch()} onChange={(v) => personSearch.set(v)} placeholder="Search for…" />
+            </View>
+            <View class="flex-row items-center gap-2 mt-2 mb-1">
+              <Text class="text-[10px] font-semibold text-[#94a3b8] dark:text-white/40 uppercase tracking-wider">Sort:</Text>
+              <View
+                class={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${personSortDesc() ? "bg-[#10b981]/10 text-[#10b981] dark:text-[#34d399]" : "text-[#94a3b8] dark:text-white/40 hover:text-[#64748b] dark:hover:text-white/60"}`}
+                onPress={() => personSortDesc.set(!personSortDesc())}
+                activeStyle={{ opacity: 0.7 }}
+              >
+                <Text class={`text-[11px] font-medium ${personSortDesc() ? "text-[#10b981] dark:text-[#34d399]" : ""}`}>{personSortDesc() ? "Z–A" : "A–Z"}</Text>
+              </View>
+            </View>
+            <If when={peopleRows().length === 0}>
+              <View class="flex-col items-center justify-center py-10 gap-1.5">
+                <Text class="text-[32px] text-[#e2e8f0] dark:text-white/10">☺</Text>
+                <Text class="text-[13px] font-medium text-[#94a3b8] dark:text-white/40">
+                  {personSearch().trim() ? `No ${personKindLabel().toLowerCase()} match your search` : `No ${personKindLabel().toLowerCase()} yet`}
+                </Text>
+                <If when={!personSearch().trim() && peopleKind() !== "banks"}>
+                  <Text class="text-[13px] font-medium text-[#10b981] cursor-pointer" onPress={() => adding.set(true)}>{`Add your first ${personKindLabel().toLowerCase().replace(/s$/, "")}`}</Text>
+                </If>
+              </View>
             </If>
-            <Each of={l()?.rows || []} key={rowKey}>
-              {(r: Any) => (
-                <View
-                  class={`flex-row items-center gap-2.5 px-3 py-2 border-b ${C.line} ${current()?.ticket === r().ticket ? C.raise : ""}`}
-                  onPress={() => personPick.set(r().ticket)}
-                >
-                  <PersonAvatar initials={r().initials} color={r().color} />
-                  <View class="flex-1 gap-0.5">
-                    <Text class={`text-[13px] font-semibold ${C.ink} truncate`}>
-                      {r().name}
-                    </Text>
-                    <Text class={`text-[11.5px] ${C.dim} truncate`}>
-                      {r().sub}
-                    </Text>
+            <View class="gap-2">
+              <Each of={peopleRows()} key={rowKey}>
+                {(r: Any) => (
+                  <View
+                    class={`flex-row items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer ${current()?.ticket === r().ticket ? "border-[#10b981]/40 bg-[#10b981]/5 dark:bg-[#10b981]/10 shadow-sm" : "border-[#e2e8f0] dark:border-white/8 bg-white dark:bg-[#15192a] hover:shadow-md hover:border-[#a7f3d0] dark:hover:border-[#10b981]/30"}`}
+                    onPress={() => personPick.set(r().ticket)}
+                    activeStyle={{ opacity: 0.75 }}
+                  >
+                    <PersonAvatar initials={r().initials} color={r().color} />
+                    <View class="flex-1 gap-0.5">
+                      <Text class="text-[13px] font-medium text-[#1e293b] dark:text-white truncate">
+                        {r().name}
+                      </Text>
+                      <Text class="text-[11px] text-[#94a3b8] dark:text-white/40 truncate">
+                        {r().sub}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              )}
-            </Each>
+                )}
+              </Each>
+            </View>
           </Panel>
           <If when={Boolean(d())}>
             <Panel pad class="flex-1 gap-3">
@@ -261,7 +302,7 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
               <View>
                 <Each of={d()?.recent || []} key={rowKey}>
                   {(r: Any) => (
-                    <View class={`flex-row gap-3 py-2 border-t ${C.line}`} onPress={() => drawerEntry.set(r().ticket)}>
+                    <View class={`flex-row gap-3 py-2 border-t ${C.line} cursor-pointer hover:bg-[#f8fafc] dark:hover:bg-white/5 transition-colors`} onPress={() => drawerEntry.set(r().ticket)} activeStyle={{ opacity: 0.75 }}>
                       <Text class={`w-[52px] text-[12.5px] font-mono ${C.ink}`}>{r().date_short}</Text>
                       <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
                         {r().title}
