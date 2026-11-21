@@ -101,7 +101,7 @@ function EvRow(p: { item: Any; proposals: Any[] }) {
   const pages = e.page_count ? ` · ${String(e.page_count)} ${e.page_count === 1 ? "page" : "pages"}` : "";
   return (
     <View class={`px-4 py-3 md:px-5 md:py-3.5 border-b transition-colors hover:bg-[#f8fafc] dark:hover:bg-white/[0.02] ${C.line}`}>
-      <View class="flex-row items-center gap-3">
+      <View class="flex-row items-center gap-3 flex-wrap">
         <View class={`w-8 h-8 rounded items-center justify-center shrink-0 border bg-gray-50 border-gray-200 dark:bg-white/5 dark:border-white/10`}>
           <Text class="text-[9px] font-bold text-[#94a3b8] dark:text-white/40">{EV_MIME[String(e.mime)] || "FILE"}</Text>
         </View>
@@ -146,7 +146,7 @@ export default function Evidence() {
         <Panel>
           <Loading res={list} />
           <If when={Boolean(list()) && items().length === 0}>
-            <View class="items-center justify-center px-4 py-16 gap-1">
+            <View class="items-center justify-center px-4 py-16 md:py-24 gap-1">
               <View class="w-20 h-20 rounded-2xl bg-[#10b981]/10 items-center justify-center mb-4">
                 <Text class="text-[30px] text-[#10b981]">▤</Text>
               </View>

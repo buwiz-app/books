@@ -69,7 +69,7 @@ function Quick(p: { title: string; sub: string; onPress: () => void }) {
 function NavTile(p: { title: string; sub: string; onPress: () => void }) {
   return (
     <View
-      class={`w-[186px] rounded-xl border px-3.5 py-3 gap-0.5 bg-white transition-colors hover:bg-slate-50 dark:bg-[#131826] dark:hover:bg-slate-700/60 ${C.line}`}
+      class={`rounded-xl border px-3.5 py-3 gap-0.5 bg-white transition-colors hover:bg-slate-50 dark:bg-[#131826] dark:hover:bg-slate-700/60 ${C.line}`}
       onPress={p.onPress}
       activeStyle={{ opacity: 0.75 }}
     >
@@ -91,7 +91,7 @@ function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
   const t = () => today() as Any;
   return (
     <View class="gap-5">
-      <View class="flex-row items-center justify-between gap-4">
+      <View class="flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <View class="gap-0.5">
           <Text class={`text-2xl font-semibold ${C.ink}`}>Overview</Text>
           <Text class={`text-sm ${C.mute}`}>
@@ -113,12 +113,12 @@ function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
       <Loading res={today} />
       <If when={Boolean(t())}>
         <View class="gap-5">
-          <View class="flex-row gap-4">
+          <View class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Kpi label={t()?.cash.label || "Cash on hand"} shown={`₱ ${t()?.cash.shown || "0.00"}`} rows={t()?.cash.rows} />
             <Kpi label={t()?.month.label || "Net income (MTD)"} shown={t()?.month.shown || "₱ 0.00"} tone={t()?.month.tone} rows={t()?.month.rows} />
             <Kpi label={t()?.unpaid.label || "Unpaid"} shown={`₱ ${t()?.unpaid.shown || "0.00"}`} rows={t()?.unpaid.rows} />
           </View>
-          <View class="flex-row gap-5 items-start">
+          <View class="flex-col lg:flex-row gap-5 items-stretch lg:items-start">
             <View class={`flex-[1.25] rounded-xl border overflow-hidden bg-white dark:bg-[#131826] ${C.line}`}>
               <View class="flex-row items-center justify-between px-5 py-3.5">
                 <Text class={`text-[14px] font-semibold ${C.ink}`}>Needs you</Text>
@@ -158,7 +158,7 @@ function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
         {(g: Any) => (
           <View class="gap-2">
             <Text class={`text-[11px] font-semibold uppercase tracking-wider ${C.dim}`}>{g()}</Text>
-            <View class="flex-row gap-2.5 flex-wrap">
+            <View class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
               <Each of={(p.pages || []).filter((x: Any) => x.group === g())} key={(x: Any) => x.id}>
                 {(x: Any) => <NavTile title={x().label} sub={x().sub || ""} onPress={() => p.go(x().id)} />}
               </Each>
