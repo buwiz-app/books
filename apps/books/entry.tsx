@@ -392,6 +392,34 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
       .catch((e: Any) => categoryCreateError.set(errText(e)))
       .finally(() => categoryCreating.set(false));
   };
+  /** One-click party create: the combobox's "Create …" row calls the tool and
+   *  selects the ticket it returns. The kind follows context: Money Out pays a
+   *  vendor, Money In collects from a customer; a line with a category takes
+   *  the party kind the old app's CategoryPartyCombobox derives from it
+   *  (revenue-ish accounts collect, everything else pays), else vendor. */
+  const partyKindFor = (accountTicket: string, fallback: string) => {
+    const account =
+      (o()?.all || []).find((a: Any) => String(a.ticket) === String(accountTicket)) ||
+      (chart()?.rows || []).find((a: Any) => String(a.ticket) === String(accountTicket));
+    const kind = `${account?.type || ""} ${account?.kind || ""} ${account?.group || ""}`.toLowerCase();
+    if (/(revenue|income|receivable)/.test(kind)) return "customers";
+    if (/(expense|payable|cost)/.test(kind)) return "vendors";
+    return fallback;
+  };
+  const createParty = (kind: string, name: string, apply: (ticket: string) => void) => {
+    const n = String(name || "").trim();
+    if (!n) return;
+    act("books_app_person_create", { kind, name: n })
+      .then((r: Any) => { apply(r.person || ""); toast(`${n} added`); })
+      .catch((e: Any) => err.set(errText(e)));
+  };
+  const createTag = (kind: string, name: string, apply: (ticket: string) => void) => {
+    const n = String(name || "").trim();
+    if (!n) return;
+    act("books_app_tag_create", { kind, name: n })
+      .then((r: Any) => { apply(r.tag || ""); toast(`${n} added`); })
+      .catch((e: Any) => err.set(errText(e)));
+  };
   const amt = computed(() => moneyText(amount()));
   const centsOf = (typed: string): bigint => {
     const text = moneyText(typed);
@@ -632,6 +660,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               payee.set(query);
                             }
                           }}
+                          onCreate={(query: string) => createParty(mode() === "money_in" ? "customers" : "vendors", query, (ticket) => { payeeTicket.set(ticket); payee.set(query); partyQuery.set(""); })}
+                          createLabel={mode() === "money_in" ? "customer" : mode() === "money_out" ? "vendor" : "party"}
                           query={partyQuery()}
                           placeholder={payee() || "Select Party"}
                           group={mode() === "money_in" ? "Customers" : "Vendors"}
@@ -667,7 +697,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                     <Text class="text-[24px] font-bold text-white tabular-nums">{shownCents(journalTotals().debit)}</Text>
                   </If>
                   <View class="flex-row items-center justify-end gap-2 mt-1">
-                    <BooksDate value={date() || o()?.today || ""} today={o()?.today} onChange={(v) => date.set(v)} />
+                    <BooksDate value={date() || o()?.today || ""} today={o()?.today} onChange={(v) => date.set(v)} variant="header" />
+                  </View>
                   </View>
                   <View class="flex-row items-center gap-2 px-3 py-1.5 rounded-lg mt-4 bg-black/20">
                     <Text class="text-[14px] text-white">{mode() === "journal" ? "≡" : mode() === "transfer" ? "⇄" : "◈"}</Text>
@@ -699,6 +730,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                           onPick={(person: Any) => { fromPerson.set(person.ticket || ""); fromPartyQuery.set(""); }}
                           query={() => fromPartyQuery()}
                           onQuery={(query: string) => { fromPartyQuery.set(query); if (query) fromPerson.set(""); }}
+                          onCreate={(query: string) => createParty("vendors", query, (ticket) => { fromPerson.set(ticket); fromPartyQuery.set(""); })}
+                          createLabel="vendor or customer"
                           placeholder="Party"
                           group="People"
                         />
@@ -715,6 +748,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                           onPick={(person: Any) => { toPerson.set(person.ticket || ""); toPartyQuery.set(""); }}
                           query={() => toPartyQuery()}
                           onQuery={(query: string) => { toPartyQuery.set(query); if (query) toPerson.set(""); }}
+                          onCreate={(query: string) => createParty("vendors", query, (ticket) => { toPerson.set(ticket); toPartyQuery.set(""); })}
+                          createLabel="vendor or customer"
                           placeholder="Party"
                           group="People"
                         />
@@ -765,15 +800,17 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 onPick={(person: Any) => { line().person.set(person.ticket || ""); line().partyQuery.set(""); }}
                                 query={() => line().partyQuery()}
                                 onQuery={(query: string) => line().partyQuery.set(query)}
+                                onCreate={(query: string) => createParty(partyKindFor(line().category(), mode() === "money_in" ? "customers" : "vendors"), query, (ticket) => { line().person.set(ticket); line().partyQuery.set(""); })}
+                                createLabel={mode() === "money_in" ? "customer" : "vendor"}
                                 placeholder="Party"
                                 group={mode() === "money_in" ? "Customers" : "Vendors"}
                               />
                             </View>
                             <View class="flex-1">
-                              <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => line().department.set(tag.ticket || "")} placeholder="Department" group="Departments" />
+                              <BooksCombo label="Department" value={line().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => line().department.set(tag.ticket || "")} onCreate={(query: string) => createTag("department", query, (ticket) => line().department.set(ticket))} createLabel="department" placeholder="Department" group="Departments" />
                             </View>
                             <View class="flex-1">
-                              <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => line().location.set(tag.ticket || "")} placeholder="Location" group="Locations" />
+                              <BooksCombo label="Location" value={line().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => line().location.set(tag.ticket || "")} onCreate={(query: string) => createTag("location", query, (ticket) => line().location.set(ticket))} createLabel="location" placeholder="Location" group="Locations" />
                             </View>
                           </View>
                           <TextBox label="Allocation memo" value={line().memo()} onChange={(value: string) => line().memo.set(value)} placeholder="Description for this category" entry />
@@ -833,15 +870,17 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               onPick={(person: Any) => { l().person.set(person.ticket || ""); l().partyQuery.set(""); }}
                               query={() => l().partyQuery()}
                               onQuery={(query: string) => l().partyQuery.set(query)}
+                              onCreate={(query: string) => createParty(partyKindFor(l().account(), "vendors"), query, (ticket) => { l().person.set(ticket); l().partyQuery.set(""); })}
+                              createLabel="vendor or customer"
                               placeholder="Party"
                               group="People"
                             />
                           </View>
                           <View class="flex-1">
-                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => l().department.set(tag.ticket || "")} placeholder="Department" group="Departments" />
+                            <BooksCombo label="Department" value={l().department()} options={() => tagOptions(departments, "Departments")} onPick={(tag: Any) => l().department.set(tag.ticket || "")} onCreate={(query: string) => createTag("department", query, (ticket) => l().department.set(ticket))} createLabel="department" placeholder="Department" group="Departments" />
                           </View>
                           <View class="flex-1">
-                            <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => l().location.set(tag.ticket || "")} placeholder="Location" group="Locations" />
+                            <BooksCombo label="Location" value={l().location()} options={() => tagOptions(locations, "Locations")} onPick={(tag: Any) => l().location.set(tag.ticket || "")} onCreate={(query: string) => createTag("location", query, (ticket) => l().location.set(ticket))} createLabel="location" placeholder="Location" group="Locations" />
                           </View>
                           <View class="flex-row items-center gap-1 shrink-0">
                             <View

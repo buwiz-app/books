@@ -4,7 +4,7 @@
 // data comes from buwiz.call alone, and every tool called is in the app's
 // permissions.tools. Money arrives as display text from Books: the app
 // never does arithmetic on an amount (invariant 2).
-import { signal, computed, resource, Text, View, Scroll, Input, Overlay } from "nsh";
+import { signal, computed, platform, resource, Text, View, Scroll, Input, Overlay } from "nsh";
 import { Avatar, Combobox, DatePicker } from "nsh/base";
 import { buwiz } from "buwiz";
 
@@ -337,7 +337,6 @@ function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; plac
     </View>
   );
 }
-
 function BooksCombo(p: {
   value: string;
   options: Any[] | (() => Any[]);
@@ -347,15 +346,17 @@ function BooksCombo(p: {
   suggestions?: Any[] | (() => Any[]);
   onSuggestion?: (o: Any) => void;
   onCreate?: (query: string) => void;
+  createLabel?: string;
   placeholder?: string;
   label?: string;
   group?: string;
 }) {
-  const CREATE_VALUE = "__books_create_category__";
+  const CREATE_VALUE = "__books_create__";
   const open = signal(false);
   const optionRows = () => (typeof p.options === "function" ? p.options() : p.options) || [];
   const suggestionRows = () => (typeof p.suggestions === "function" ? p.suggestions() : p.suggestions) || [];
   const queryValue = () => (typeof p.query === "function" ? p.query() : p.query) || "";
+  const createLabel = () => p.createLabel || "category";
   const items = computed(() => [
     ...optionRows().map((o: Any) => ({
       value: String(o.ticket),
@@ -365,10 +366,10 @@ function BooksCombo(p: {
     ...suggestionRows().map((o: Any, index: number) => ({
       value: `__books_suggested_${index}__`,
       title: `${String(o.name || o.label || "")} ${String((o.keywords || []).join(" "))}`,
-      group: "Suggested",
+      group: "Create New",
     })),
     ...(p.onCreate && queryValue().trim()
-      ? [{ value: CREATE_VALUE, title: `${queryValue().trim()} Create new category`, group: "Create new" }]
+      ? [{ value: CREATE_VALUE, title: `${queryValue().trim()}`, group: "Create New" }]
       : []),
   ]);
   return (
@@ -394,26 +395,28 @@ function BooksCombo(p: {
       onQueryChange={({ query }) => p.onQuery?.(query)}
       accessibilityLabel={p.label || p.placeholder || "Account"}
       placeholder={p.placeholder || "Select..."}
-      inputClass="h-8 rounded-md border border-[#e2e8f0] bg-white px-3 text-[13px] text-[#0f172a] dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
-      popupClass="rounded-md border border-[#e2e8f0] bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800"
-      listClass="max-h-[260px] p-1"
-      groupClass="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#94a3b8]"
-      itemClass="rounded px-2 py-1.5 text-[13px] text-[#0f172a] focus:bg-[#f1f5f9] selected:bg-[#dcfce7] dark:text-slate-100 dark:focus:bg-slate-700 dark:selected:bg-green-900"
+      inputClass="min-h-10 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-[13px] text-[#0f172a] focus:border-[#2a9d8f] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+      popupClass="rounded-xl border border-[#e2e8f0] bg-white shadow-xl overflow-hidden dark:border-slate-700 dark:bg-slate-800"
+      popupStartingClass="opacity-0"
+      listClass="max-h-[280px]"
+      groupClass="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#94a3b8] bg-[#f8fafc] border-t border-[#e2e8f0] dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700"
+      itemClass="px-4 min-h-10 text-[13px] text-[#0f172a] focus:bg-[#f1f5f9] selected:bg-[#eaf6f6] dark:text-slate-100 dark:focus:bg-slate-700 dark:selected:bg-teal-900/30"
       searchAccessibilityLabel={`Find ${p.label || p.placeholder || "account"}`}
       searchPlaceholder="Type to filter..."
-      empty={<Text class="px-3 py-2 text-[13px] text-[#64748b] dark:text-slate-400">No results</Text>}
-      triggerButton={<Text class="text-[12px] text-[#94a3b8]">⌄</Text>}
+      empty={<Text class="px-4 py-2.5 text-[13px] text-[#94a3b8]">No matches found</Text>}
+      triggerButton={<Text class="text-[16px] text-[#94a3b8] opacity-60">⌄</Text>}
       renderItem={(item) => {
         const suggested = item.value.startsWith("__books_suggested_");
         const create = item.value === CREATE_VALUE;
         const suggestion = suggested
           ? suggestionRows()[Number(item.value.slice("__books_suggested_".length).replace(/__/g, ""))]
           : null;
+        const pickedRow = item.value === p.value;
         const group = String(item.group || "").toLowerCase();
         const income = group.includes("revenue") || group.includes("income");
-        const color = create
-          ? "#16a34a"
-          : suggested || group.includes("equity")
+        const color = create || suggested
+          ? "#2a9d8f"
+          : group.includes("equity")
             ? "#8b5cf6"
             : income
               ? "#3b82f6"
@@ -422,30 +425,41 @@ function BooksCombo(p: {
                 : group.includes("liabilit")
                   ? "#fb923c"
                   : "#14b8a6";
-        const icon = create
+        const icon = create || suggested
           ? "+"
-          : suggested
-            ? "✦"
-            : group.includes("liabilit")
-              ? "⇄"
-              : group.includes("equity")
-                ? "◆"
-                : income
-                  ? "↗"
-                  : group.includes("expense")
-                    ? "↘"
-                    : "▤";
+          : group.includes("liabilit")
+            ? "⇄"
+            : group.includes("equity")
+              ? "◆"
+              : income
+                ? "↗"
+                : group.includes("expense")
+                  ? "↘"
+                  : "▤";
         return (
-          <View class="flex-row items-center gap-2">
-            <View class="w-5 h-5 rounded items-center justify-center" style={{ backgroundColor: `${color}22` }}>
-              <Text class="text-[11px] font-semibold" style={{ color }}>{icon}</Text>
-            </View>
+          <View class="flex-row items-center gap-3">
+            <If when={create || suggested}>
+              <Text class="w-5 text-[14px] font-semibold" style={{ color }}>{icon}</Text>
+            </If>
+            <If when={!create && !suggested}>
+              <View class="w-5 h-5 rounded items-center justify-center" style={{ backgroundColor: `${color}22` }}>
+                <Text class="text-[11px] font-semibold" style={{ color }}>{icon}</Text>
+              </View>
+            </If>
             <View class="flex-1 gap-0.5">
-              <Text class="text-[13px]">{create ? `Create new category “${queryValue().trim()}”` : suggestion?.name || item.title}</Text>
+              <Text class={`text-[13px] ${create || pickedRow ? "font-medium" : ""}`} style={create || pickedRow ? { color: "#2a9d8f" } : undefined}>
+                {create ? `Create ${createLabel()} “${queryValue().trim()}”` : suggestion?.name || item.title}
+              </Text>
               <If when={Boolean(suggestion?.description)}>
                 <Text class="text-[11px] text-[#94a3b8]" numberOfLines={1}>{suggestion?.description || ""}</Text>
               </If>
             </View>
+            <If when={create}>
+              <Text class="text-[10px] text-[#94a3b8]">{platform.os === "macos" ? "⌘ ↵" : "Ctrl ↵"}</Text>
+            </If>
+            <If when={pickedRow}>
+              <Text class="text-[16px]" style={{ color: "#2a9d8f" }}>✓</Text>
+            </If>
           </View>
         );
       }}
@@ -453,8 +467,9 @@ function BooksCombo(p: {
   );
 }
 
-function BooksDate(p: { value: string; onChange: (value: string) => void; today?: string }) {
+function BooksDate(p: { value: string; onChange: (value: string) => void; today?: string; variant?: "header" | "form" }) {
   const open = signal(false);
+  const header = p.variant === "header";
   return (
     <DatePicker
       value={p.value || null}
@@ -463,13 +478,24 @@ function BooksDate(p: { value: string; onChange: (value: string) => void; today?
       onChange={({ value }) => p.onChange(typeof value === "string" ? value : "")}
       accessibilityLabel="Date"
       dateFormat="%B %-d, %Y"
-      popupClass="rounded-lg border border-[#e2e8f0] bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800"
-      calendarClass="p-2"
+      presets={p.today ? [{ label: "Today", value: p.today }] : []}
+      popupClass="rounded-xl border border-[#e2e8f0] bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
+      popupStyle={{ width: 280 }}
+      calendarClass="p-5"
+      headerClass="mb-3"
+      itemClass="rounded-md py-1.5 text-[13px] text-[#334155] dark:text-slate-300 selected:bg-[#27ae60] selected:text-white selected:font-semibold data-today:ring-1 data-today:ring-[#27ae60] data-today:text-[#27ae60] dark:data-today:text-[#2ecc71] data-today:font-medium data-outside:text-[#cbd5e1] dark:data-outside:text-slate-600"
       trigger={
-        <View class="h-8 flex-row items-center justify-between rounded-md border border-[#e2e8f0] bg-white px-3 dark:border-slate-600 dark:bg-slate-700">
-          <Text class="text-[13px] text-[#0f172a] dark:text-slate-100">{p.value || p.today || "Select date"}</Text>
-          <Text class="text-[12px] text-[#94a3b8]">⌄</Text>
-        </View>
+        header ? (
+          <View class="flex-row items-center justify-center gap-1.5 rounded-md bg-black/20 px-3 py-1.5">
+            <Text class="text-sm font-medium text-white/90">{p.value || p.today || "Select date"}</Text>
+            <Text class="text-[14px] text-white/90">▦</Text>
+          </View>
+        ) : (
+          <View class="min-h-10 flex-row items-center justify-between rounded-lg border border-[#e2e8f0] bg-[#f9fafb] px-3 py-2.5 dark:border-white/10 dark:bg-white/5">
+            <Text class="text-[13px] font-medium text-[#1f2937] dark:text-white">{p.value || p.today || "Select date"}</Text>
+            <Text class="text-[16px] text-[#9ca3af] dark:text-white/40">▦</Text>
+          </View>
+        )
       }
     />
   );
