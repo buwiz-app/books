@@ -130,6 +130,14 @@ export default function Evidence() {
   const proposals = () => ((review() as Any)?.rows || []) as Any[];
   return (
     <View style={{ flex: 1 }} class={`${C.bg}`}>
+      <View
+        class="flex-row items-center gap-1.5 py-1.5 pr-2"
+        onPress={() => buwiz.open({ app: "books", props: { page: "today" } }).catch(() => null)}
+        activeStyle={{ opacity: 0.7 }}
+      >
+        <Text class={`text-[14px] font-medium ${C.ink}`}>‹ Back</Text>
+        <Text class={`hidden sm:inline text-[14px] font-medium ${C.ink}`}>to Dashboard</Text>
+      </View>
       <Head title="Books documents" sub="Receipts, bills, statements and other papers kept with your books.">
         <View
           accessibilityLabel="Upload document"
