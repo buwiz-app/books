@@ -236,8 +236,8 @@ fn batch_refuses_the_assistant_and_bad_lists() {
 
 /// The bulk panel adds exactly two window tools, `books_app_batch` and the
 /// `books_ledger_list` it reads, both under the 64 cap. The set before
-/// it is the window's own grants with the bulk panel's
-/// source taken out, so no count is written down here.
+/// it is the window's grants with the bulk panel's source taken out, so no
+/// count is written down here.
 #[test]
 fn the_window_grants_batch_and_ledger_list_within_the_cap() {
     let m = books_mini_app::manifest::unsigned(books_mini_app::manifest::RELEASE_KEY_ID);
@@ -258,7 +258,7 @@ fn the_window_grants_batch_and_ledger_list_within_the_cap() {
         books_mini_app::apps::AppSource::Tsx(source) => source,
         books_mini_app::apps::AppSource::Native { .. } => panic!("the window is a tsx app"),
     };
-    let bulk = include_str!("../apps/books/ledger_bulk.tsx");
+    let bulk = include_str!(concat!(env!("OUT_DIR"), "/ledger_bulk.tsx"));
     assert!(source.contains(bulk), "the window carries the bulk panel");
     let before: BTreeSet<String> = books_mini_app::apps::named_tools(&source.replace(bulk, ""))
         .into_iter()
