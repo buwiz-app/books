@@ -904,6 +904,31 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
               </If>
             </View>
             </Scroll>
+            <If when={mode() === "journal"}>
+              <View class={`shrink-0 px-6 py-3 border-t flex-row items-center justify-between ${C.line}`}>
+                <View class="flex-row items-center gap-1.5">
+                  <Text class={`text-[14px] font-bold ${journalTotals().balanced ? "text-[#14b8a6]" : "text-[#ef4444]"}`}>
+                    {journalTotals().balanced ? "✓" : "⊗"}
+                  </Text>
+                  <Text class={`text-xs font-medium ${journalTotals().balanced ? "text-[#14b8a6]" : "text-[#ef4444]"}`}>
+                    {shownCents(journalTotals().debit)}
+                  </Text>
+                  <If when={!journalTotals().balanced}>
+                    <Text class={`text-[12px] ${C.dim}`}>{`Difference ${shownCents(journalTotals().difference)}`}</Text>
+                  </If>
+                </View>
+                <View class="flex-row gap-6">
+                  <View class="flex-row gap-1">
+                    <Text class="text-xs text-[#94a3b8] dark:text-slate-500">Debit</Text>
+                    <Text class="text-xs font-semibold text-[#1e293b] dark:text-white tabular-nums">{shownCents(journalTotals().debit)}</Text>
+                  </View>
+                  <View class="flex-row gap-1">
+                    <Text class="text-xs text-[#94a3b8] dark:text-slate-500">Credit</Text>
+                    <Text class="text-xs font-semibold text-[#1e293b] dark:text-white tabular-nums">{shownCents(journalTotals().credit)}</Text>
+                  </View>
+                </View>
+              </View>
+            </If>
         </View>
         {/* ENTRY_SIDE_MOUNT: agent C moves this right column to apps/books/entry_side.tsx */}
         <View class="w-[360px] shrink-0 rounded-[24px] border border-[#e2e8f0] dark:border-slate-600 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex-col h-full bg-white dark:bg-slate-800">
@@ -978,15 +1003,15 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
           </If>
         </View>
         <If when={saveMenuOpen()}>
-          <View class={`absolute right-6 top-[66px] w-[160px] rounded-lg border py-1 shadow-lg ${C.panel} ${C.line}`}>
+          <View class={`absolute right-6 top-[66px] w-40 rounded-lg border py-1 shadow-lg ${C.panel} ${C.line}`}>
             <View class="px-3 py-2 hover:bg-[#f9fafb] dark:hover:bg-slate-800" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false); }}>
-              <Text class={`text-[12px] ${C.ink}`}>Save</Text>
+              <Text class="text-xs text-[#374151] dark:text-slate-200">Save</Text>
             </View>
             <View class="px-3 py-2 hover:bg-[#f9fafb] dark:hover:bg-slate-800" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false, true); }}>
-              <Text class={`text-[12px] ${C.ink}`}>Save & New</Text>
+              <Text class="text-xs text-[#374151] dark:text-slate-200">Save & New</Text>
             </View>
             <View class={`px-3 py-2 border-t hover:bg-[#f9fafb] dark:hover:bg-slate-800 ${C.line}`} activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(true, true); }}>
-              <Text class={`text-[12px] ${C.ink}`}>Post</Text>
+              <Text class="text-xs text-[#374151] dark:text-slate-200">Post</Text>
             </View>
           </View>
         </If>
