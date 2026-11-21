@@ -402,7 +402,7 @@ function BooksCombo(p: {
   const chipTitle = () =>
     items().find((i: Any) => i.value === p.value)?.title || p.placeholder || "Select...";
   return (
-    <View class={chip ? "relative" : ""}>
+    <View class={chip ? "relative w-full" : ""}>
       {chip && (
         <View
           class="absolute inset-0 flex-row items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 hover:border-[#d1d5db] dark:border-slate-600 dark:bg-slate-800 dark:hover:border-[#64748b] cursor-pointer"
@@ -415,8 +415,7 @@ function BooksCombo(p: {
           </If>
           <If when={!typing()}>
             <Text
-              class={`flex-1 min-w-0 text-sm ${p.value ? "text-[#1e293b] dark:text-slate-100" : "text-[#94a3b8] dark:text-slate-500"}`}
-              numberOfLines={1}
+              class={`flex-1 min-w-0 truncate text-sm ${p.value ? "text-[#1e293b] dark:text-slate-100" : "text-[#94a3b8] dark:text-slate-500"}`}
             >
               {chipTitle()}
             </Text>
