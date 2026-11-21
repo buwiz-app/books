@@ -415,8 +415,7 @@ function BooksCombo(p: {
           </If>
           <If when={!typing()}>
             <Text
-              class={`flex-1 min-w-0 text-sm ${p.value ? "text-[#1e293b] dark:text-slate-100" : "text-[#94a3b8] dark:text-slate-500"}`}
-              numberOfLines={1}
+              class={`flex-1 min-w-0 truncate text-sm ${p.value ? "text-[#1e293b] dark:text-slate-100" : "text-[#94a3b8] dark:text-slate-500"}`}
             >
               {chipTitle()}
             </Text>
