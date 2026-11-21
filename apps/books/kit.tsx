@@ -11,6 +11,19 @@ import { buwiz } from "buwiz";
 type Any = any;
 const PROPS = (buwiz.props || {}) as { ticket?: string; page?: string; account?: string; month?: string; filter?: string; form?: string; tax_option?: string; deduction?: string };
 
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+/** "2026-10-29" → "October 29, 2026", for display only: the stored value
+ *  stays ISO (the old web app's formatDisplay, without a locale API). */
+const longDate = (iso: string) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
+  if (!m) return iso;
+  return `${MONTH_NAMES[Number(m[2]) - 1] || m[2]} ${String(Number(m[3]))}, ${m[1]}`;
+};
+
 /** Colors: a dark palette, with a light twin for each. */
 const C = {
   bg: "bg-white dark:bg-[#0a0a0b]",
@@ -350,6 +363,11 @@ function BooksCombo(p: {
   placeholder?: string;
   label?: string;
   group?: string;
+  /** "chip": the reference's rounded, bordered field with a leading icon
+   *  (tag for category, user for party, building for department, pin for
+   *  location) and a trailing chevron, instead of a bare filter input. */
+  trigger?: "chip";
+  icon?: string;
 }) {
   const CREATE_VALUE = "__books_create__";
   const open = signal(false);
@@ -395,7 +413,16 @@ function BooksCombo(p: {
       onQueryChange={({ query }) => p.onQuery?.(query)}
       accessibilityLabel={p.label || p.placeholder || "Account"}
       placeholder={p.placeholder || "Select..."}
-      inputClass="min-h-10 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-[13px] text-[#0f172a] focus:border-[#2a9d8f] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+      prefix={
+        p.icon ? (
+          <Text class="text-[14px] text-[#94a3b8] dark:text-slate-500">{p.icon}</Text>
+        ) : undefined
+      }
+      inputClass={
+        p.trigger === "chip"
+          ? "rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#1e293b] hover:border-[#d1d5db] focus:border-[#2a9d8f] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-[#64748b]"
+          : "min-h-10 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-[13px] text-[#0f172a] focus:border-[#2a9d8f] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+      }
       popupClass="rounded-xl border border-[#e2e8f0] bg-white shadow-xl overflow-hidden dark:border-slate-700 dark:bg-slate-800"
       popupStartingClass="opacity-0"
       listClass="max-h-[280px]"
@@ -486,13 +513,13 @@ function BooksDate(p: { value: string; onChange: (value: string) => void; today?
       itemClass="rounded-md py-1.5 text-[13px] text-[#334155] dark:text-slate-300 selected:bg-[#27ae60] selected:text-white selected:font-semibold data-today:ring-1 data-today:ring-[#27ae60] data-today:text-[#27ae60] dark:data-today:text-[#2ecc71] data-today:font-medium data-outside:text-[#cbd5e1] dark:data-outside:text-slate-600"
       trigger={
         header ? (
-          <View class="flex-row items-center justify-center gap-1.5 rounded-md bg-black/20 px-3 py-1.5">
-            <Text class="text-sm font-medium text-white/90">{p.value || p.today || "Select date"}</Text>
+          <View class="flex-row items-center justify-center gap-1.5 rounded-md bg-black/20 px-3 py-1.5 hover:bg-black/30">
+            <Text class="text-sm font-medium text-white/90">{longDate(p.value || p.today || "Select date")}</Text>
             <Text class="text-[14px] text-white/90">▦</Text>
           </View>
         ) : (
           <View class="min-h-10 flex-row items-center justify-between rounded-lg border border-[#e2e8f0] bg-[#f9fafb] px-3 py-2.5 dark:border-white/10 dark:bg-white/5">
-            <Text class="text-[13px] font-medium text-[#1f2937] dark:text-white">{p.value || p.today || "Select date"}</Text>
+            <Text class="text-[13px] font-medium text-[#1f2937] dark:text-white">{longDate(p.value || p.today || "Select date")}</Text>
             <Text class="text-[16px] text-[#9ca3af] dark:text-white/40">▦</Text>
           </View>
         )
