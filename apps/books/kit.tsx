@@ -400,8 +400,15 @@ function BooksCombo(p: {
   const typing = () => open() || queryValue().trim().length > 0;
   const chipTitle = () =>
     items().find((i: Any) => i.value === p.value)?.title || p.placeholder || "Select...";
+  // Non-chip: the nsh Combobox's own row can't carry classes, so the
+  // reference's bordered trigger (Combobox.tsx) is this wrapper: the border,
+  // radius, background and open-state teal border wrap prefix, input and the
+  // ⌄ together, while the input inside is borderless and flex-1. The class
+  // stays inline so open() re-evaluates it; a hoisted string freezes at mount.
   return (
-    <View class={chip ? "relative w-full" : ""}>
+    <View
+      class={chip ? "relative w-full" : `flex-col justify-center w-full min-h-11 sm:min-h-0 px-3 py-2 rounded-lg transition-colors ${open() ? "border-2 border-[#2a9d8f] dark:border-[#2dd4bf]" : "border border-gray-200 hover:border-gray-300 dark:border-slate-600 dark:hover:border-slate-500"} bg-white dark:bg-slate-800`}
+    >
       {chip && (
         <View
           class={`absolute inset-0 flex-row items-center gap-2 rounded-lg border bg-white px-3 py-2 transition-colors cursor-pointer dark:bg-slate-800 ${open() ? "border-[#2a9d8f] dark:border-[#2dd4bf]" : "border-[#e5e7eb] hover:border-[#d1d5db] dark:border-slate-600 dark:hover:border-[#64748b]"}`}
@@ -452,7 +459,7 @@ function BooksCombo(p: {
         inputClass={
           chip
             ? `w-full py-2 text-sm ${p.icon ? "pl-[38px] pr-3" : "px-3"} ${typing() ? "text-[#1e293b] dark:text-slate-100" : "opacity-0"}`
-            : "min-h-10 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-[13px] text-[#0f172a] transition-colors focus:outline-none focus:ring-1 focus:ring-[#2a9d8f] focus:border-[#2a9d8f] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            : `flex-1 min-w-0 text-sm text-[#1e293b] dark:text-slate-100 focus:outline-none${p.icon ? " pl-2" : ""}`
         }
         popupClass={`rounded-xl border border-[#e2e8f0] bg-white shadow-xl overflow-hidden dark:border-slate-700 dark:bg-slate-800${chip ? " min-w-[240px]" : ""}`}
       popupStartingClass="opacity-0"
@@ -463,7 +470,7 @@ function BooksCombo(p: {
       searchPlaceholder="Type to filter..."
       empty={<Text class="px-4 py-2.5 text-[13px] text-[#94a3b8]">No matches found</Text>}
         triggerButton={
-          chip ? <View class="w-0 h-0" /> : <Text class="text-[16px] text-[#94a3b8] opacity-60">⌄</Text>
+          chip ? <View class="w-0 h-0" /> : <Text class="shrink-0 text-[15px] text-[#1e293b] opacity-40 dark:text-slate-100">⌄</Text>
         }
       renderItem={(item) => {
         const suggested = item.value.startsWith("__books_suggested_");
