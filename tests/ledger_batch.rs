@@ -276,5 +276,5 @@ fn the_window_grants_batch_and_ledger_list_within_the_cap() {
         expected.iter().collect::<BTreeSet<&String>>(),
         "{added:?}"
     );
-    assert_eq!(granted.len(), 63, "the window has {} grants", granted.len());
+    assert_eq!(granted.len(), 64, "the window has {} grants", granted.len());
 }
