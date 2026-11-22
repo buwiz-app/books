@@ -583,6 +583,26 @@ function MatchView() {
     selectedLine.set(r.no ?? null);
     if (r.page) snapPage.set(Number(r.page));
   };
+  // pointer-hover link between the page's boxes and the list's rows: the
+  // hover's source owns which side scrolls, so a box hover moves only the
+  // list and a row hover only the page (no ping-pong between them)
+  const hoveredLine = signal<number | null>(null);
+  let rowsScroll: Any;
+  let snapApi: Any; // SnapshotPane's { scrollToLine, cancel }
+  const rowTop = new Map<number, number>(); // line no -> y in the list's content
+  const hoverBox = (no: number | null) => {
+    hoveredLine.set(no);
+    if (no !== null) {
+      const y = rowTop.get(no);
+      if (y !== undefined) rowsScroll?.scrollTo?.({ y: Math.max(0, y - 16), animated: true });
+    }
+  };
+  const hoverRow = (r: Any | null) => {
+    const no = r?.no ?? null;
+    hoveredLine.set(no);
+    if (no === null) snapApi?.cancel?.();
+    else snapApi?.scrollToLine?.(no);
+  };
   // the snapshot on the left and the lines on the right; with none, the full-width list
   const side = () => snapShown(s());
   // ── old-app detail page: light header, green summary strip, search bar, tinted rows ──
@@ -679,6 +699,12 @@ function MatchView() {
                 stamp={String(s()?.snapshot_stamp || "")}
                 selected={selectedLine()}
                 onSelect={(no: number) => selectedLine.set(no)}
+                hovered={hoveredLine()}
+                onHover={(no: number | null) => hoverBox(no)}
+                areas={s()?.areas || []}
+                bind={(api: Any) => {
+                  snapApi = api;
+                }}
                 page={snapPage()}
                 onPage={(n: number) => snapPage.set(n)}
                 account={recAccount()}
@@ -744,20 +770,39 @@ function MatchView() {
               <If when={side()}>
                 <Text class={`px-3 py-2.5 text-[11px] uppercase tracking-wider border-b ${C.line} ${C.dim}`}>Statement lines and Books entries</Text>
               </If>
-              <Each of={rowsView()} key={rowKey}>
-                {(r: Any) => (
-                  <View
-                    class={`${side() ? "" : "flex-row items-center"} border-b cursor-pointer transition-colors ${
-                      r().no === selectedLine()
-                        ? "bg-[#eff6ff] dark:bg-blue-950/60 border-[#dbeafe] dark:border-blue-900/40"
-                        : r().match === "m"
-                          ? "bg-emerald-50/40 dark:bg-emerald-950/10 border-emerald-100/50 dark:border-emerald-900/20 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/25"
-                          : "bg-orange-50/40 dark:bg-orange-950/10 border-orange-100/50 dark:border-orange-900/20 hover:bg-orange-50/70 dark:hover:bg-orange-950/25"
-                    }`}
-                    onPress={() => pick(r())}
-                  >
-                    {/* left status bar: blue selected, emerald matched, orange unsettled */}
-                    <View class={`w-[3px] self-stretch ${r().no === selectedLine() ? "bg-blue-500" : r().match === "m" ? "bg-emerald-400" : "bg-orange-400"}`} />
+              {/* the list scrolls inside its card (the old app's column): a box hover can bring its row in */}
+              <Scroll ref={rowsScroll} class="max-h-[640px]">
+                <Each of={rowsView()} key={rowKey}>
+                  {(r: Any) => (
+                    <View
+                      class={`${side() ? "" : "flex-row items-center"} border-b cursor-pointer transition-colors ${
+                        r().no === selectedLine()
+                          ? "bg-[#eff6ff] dark:bg-blue-950/60 border-[#dbeafe] dark:border-blue-900/40"
+                          : r().no === hoveredLine()
+                            ? r().match === "m"
+                              ? "bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-900/40"
+                              : "bg-orange-50/80 dark:bg-orange-950/30 border-orange-100 dark:border-orange-900/40"
+                            : r().match === "m"
+                              ? "bg-emerald-50/40 dark:bg-emerald-950/10 border-emerald-100/50 dark:border-emerald-900/20 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/25"
+                              : "bg-orange-50/40 dark:bg-orange-950/10 border-orange-100/50 dark:border-orange-900/20 hover:bg-orange-50/70 dark:hover:bg-orange-950/25"
+                      }`}
+                      onLayout={(e: Any) => rowTop.set(r().no, Number(e?.bounds?.origin?.y) || 0)}
+                      onMouseEnter={() => hoverRow(r())}
+                      onMouseLeave={() => hoverRow(null)}
+                      onPress={() => pick(r())}
+                    >
+                      {/* left status bar: blue selected, match-colour hover, like the old row */}
+                      <View
+                        class={`w-[3px] self-stretch ${
+                          r().no === selectedLine()
+                            ? "bg-blue-500"
+                            : r().no === hoveredLine()
+                              ? r().match === "m"
+                                ? "bg-emerald-400"
+                                : "bg-orange-400"
+                              : "bg-transparent"
+                        }`}
+                      />
                     {/* date block: "Oct 15" over the year, like the old row */}
                     <View class="w-[58px] items-center py-2 shrink-0">
                       <Text class={`text-[12.5px] font-semibold ${C.ink}`}>{r().date_short}</Text>
@@ -795,7 +840,7 @@ function MatchView() {
                             <Text class={`text-[11px] ${C.dim}`}>{`Usually ${r().hint?.category || ""}`}</Text>
                           </If>
                         </View>
-                        <If when={r().match === "x" && s()?.status !== "finished"}>
+                          <If when={r().match === "x" && s()?.status !== "finished"}>
                           <Btn label="+ Add" small onPress={() => call("books_app_statement_add_line", { line: r().ticket })} />
                         </If>
                         <If when={r().match === "s" && s()?.status !== "finished"}>
@@ -826,9 +871,10 @@ function MatchView() {
                         </View>
                       </If>
                     </View>
-                  </View>
-                )}
-              </Each>
+                    </View>
+                  )}
+                </Each>
+              </Scroll>
             </Panel>
           </View>
           <If when={!side()}>

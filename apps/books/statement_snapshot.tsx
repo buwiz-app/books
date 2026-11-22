@@ -27,6 +27,9 @@ function PrintReconciliation(p: { account: string; month: string }) {
 
 const SNAP_EDGE: Record<string, string> = { m: "border-green-600", s: "border-amber-500", x: "border-red-600" };
 const SNAP_FILL: Record<string, string> = { m: "bg-green-600/30", s: "bg-amber-500/30", x: "bg-red-600/30" };
+const SNAP_SOFT: Record<string, string> = { m: "bg-green-600/15", s: "bg-amber-500/15", x: "bg-red-600/15" };
+/** The pane's page area scrolls its picture when it is taller than this. */
+const SNAP_SCROLL_H = 600;
 
 /** The rows the pane can draw: those with a page and a box. */
 function snapPaged(rows: Any[]): Any[] {
@@ -84,6 +87,14 @@ function SnapshotPane(p: {
   stamp: string;
   selected: number | null;
   onSelect: (no: number) => void;
+  /** The line the pointer is on, either side (its box draws lit). */
+  hovered: number | null;
+  /** A box's pointer entering (its line no) or leaving (null). */
+  onHover: (no: number | null) => void;
+  /** Whole-field boxes (title, date) from the statement, labelled on hover. */
+  areas: Any[];
+  /** Receives { scrollToLine, cancel } for the right side's row hover. */
+  bind: (api: Any) => void;
   page: number;
   onPage: (page: number) => void;
   account: string;
@@ -115,6 +126,30 @@ function SnapshotPane(p: {
     if (p.kind === "image" || pictures().length > 0) return `No picture was kept for page ${String(page())}, so its lines are in the list only.`;
     return SNAP_NOTE[p.kind] || "";
   };
+  // hover → scroll: a row hover on the right asks the pane to show its box
+  let scRef: Any;
+  const wish = signal<number | null>(null);
+  const boxTop = new Map<number, number>();
+  const runWish = () => {
+    const no = wish();
+    if (no === null || !img()) return;
+    const y = boxTop.get(no);
+    if (y === undefined) return;
+    scRef?.scrollTo?.({ y: Math.max(0, y - 24), animated: true });
+    wish.set(null);
+  };
+  const scrollToLine = (no: number) => {
+    const r = (p.rows || []).find((x: Any) => x.no === no);
+    if (!r?.page || !r?.box) return;
+    if (Number(r.page) !== page()) p.onPage(Number(r.page));
+    wish.set(no);
+    runWish();
+  };
+  p.bind({ scrollToLine, cancel: () => wish.set(null) });
+  // area boxes (title, date) are quieter than line boxes and name on hover
+  const areasPage = () => (img() ? (p.areas || []).filter((a: Any) => a?.box && Number(a.page) === page()) : []);
+  const hoverArea = signal("");
+  const areaKey = (a: Any) => `${String(a?.kind)}|${String(a?.label)}|${String(a?.page)}|${String(a?.box?.top)}`;
   return (
     <View class="gap-2" style={{ width: SNAP_W }}>
       <If when={pages().length > 1}>
@@ -132,19 +167,53 @@ function SnapshotPane(p: {
       </If>
       <If when={Boolean(img())}>
         <Panel class="relative overflow-hidden">
-          <View style={{ width: SNAP_W, height: height() }}>
-            <Avatar src={img()?.src || ""} accessibilityLabel="Statement page" style={{ width: SNAP_W, height: height() }} imageStyle={{ width: SNAP_W, height: height() }} />
-            <Each of={onPage()} key={(r: Any) => String(r.no)}>
-              {(r: Any) => (
-                <View
-                  class={`absolute border-2 ${SNAP_EDGE[r().match] || SNAP_EDGE.x} ${r().no === p.selected ? SNAP_FILL[r().match] || SNAP_FILL.x : ""}`}
-                  style={{ left: r().box.left, top: r().box.top, width: r().box.width, height: r().box.height }}
-                  accessibilityLabel="Show this statement line"
-                  onPress={() => p.onSelect(r().no)}
-                />
-              )}
-            </Each>
-          </View>
+          <Scroll ref={scRef} class={`max-h-[${SNAP_SCROLL_H}px]`}>
+            <View style={{ width: SNAP_W, height: height() }} onLayout={runWish}>
+              <Avatar src={img()?.src || ""} accessibilityLabel="Statement page" style={{ width: SNAP_W, height: height() }} imageStyle={{ width: SNAP_W, height: height() }} />
+              <Each of={areasPage()} key={(a: Any) => areaKey(a)}>
+                {(a: Any) => (
+                  <View
+                    class={`absolute border ${hoverArea() === areaKey(a()) ? "border-sky-500 dark:border-sky-400 bg-sky-500/10" : "border-dashed border-slate-400/70 dark:border-slate-500/60"}`}
+                    style={{ left: a().box.left, top: a().box.top, width: a().box.width, height: a().box.height }}
+                    accessibilityLabel={String(a().label || a().kind || "Statement field")}
+                    onMouseEnter={() => hoverArea.set(areaKey(a()))}
+                    onMouseLeave={() => hoverArea.set("")}
+                  >
+                    <If when={hoverArea() === areaKey(a())}>
+                      <View class="absolute -top-4 left-0 rounded-sm px-1 py-px bg-slate-700/90 dark:bg-slate-200/90">
+                        <Text class="text-[9px] font-medium text-white dark:text-slate-800">{a().label || a().kind}</Text>
+                      </View>
+                    </If>
+                  </View>
+                )}
+              </Each>
+              <Each of={onPage()} key={(r: Any) => String(r.no)}>
+                {(r: Any) => (
+                  <View
+                    class={`absolute border-2 ${SNAP_EDGE[r().match] || SNAP_EDGE.x} ${
+                      r().no === p.selected
+                        ? SNAP_FILL[r().match] || SNAP_FILL.x
+                        : r().no === p.hovered
+                          ? SNAP_SOFT[r().match] || SNAP_SOFT.x
+                          : r().match === "x"
+                            ? "border-dashed"
+                            : ""
+                    }`}
+                    style={{ left: r().box.left, top: r().box.top, width: r().box.width, height: r().box.height }}
+                    accessibilityLabel="Show this statement line"
+                    onLayout={(e: Any) => {
+                      const y = Number(e?.bounds?.origin?.y) || 0;
+                      boxTop.set(r().no, y);
+                      if (r().no === wish()) runWish();
+                    }}
+                    onMouseEnter={() => p.onHover(r().no)}
+                    onMouseLeave={() => p.onHover(null)}
+                    onPress={() => p.onSelect(r().no)}
+                  />
+                )}
+              </Each>
+            </View>
+          </Scroll>
         </Panel>
       </If>
       <If when={chosen()?.match === "x" && paged().length > 0}>
