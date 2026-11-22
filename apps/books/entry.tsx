@@ -300,6 +300,9 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
   });
   const jl = signal<Any[]>([journalLine(), journalLine()]);
   const allocations = signal<Any[]>([allocationLine()]);
+  // the draft this form already saved, so a second Save edits it instead of
+  // writing a new one (PR37 finding 6)
+  const savedEntry = signal("");
   const busy = signal(false);
   const err = signal("");
   const saveMenuOpen = signal(false);
@@ -465,6 +468,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
   const args = (): Record<string, Any> | null => {
     err.set("");
     const base: Record<string, Any> = { form: mode() };
+    if (savedEntry()) base.entry = savedEntry();
     if (date() || o()?.today) base.date = date() || o()?.today;
     if (payee()) base.payee = payee();
     if (memo()) base.memo = memo();
@@ -569,6 +573,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
         entryStaged.set(failed);
         if (failed.length === 0) toast(post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`);
         else toast(`${post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`}. ${failed.length} document${failed.length === 1 ? "" : "s"} couldn't be linked: ${firstLinkError}`);
+        savedEntry.set(fresh ? "" : String(r.entry || ""));
         if (close || fresh) {
           amount.set("");
           date.set("");
