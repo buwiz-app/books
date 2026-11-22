@@ -358,7 +358,26 @@ fn lines_accounted(call: &Map<String, Value>) -> Result<Vec<String>, Refusal> {
 }
 
 /// What a new entry comes to, every argument shown: `(amount, card lines)`.
+/// Resolving named people, departments and locations for the card can mint
+/// rows; a preview decides nothing, so it runs in a savepoint that always
+/// rolls back. The card still reads the resolved values before that.
 fn new_entry(
+    store: &Store,
+    chart: &Chart,
+    call: &Map<String, Value>,
+) -> Result<(i64, Vec<String>), Refusal> {
+    store
+        .conn()
+        .execute_batch("SAVEPOINT press_card")
+        .map_err(books_store::StoreError::from)?;
+    let result = new_entry_inner(store, chart, call);
+    let _ = store
+        .conn()
+        .execute_batch("ROLLBACK TO SAVEPOINT press_card; RELEASE SAVEPOINT press_card");
+    result
+}
+
+fn new_entry_inner(
     store: &Store,
     chart: &Chart,
     call: &Map<String, Value>,

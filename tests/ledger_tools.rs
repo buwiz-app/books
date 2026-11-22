@@ -1158,3 +1158,65 @@ fn a_person_linked_only_on_the_money_line_still_counts() {
         .expect("the paid-this-year figure");
     assert_eq!(paid["shown"], "500.00");
 }
+
+#[test]
+fn a_press_card_preview_makes_no_tags_or_people() {
+    let dir = TempDir::new("preview-writes");
+    let mut bot = Bot::new(&dir);
+    let book = app_data(
+        &mut bot,
+        "books_app_book_create",
+        json!({ "client_request_id": "prev-book-1", "label": "Synthetic Preview Book" }),
+    )["book"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let card = app_data(
+        &mut bot,
+        "books_app_press_card",
+        json!({
+            "tool": "books_app_post_entry",
+            "args": {
+                "client_request_id": "prev-card-1", "book": book, "form": "money_out",
+                "date": "2026-10-18", "amount": "25.00", "account": "11000",
+                "category": "66100", "department": "Synthetic Preview Dept",
+                "payee": "Synthetic Preview Vendor", "person_kind": "vendors"
+            }
+        }),
+    );
+    let shown = card["lines"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(Value::as_str)
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(shown.contains("Department: Synthetic Preview Dept"), "{shown}");
+    assert!(shown.contains("Synthetic Preview Vendor"), "{shown}");
+    let tags = app_data(
+        &mut bot,
+        "books_tags_list",
+        json!({ "kind": "department", "month": "2026-10", "book": book }),
+    );
+    assert!(
+        tags["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|row| row["name"] != "Synthetic Preview Dept"),
+        "the preview must not save the tag: {tags}"
+    );
+    let people = app_data(
+        &mut bot,
+        "books_people_list",
+        json!({ "book": book, "kind": "vendors" }),
+    );
+    assert!(
+        people["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|row| row["name"] != "Synthetic Preview Vendor"),
+        "the preview must not save the person: {people}"
+    );
+}
