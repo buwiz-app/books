@@ -308,6 +308,9 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
   });
   const jl = signal<Any[]>([journalLine(), journalLine()]);
   const allocations = signal<Any[]>([allocationLine()]);
+  // the draft this form already saved, so a second Save edits it instead of
+  // writing a new one (PR37 finding 6)
+  const savedEntry = signal("");
   const busy = signal(false);
   const err = signal("");
   const saveMenuOpen = signal(false);
@@ -331,7 +334,16 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
       v: ver(),
       kind: mode() === "money_in" ? "customers" : mode() === "money_out" ? "vendors" : "",
     }),
-    (key: Any) => buwiz.call("books_people_list", key.kind ? { kind: key.kind } : {}),
+    // a mode with no natural kind (journal, transfer) asks every people kind
+    // and merges the rows; omitting kind returns vendors only (PR37 finding 9)
+    (key: Any) =>
+      key.kind
+        ? buwiz.call("books_people_list", { kind: key.kind })
+        : Promise.all(
+            ["vendors", "customers", "employees", "owners", "lenders", "government"].map((kind) =>
+              buwiz.call("books_people_list", { kind }),
+            ),
+          ).then((rs: Any[]) => ({ rows: rs.flatMap((r: Any) => r?.rows || []) })),
   );
   const departments = resource(
     () => ({ v: ver() }),
@@ -377,7 +389,9 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     newCategoryName.set(name || suggestion?.name || "");
     newCategoryNumber.set("");
     newCategoryType.set(suggestion?.accountType || (mode() === "money_in" ? "revenue" : "expense"));
-    newCategoryKind.set(suggestion?.subtype || "unsure");
+    // `kind` is a catalog kind id picked at the source; `subtype` keeps the
+    // old app's vocabulary for the cash/accrual filter (PR37 finding 8)
+    newCategoryKind.set(suggestion?.kind || "unsure");
     categoryCreateApply.set(apply || null);
     categoryCreateError.set("");
     categoryCreateOpen.set(true);
@@ -389,12 +403,11 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     if (!number) return categoryCreateError.set("Enter an account number.");
     categoryCreating.set(true);
     categoryCreateError.set("");
-    act("books_app_account_create", {
-      number,
-      name,
-      kind: newCategoryKind(),
-      type: newCategoryType(),
-    })
+    // a catalog kind fixes the account type, so `type` goes only with
+    // unsure/mixed and the server derives it otherwise (PR37 finding 3)
+    const args: Record<string, Any> = { number, name, kind: newCategoryKind() };
+    if (newCategoryKind() === "unsure" || newCategoryKind() === "mixed") args.type = newCategoryType();
+    act("books_app_account_create", args)
       .then((result: Any) => {
         const ticket = result.account || "";
         if (categoryCreateApply()) categoryCreateApply()(ticket);
@@ -470,16 +483,19 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     const cents = String(absolute % 100n).padStart(2, "0");
     return `${negative ? "−" : ""}₱${whole}.${cents}`;
   };
-  const args = (): Record<string, Any> | null => {
+  const args = (post: boolean): Record<string, Any> | null => {
     err.set("");
     const base: Record<string, Any> = { form: mode() };
+    if (savedEntry()) base.entry = savedEntry();
     if (date() || o()?.today) base.date = date() || o()?.today;
     if (payee()) base.payee = payee();
+    if (payeeTicket()) base.person = payeeTicket();
     if (memo()) base.memo = memo();
     if (reference()) base.reference = reference();
     if (mode() === "journal") {
-      if (!journalTotals().balanced || journalTotals().debit === 0n) {
-        err.set("Debits and credits must be equal before saving.");
+      // an unbalanced journal may wait as a draft; only a post refuses it
+      if (post && (!journalTotals().balanced || journalTotals().debit === 0n)) {
+        err.set("Debits and credits must be equal before posting.");
         return null;
       }
       const lines = jl()
@@ -555,26 +571,31 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     return base;
   };
   const save = (post: boolean, close = true, fresh = false) => {
-    const a = args();
+    const a = args(post);
     if (!a) return;
     busy.set(true);
     act(post ? "books_app_post_entry" : "books_entry_draft", a)
       .then(async (r: Any) => {
         // a document staged in the side panel links to the entry it was kept
-        // for; one that fails stays staged so nothing vanishes
+        // for; one that fails stays in the Documents library, unlinked, so
+        // the next form never shows another entry's attachment (PR37 f1)
         let firstLinkError = "";
-        const failed: Any[] = [];
+        let failed = 0;
         for (const d of entryStaged()) {
           try {
             await act("books_app_evidence_attach", { op: "link", evidence: d.evidence, target: { kind: "entry", ticket: r.entry } });
           } catch (e: Any) {
             if (!firstLinkError) firstLinkError = errText(e);
-            failed.push(d);
+            failed += 1;
           }
         }
-        entryStaged.set(failed);
-        if (failed.length === 0) toast(post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`);
-        else toast(`${post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`}. ${failed.length} document${failed.length === 1 ? "" : "s"} couldn't be linked: ${firstLinkError}`);
+        entryStaged.set([]);
+        if (failed === 0) toast(post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`);
+        else toast(`${post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`}. ${failed} document${failed === 1 ? "" : "s"} couldn't be linked — still in Documents: ${firstLinkError}`);
+        // the remembered draft ticket survives only a plain Save that keeps
+        // the form open; Post, Save & Close and Save & New all clear it so a
+        // reused page never edits or re-posts the old entry (PR37 finding 6)
+        savedEntry.set(post || close || fresh ? "" : String(r.entry || ""));
         if (close || fresh) {
           amount.set("");
           date.set("");
@@ -604,6 +625,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     <View class="flex-1 flex-row bg-[#f0f2f5] dark:bg-slate-950">
       <View class="flex-1 flex-col overflow-hidden relative">
         <View class={`flex-row items-center gap-3 px-6 py-3 border-b bg-white dark:bg-slate-900 ${C.line}`}>
+          <Btn label="Cancel" small onPress={() => p.close()} />
           <View
             ref={typeMenuAnchor}
             accessibilityLabel="Entry type"

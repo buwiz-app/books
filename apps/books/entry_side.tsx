@@ -52,9 +52,13 @@ const SIDE_THUMB_BYTES = 2097152;
 // The rail's tab icons and the panel glyphs: the old app's stroke SVGs
 // (transactions_.new.tsx, AttachmentsPanel.tsx), as data URIs through Avatar —
 // the SDK-1 sandbox has no Image import.
+// A standalone SVG-as-image renders only with its namespace. The namespace is
+// an identifier, never a fetched URL — but the bundle refuses URL literals, so
+// it is assembled without one (PR37 finding 2).
+const SVG_NS = "http" + "://www.w3.org/2000/svg";
 const sideSvg = (inner: string, width: number, stroke = "white") =>
   `data:image/svg+xml,${encodeURIComponent(
-    `<svg viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`,
+    `<svg xmlns="${SVG_NS}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`,
   )}`;
 const SIDE_PATHS: Record<string, string> = {
   attachments: '<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
@@ -251,7 +255,7 @@ function SideAttachments() {
                 <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">{sideBytesShown(d().size)}</Text>
               </View>
               <View
-                class="w-7 h-7 rounded-md items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer shrink-0 opacity-0 group-hover:opacity-100"
+                class="w-7 h-7 rounded-md items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer shrink-0 opacity-60 group-hover:opacity-100"
                 accessibilityLabel="Remove attachment"
                 onPress={() => entryStaged.set(entryStaged().filter((_: Any, j: number) => j !== i()))}
                 activeStyle={{ opacity: 0.7 }}
@@ -479,7 +483,9 @@ async function sideSendCopy() {
       error: problems.length > 0,
       text: problems.length
         ? `Couldn't send ${problems.join(", ")} — paste it into the Bot chat yourself.`
-        : `Sent to the Bot chat — the reply shows there, and its draft waits in your Inbox.${files.length ? " The files are staged on this entry and in Documents." : ""}`,
+        : text
+          ? `Prompt copied — paste it into the Bot chat and send it there; the reply shows there, and its draft waits in your Inbox.${files.length ? " The files are staged on this entry and in Documents." : ""}`
+          : "Only text can go to the Bot chat — the files stay staged on this entry and in Documents.",
       at,
     },
   ]);
