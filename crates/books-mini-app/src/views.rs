@@ -624,6 +624,25 @@ pub fn ledger(
         .map(|s| {
             let mut row = s.row(store, origin)?;
             row["checks"] = json!(marks.get(&s.entry.id).cloned().unwrap_or_default());
+            if let Some(a) = &selected {
+                // The grouped ledger's Debit/Credit columns: this entry's
+                // lines on the picked account.
+                let (debit, credit) = s
+                    .lines
+                    .iter()
+                    .filter(|l| l.account_id == a.id)
+                    .fold((0i64, 0i64), |(d, c), l| (d + l.debit, c + l.credit));
+                row["debit_shown"] = json!(if debit > 0 {
+                    money::display(debit)
+                } else {
+                    String::new()
+                });
+                row["credit_shown"] = json!(if credit > 0 {
+                    money::display(credit)
+                } else {
+                    String::new()
+                });
+            }
             if let Some(running) = &running {
                 row["balance_shown"] = json!(running.get(&s.entry.id).map(|b| money::display(*b)));
             }
@@ -642,6 +661,87 @@ pub fn ledger(
             Ok(row)
         })
         .collect::<Result<Vec<_>, Refusal>>()?;
+    // All-accounts mode: the grouped view — every account the filtered entries
+    // touch, with its debit/credit movement, count and its own page of rows
+    // (the old app's listTransactionsGrouped). Rows carry the same per-account
+    // debit_shown/credit_shown/balance_shown as the `account` mode, so the app
+    // draws the whole grouped ledger from one call.
+    let groups_aggregated = match &selected {
+        Some(_) => Vec::new(),
+        None => {
+            let mut order: Vec<i64> = Vec::new();
+            let mut agg: std::collections::HashMap<
+                i64,
+                (i64, i64, std::collections::BTreeSet<i64>),
+            > = std::collections::HashMap::new();
+            for s in &filtered {
+                for l in &s.lines {
+                    let e = agg.entry(l.account_id).or_insert_with(|| {
+                        order.push(l.account_id);
+                        (0, 0, std::collections::BTreeSet::new())
+                    });
+                    e.0 += l.debit;
+                    e.1 += l.credit;
+                    e.2.insert(s.entry.id);
+                }
+            }
+            order.sort_by_key(|id| {
+                chart
+                    .by_id
+                    .get(id)
+                    .map(|a| (a.number.clone(), a.name.clone()))
+                    .unwrap_or_default()
+            });
+            let mut out = Vec::new();
+            for id in &order {
+                let Some(a) = chart.by_id.get(id) else {
+                    continue;
+                };
+                let Some((debit, credit, ids)) = agg.get(id) else {
+                    continue;
+                };
+                let run = crate::activity::balances_after(store, &chart, a, &month).ok();
+                let mut grows = Vec::new();
+                for s in filtered.iter().filter(|s| ids.contains(&s.entry.id)) {
+                    let mut row = s.row(store, origin)?;
+                    row["checks"] = json!(marks.get(&s.entry.id).cloned().unwrap_or_default());
+                    let (d, c) = s
+                        .lines
+                        .iter()
+                        .filter(|l| l.account_id == a.id)
+                        .fold((0i64, 0i64), |(d, c), l| (d + l.debit, c + l.credit));
+                    row["debit_shown"] = json!(if d > 0 {
+                        money::display(d)
+                    } else {
+                        String::new()
+                    });
+                    row["credit_shown"] = json!(if c > 0 {
+                        money::display(c)
+                    } else {
+                        String::new()
+                    });
+                    if let Some(run) = &run {
+                        row["balance_shown"] =
+                            json!(run.get(&s.entry.id).map(|b| money::display(*b)));
+                    }
+                    grows.push(row);
+                }
+                out.push(json!({
+                    "ticket": ticket(store, "account", a.id)?,
+                    "number": a.number,
+                    "name": a.name,
+                    "type": a.account_type.as_str(),
+                    "group": a.account_type.group(),
+                    "debit_shown": money::display(*debit),
+                    "credit_shown": money::display(*credit),
+                    "balance_shown": money::display(a.natural(debit - credit)),
+                    "count": ids.len(),
+                    "rows": grows,
+                }));
+            }
+            out
+        }
+    };
     let header = match &selected {
         Some(a) => {
             let month_moves = books::movements(
@@ -676,6 +776,7 @@ pub fn ledger(
         "filter": filter,
         "counts": counts,
         "running_balance": running.is_some(),
+        "groups": groups_aggregated,
         "rows": rows,
     }))
 }

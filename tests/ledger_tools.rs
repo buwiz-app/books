@@ -1328,3 +1328,73 @@ fn a_noncash_journal_naming_a_person_on_both_sides_shows_its_amount_once() {
     assert_eq!(recent.len(), 1, "{detail}");
     assert_eq!(recent[0]["amount"], "500.00", "{detail}");
 }
+
+#[test]
+fn ledger_list_groups_accounts_and_rows_carry_account_debit_credit() {
+    // The grouped ledger: with no account picked, `groups` aggregates each
+    // account the month's entries touch (debit, credit, count, normal
+    // balance); with one picked, each row carries that account's debit and
+    // credit for the entry.
+    let dir = TempDir::new("ledger-groups");
+    let mut bot = Bot::new(&dir);
+    data(&bot.app(
+        "books_app_book_create",
+        json!({ "client_request_id": "book-groups-001", "label": "Group Shop" }),
+    ));
+    // Supplies out of the bank: 11000 credit 1,350.00, 67200 debit 1,350.00.
+    let first = data(&bot.app(
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "post-groups-001", "form": "money_out", "date": "2026-10-18",
+            "amount": "1350.00", "account": "11000", "category": "67200"
+        }),
+    ))
+    .clone();
+    // A second bank entry so its count reads 2.
+    data(&bot.app(
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "post-groups-002", "form": "money_in", "date": "2026-10-19",
+            "amount": "200.00", "account": "11000", "category": "41000"
+        }),
+    ));
+    let list = app_data(&mut bot, "books_ledger_list", json!({ "month": "2026-10" }));
+    let groups = list["groups"].as_array().expect("group aggregates");
+    let find = |number: &str| {
+        groups
+            .iter()
+            .find(|g| g["number"] == number)
+            .unwrap()
+            .clone()
+    };
+    let bank = find("11000");
+    assert_eq!(bank["debit_shown"], "200.00");
+    assert_eq!(bank["credit_shown"], "1,350.00");
+    assert_eq!(bank["count"], 2);
+    // an asset's balance is debit minus credit: −1,150.00
+    assert_eq!(bank["balance_shown"], "\u{2212}1,150.00");
+    assert_eq!(bank["type"], "asset");
+    let expense = find("67200");
+    assert_eq!(expense["debit_shown"], "1,350.00");
+    assert_eq!(expense["count"], 1);
+    assert_eq!(find("41000")["credit_shown"], "200.00");
+
+    // one account picked: rows carry that account's own debit and credit
+    let account = bank["ticket"].as_str().unwrap().to_string();
+    let one = app_data(
+        &mut bot,
+        "books_ledger_list",
+        json!({ "month": "2026-10", "account": account }),
+    );
+    assert!(one["groups"].as_array().unwrap().is_empty());
+    let rows = one["rows"].as_array().unwrap();
+    let row = |t| rows.iter().find(|r| r["ticket"] == t).unwrap();
+    let row1 = row(first["entry"].as_str().unwrap());
+    assert_eq!(row1["debit_shown"], "");
+    assert_eq!(row1["credit_shown"], "1,350.00");
+    let row2 = &rows[0];
+    assert!(
+        row2["debit_shown"].as_str().is_some_and(|s| !s.is_empty())
+            || row2["credit_shown"].as_str().is_some_and(|s| !s.is_empty())
+    );
+}

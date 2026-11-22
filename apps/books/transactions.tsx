@@ -1,22 +1,27 @@
-// Transactions: the old app's /transactions 3-panel ledger (routes/transactions.tsx):
-// COA sidebar, green header with View/Edit pill, month navigator + tabs, search
-// + filter chips, grouped list. Books' tools answer one account per month, so
-// the list is the month's rows (grouped by account only in the old app; the
-// tool's rows carry no per-row account). Row press opens the window's entry
-// drawer, the way the native ledger's drawer does. Edit mode keeps select +
-// Void (posted) / Discard (drafts) — the only batch writes Books tools offer;
-// inline edits, batch match and CSV export have no tool, so they're left out.
+// Transactions: the old app's /transactions ledger (routes/transactions.tsx):
+// COA sidebar, green header with View/Edit pill, month navigator + tabs, the
+// LedgerSearchBar tag-chip input, and the list — a flat grid when an account is
+// picked, the AccountGroupedList (one group per account the month touches)
+// when it is not. Row press opens the window's entry drawer. Edit mode keeps
+// select + Void (posted) / Discard (drafts) — the only batch writes Books tools
+// offer; inline edits, batch match and CSV export have no tool, so they're
+// left out.
 
 const txMonth = signal(String(PROPS.month || "")); // "YYYY-MM", "" = the tool's current month
 const txAccount = signal(""); // account ticket, "" = All accounts
 const txFilter = signal("all"); // tool enum: all/review/draft/posted/checks
-const txSearch = signal("");
+const txSearch = signal(""); // live text in the search input
+const txQueryChips = signal<string[]>([]); // queries the person committed with Enter
+const txChipsOpen = signal(false); // chip bar overflow expanded
 const txFiltersOpen = signal(false);
 const txMode = signal("view"); // "view" | "edit"
 const txPicked = signal<string[]>([]); // selected entry tickets in edit mode
 const txSideOpen = signal(false); // accounts sheet below lg
 const txConfirm = signal<"" | "void" | "discard">("");
 const txBusy = signal(false);
+// expand/collapse (AccountGroupedList's expandedGroups + allCollapsed)
+const txAllCollapsed = signal(false);
+const txExpandOver = signal<Record<string, boolean>>({});
 // client-side filters (the tool's own enum stays on `txFilter`)
 const txTypes = signal<string[]>([]);
 const txStatuses = signal<string[]>([]);
@@ -24,16 +29,48 @@ const txAmountMin = signal("");
 const txAmountMax = signal("");
 const txPartyText = signal("");
 
+// The server `search` arg: the text being typed, else the first query chip
+// (the rest of the chips AND client-side in txFiltered).
+const txServerSearch = () => txSearch().trim() || txQueryChips()[0] || "";
+
 const txData = resource(
-  () => ({ v: ver(), m: txMonth(), a: txAccount(), f: txFilter(), q: txSearch().trim() }),
+  () => ({ v: ver(), m: txMonth(), a: txAccount(), f: txFilter(), s: txServerSearch(), q: txQueryChips().length }),
   (k: Any) =>
     buwiz.call("books_ledger_list", {
       ...(k.m ? { month: k.m } : {}),
       ...(k.a ? { account: k.a } : {}),
-      ...(k.q ? { search: k.q } : {}),
+      ...(k.s ? { search: k.s } : {}),
       filter: k.f,
     }),
 );
+
+// Paging: the tool answers 200 rows + next_cursor; "Load more" appends pages.
+const txCursor = signal(""); // next_cursor of the last page fetched
+const txMoreRows = signal<Any[]>([]);
+const txMoreFor = signal(""); // the page key the extra rows belong to
+const txLoadingMore = signal(false);
+const txPageKey = () => [ver(), txMonth(), txAccount(), txFilter(), txServerSearch(), txQueryChips().join("\u001f")].join("|");
+const txRowsAll = () => (txMoreFor() === txPageKey() ? [...txRows(), ...txMoreRows()] : txRows());
+const txNextCursor = () => (txMoreFor() === txPageKey() ? txCursor() : String(txD()?.next_cursor || ""));
+const txLoadMore = async () => {
+  const cursor = txNextCursor();
+  if (!cursor || txLoadingMore()) return;
+  txLoadingMore.set(true);
+  try {
+    const res: Any = await buwiz.call("books_ledger_list", {
+      ...(txMonth() ? { month: txMonth() } : {}),
+      ...(txAccount() ? { account: txAccount() } : {}),
+      filter: txFilter(),
+      ...(txServerSearch() ? { search: txServerSearch() } : {}),
+      cursor,
+    });
+    txMoreRows.set([...(txMoreFor() === txPageKey() ? txMoreRows() : []), ...(((res?.rows as Any[]) || []) as Any[])]);
+    txCursor.set(String(res?.next_cursor || ""));
+    txMoreFor.set(txPageKey());
+  } finally {
+    txLoadingMore.set(false);
+  }
+};
 const txAccounts = resource(
   () => ({ v: ver() }),
   () => buwiz.call("books_accounts_list", {}),
@@ -41,10 +78,21 @@ const txAccounts = resource(
 
 const txD = () => txData() as Any;
 const txRows = () => ((txD()?.rows as Any[]) || []) as Any[];
-// Kit ICONS has no search or x yet (kit.tsx is agent B's); same svgIcon helper.
+const txGroups = () => ((txD()?.groups as Any[]) || []) as Any[];
+
+// Grouped view: each group in the ledger payload already carries its rows
+// for the month (views::ledger embeds them), so the app draws the whole
+// grouped ledger from one call.
+const txGroupRows = (g: Any): Any[] => ((g?.rows as Any[]) || []) as Any[];
+
+
+// Kit ICONS has no search/x/funnel/grid yet (kit.tsx is agent B's); same svgIcon helper.
 const TX_ICONS = {
   search: svgIcon('<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>', 2),
   x: svgIcon('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', 2),
+  funnel: svgIcon('<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>', 2),
+  grid: svgIcon('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>', 2),
+  chevronUp: svgIcon('<path d="m18 15-6-6-6 6"/>', 2),
 };
 const MONTH_KEYS = MONTH_NAMES;
 
@@ -80,34 +128,48 @@ function cmpDec(a: string, b: string): number {
   return sa < 0 ? -cmp : cmp;
 }
 
-/** Rows after the client-side filters (type, status, amount, party); the search is books_ledger_list's. */
-function txFiltered(): Any[] {
+/** The fields the tool's `matches()` haystack covers, for client chip terms. */
+function txHay(r: Any): string {
+  return [r.payee, r.title, r.sub, r.category, r.no, r.date_short, r.date, r.amount_shown, r.amount]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+/** Rows after search + the client-side filters (type, status, amount, party) + extra query chips. */
+function txFiltered(rowsIn?: Any[]): Any[] {
   const types = txTypes();
   const statuses = txStatuses();
-  const min = txAmountMin().trim();
-  const max = txAmountMax().trim();
+  // Compare unsigned amounts on digits only ("+40.00" and "1,200" both read).
+  const min = txAmountMin().replace(/[^0-9.]/g, "");
+  const max = txAmountMax().replace(/[^0-9.]/g, "");
   const party = txPartyText().trim().toLowerCase();
-  return txRows().filter((r) => {
+  // Query chips still needing a client-side match: all of them while the input
+  // has text (the server filters on the text instead), else chips past the
+  // first (the server filtered on chip[0]).
+  const terms = txSearch().trim() ? txQueryChips() : txQueryChips().slice(1);
+  return (rowsIn || txRowsAll()).filter((r) => {
     if (types.length && !types.includes(String(r.form || ""))) return false;
     if (statuses.length) {
       const rev = String(r.pill || "") === "rev";
       const st = String(r.status || "");
       if (!statuses.some((s) => (s === "review" ? rev : st === s))) return false;
     }
-    // amount_shown is display text ("+80,000.00", "−1,350.00"): drop the
-    // sign, whatever its glyph, before cmpDec counts digits.
-    const amt = String(r.amount_shown || r.amount || "0").replace(/[^0-9.,]/g, "");
+    const amt = String(r.amount_shown || r.amount || "0").replace(/[^0-9.]/g, "");
     if (min && cmpDec(amt, min) < 0) return false;
     if (max && cmpDec(amt, max) > 0) return false;
-    return !party || String(r.payee || r.title || "").toLowerCase().includes(party);
+    const hay = (terms.length || party) && txHay(r);
+    if (party && !hay.includes(party)) return false;
+    for (const t of terms) if (!hay.includes(t.toLowerCase())) return false;
+    return true;
   });
 }
 
 const TX_TYPE_OPTS: [string, string][] = [
-  ["money_in", "Money in"],
-  ["money_out", "Money out"],
-  ["transfer", "Transfer"],
+  ["money_in", "Pay In"],
+  ["money_out", "Pay Out"],
   ["journal", "Journal"],
+  ["transfer", "Transfer"],
 ];
 const TX_STATUS_OPTS: [string, string][] = [
   ["draft", "Draft"],
@@ -116,15 +178,15 @@ const TX_STATUS_OPTS: [string, string][] = [
   ["review", "Needs review"],
 ];
 const TX_FORMS: Record<string, string> = {
-  money_in: "Money in",
-  money_out: "Money out",
+  money_in: "Pay In",
+  money_out: "Pay Out",
   transfer: "Transfer",
   journal: "Journal",
 };
 
-function txToggleIn(list: Any, v: string) {
-  // `x.set` detached loses its signal receiver; pass the signal itself.
-  list.set(list().includes(v) ? list().filter((x: Any) => x !== v) : [...list(), v]);
+function txToggleIn(sig: Any, v: string) {
+  const list = sig() as string[];
+  sig.set(list.includes(v) ? list.filter((x: string) => x !== v) : [...list, v]);
 }
 function txHasFilters(): boolean {
   return Boolean(
@@ -133,6 +195,7 @@ function txHasFilters(): boolean {
       txAmountMin().trim() ||
       txAmountMax().trim() ||
       txPartyText().trim() ||
+      txQueryChips().length ||
       txSearch().trim(),
   );
 }
@@ -142,19 +205,36 @@ function txClearFilters() {
   txAmountMin.set("");
   txAmountMax.set("");
   txPartyText.set("");
+  txQueryChips.set([]);
   txSearch.set("");
 }
-
-/** The old app's per-row source/dimension columns Books has no data for. */
-const TX_DIMS: Record<string, string> = { department: "—", location: "—" };
-
-/** Date cell: "29" + "Oct 2026" under it (LedgerRow's formatDate). */
-function txDayParts(iso: string): [string, string] {
-  const d = String(iso || "");
-  const day = String(Number(d.slice(8, 10) || 0));
-  const mon = MONTH_KEYS[Number(d.slice(5, 7)) - 1]?.slice(0, 3) || "";
-  return [day, `${mon} ${d.slice(0, 4)}`];
+/** Enter in the search input commits the query as a chip (LedgerSearchBar). */
+function txCommitQuery() {
+  const q = txSearch().trim();
+  if (q) txQueryChips.set([...txQueryChips(), q]);
+  txSearch.set("");
 }
+function txDropQuery(q: string) {
+  txQueryChips.set(txQueryChips().filter((x) => x !== q));
+}
+
+/** Group icon-box colours per account type (AccountGroupedList's TYPE_COLORS). */
+const TX_TYPE_COLORS: Record<string, [string, string]> = {
+  asset: ["#dcfce7", "#16a34a"],
+  liability: ["#fef3c7", "#d97706"],
+  equity: ["#dbeafe", "#2563eb"],
+  revenue: ["#d1fae5", "#059669"],
+  cost_of_revenue: ["#fce7f3", "#db2777"],
+  expense: ["#fee2e2", "#dc2626"],
+  other_income: ["#e0e7ff", "#4f46e5"],
+  other_expense: ["#fef9c3", "#ca8a04"],
+};
+
+const STATUS_BAR: Record<string, string> = {
+  draft: "#fbbf24",
+  posted: "#22c55e",
+  voided: "#ef4444",
+};
 
 /** Party initials + stable color (LedgerRow's getPartyInitials / stringToColor). */
 const TX_PARTY_COLORS = [
@@ -172,137 +252,304 @@ function txPartyAvatar(name: string): [string, string] {
   return [initials, TX_PARTY_COLORS[Math.abs(hash) % TX_PARTY_COLORS.length]];
 }
 
-const STATUS_BAR: Record<string, string> = {
-  draft: "#fbbf24",
-  posted: "#22c55e",
-  voided: "#ef4444",
-};
+/** Date cell: "Oct 29" + "2026" under it (LedgerRow's formatDate). */
+function txDayParts(iso: string): [string, string] {
+  const d = String(iso || "");
+  const day = String(Number(d.slice(8, 10) || 0));
+  const mon = MONTH_KEYS[Number(d.slice(5, 7)) - 1]?.slice(0, 3) || "";
+  return [`${mon} ${day}`, d.slice(0, 4)];
+}
 
-/** One ledger row (LedgerRow.tsx grid mode): bar | date | party | src | category | dept | loc | amount | balance? | › */
-function TxRow(p: { r: Any; balance: boolean; edit: boolean; checked: boolean; onCheck: () => void; onOpen: () => void }) {
-  const r = () => p.r as Any;
-  const [day, my] = txDayParts(String(r().date || ""));
-  const title = String(r().title || r().payee || "—");
-  const sub = String(r().sub || "");
-  const pill = String(r().pill || "");
-  const bar = STATUS_BAR[String(r().status || "")] || "#cbd5e1";
+/** The checkbox shared by grid rows, cards and group headers. */
+function TxCheck(p: { checked: boolean }) {
   return (
     <View
-      class={`flex-row items-stretch cursor-pointer border-b transition-colors ${
+      class={`w-4 h-4 rounded border items-center justify-center transition-all ${
+        p.checked
+          ? "bg-[#2dd4bf] border-[#2dd4bf] dark:bg-teal-500 dark:border-teal-500"
+          : "bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600 group-hover:border-gray-400 dark:group-hover:border-slate-500"
+      }`}
+    >
+      <If when={p.checked}>
+        <Avatar src={ICONS.check} class="w-2.5 h-2.5" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
+      </If>
+    </View>
+  );
+}
+
+/** One ledger row (LedgerRow.tsx grid mode): bar|date|party|src|category|dept|loc|debit|credit|balance|› */
+function TxRow(p: {
+  r: Any;
+  balance?: boolean;
+  edit?: boolean;
+  checked?: boolean;
+  inGroup?: boolean;
+  onCheck: () => void;
+  onOpen: () => void;
+}) {
+  const r = () => p.r as Any;
+  const [md, yr] = txDayParts(String(r().date || ""));
+  const title = String(r().payee || r().title || "—");
+  const sub = String(r().payee ? r().title || r().sub || "" : r().sub || "");
+  const bar = String(r().pill || "") === "rev" ? "#fbbf24" : STATUS_BAR[String(r().status || "")] || "#cbd5e1";
+  const unposted = String(r().status || "") !== "posted" || String(r().pill || "") === "rev";
+  const [initials, color] = txPartyAvatar(String(r().payee || r().title || "?"));
+  const cat = String(r().category || "");
+  const catColor = String(r().category_color || "#94a3b8");
+  const debit = String(r().debit_shown || "");
+  const credit = String(r().credit_shown || "");
+  return (
+    <View
+      class={`group flex-row items-stretch cursor-pointer border-b transition-colors ${
         p.checked
           ? "bg-[#eff6ff] dark:bg-blue-950/60 border-[#dbeafe] dark:border-blue-900/40"
-          : "border-[#f1f5f9] dark:border-slate-800 hover:bg-[#fafbfc] dark:hover:bg-slate-800"
+          : `border-[#f1f5f9] dark:border-slate-800 ${p.inGroup ? "hover:bg-[#f8fafc] dark:hover:bg-slate-800/70" : "hover:bg-[#fafbfc] dark:hover:bg-slate-800"}`
       }`}
       onPress={p.edit ? p.onCheck : p.onOpen}
     >
-      <View class="w-1 shrink-0" style={{ backgroundColor: pill === "rev" ? "#fbbf24" : bar }} />
+      <View class="w-1 shrink-0 self-stretch">
+        <If when={unposted}>
+          <View class="w-1 h-full" style={{ backgroundColor: bar }} />
+        </If>
+      </View>
       <If when={p.edit}>
-        <View class="pl-3 pr-1 py-3 items-center justify-center shrink-0">
-          <View
-            class={`w-4 h-4 rounded border items-center justify-center transition-all ${
-              p.checked ? "bg-[#2dd4bf] border-[#2dd4bf]" : "bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600"
-            }`}
-          >
-            <If when={p.checked}>
-              <Avatar src={ICONS.check} class="w-2.5 h-2.5" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
-            </If>
-          </View>
+        <View class="pl-3 pr-1 items-center justify-center shrink-0">
+          <TxCheck checked={Boolean(p.checked)} />
         </View>
       </If>
       <View class="w-[72px] py-2.5 px-2 items-center shrink-0">
-        <Text class="text-[13px] font-semibold text-[#1e293b] dark:text-slate-100 leading-tight">{day}</Text>
-        <Text class="text-[10px] text-[#94a3b8] dark:text-slate-500">{my}</Text>
+        <Text class="text-[13px] font-semibold text-[#1e293b] dark:text-slate-100 leading-tight">{md}</Text>
+        <Text class="text-[10px] text-[#94a3b8] dark:text-slate-500">{yr}</Text>
       </View>
       <View class="flex-1 min-w-0 flex-row items-center gap-2.5 py-2.5 px-2">
-        <View class="min-w-0">
+        <View class="w-7 h-7 rounded-full items-center justify-center shrink-0" style={{ backgroundColor: color }}>
+          <Text class="text-[10px] font-bold text-white">{initials}</Text>
+        </View>
+        <View class="flex-1 min-w-0">
           <Text class="text-[13px] font-medium text-[#1e293b] dark:text-slate-100 truncate">{title}</Text>
           <If when={Boolean(sub)}>
             <Text class="text-[11px] text-[#94a3b8] dark:text-slate-500 truncate">{sub}</Text>
           </If>
         </View>
       </View>
-      <View class="w-10 py-2.5 px-1 items-center shrink-0">
-        <Text class="text-[11px] text-[#cbd5e1] dark:text-slate-600 italic">—</Text>
+      <View class="w-10 py-2.5 items-center justify-center shrink-0">
+        <View class="w-5 h-5 rounded-full items-center justify-center" style={{ backgroundColor: "#64748b" }}>
+          <Text class="text-[8px] font-bold text-white">M</Text>
+        </View>
       </View>
-      <View class="w-[160px] py-2.5 px-2 shrink-0 min-w-0">
-        <Text class="text-[12px] text-[#475569] dark:text-slate-300 truncate">{String(r().category || "") || "—"}</Text>
+      <View class="w-[160px] py-2.5 px-2 shrink-0 min-w-0 hidden md:block">
+        <If when={Boolean(cat)}>
+          <View class="flex-row items-center gap-1.5">
+            <View class="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: catColor }} />
+            <Text class="text-[12px] text-[#475569] dark:text-slate-300 truncate">{cat}</Text>
+          </View>
+        </If>
+        <If when={!cat}>
+          <Text class="text-[11px] text-[#cbd5e1] dark:text-slate-600 italic">—</Text>
+        </If>
       </View>
       <View class="w-[130px] py-2.5 px-2 shrink-0 hidden xl:block">
-        <Text class="text-[11px] text-[#cbd5e1] dark:text-slate-600 italic">{TX_DIMS.department}</Text>
+        <Text class="text-[11px] text-[#cbd5e1] dark:text-slate-600 italic">None</Text>
       </View>
       <View class="w-[130px] py-2.5 px-2 shrink-0 hidden xl:block">
-        <Text class="text-[11px] text-[#cbd5e1] dark:text-slate-600 italic">{TX_DIMS.location}</Text>
+        <Text class="text-[11px] text-[#cbd5e1] dark:text-slate-600 italic">None</Text>
       </View>
-      <View class="w-[100px] py-2.5 px-2 items-end shrink-0">
-        <Text class={`tabular-nums whitespace-nowrap text-[13px] font-semibold ${String(r().tone) === "neg" ? "text-[#1e293b] dark:text-slate-100" : "text-[#16a34a] dark:text-emerald-400"}`}>
-          {String(r().amount_shown || r().amount || "")}
-        </Text>
+      <View class="w-[100px] py-2.5 px-2 items-end justify-center shrink-0">
+        <If when={Boolean(debit)}>
+          <Text class="text-[13px] font-semibold tabular-nums text-[#1e293b] dark:text-slate-100">{debit}</Text>
+        </If>
+      </View>
+      <View class="w-[100px] py-2.5 px-2 items-end justify-center shrink-0">
+        <If when={Boolean(credit)}>
+          <Text class="text-[13px] font-semibold tabular-nums text-[#16a34a] dark:text-emerald-400">{credit}</Text>
+        </If>
       </View>
       <If when={p.balance}>
-        <View class="w-[110px] py-2.5 px-2 items-end shrink-0">
+        <View class="w-[110px] py-2.5 px-2 items-end justify-center shrink-0">
           <Text class="tabular-nums text-[12px] text-[#64748b] dark:text-slate-400">{String(r().balance_shown || "")}</Text>
         </View>
       </If>
       <View class="w-9 items-center justify-center shrink-0">
-        <Avatar src={ICONS.chevronRight} class="w-4 h-4" imageClass="tint-[#cbd5e1] dark:tint-slate-600" fallbackDelay={Infinity} accessibilityLabel="" />
+        <Avatar
+          src={ICONS.chevronRight}
+          class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity"
+          imageClass="tint-[#cbd5e1] dark:tint-slate-600"
+          fallbackDelay={Infinity}
+          accessibilityLabel=""
+        />
       </View>
     </View>
   );
 }
 
-/** Card-mode row below md (LedgerRow's card: avatar, title, sub, chips, amount). */
+/** Card-mode row below md (LedgerRow's card: avatar, title, sub, chips, Dr/Cr + Bal). */
 function TxCard(p: { r: Any; edit?: boolean; checked?: boolean; onCheck?: () => void; onOpen: () => void }) {
   const r = () => p.r as Any;
   const [initials, color] = txPartyAvatar(String(r().payee || r().title || "?"));
+  const [md, yr] = txDayParts(String(r().date || ""));
+  const unposted = String(r().status || "") !== "posted" || String(r().pill || "") === "rev";
+  const debit = String(r().debit_shown || "");
+  const credit = String(r().credit_shown || "");
   return (
     <View
-      class="border-b border-[#f1f5f9] dark:border-slate-800 px-4 py-3 transition-colors cursor-pointer hover:bg-[#fafbfc] dark:hover:bg-slate-800"
+      class={`border-b px-4 py-3 transition-colors cursor-pointer ${
+        p.checked
+          ? "bg-[#eff6ff] dark:bg-blue-950/60 border-[#dbeafe] dark:border-blue-900/40"
+          : "border-[#f1f5f9] dark:border-slate-800 hover:bg-[#fafbfc] dark:hover:bg-slate-800"
+      }`}
       onPress={p.edit ? p.onCheck : p.onOpen}
     >
       <View class="flex-row gap-3">
         <If when={p.edit}>
-          <View class="items-center justify-center shrink-0">
-            <View
-              class={`w-4 h-4 rounded border items-center justify-center transition-all ${
-                p.checked ? "bg-[#2dd4bf] border-[#2dd4bf]" : "bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600"
-              }`}
-            >
-              <If when={p.checked}>
-                <Avatar src={ICONS.check} class="w-2.5 h-2.5" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
-              </If>
-            </View>
+          <View class="mt-1 items-center justify-center shrink-0">
+            <TxCheck checked={Boolean(p.checked)} />
           </View>
         </If>
         <View class="mt-0.5 h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: color }}>
           <Text class="text-[11px] font-bold text-white">{initials}</Text>
         </View>
         <View class="flex-1 min-w-0">
-          <Text class="truncate text-sm font-semibold text-[#1e293b] dark:text-slate-100">{String(r().title || r().payee || "—")}</Text>
-          <If when={Boolean(r().sub)}>
-            <Text class="mt-0.5 truncate text-xs text-[#94a3b8] dark:text-slate-500">{String(r().sub)}</Text>
-          </If>
+          <Text class="truncate text-sm font-semibold text-[#1e293b] dark:text-slate-100">{String(r().payee || r().title || "—")}</Text>
+          <Text class="mt-0.5 truncate text-xs text-[#94a3b8] dark:text-slate-500">
+            {`${md}, ${yr}${r().category ? ` · ${String(r().category)}` : ""}`}
+          </Text>
           <View class="mt-1 flex-row flex-wrap items-center gap-1.5">
             <Text class="text-[10px] font-medium uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">
               {TX_FORMS[String(r().form)] || String(r().form || "")}
             </Text>
-            <Pill tone={String(r().pill || "ok")} label={String(r().status_label || r().status || "")} />
-            <If when={Boolean(r().category)}>
-              <Text class="rounded-full bg-[#f8fafc] px-2 py-0.5 text-xs font-medium text-[#475569] dark:bg-slate-800 dark:text-slate-300">
-                {String(r().category)}
-              </Text>
+            <If when={unposted}>
+              <Pill tone={String(r().pill || "ok")} label={String(r().status_label || r().status || "")} />
             </If>
           </View>
         </View>
         <View class="shrink-0 items-end gap-0.5">
-          <Text class={`tabular-nums text-[15px] font-semibold ${String(r().tone) === "neg" ? "text-[#1e293b] dark:text-slate-100" : "text-[#16a34a] dark:text-emerald-400"}`}>
-            {String(r().amount_shown || r().amount || "")}
-          </Text>
-          <Text class="text-xs font-medium text-[#94a3b8] dark:text-slate-500">{String(r().date_short || "")}</Text>
+          <If when={Boolean(debit || credit)}>
+            <Text class={`tabular-nums text-[15px] font-semibold ${debit ? "text-[#1e293b] dark:text-slate-100" : "text-[#16a34a] dark:text-emerald-400"}`}>
+              {debit ? `Dr ${debit}` : `Cr ${credit}`}
+            </Text>
+          </If>
+          <If when={!debit && !credit}>
+            <Text class={`tabular-nums text-[15px] font-semibold ${String(r().tone) === "neg" ? "text-[#1e293b] dark:text-slate-100" : "text-[#16a34a] dark:text-emerald-400"}`}>
+              {String(r().amount_shown || r().amount || "")}
+            </Text>
+          </If>
+          <If when={Boolean(r().balance_shown)}>
+            <Text class="text-xs tabular-nums text-[#94a3b8] dark:text-slate-500">{`Bal ${String(r().balance_shown)}`}</Text>
+          </If>
         </View>
       </View>
     </View>
   );
 }
+
+/** One account group in the All-accounts view (AccountGroupedList's header). */
+function TxGroup(p: {
+  g: Any;
+  expanded: boolean;
+  edit: boolean;
+  onToggle: () => void;
+  onToggleAll: (on: boolean) => void;
+  onOpen: (r: Any) => void;
+  onCheck: (r: Any) => void;
+}) {
+  const g = () => p.g as Any;
+  const [bg, fg] = TX_TYPE_COLORS[String(g().type || "")] || ["#f1f5f9", "#64748b"];
+  const rows = () => txFiltered(txGroupRows(g()));
+  const some = () => rows().some((r) => txPicked().includes(String(r.ticket)));
+  const neg = () => String(g().balance_shown || "").startsWith("\u2212") || String(g().balance_shown || "").startsWith("-");
+  return (
+    <View>
+      <View
+        class={`group flex-row items-center gap-2 px-3 py-2 border-b border-[#f1f5f9] dark:border-slate-800 cursor-pointer transition-colors bg-[#fafbfc] dark:bg-slate-800/50 hover:bg-[#f1f5f9] dark:hover:bg-slate-800`}
+        onPress={p.onToggle}
+      >
+        <If when={p.edit}>
+          <View onPress={() => p.onToggleAll(!some())}>
+            <TxCheck checked={some()} />
+          </View>
+        </If>
+        <View class="w-7 h-7 rounded-lg items-center justify-center shrink-0" style={{ backgroundColor: bg }}>
+          {/* expanded: the type icon, a chevron-down on hover (always below md) */}
+          <If when={p.expanded}>
+            <View class="hidden md:flex items-center justify-center group-hover:hidden">
+              <Avatar src={ICONS.journal} class="w-4 h-4" imageClass={`tint-[${fg}]`} fallbackDelay={Infinity} accessibilityLabel="" />
+            </View>
+            <View class="md:hidden flex items-center justify-center md:group-hover:flex">
+              <Avatar src={ICONS.chevronDown} class="w-4 h-4" imageClass={`tint-[${fg}]`} fallbackDelay={Infinity} accessibilityLabel="" />
+            </View>
+          </If>
+          <If when={!p.expanded}>
+            <Avatar src={ICONS.chevronRight} class="w-4 h-4" imageClass={`tint-[${fg}]`} fallbackDelay={Infinity} accessibilityLabel="" />
+          </If>
+        </View>
+        <View class="flex-1 min-w-0">
+          <View class="flex-row items-baseline gap-2 min-w-0">
+            <Text class="text-[13px] font-semibold text-[#1e293b] dark:text-slate-100 truncate">{String(g().name || "")}</Text>
+            <Text class="text-[11px] tabular-nums text-[#94a3b8] dark:text-slate-500 shrink-0">{String(g().number || "")}</Text>
+          </View>
+          <Text class="text-[11px] text-[#94a3b8] dark:text-slate-500">{`${Number(g().count || 0)} Transactions`}</Text>
+        </View>
+        <View class="w-[100px] items-end shrink-0 hidden md:flex">
+          <Text class="tabular-nums text-[12px] text-[#1e293b] dark:text-slate-100">{String(g().debit_shown || "")}</Text>
+        </View>
+        <View class="w-[100px] items-end shrink-0 hidden md:flex">
+          <Text class="tabular-nums text-[12px] text-[#16a34a] dark:text-emerald-400">{String(g().credit_shown || "")}</Text>
+        </View>
+        <View class="w-[110px] items-end shrink-0">
+          <Text class={`tabular-nums text-[12px] font-semibold ${neg() ? "text-[#dc2626] dark:text-red-400" : "text-[#1e293b] dark:text-slate-100"}`}>
+            {String(g().balance_shown || "")}
+          </Text>
+        </View>
+      </View>
+      <If when={p.expanded}>
+        <View>
+          <TxCols edit={p.edit} balance />
+          <View class="hidden md:block">
+            {rows().map((r) => (
+              <TxRow r={r} balance inGroup edit={p.edit} checked={txPicked().includes(String(r.ticket))} onCheck={() => p.onCheck(r)} onOpen={() => p.onOpen(r)} />
+            ))}
+          </View>
+          <View class="md:hidden">
+            {rows().map((r) => (
+              <TxCard r={r} edit={p.edit} checked={txPicked().includes(String(r.ticket))} onCheck={() => p.onCheck(r)} onOpen={() => p.onOpen(r)} />
+            ))}
+          </View>
+        </View>
+      </If>
+    </View>
+  );
+}
+
+/** Column labels over the grid (flat list header or a group's own header). */
+function TxCols(p: { edit?: boolean; balance?: boolean }) {
+  const colHead = (label: string, cls: string) => (
+    <Text class={`${cls} px-2 text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider`}>{label}</Text>
+  );
+  return (
+    <View class="hidden md:flex flex-row items-center py-1.5 border-b border-[#f1f5f9] dark:border-slate-800 bg-white dark:bg-[#0f172a]">
+      <View class="w-1" />
+      <If when={p.edit}>
+        <View class="w-8" />
+      </If>
+      {colHead("Date", "w-[72px] text-center")}
+      {colHead("Party", "flex-1 min-w-0")}
+      {colHead("Src", "w-10 text-center")}
+      {colHead("Category", "w-[160px]")}
+      {colHead("Department", "w-[130px] hidden xl:block")}
+      {colHead("Location", "w-[130px] hidden xl:block")}
+      {colHead("Debit", "w-[100px] text-right")}
+      {colHead("Credit", "w-[100px] text-right")}
+      <If when={p.balance}>
+        {colHead("Balance", "w-[110px] text-right")}
+      </If>
+      <View class="w-9" />
+    </View>
+  );
+}
+
+/* ── TxSide: the COA sidebar. Agent B ports this to transactions_side.tsx;
+   keep the props/state it touches (txAccount, txSideOpen, txAccounts, txD)
+   stable so that swap merges clean. ─────────────────────────────────────── */
 
 /** Sidebar account row (AccountSidebar): number · name · balance. */
 function TxSideRow(p: { a: Any; on: boolean; onPress: () => void }) {
@@ -361,6 +608,20 @@ function TxSide() {
   );
 }
 
+/* ── end TxSide ─────────────────────────────────────────────────────────── */
+
+/** A filter/query chip in the search bar (LedgerSearchBar's tag chips). */
+function TxChip(p: { label: string; clear: () => void }) {
+  return (
+    <View class="flex-row items-center gap-1 px-2 py-0.5 rounded-full bg-[#e6f7f5] dark:bg-teal-950/60 border border-[#b2e0db] dark:border-teal-800 shrink-0">
+      <Text class="text-[11px] font-medium text-[#0f766e] dark:text-teal-400">{p.label}</Text>
+      <View class="w-3.5 h-3.5 items-center justify-center rounded-full cursor-pointer hover:bg-[#0f766e]/10" onPress={p.clear}>
+        <Avatar src={TX_ICONS.x} class="w-2.5 h-2.5" imageClass="tint-[#0f766e] dark:tint-teal-400" fallbackDelay={Infinity} accessibilityLabel="" />
+      </View>
+    </View>
+  );
+}
+
 function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) => void }) {
   const d = () => txD();
   const month = () => (d()?.month || {}) as Any;
@@ -379,48 +640,41 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
     return out;
   };
   const goMonth = (k: string) => txMonth.set(k);
-  const selRows = () => rows().filter((r) => txPicked().includes(String(r.ticket)));
-  const togglePick = (r: Any) =>
-    txPicked.set(
-      txPicked().includes(String(r.ticket))
-        ? txPicked().filter((t) => t !== String(r.ticket))
-        : [...txPicked(), String(r.ticket)],
-    );
-  // Bulk changes send only the rows the button and the confirm counted.
-  // Voids go one by one (there is no batch void tool), so a stop part-way
-  // names which entries committed; discards use the atomic books_app_batch.
-  const actBatch = async () => {
-    const voiding = txConfirm() === "void";
-    const eligible = voiding ? voidables() : drafts();
+  const selRows = () => {
+    // group rows can repeat an entry across accounts: act on each once.
+    const seen: Record<string, Any> = {};
+    const pool: Any[] = !txAccount()
+      ? txGroups().flatMap((g) => txFiltered(txGroupRows(g)))
+      : rows();
+    for (const r of pool) if (txPicked().includes(String(r.ticket))) seen[String(r.ticket)] = r;
+    return Object.values(seen);
+  };
+  // Voidable = posted and not itself a reversal (the entry drawer's rule);
+  // drafts go through one atomic books_app_batch "discard".
+  const voidables = () => selRows().filter((r) => r.status === "posted" && !r.reversal);
+  const drafts = () => selRows().filter((r) => r.status === "draft");
+  const actBatch = async (mode: "void" | "discard") => {
     txBusy.set(true);
     try {
-      if (voiding) {
-        const done: Any[] = [];
-        let stopped = "";
-        for (const r of eligible) {
+      if (mode === "discard") {
+        const tickets = drafts().map((r) => String(r.ticket));
+        if (tickets.length) await act("books_app_batch", { action: "discard", entries: tickets });
+        toast("Discarded.");
+      } else {
+        const list = voidables();
+        let done = 0;
+        for (const r of list) {
           try {
             await act("books_app_void_entry", { entry: String(r.ticket) });
-            done.push(r);
+            done++;
           } catch (e: Any) {
-            stopped = errText(e);
+            toast(done ? `Voided ${done} of ${list.length}; the rest failed: ${errText(e)}` : errText(e));
             break;
           }
         }
-        toast(
-          stopped
-            ? done.length
-              ? `Voided ${done.map((r) => String(r.no || r.ticket)).join(", ")}. ${stopped}`
-              : stopped
-            : "Voided.",
-        );
-        const doneTickets = new Set(done.map((r) => String(r.ticket)));
-        txPicked.set(txPicked().filter((t) => !doneTickets.has(t)));
-      } else {
-        const ids = eligible.map((r) => String(r.ticket));
-        await act("books_app_batch", { action: "discard", entries: ids });
-        toast("Discarded.");
-        txPicked.set(txPicked().filter((t) => !ids.includes(t)));
+        if (done === list.length) toast("Voided.");
       }
+      txPicked.set([]);
       txConfirm.set("");
       bump();
     } catch (e: Any) {
@@ -429,42 +683,56 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
       txBusy.set(false);
     }
   };
-  // Reversals stay out of the void set, like the entry drawer's actions.
-  const voidables = () => selRows().filter((r) => r.status === "posted" && r.form !== "reversal");
-  const drafts = () => selRows().filter((r) => r.status === "draft");
-
-  const colHead = (label: string, cls: string) => (
-    <Text class={`${cls} px-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider`}>{label}</Text>
-  );
-  const header = (
-    <View class="hidden md:flex flex-row items-center px-0 py-2 border-b border-[#f1f5f9] dark:border-slate-800 bg-white dark:bg-[#0f172a]">
-      <View class="w-1" />
-      <If when={txMode() === "edit"}>
-        <View class="w-8" />
-      </If>
-      {colHead("Date", "w-[72px] text-center")}
-      {colHead("Party", "flex-1 min-w-0")}
-      {colHead("Src", "w-10 text-center")}
-      {colHead("Category", "w-[160px]")}
-      {colHead("Department", "w-[130px] hidden xl:block")}
-      {colHead("Location", "w-[130px] hidden xl:block")}
-      {colHead("Amount", "w-[100px] text-right")}
-      <If when={Boolean(txAccount())}>
-        {colHead("Balance", "w-[110px] text-right")}
-      </If>
-      <View class="w-9" />
-    </View>
-  );
 
   const chips = () => {
     const out: { label: string; clear: () => void }[] = [];
     for (const t of txTypes()) out.push({ label: TX_FORMS[t] || t, clear: () => txToggleIn(txTypes, t) });
     for (const s of txStatuses()) out.push({ label: (TX_STATUS_OPTS.find(([k]) => k === s) || ["", s])[1], clear: () => txToggleIn(txStatuses, s) });
     if (txAmountMin().trim() || txAmountMax().trim())
-      out.push({ label: `Amount ${txAmountMin().trim() || "0"}–${txAmountMax().trim() || "∞"}`, clear: () => { txAmountMin.set(""); txAmountMax.set(""); } });
+      out.push({
+        label: `${txAmountMin().trim() ? `\u2265 ${txAmountMin().trim()}` : ""}${txAmountMin().trim() && txAmountMax().trim() ? " – " : ""}${txAmountMax().trim() ? (txAmountMin().trim() ? "" : "\u2264 ") + txAmountMax().trim() : ""}` || `${txAmountMin().trim()} – ${txAmountMax().trim()}`,
+        clear: () => { txAmountMin.set(""); txAmountMax.set(""); },
+      });
     if (txPartyText().trim()) out.push({ label: `Party: ${txPartyText().trim()}`, clear: () => txPartyText.set("") });
+    for (const q of txQueryChips()) out.push({ label: q, clear: () => txDropQuery(q) });
     return out;
   };
+  // Old app measures the wrap; approximate: show the expand chevron when the
+  // chips plausibly reach a second row.
+  const chipsWrap = () => {
+    const cs = chips();
+    return cs.length > 4 || cs.reduce((n, c) => n + c.label.length, 0) > 80;
+  };
+  const filterOn = () => txFiltersOpen() || txHasFilters();
+
+  const togglePill = (
+    <View class="flex-row items-center gap-1 shrink-0">
+      <View
+        class={`w-7 h-7 items-center justify-center rounded-md cursor-pointer transition-colors ${
+          !txAllCollapsed() ? "bg-[#e6f7f5] dark:bg-teal-950/60" : "hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
+        }`}
+        onPress={() => { txAllCollapsed.set(false); txExpandOver.set({}); }}
+      >
+        <Avatar src={ICONS.list} class="w-4 h-4" imageClass={!txAllCollapsed() ? "tint-[#0f766e] dark:tint-teal-400" : "tint-[#94a3b8] dark:tint-slate-500"} fallbackDelay={Infinity} accessibilityLabel="" />
+      </View>
+      <View
+        class={`w-7 h-7 items-center justify-center rounded-md cursor-pointer transition-colors ${
+          txAllCollapsed() ? "bg-[#e6f7f5] dark:bg-teal-950/60" : "hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
+        }`}
+        onPress={() => { txAllCollapsed.set(true); txExpandOver.set({}); }}
+      >
+        <Avatar src={TX_ICONS.grid} class="w-4 h-4" imageClass={txAllCollapsed() ? "tint-[#0f766e] dark:tint-teal-400" : "tint-[#94a3b8] dark:tint-slate-500"} fallbackDelay={Infinity} accessibilityLabel="" />
+      </View>
+      <View
+        class={`w-7 h-7 items-center justify-center rounded-md cursor-pointer transition-colors ${
+          filterOn() ? "bg-[#ccece8] dark:bg-teal-900/40" : "hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
+        }`}
+        onPress={() => txFiltersOpen.set(!txFiltersOpen())}
+      >
+        <Avatar src={TX_ICONS.funnel} class="w-4 h-4" imageClass={filterOn() ? "tint-[#0f766e] dark:tint-teal-400" : "tint-[#94a3b8] dark:tint-slate-500"} fallbackDelay={Infinity} accessibilityLabel="" />
+      </View>
+    </View>
+  );
 
   return (
     <View class="flex-1 min-h-0 flex-row bg-white dark:bg-slate-900">
@@ -473,17 +741,10 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
         <Scroll class="flex-1"><TxSide /></Scroll>
       </View>
       <View class="flex-1 min-w-0 flex flex-col">
-        <View class="flex-1 min-h-0 flex flex-col md:m-3 md:rounded-lg md:border md:border-[#e5e7eb] md:shadow-sm overflow-hidden bg-white dark:bg-slate-900">
+        <View class="flex-1 min-h-0 flex flex-col md:mx-3 md:my-3 md:rounded-lg md:border md:border-[#e5e7eb] md:shadow-sm overflow-hidden bg-white dark:bg-slate-900">
           {/* Header — LedgerHeader */}
           <View class="flex-row items-center px-5 py-3 bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c] rounded-t-lg">
             <View class="flex-row items-center gap-3 shrink-0">
-              <View
-                class="h-8 px-2 rounded-lg flex-row items-center justify-center transition-colors hover:bg-white/10 cursor-pointer"
-                onPress={() => p.go("today")}
-                activeStyle={{ opacity: 0.75 }}
-              >
-                <Text class="text-[13px] font-medium text-white/90">‹ Back</Text>
-              </View>
               <View
                 class="w-8 h-8 rounded-lg items-center justify-center transition-colors hover:bg-white/10 cursor-pointer"
                 onPress={() => txSideOpen.set(true)}
@@ -532,7 +793,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
               {tabs().map((k) => (
                 <View
                   class={`shrink-0 flex-row items-center gap-1 px-3 py-1 rounded-md cursor-pointer transition-all ${
-                    k === tabKey() ? "bg-white/20 shadow-sm border border-white/20" : "border border-transparent hover:bg-white/10"
+                    k === tabKey() ? "bg-white/20 shadow-sm" : "border border-transparent hover:bg-white/10"
                   }`}
                   onPress={() => goMonth(k)}
                 >
@@ -551,42 +812,50 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
             </View>
           </View>
 
-          {/* Search + filters — LedgerSearchBar */}
-          <View class="flex-row items-center gap-2 border-b border-[#e5e7eb] dark:border-slate-700 px-3 py-2">
-            <View class="flex-1 min-w-0 flex-row items-center gap-2 rounded-lg border border-[#e2e8f0] bg-[#f9fafb] px-3 py-1.5 dark:border-white/10 dark:bg-white/5">
-              <Avatar src={TX_ICONS.search} class="w-3.5 h-3.5" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
-              <TextBox
-                value={txSearch()}
-                onChange={(v) => txSearch.set(v)}
-                placeholder={`Search ${txRows().length} transactions…`}
-              />
-            </View>
-            <View
-              class={`shrink-0 flex-row items-center gap-1.5 rounded-lg border px-3 py-1.5 cursor-pointer transition-colors ${
-                txFiltersOpen() || txHasFilters()
-                  ? "border-[#2dd4bf] text-[#0f766e] bg-[#f0fdfa] dark:bg-teal-950/40 dark:border-teal-800"
-                  : "border-[#e2e8f0] dark:border-white/10 hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
-              }`}
-              onPress={() => txFiltersOpen.set(!txFiltersOpen())}
-            >
-              <Text class={`text-[13px] font-medium ${txFiltersOpen() || txHasFilters() ? "text-[#0f766e] dark:text-teal-300" : "text-[#475569] dark:text-slate-300"}`}>
-                Filters
-              </Text>
-            </View>
-          </View>
-          <If when={chips().length > 0}>
-            <View class="flex-row flex-wrap items-center gap-1.5 px-3 py-1.5 border-b border-[#f1f5f9] dark:border-slate-800">
-              {chips().map((c) => (
-                <View class="flex-row items-center gap-1 rounded-full bg-[#f1f5f9] px-2.5 py-0.5 dark:bg-slate-800 cursor-pointer hover:bg-[#e2e8f0] dark:hover:bg-slate-700" onPress={c.clear}>
-                  <Text class="text-[11px] font-medium text-[#475569] dark:text-slate-300">{c.label}</Text>
-                  <Avatar src={TX_ICONS.x} class="w-2.5 h-2.5" imageClass="tint-[#94a3b8]" fallbackDelay={Infinity} accessibilityLabel="" />
-                </View>
-              ))}
-              <View class="cursor-pointer" onPress={txClearFilters}>
-                <Text class="text-[11px] font-medium text-[#64748b] dark:text-slate-400 hover:underline">Clear all</Text>
+          {/* Search + filters — LedgerSearchBar: one bordered input until the
+              first chip, then chips + a bare inline input in one wrap row. */}
+          <If when={chips().length === 0}>
+            <View class="flex-row items-center gap-2 px-5 py-2 border-b border-[#f1f5f9] dark:border-slate-800">
+              <View class="flex-1 min-w-0 flex-row items-center gap-2 rounded-md border border-[#e2e8f0] bg-[#f8fafc] px-2.5 h-9 dark:border-slate-700 dark:bg-slate-800/60 focus-within:ring-1 focus-within:ring-[#0d9488] focus-within:border-[#0d9488] transition-colors">
+                <Avatar src={TX_ICONS.search} class="w-3.5 h-3.5 shrink-0" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
+                <Input
+                  value={txSearch()}
+                  placeholder={`Search ${txRows().length || Number(txD()?.total || 0)} transactions…`}
+                  onChange={(e: Any) => txSearch.set(typeof e === "string" ? e : e.value)}
+                  onSubmit={() => txCommitQuery()}
+                  class="flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] text-[#1e293b] dark:text-slate-100 placeholder:text-[#94a3b8] focus:ring-0"
+                />
               </View>
+              {togglePill}
             </View>
           </If>
+          <If when={chips().length > 0}>
+            <View class="flex-row items-center gap-2 px-5 py-2 border-b border-[#f1f5f9] dark:border-slate-800">
+              <View class={`flex-1 min-w-0 flex-row flex-wrap items-center gap-1.5 ${txChipsOpen() ? "max-h-[128px]" : "max-h-[32px]"} overflow-hidden`}>
+                {chips().map((c) => (
+                  <TxChip label={c.label} clear={c.clear} />
+                ))}
+                <Input
+                  value={txSearch()}
+                  placeholder="Search or add filter…"
+                  onChange={(e: Any) => txSearch.set(typeof e === "string" ? e : e.value)}
+                  onSubmit={() => txCommitQuery()}
+                  class="flex-1 min-w-[120px] py-0.5 bg-transparent border-none outline-none text-[13px] text-[#1e293b] dark:text-slate-100 placeholder:text-[#94a3b8] focus:ring-0"
+                />
+              </View>
+              <If when={chipsWrap()}>
+                <View class="w-6 h-6 items-center justify-center rounded cursor-pointer hover:bg-[#f1f5f9] dark:hover:bg-slate-800 shrink-0" onPress={() => txChipsOpen.set(!txChipsOpen())}>
+                  <Avatar src={txChipsOpen() ? TX_ICONS.chevronUp : ICONS.chevronDown} class="w-3.5 h-3.5" imageClass="tint-[#94a3b8]" fallbackDelay={Infinity} accessibilityLabel="" />
+                </View>
+              </If>
+              <View class="cursor-pointer shrink-0" onPress={txClearFilters}>
+                <Text class="text-[12px] font-medium text-[#0f766e] dark:text-teal-400 hover:underline">Clear</Text>
+              </View>
+              {togglePill}
+            </View>
+          </If>
+
+          {/* Filter popover panel — LedgerFilters (type/status/amount/party) */}
           <If when={txFiltersOpen()}>
             <View class="border-b border-[#e5e7eb] dark:border-slate-700 px-3 py-3 gap-3 bg-[#f8fafc] dark:bg-slate-950/50">
               <View class="gap-1">
@@ -622,14 +891,14 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
             </View>
           </If>
 
-          {/* List */}
+          {/* List: flat grid when an account is picked, account groups otherwise */}
           <Scroll class="flex-1 min-h-0">
             <If when={!txData() && !txData.error()}>
               <View class="items-center px-4 py-12">
                 <Text class="text-sm text-slate-500 dark:text-slate-400">Loading transactions…</Text>
               </View>
             </If>
-            <If when={Boolean(txData()) && rows().length === 0}>
+            <If when={Boolean(txData()) && !txAccount() && txGroups().length === 0}>
               <View class="items-center gap-4 px-4 py-12">
                 <Text class="text-sm text-slate-500 dark:text-slate-400">No transactions found matching your filters.</Text>
                 <If when={txHasFilters()}>
@@ -637,16 +906,60 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 </If>
               </View>
             </If>
-            <If when={rows().length > 0}>
-              {header}
+            <If when={Boolean(txData()) && Boolean(txAccount()) && rows().length === 0}>
+              <View class="items-center gap-4 px-4 py-12">
+                <Text class="text-sm text-slate-500 dark:text-slate-400">No transactions found matching your filters.</Text>
+                <If when={txHasFilters()}>
+                  <Btn label="Clear filters" onPress={txClearFilters} />
+                </If>
+              </View>
+            </If>
+
+            {/* Grouped — AccountGroupedList */}
+            <If when={!txAccount() && txGroups().length > 0}>
+              {txGroups().map((g) => {
+                const t = String(g.ticket);
+                const expanded = txExpandOver()[t] ?? !txAllCollapsed();
+                return (
+                  <TxGroup
+                    g={g}
+                    expanded={expanded}
+                    edit={txMode() === "edit"}
+                    onToggle={() => txExpandOver.set({ ...txExpandOver(), [t]: !expanded })}
+                    onToggleAll={(on) => {
+                      const ids = txFiltered(txGroupRows(g)).map((r) => String(r.ticket));
+                      txPicked.set(on ? [...new Set([...txPicked(), ...ids])] : txPicked().filter((x) => !ids.includes(x)));
+                    }}
+                    onCheck={(r) =>
+                      txPicked.set(
+                        txPicked().includes(String(r.ticket))
+                          ? txPicked().filter((x) => x !== String(r.ticket))
+                          : [...txPicked(), String(r.ticket)],
+                      )
+                    }
+                    onOpen={(r) => drawerEntry.set(String(r.ticket))}
+                  />
+                );
+              })}
+            </If>
+
+            {/* Flat — LedgerRows for the picked account */}
+            <If when={Boolean(txAccount()) && rows().length > 0}>
+              <TxCols edit={txMode() === "edit"} balance={Boolean(txD()?.running_balance)} />
               <View class="hidden md:block">
                 {rows().map((r) => (
                   <TxRow
                     r={r}
-                    balance={Boolean(txAccount()) && Boolean(txD()?.running_balance)}
+                    balance={Boolean(txD()?.running_balance)}
                     edit={txMode() === "edit"}
                     checked={txPicked().includes(String(r.ticket))}
-                    onCheck={() => togglePick(r)}
+                    onCheck={() =>
+                      txPicked.set(
+                        txPicked().includes(String(r.ticket))
+                          ? txPicked().filter((t) => t !== String(r.ticket))
+                          : [...txPicked(), String(r.ticket)],
+                      )
+                    }
                     onOpen={() => drawerEntry.set(String(r.ticket))}
                   />
                 ))}
@@ -657,10 +970,29 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                     r={r}
                     edit={txMode() === "edit"}
                     checked={txPicked().includes(String(r.ticket))}
-                    onCheck={() => togglePick(r)}
+                    onCheck={() =>
+                      txPicked.set(
+                        txPicked().includes(String(r.ticket))
+                          ? txPicked().filter((t) => t !== String(r.ticket))
+                          : [...txPicked(), String(r.ticket)],
+                      )
+                    }
                     onOpen={() => drawerEntry.set(String(r.ticket))}
                   />
                 ))}
+              </View>
+              {/* "Showing N of M" + Load more while the tool has another page */}
+              <View class="flex-row items-center justify-between px-3 py-2">
+                <Text class="text-[11px] text-slate-500 dark:text-slate-400">
+                  {`Showing ${rows().length} of ${Number(txD()?.total || rows().length)}`}
+                </Text>
+                <If when={Boolean(txNextCursor())}>
+                  <View class="cursor-pointer" onPress={txLoadMore}>
+                    <Text class="text-[12px] font-medium text-[#0f766e] dark:text-teal-300 hover:underline">
+                      {txLoadingMore() ? "Loading…" : "Load more"}
+                    </Text>
+                  </View>
+                </If>
               </View>
             </If>
           </Scroll>
@@ -732,7 +1064,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 label={txConfirm() === "void" ? "Void" : "Discard"}
                 tone="vi"
                 disabled={txBusy()}
-                onPress={actBatch}
+                onPress={() => actBatch(txConfirm() === "void" ? "void" : "discard")}
               />
             </View>
           </View>
