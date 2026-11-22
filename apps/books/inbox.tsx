@@ -136,10 +136,16 @@ function InboxDetail(p: { ticket: string; row?: Any }) {
 }
 
 function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mode: string) => void }) {
+  const query = signal("");
   const list = (filter: string) =>
     resource(
-      () => ({ v: ver(), m: inboxMonth() }),
-      (k: Any) => buwiz.call("books_ledger_list", k.m ? { filter, month: k.m } : { filter }),
+      () => ({ v: ver(), m: inboxMonth(), q: query().trim() }),
+      (k: Any) =>
+        buwiz.call("books_ledger_list", {
+          ...(k.m ? { month: k.m } : {}),
+          ...(k.q ? { search: k.q } : {}),
+          filter,
+        }),
     );
   const review = list("review");
   const drafts = list("draft");
@@ -153,7 +159,6 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
   });
   const waiting = () => (rv()?.counts?.review || 0) + (rv()?.counts?.draft || 0);
   const month = () => rv()?.month || {};
-  const query = signal("");
   const visibleRows = () => {
     const q = query().trim().toLowerCase();
     const list = rows();
