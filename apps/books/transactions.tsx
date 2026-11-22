@@ -254,15 +254,28 @@ function TxRow(p: { r: Any; balance: boolean; edit: boolean; checked: boolean; o
 }
 
 /** Card-mode row below md (LedgerRow's card: avatar, title, sub, chips, amount). */
-function TxCard(p: { r: Any; onOpen: () => void }) {
+function TxCard(p: { r: Any; edit?: boolean; checked?: boolean; onCheck?: () => void; onOpen: () => void }) {
   const r = () => p.r as Any;
   const [initials, color] = txPartyAvatar(String(r().payee || r().title || "?"));
   return (
     <View
       class="border-b border-[#f1f5f9] dark:border-slate-800 px-4 py-3 transition-colors cursor-pointer hover:bg-[#fafbfc] dark:hover:bg-slate-800"
-      onPress={p.onOpen}
+      onPress={p.edit ? p.onCheck : p.onOpen}
     >
       <View class="flex-row gap-3">
+        <If when={p.edit}>
+          <View class="items-center justify-center shrink-0">
+            <View
+              class={`w-4 h-4 rounded border items-center justify-center transition-all ${
+                p.checked ? "bg-[#2dd4bf] border-[#2dd4bf]" : "bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600"
+              }`}
+            >
+              <If when={p.checked}>
+                <Avatar src={ICONS.check} class="w-2.5 h-2.5" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
+              </If>
+            </View>
+          </View>
+        </If>
         <View class="mt-0.5 h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: color }}>
           <Text class="text-[11px] font-bold text-white">{initials}</Text>
         </View>
@@ -370,6 +383,12 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
   };
   const goMonth = (k: string) => txMonth.set(k);
   const selRows = () => rows().filter((r) => txPicked().includes(String(r.ticket)));
+  const togglePick = (r: Any) =>
+    txPicked.set(
+      txPicked().includes(String(r.ticket))
+        ? txPicked().filter((t) => t !== String(r.ticket))
+        : [...txPicked(), String(r.ticket)],
+    );
   // Bulk changes send only the rows the button and the confirm counted.
   // Voids go one by one (there is no batch void tool), so a stop part-way
   // names which entries committed; discards use the atomic books_app_batch.
@@ -623,20 +642,20 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                     balance={Boolean(txAccount()) && Boolean(txD()?.running_balance)}
                     edit={txMode() === "edit"}
                     checked={txPicked().includes(String(r.ticket))}
-                    onCheck={() =>
-                      txPicked.set(
-                        txPicked().includes(String(r.ticket))
-                          ? txPicked().filter((t) => t !== String(r.ticket))
-                          : [...txPicked(), String(r.ticket)],
-                      )
-                    }
+                    onCheck={() => togglePick(r)}
                     onOpen={() => drawerEntry.set(String(r.ticket))}
                   />
                 ))}
               </View>
               <View class="md:hidden">
                 {rows().map((r) => (
-                  <TxCard r={r} onOpen={() => drawerEntry.set(String(r.ticket))} />
+                  <TxCard
+                    r={r}
+                    edit={txMode() === "edit"}
+                    checked={txPicked().includes(String(r.ticket))}
+                    onCheck={() => togglePick(r)}
+                    onOpen={() => drawerEntry.set(String(r.ticket))}
+                  />
                 ))}
               </View>
             </If>
