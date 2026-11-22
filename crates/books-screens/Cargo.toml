@@ -9,12 +9,12 @@ publish.workspace = true
 
 [dependencies]
 buwiz-app = { workspace = true }
-nsh-core = { git = "https://github.com/hexuria/nsh", rev = "c66f78cb4fa67825c51db55909ef5e1ea24f1658" }
+nsh-core = { git = "https://github.com/hexuria/nsh", rev = "3fcb4e58b2aeb8750d78803e356408c4b36c0f55" }
 serde_json = "1"
 
 [dev-dependencies]
 books-mini-app = { path = "../books-mini-app" }
-nsh-engine = { git = "https://github.com/hexuria/nsh", rev = "c66f78cb4fa67825c51db55909ef5e1ea24f1658" }
+nsh-engine = { git = "https://github.com/hexuria/nsh", rev = "3fcb4e58b2aeb8750d78803e356408c4b36c0f55" }
 
 [lints]
 workspace = true
