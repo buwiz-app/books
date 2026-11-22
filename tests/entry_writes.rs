@@ -198,3 +198,76 @@ fn f10_an_unbalanced_journal_drafts_but_never_posts() {
         "the refused post went through: {got}"
     );
 }
+
+/// A draft edit that sends an empty `person` drops the person the draft was
+/// saved with, so a replaced vendor is not credited with the payment.
+#[test]
+fn an_edit_with_an_empty_person_drops_the_saved_person() {
+    let (_dir, mut books) = seeded();
+    let b = &mut books;
+    let person = call(
+        b,
+        "books_app_person_create",
+        json!({ "client_request_id": "ew-rp-0001", "kind": "vendors", "name": "Synthetic Vendor RP" }),
+        Origin::App,
+    )["person"]
+        .clone();
+    let draft = call(
+        b,
+        "books_entry_draft",
+        json!({ "client_request_id": "ew-rp-0002", "form": "money_out", "date": "2026-10-13",
+                "amount": "300.00", "account": "11000", "category": "67200", "person": person }),
+        Origin::App,
+    );
+    call(
+        b,
+        "books_entry_draft",
+        json!({ "client_request_id": "ew-rp-0003", "entry": draft["entry"], "form": "money_out",
+                "date": "2026-10-13", "amount": "300.00", "account": "11000", "category": "67200",
+                "payee": "Synthetic Walk-in", "person": "" }),
+        Origin::App,
+    );
+    call(
+        b,
+        "books_app_post_entry",
+        json!({ "client_request_id": "ew-rp-0004", "entry": draft["entry"] }),
+        Origin::App,
+    );
+    let ps = call(
+        b,
+        "books_report",
+        json!({ "kind": "ps", "person": person, "period_kind": "month", "period": "2026-10" }),
+        Origin::App,
+    );
+    assert_eq!(
+        ps["activity"]["rows"].as_array().unwrap().len(),
+        0,
+        "the replaced vendor still got the payment: {ps}"
+    );
+}
+
+/// The ledger's search matches the amount a row shows, as the Inbox's own
+/// filter does.
+#[test]
+fn ledger_search_matches_the_shown_amount() {
+    let (_dir, mut books) = seeded();
+    let b = &mut books;
+    let draft = call(
+        b,
+        "books_entry_draft",
+        json!({ "client_request_id": "ew-am-0001", "form": "money_out", "date": "2026-10-14",
+                "amount": "7131.31", "account": "11000", "category": "67200" }),
+        Origin::App,
+    );
+    let list = call(
+        b,
+        "books_ledger_list",
+        json!({ "month": "2026-10", "filter": "draft", "search": "7,131.31" }),
+        Origin::App,
+    );
+    let rows = list["rows"].as_array().unwrap();
+    assert!(
+        rows.iter().any(|r| r["ticket"] == draft["entry"]),
+        "an amount search lost the draft: {list}"
+    );
+}

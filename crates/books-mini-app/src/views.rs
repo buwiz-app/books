@@ -581,6 +581,8 @@ pub fn ledger(
             s.entry.status.as_str().to_string(),
             s.entry.form.as_str().to_string(),
             s.entry.date.to_string(),
+            money::format(s.amount()),
+            signed(s.amount()),
             s.category
                 .as_ref()
                 .map(|a| a.name.clone())
