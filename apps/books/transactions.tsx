@@ -482,6 +482,13 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
           <View class="flex-row items-center px-5 py-3 bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c] rounded-t-lg">
             <View class="flex-row items-center gap-3 shrink-0">
               <View
+                class="h-8 px-2 rounded-lg flex-row items-center justify-center transition-colors hover:bg-white/10 cursor-pointer"
+                onPress={() => p.go("today")}
+                activeStyle={{ opacity: 0.75 }}
+              >
+                <Text class="text-[13px] font-medium text-white/90">‹ Back</Text>
+              </View>
+              <View
                 class="w-8 h-8 rounded-lg items-center justify-center transition-colors hover:bg-white/10 cursor-pointer"
                 onPress={() => txSideOpen.set(true)}
               >
