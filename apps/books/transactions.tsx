@@ -407,7 +407,7 @@ function TxCard(p: { r: Any; edit?: boolean; checked?: boolean; onCheck?: () => 
     >
       <View class="flex-row gap-3">
         <If when={p.edit}>
-          <View class="mt-1 items-center justify-center shrink-0">
+          <View class="w-11 h-11 -ml-2 -my-1 items-center justify-center shrink-0">
             <TxCheck checked={Boolean(p.checked)} />
           </View>
         </If>
@@ -470,7 +470,7 @@ function TxGroup(p: {
         onPress={p.onToggle}
       >
         <If when={p.edit}>
-          <View onPress={() => p.onToggleAll(!some())}>
+          <View class="w-11 h-11 -ml-2 -my-1 md:w-auto md:h-auto md:ml-0 md:my-0 items-center justify-center shrink-0" onPress={() => p.onToggleAll(!some())}>
             <TxCheck checked={some()} />
           </View>
         </If>
@@ -989,7 +989,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
 
           {/* Batch bar (edit mode) — BatchActionBar */}
           <If when={txMode() === "edit" && txPicked().length > 0}>
-            <View class="flex-row items-center gap-3 border-t border-[#e5e7eb] dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 shadow">
+            <View class="flex-row flex-wrap items-center gap-3 min-h-[52px] md:min-h-0 border-t border-[#e5e7eb] dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 shadow">
               <Text class="text-[13px] font-medium text-[#334155] dark:text-slate-300">{txPicked().length} selected</Text>
               <View class="flex-1" />
               <If when={voidables().length > 0}>

@@ -579,6 +579,7 @@ function MatchView() {
     act(tool, { account: recAccount(), month: recMonth(), ...extra }).catch(() => null);
   const selectedLine = signal<number | null>(null);
   const snapPage = signal(0);
+  const recPane = signal<"list" | "pdf">("list");
   const pick = (r: Any) => {
     selectedLine.set(r.no ?? null);
     if (r.page) snapPage.set(Number(r.page));
@@ -688,30 +689,44 @@ function MatchView() {
             <RecSumCard title={isCard() ? "Payments" : "Withdrawals"} icon="dash" rows={[["Bank", centsShown(wdBankN())], ["Ledger", wdLeg()]]} />
             <RecSumCard title="Net" icon="notEqual" highlight={s()?.difference_shown} rows={[["Bank", String(s()?.closing_shown || "—")], ["Ledger", String(s()?.books_shown || "—")]]} />
           </View>
-          <View class={side() ? "flex-row items-start gap-3.5" : "gap-3.5"}>
-            <If when={side()}>
-              <SnapshotPane
-                rows={rowsView()}
-                evidence={Boolean(s()?.snapshot)}
-                kind={String(s()?.snapshot_kind || "")}
-                pictures={s()?.snapshot_pictures || []}
-                doc={String(s()?.evidence || "")}
-                stamp={String(s()?.snapshot_stamp || "")}
-                selected={selectedLine()}
-                onSelect={(no: number) => selectedLine.set(no)}
-                hovered={hoveredLine()}
-                onHover={(no: number | null) => hoverBox(no)}
-                areas={s()?.areas || []}
-                bind={(api: Any) => {
-                  snapApi = api;
-                }}
-                page={snapPage()}
-                onPage={(n: number) => snapPage.set(n)}
-                account={recAccount()}
-                month={recMonth()}
+          <If when={side()}>
+            <View class="lg:hidden">
+              <Seg
+                options={[
+                  ["pdf", "Statement PDF"],
+                  ["list", "Journal Entries"],
+                ]}
+                value={recPane()}
+                onPick={(v: string) => recPane.set(v === "pdf" ? "pdf" : "list")}
               />
+            </View>
+          </If>
+          <View class={side() ? "lg:flex-row items-start gap-3.5" : "gap-3.5"}>
+            <If when={side()}>
+              <View class={recPane() === "pdf" ? "block" : "hidden lg:block"}>
+                <SnapshotPane
+                  rows={rowsView()}
+                  evidence={Boolean(s()?.snapshot)}
+                  kind={String(s()?.snapshot_kind || "")}
+                  pictures={s()?.snapshot_pictures || []}
+                  doc={String(s()?.evidence || "")}
+                  stamp={String(s()?.snapshot_stamp || "")}
+                  selected={selectedLine()}
+                  onSelect={(no: number) => selectedLine.set(no)}
+                  hovered={hoveredLine()}
+                  onHover={(no: number | null) => hoverBox(no)}
+                  areas={s()?.areas || []}
+                  bind={(api: Any) => {
+                    snapApi = api;
+                  }}
+                  page={snapPage()}
+                  onPage={(n: number) => snapPage.set(n)}
+                  account={recAccount()}
+                  month={recMonth()}
+                />
+              </View>
             </If>
-            <Panel class={side() ? "flex-1" : ""}>
+            <Panel class={side() ? (recPane() === "list" ? "flex-1 w-full" : "hidden lg:flex lg:flex-1") : ""}>
               {/* search / filter bar inside the card (old app's ReconciliationSearchBar): magnifier, borderless input, counters, funnel, + */}
               <View class={`flex-row items-center gap-2 px-4 py-2.5 border-b ${C.line}`}>
                 <Text class={`text-[13px] ${C.dim}`}>⌕</Text>
