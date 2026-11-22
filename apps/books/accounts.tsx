@@ -391,7 +391,12 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
     const name = ncName().trim();
     const number = ncNumber().trim() || nextNumber();
     try {
-      const r = await act("books_app_account_create", { number, name, kind: ncKind(), type: ncType() });
+      // A catalog kind fixes the account type: omit `type` and the server
+      // derives it, so a kind can never save with a stale type. `type` is
+      // only the user's pick for unsure/mixed kinds (PR37 finding 3).
+      const args: Any = { number, name, kind: ncKind() };
+      if (ncKind() === "unsure" || ncKind() === "mixed") args.type = ncType();
+      const r = await act("books_app_account_create", args);
       const acct = r?.account || {};
       if (acct.ticket) selected.set({ ...acct, name, number, type: ncType() });
       mode.set("");
@@ -711,13 +716,10 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
                 {(k: Any) => (
                   <View
                     class="flex-row items-center gap-2.5 px-4 py-2.5 transition-colors hover:bg-[#f8fafc] dark:hover:bg-white/5"
-                    // a kind fixes the account type; leaving it at the last
-                    // pick (asset by default) files expenses out of the P&L
-                    // (PR37 finding 3)
+                    // a kind fixes the account type, so the type field is
+                    // hidden once a catalog kind is picked (PR37 finding 3)
                     onPress={() => {
                       ncKind.set(k());
-                      const named = allRows().find((a: Any) => String(a.kind) === k());
-                      if (named?.type) ncType.set(String(named.type));
                       kindMenu.set(false);
                     }}
                     activeStyle={{ opacity: 0.7 }}
@@ -765,6 +767,9 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
               </If>
             </View>
             {kindField()}
+            {/* A catalog kind sets the type, so the picker only shows for
+                unsure/mixed; editing keeps it read-only. */}
+            <If when={editing || ncKind() === "unsure" || ncKind() === "mixed"}>
             <View class="gap-1.5">
               <Text class={`text-[11px] font-medium ${C.mute}`}>Category Type</Text>
               <View class="flex-row flex-wrap gap-1.5">
@@ -788,6 +793,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
                 </Each>
               </View>
             </View>
+            </If>
             <If when={editing}>
               <Text class={`text-[11.5px] ${C.dim} leading-snug`}>
                 Saving edits needs an account-update tool Books doesn't have yet — the form is read-only for now.

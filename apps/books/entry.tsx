@@ -396,7 +396,13 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     // a suggested subtype is not always a catalog kind id (fixed_assets and
     // friends); a kind refusal retries as unsure rather than failing dead
     // (PR37 finding 8)
-    const request = (kind: string) => act("books_app_account_create", { number, name, kind, type: newCategoryType() });
+    const request = (kind: string) => {
+      // a catalog kind fixes the account type, so `type` goes only with
+      // unsure/mixed and the server derives it otherwise (PR37 finding 3)
+      const args: Record<string, Any> = { number, name, kind };
+      if (kind === "unsure" || kind === "mixed") args.type = newCategoryType();
+      return act("books_app_account_create", args);
+    };
     request(newCategoryKind())
       .catch((e: Any) => (newCategoryKind() !== "unsure" && /kind/i.test(errText(e)) ? request("unsure") : Promise.reject(e)))
       .then((result: Any) => {

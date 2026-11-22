@@ -43,14 +43,18 @@ fn f2_side_icons_carry_the_svg_namespace() {
     );
 }
 
-/// Finding 3: picking a kind in the new-category form syncs the account type,
-/// so an expense kind cannot be saved as an asset.
+/// Finding 3: a catalog kind fixes the account type, so the create call
+/// omits `type` and the server derives it — whatever accounts exist.
 #[test]
-fn f3_kind_pick_syncs_account_type() {
+fn f3_catalog_kind_omits_type() {
     let s = books();
     assert!(
-        s.contains("ncType.set(String(named.type))"),
-        "choosing a kind never sets the type"
+        s.contains("{ number, name, kind: ncKind() }") && s.contains("args.type = ncType()"),
+        "the new-category form still sends a copyable type"
+    );
+    assert!(
+        s.contains("name, kind }") && s.contains("args.type = newCategoryType()"),
+        "the suggestion create still sends a copyable type"
     );
 }
 
