@@ -94,7 +94,9 @@ function txFiltered(): Any[] {
       const st = String(r.status || "");
       if (!statuses.some((s) => (s === "review" ? rev : st === s))) return false;
     }
-    const amt = String(r.amount_shown || r.amount || "0").replace("-", "");
+    // amount_shown is display text ("+80,000.00", "−1,350.00"): drop the
+    // sign, whatever its glyph, before cmpDec counts digits.
+    const amt = String(r.amount_shown || r.amount || "0").replace(/[^0-9.,]/g, "");
     if (min && cmpDec(amt, min) < 0) return false;
     if (max && cmpDec(amt, max) > 0) return false;
     if (party && !String(r.payee || r.title || "").toLowerCase().includes(party)) return false;
