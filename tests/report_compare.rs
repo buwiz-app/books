@@ -342,12 +342,16 @@ fn a_noncash_journal_is_no_tagged_cash_flow() {
         .unwrap()
         .to_string();
     let net = |b: &mut Books| {
-        call(b, "books_report", json!({ "kind": "cf", "period": "2026-10", "tag": tag }))
-            .get("net")
-            .and_then(|n| n.get("shown"))
-            .and_then(|s| s.as_str())
-            .unwrap_or("")
-            .to_string()
+        call(
+            b,
+            "books_report",
+            json!({ "kind": "cf", "period": "2026-10", "tag": tag }),
+        )
+        .get("net")
+        .and_then(|n| n.get("shown"))
+        .and_then(|s| s.as_str())
+        .unwrap_or("")
+        .to_string()
     };
     let before = net(b);
     // a journal whose lines never touch a money account reports no tagged cash movement
@@ -362,7 +366,11 @@ fn a_noncash_journal_is_no_tagged_cash_flow() {
             ]
         }),
     );
-    assert_eq!(net(b), before, "a journal that moves no cash made tagged flow");
+    assert_eq!(
+        net(b),
+        before,
+        "a journal that moves no cash made tagged flow"
+    );
     // a tagged payment still counts through its noncash split
     call(
         b,

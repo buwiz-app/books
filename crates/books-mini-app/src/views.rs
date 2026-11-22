@@ -573,6 +573,17 @@ pub fn ledger(
         "posted": list.iter().filter(|s| is(s, "posted")).count(),
         "checks": list.iter().filter(|s| is(s, "checks")).count(),
     });
+    // one account picked: each row also carries that account's own share of
+    // the entry, so a category page sums its lines, not whole payments
+    let account_amount = |s: &Summary, a: &Account| -> i64 {
+        a.natural(
+            s.lines
+                .iter()
+                .filter(|l| l.account_id == a.id)
+                .map(|l| l.debit - l.credit)
+                .sum(),
+        )
+    };
     let rows = list
         .iter()
         .filter(|s| is(s, filter))
@@ -583,14 +594,35 @@ pub fn ledger(
             if let Some(running) = &running {
                 row["balance_shown"] = json!(running.get(&s.entry.id).map(|b| money::display(*b)));
             }
+            if let Some(a) = &selected {
+                let amount = account_amount(s, a);
+                row["account_amount"] = json!(money::format(amount));
+                row["account_amount_shown"] = json!(money::display(amount));
+                row["account_tone"] = json!(if amount > 0 {
+                    "pos"
+                } else if amount < 0 {
+                    "neg"
+                } else {
+                    ""
+                });
+            }
             Ok(row)
         })
         .collect::<Result<Vec<_>, Refusal>>()?;
     let header = match &selected {
-        Some(a) => json!({
-            "ticket": ticket(store, "account", a.id)?, "number": a.number, "name": a.name,
-            "balance_shown": money::display(a.natural(*balances.get(&a.id).unwrap_or(&0))),
-        }),
+        Some(a) => {
+            let month_moves = books::movements(
+                store.conn(),
+                chart.book.id,
+                Some(month.start),
+                Some(month.end),
+            )?;
+            json!({
+                "ticket": ticket(store, "account", a.id)?, "number": a.number, "name": a.name,
+                "balance_shown": money::display(a.natural(*balances.get(&a.id).unwrap_or(&0))),
+                "month_shown": money::display(a.natural(*month_moves.get(&a.id).unwrap_or(&0))),
+            })
+        }
         None => {
             let cash: i64 = chart
                 .list

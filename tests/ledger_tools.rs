@@ -1191,7 +1191,10 @@ fn a_press_card_preview_makes_no_tags_or_people() {
         .filter_map(Value::as_str)
         .collect::<Vec<_>>()
         .join("\n");
-    assert!(shown.contains("Department: Synthetic Preview Dept"), "{shown}");
+    assert!(
+        shown.contains("Department: Synthetic Preview Dept"),
+        "{shown}"
+    );
     assert!(shown.contains("Synthetic Preview Vendor"), "{shown}");
     let tags = app_data(
         &mut bot,

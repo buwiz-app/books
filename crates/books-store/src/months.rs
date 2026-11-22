@@ -975,8 +975,14 @@ mod tests {
         // A January deposit reversed in February counts once in each month.
         let id = post(Date::new(2026, 1, 15).unwrap(), 10_000);
         entries::void(c, &book, id, Date::new(2026, 2, 10).unwrap(), OPEN).unwrap();
-        assert_eq!(account_movement(c, book.id, bank, &jan).unwrap(), (10_000, 0));
-        assert_eq!(account_movement(c, book.id, bank, &feb).unwrap(), (0, 10_000));
+        assert_eq!(
+            account_movement(c, book.id, bank, &jan).unwrap(),
+            (10_000, 0)
+        );
+        assert_eq!(
+            account_movement(c, book.id, bank, &feb).unwrap(),
+            (0, 10_000)
+        );
 
         // A void inside one month still cancels out of that month entirely.
         let id = post(Date::new(2026, 3, 5).unwrap(), 7_500);

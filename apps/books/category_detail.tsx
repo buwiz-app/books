@@ -41,9 +41,14 @@ function CategoryDetailPage(p: { go: (page: string, filter?: string) => void }) 
     },
   );
   const tx = () => ((ledger() as Any)?.rows || []) as Any[];
-  // Integer centavos only (AGENTS.md invariant 2) — centsOf/centsShown live in reconcile.tsx.
-  const monthTotal = () =>
-    tx().reduce((s: bigint, r: Any) => s + centsOf(String(r.amount_shown || r.amount || "0")), 0n);
+  // The account's own month movement comes back computed; summing the page
+  // would count whole entries and stop at the row cap.
+  const monthShown = () => String((ledger() as Any)?.account?.month_shown || "");
+  const totalCount = () => Number((ledger() as Any)?.counts?.posted ?? tx().length);
+  const countLabel = () =>
+    totalCount() > tx().length
+      ? `first ${tx().length} of ${totalCount()} transactions`
+      : `${tx().length} transaction${tx().length === 1 ? "" : "s"}`;
 
   const a = acct;
   const t = () => (a() ? acctType(String(a()?.type)) : ACCT_TYPES[0]);
@@ -104,8 +109,8 @@ function CategoryDetailPage(p: { go: (page: string, filter?: string) => void }) 
                   </View>
                 </View>
                 <View class="items-end">
-                  <Text class={`text-[13px] font-semibold ${C.ink}`}>{tx().length > 0 ? centsShown(monthTotal(), true).replace(/^-/, "−") : ""}</Text>
-                  <Text class={`text-[11px] ${C.dim}`}>{`${tx().length} transaction${tx().length === 1 ? "" : "s"}`}</Text>
+                  <Text class={`text-[13px] font-semibold ${C.ink}`}>{monthShown()}</Text>
+                  <Text class={`text-[11px] ${C.dim}`}>{tx().length > 0 ? countLabel() : ""}</Text>
                 </View>
               </View>
               <Loading res={ledger} />
@@ -120,8 +125,8 @@ function CategoryDetailPage(p: { go: (page: string, filter?: string) => void }) 
                     <View class="flex-1 min-w-0">
                       <Text class={`text-[13px] truncate ${C.ink}`}>{r().title || r().category || ""}</Text>
                     </View>
-                    <Text class={`text-[13px] font-mono ${r().tone === "pos" ? "text-emerald-600 dark:text-emerald-400" : r().tone === "neg" ? C.ink : C.mute}`}>
-                      {r().amount_shown || ""}
+                    <Text class={`text-[13px] font-mono ${(r().account_tone || r().tone) === "pos" ? "text-emerald-600 dark:text-emerald-400" : (r().account_tone || r().tone) === "neg" ? C.ink : C.mute}`}>
+                      {r().account_amount_shown || r().amount_shown || ""}
                     </Text>
                   </View>
                 )}
