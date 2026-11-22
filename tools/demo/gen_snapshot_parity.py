@@ -27,12 +27,16 @@ Mapping:
   (multi-line debits become `allocations`), transfer -> transfer,
   journal -> journal. Line party/department/location come through as
   payee/department/location names (Books resolves names to people/tags).
-- reconciliations + statement_lines -> one statement import per
-  (bank account, month), CSV built from the lines, then statement_accept.
-- documents -> evidence: statement PDFs attach through the statement import's
-  document_upload; receipts/bills attach unlinked (their link targets are the
-  old app's bills table, which has no Books counterpart). The one CSV
-  document cannot be evidence (PDF/PNG/JPEG/WebP only) and is skipped.
+- reconciliations + statement_lines -> one statement read per
+  (bank account, month) through the draft path (books_statement_draft_lines
+  + books_app_statement_accept), with each line's whole-row box on its page.
+- documents -> evidence: statement PDFs are generated here at known
+  coordinates and attach through the read's document_upload (each
+  reconciliation's PDF is the same bytes for every month it spans, so
+  evidence dedupe keeps one document); receipts/bills attach unlinked (their
+  link targets are the old app's bills table, which has no Books
+  counterpart). The one CSV document cannot be evidence (PDF/PNG/JPEG/WebP
+  only) and is skipped.
 
 Every name, amount and memo is synthetic, copied verbatim from the snapshot.
 Amounts stay two-place decimal text; no floats are used.
@@ -40,8 +44,6 @@ Amounts stay two-place decimal text; no floats are used.
 Run from the repo root: python3 tools/demo/gen_snapshot_parity.py
 """
 import base64
-import csv
-import io
 import json
 from decimal import Decimal
 
@@ -215,7 +217,125 @@ for h in sorted(heads.values(), key=lambda h: h["transaction_number"]):
             for l in others]
     step("books_app_post_entry", args)
 
-# --- statement documents: upload, keep with the import --------------------
+# --- statement documents: generated bank statements ------------------------
+# Every statement PDF is drawn at known coordinates on 612x792 letter pages,
+# so each row's whole-row box and the title/period areas are exact. Boxes are
+# [x0, y0, x1, y1] in thousandths (0-1000) of the page, top-left origin; PDF
+# points are bottom-left, 1 pt = 1000/612 (x) or 1000/792 (y) thousandths.
+# 16 rows per page, as the snapshot's own ocr_bbox rows imply (page 0 holds
+# sort_order 0-15, page 1 the rest).
+
+PAGE_W, PAGE_H = 612.0, 792.0
+MARG_L, MARG_R = 54.0, 558.0
+ROW_PITCH, ROW_TOP_0, ROW_TOP_N, ROWS_PER_PAGE = 18.0, 112.0, 64.0, 16
+
+def kx(x):
+    return round(x / PAGE_W * 1000)
+
+def ky(y):
+    return round(y / PAGE_H * 1000)
+
+def bbox(x0, y0, x1, y1):
+    return [kx(x0), ky(y0), kx(x1), ky(y1)]
+
+# PDF literal strings here are ASCII: hayro's base-14 fonts render no WinAnsi
+# punctuation, so dashes are drawn as hyphens (the area labels keep the real
+# characters) and anything else non-ASCII becomes '?'.
+def pdf_escape(s):
+    out = []
+    for ch in s:
+        if ch in "\\()":
+            out.append("\\" + ch)
+        elif ord(ch) < 128:
+            out.append(ch)
+        elif ch in "–—":
+            out.append("-")
+        else:
+            out.append("?")
+    return "".join(out)
+
+def pdf_text(x, y_top, size, text, font="F1"):
+    return f"BT /{font} {size} Tf {x:.1f} {PAGE_H - y_top:.1f} Td ({pdf_escape(text)}) Tj ET\n"
+
+def pdf_rule(y_top, weight=0.8, gray=0.85):
+    return f"{gray} g {MARG_L:.1f} {PAGE_H - y_top:.1f} {MARG_R - MARG_L:.1f} {weight} re f 0 g\n"
+
+# Helvetica's own widths, in ems, for right-aligning the amount column.
+HELV = {ch: .556 for ch in "0123456789"}
+HELV.update({".": .278, ",": .278, "-": .333, " ": .278})
+
+def text_w(s, size):
+    return sum(HELV.get(ch, .5) for ch in s) * size
+
+MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+def period_text(r):
+    a, b = r["period_start"][:10].split("-"), r["period_end"][:10].split("-")
+    if a[0] == b[0]:
+        return f"Statement Period: {MON[int(a[1]) - 1]} {int(a[2])} – {MON[int(b[1]) - 1]} {int(b[2])}, {b[0]}"
+    return f"Statement Period: {MON[int(a[1]) - 1]} {int(a[2])}, {a[0]} – {MON[int(b[1]) - 1]} {int(b[2])}, {b[0]}"
+
+def statement_pdf(title, period, rows, closing):
+    """One bank statement. rows = [(date, description, amount)] in page
+    order; returns (pdf bytes, row_boxes, areas) where row_boxes[i] is
+    (page, bbox) for rows[i] and areas are the title/period boxes."""
+    if len(rows) > 96:
+        raise SystemExit("statement_pdf: more than 96 rows")
+    chunks = [rows[i:i + ROWS_PER_PAGE] for i in range(0, len(rows), ROWS_PER_PAGE)] or [[]]
+    page_ops = []
+    row_boxes = []
+    for pi, chunk in enumerate(chunks):
+        ops = []
+        if pi == 0:
+            ops.append(pdf_text(MARG_L, 42, 14, title, "F2"))
+            ops.append(pdf_text(MARG_L, 60, 9, period))
+            ops.append(pdf_rule(78))
+            header_y, rows_y = 94, ROW_TOP_0
+        else:
+            header_y, rows_y = 44, ROW_TOP_N
+        ops.append(pdf_text(MARG_L, header_y, 9, "Date", "F2"))
+        ops.append(pdf_text(150, header_y, 9, "Description", "F2"))
+        ops.append(pdf_text(MARG_R - text_w("Amount", 9), header_y, 9, "Amount", "F2"))
+        ops.append(pdf_rule(header_y + 10, 0.5, 0.9))
+        top = rows_y
+        for date, desc, amount in chunk:
+            ops.append(pdf_text(MARG_L, top + 11, 9, date))
+            ops.append(pdf_text(150, top + 11, 9, desc[:52]))
+            ops.append(pdf_text(MARG_R - text_w(amount, 9), top + 11, 9, amount))
+            row_boxes.append((pi + 1, bbox(MARG_L, top, MARG_R, top + 16)))
+            top += ROW_PITCH
+        if pi == len(chunks) - 1:
+            ops.append(pdf_rule(top + 4))
+            ops.append(pdf_text(MARG_L, top + 18, 10, "Closing Balance", "F2"))
+            ops.append(pdf_text(MARG_R - text_w(closing, 10), top + 18, 10, closing, "F2"))
+        page_ops.append("".join(ops).encode())
+    objs = [b"<</Type/Catalog/Pages 2 0 R>>"]
+    kids = " ".join(f"{3 + 2 * i} 0 R" for i in range(len(page_ops)))
+    objs.append(f"<</Type/Pages/Kids[{kids}]/Count {len(page_ops)}>>".encode())
+    for i, body in enumerate(page_ops):
+        page_no, cont_no = 3 + 2 * i, 4 + 2 * i
+        objs.append(f"<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents {cont_no} 0 R/Resources<</Font<</F1 {3 + 2 * len(page_ops)} 0 R/F2 {4 + 2 * len(page_ops)} 0 R>>>>>>".encode())
+        objs.append(b"<</Length " + str(len(body)).encode() + b">>\nstream\n" + body + b"\nendstream")
+    objs.append(b"<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>")
+    objs.append(b"<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold>>")
+    out = b"%PDF-1.4\n"
+    offs = []
+    for i, o in enumerate(objs, 1):
+        offs.append(len(out))
+        out += f"{i} 0 obj\n".encode() + o + b"\nendobj\n"
+    xref = len(out)
+    out += f"xref\n0 {len(objs)+1}\n0000000000 65535 f \n".encode()
+    for o in offs:
+        out += f"{o:010d} 00000 n \n".encode()
+    out += f"trailer<</Size {len(objs)+1}/Root 1 0 R>>\nstartxref\n{xref}\n%%EOF".encode()
+    areas = [
+        {"kind": "title", "label": title, "page": 1,
+         "bbox": bbox(MARG_L, 26, MARG_R, 50)},
+        {"kind": "date", "label": period, "page": 1,
+         "bbox": bbox(MARG_L, 52, MARG_L + text_w(period, 9) + 8, 68)},
+    ]
+    return out, row_boxes, areas
+
 def tiny_pdf(label):
     body = f"BT /F1 10 Tf 40 720 Td ({label}) Tj ET".encode()
     # minimal valid single-page PDF
@@ -256,22 +376,46 @@ for a in data["document_attachments"]:
     if a["linkable_type"] == "reconciliation":
         doc_by_rec[a["linkable_id"]] = docs[a["document_id"]]
 
-for rid_, r in sorted(recs.items(), key=lambda kv: kv[1]["period_start"]):
-    acct_no = accounts[fins[r["bank_account_id"]]["ledger_account_id"]]["account_number"]
-    doc = doc_by_rec.get(rid_)
-    if doc:
-        up = f"stmt-{rid_[:8]}"
-        upload(up, doc_blob(doc))
-        step("books_app_statement_import", {"account": acct_no, "document_upload": up,
-                                          "document_mime": "application/pdf"})
-
-# --- statements: one import per (account, month) ---------------------------
+# --- statements: one read per (account, month) -----------------------------
+# Each read goes through the statement-read path (draft lines + the person's
+# accept) so every line keeps its whole-row box and the statement document
+# keeps its title/period areas. The document is the reconciliation's whole
+# statement, so a reconciliation spanning two months uploads the same PDF
+# twice under different upload ids; evidence dedupe keeps one document, and
+# each month's statement points at it with its own rows boxed.
 slines = sorted(data["statement_lines"], key=lambda l: (l["reconciliation_id"], l["sort_order"]))
 months = {}
 for l in slines:
     r = recs[l["reconciliation_id"]]
     acct_no = accounts[fins[r["bank_account_id"]]["ledger_account_id"]]["account_number"]
     months.setdefault((acct_no, l["transaction_date"][:7]), []).append(l)
+
+# one generated statement document per reconciliation that has lines
+pdf_by_rec = {}
+for rid_, r in sorted(recs.items(), key=lambda kv: kv[1]["period_start"]):
+    rec_lines = [l for l in slines if l["reconciliation_id"] == rid_]
+    fin = fins[r["bank_account_id"]]
+    if rec_lines:
+        run = Decimal(r["statement_beginning_balance"])
+        drawn = []
+        for l in rec_lines:
+            run += Decimal(l["amount"])
+            drawn.append((l, l["transaction_date"][:10], l["description"] or "", money(l["amount"])))
+        closing = run
+        if accounts[fin["ledger_account_id"]]["account_type"] == "liability":
+            closing = -closing
+        pdf_by_rec[rid_] = statement_pdf(
+            f"{fin['account_name']} — Monthly Statement",
+            period_text(r),
+            [(d, t, a) for _, d, t, a in drawn],
+            str(closing.quantize(Decimal("0.01"))))
+    elif doc_by_rec.get(rid_):
+        # a statement document with no lines: evidence only, no read
+        acct_no = accounts[fin["ledger_account_id"]]["account_number"]
+        up = f"stmt-{rid_[:8]}"
+        upload(up, doc_blob(doc_by_rec[rid_]))
+        step("books_app_statement_import", {"account": acct_no, "document_upload": up,
+                                          "document_mime": "application/pdf"})
 
 for (acct_no, month), ls in sorted(months.items()):
     # closing = this account's first opening plus every line through the month
@@ -281,18 +425,37 @@ for (acct_no, month), ls in sorted(months.items()):
                     ["ledger_account_id"]]["account_number"] == acct_no),
         key=lambda l: l["transaction_date"])
     first_rec = recs[acct_lines[0]["reconciliation_id"]]
-    closing = Decimal(first_rec["statement_beginning_balance"]) + sum(
+    account = accounts[fins[first_rec["bank_account_id"]]["ledger_account_id"]]
+    raw_closing = Decimal(first_rec["statement_beginning_balance"]) + sum(
         Decimal(l["amount"]) for l in acct_lines
         if l["transaction_date"][:7] <= month)
-    buf = io.StringIO()
-    w = csv.writer(buf)
-    w.writerow(["Date", "Description", "Amount"])
+    closing = -raw_closing if account["account_type"] == "liability" else raw_closing
+    rid_ = ls[0]["reconciliation_id"]
+    pdf, row_boxes, areas = pdf_by_rec[rid_]
+    rec_lines = [l for l in slines if l["reconciliation_id"] == rid_]
+    order = {id(l): i for i, l in enumerate(rec_lines)}
+    # each line's balance is its running raw sum, so balance_breaks is 0
+    run = raw_closing - sum(Decimal(l["amount"]) for l in ls)
+    lines_arg = []
     for l in ls:
-        w.writerow([l["transaction_date"][:10], l["description"] or "", money(l["amount"])])
-    step("books_app_statement_import", {"account": acct_no, "csv_text": buf.getvalue(),
-                                        "closing": str(closing.quantize(Decimal("0.01"))),
-                                        "file_name": f"{acct_no}-{month}.csv"})
-    step("books_app_statement_accept", {"account": acct_no, "month": month})
+        run += Decimal(l["amount"])
+        page, box = row_boxes[order[id(l)]]
+        lines_arg.append({"date": l["transaction_date"][:10],
+                          "description": l["description"] or "",
+                          "amount": money(l["amount"]),
+                          "balance": str(run.quantize(Decimal("0.01"))),
+                          "page": page, "bbox": box, "confidence": 96})
+    args = {"account": acct_no, "month": month, "lines": lines_arg,
+            "closing": str(closing.quantize(Decimal("0.01")))}
+    if doc_by_rec.get(rid_):
+        up = f"stmt-{rid_[:8]}-{month}"
+        upload(up, pdf)
+        args["document_upload"] = up
+        args["document_mime"] = "application/pdf"
+        args["areas"] = areas
+    step("books_statement_draft_lines", args)
+    step("books_app_statement_accept", {"account": acct_no, "month": month,
+                                        "draft": "pending"})
 
 # --- other documents: unlinked evidence ------------------------------------
 attached_ids = {doc["id"] for doc in doc_by_rec.values()}

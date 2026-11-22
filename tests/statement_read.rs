@@ -370,6 +370,153 @@ fn d_evidence_ticket_is_kept_on_the_statement() {
     );
 }
 
+/// A one-page statement drawn like the demo generator's, small but real PDF.
+fn statement_pdf() -> Vec<u8> {
+    let body = b"BT /F2 14 Tf 54 750 Td (Mercury Checking - Monthly Statement) Tj ET\n\
+                 BT /F1 9 Tf 54 732 Td (Statement Period: Sep 1 - Sep 30, 2026) Tj ET\n\
+                 0.85 g 54 714 504 0.8 re f 0 g\n\
+                 BT /F1 9 Tf 54 680 Td (2026-09-03) Tj ET\n\
+                 BT /F1 9 Tf 150 680 Td (Coffee shop) Tj ET\n\
+                 BT /F1 9 Tf 490 680 Td (-120.00) Tj ET\n";
+    let objs: Vec<Vec<u8>> = vec![
+        b"<</Type/Catalog/Pages 2 0 R>>".to_vec(),
+        b"<</Type/Pages/Kids[3 0 R]/Count 1>>".to_vec(),
+        b"<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R/Resources<</Font<</F1 5 0 R/F2 6 0 R>>>>>>".to_vec(),
+        [b"<</Length ".to_vec(), body.len().to_string().into_bytes(), b">>\nstream\n".to_vec(), body.to_vec(), b"\nendstream".to_vec()].concat(),
+        b"<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>".to_vec(),
+        b"<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold>>".to_vec(),
+    ];
+    let mut out = b"%PDF-1.4\n".to_vec();
+    let mut offs = Vec::new();
+    for (i, o) in objs.iter().enumerate() {
+        offs.push(out.len());
+        out.extend(format!("{} 0 obj\n", i + 1).into_bytes());
+        out.extend(o);
+        out.extend(b"\nendobj\n");
+    }
+    let xref = out.len();
+    out.extend(format!("xref\n0 {}\n0000000000 65535 f \n", objs.len() + 1).into_bytes());
+    for o in offs {
+        out.extend(format!("{o:010} 00000 n \n").into_bytes());
+    }
+    out.extend(
+        format!(
+            "trailer<</Size {}/Root 1 0 R>>\nstartxref\n{xref}\n%%EOF",
+            objs.len() + 1
+        )
+        .into_bytes(),
+    );
+    out
+}
+
+#[test]
+fn h_document_upload_and_pending_accept_keep_boxes_and_areas() {
+    let dir = TempDir::new("r1-doc");
+    let mut b = seeded(&dir);
+    // the app staged the statement's parts; the read keeps it as the document
+    ok(
+        &mut b,
+        Origin::App,
+        tools::UPLOAD_PART,
+        json!({ "client_request_id": "r1-doc-part", "upload": "r1-stmt-doc", "part": 0, "parts": 1,
+                "data_base64": b64::encode(&statement_pdf()) }),
+    );
+    let mut args = draft_args("r1-doc-draft", lines());
+    args["document_upload"] = json!("r1-stmt-doc");
+    args["document_mime"] = json!("application/pdf");
+    args["areas"] = json!([
+        { "kind": "title", "label": "Mercury Checking - Monthly Statement", "page": 1, "bbox": [88, 33, 912, 63] },
+        { "kind": "date", "label": "Statement Period: Sep 1 - Sep 30, 2026", "page": 1, "bbox": [88, 66, 360, 86] }
+    ]);
+    let out = ok(&mut b, Origin::Agent, tools::STATEMENT_DRAFT_LINES, args);
+    assert!(
+        out["draft"]
+            .as_str()
+            .is_some_and(books_store::plumbing::is_ticket)
+    );
+    // the draft shows its areas back to the app, never to the assistant
+    let app = get(&mut b, Origin::App);
+    assert_eq!(app["draft"]["areas"].as_array().map(Vec::len), Some(2));
+    assert!(get(&mut b, Origin::Agent)["draft"].get("areas").is_none());
+    // "pending" names this month's pending read, for callers without the ticket
+    ok(
+        &mut b,
+        Origin::App,
+        tools::STATEMENT_ACCEPT,
+        json!({ "client_request_id": "r1-doc-accept", "account": BANK, "month": MONTH, "draft": "pending" }),
+    );
+    let st = get(&mut b, Origin::App);
+    let st = &st["statement"];
+    assert!(
+        st["evidence"]
+            .as_str()
+            .is_some_and(books_store::plumbing::is_ticket),
+        "{st}"
+    );
+    let areas = st["areas"].as_array().unwrap();
+    assert_eq!(areas.len(), 2);
+    assert_eq!(
+        (
+            areas[0]["kind"].as_str(),
+            areas[0]["label"].as_str(),
+            areas[0]["page"].as_i64(),
+            areas[0]["box"]["left"].as_str(),
+            areas[0]["box"]["top"].as_str(),
+            areas[0]["box"]["width"].as_str(),
+            areas[0]["box"]["height"].as_str()
+        ),
+        (
+            Some("title"),
+            Some("Mercury Checking - Monthly Statement"),
+            Some(1),
+            Some("8.8%"),
+            Some("3.3%"),
+            Some("82.4%"),
+            Some("3.0%")
+        )
+    );
+    assert_eq!(areas[1]["kind"], "date");
+    // every row keeps its whole-row box, and page pictures exist to draw under them
+    let rows = st["rows"].as_array().unwrap();
+    assert!(
+        rows.iter()
+            .all(|r| r["box"].is_object() && r["page"].is_i64())
+    );
+    assert_eq!(count(&mut b, "SELECT count(*) FROM evidence_page"), 1);
+    assert_eq!(count(&mut b, "SELECT count(*) FROM statement_area"), 2);
+    assert!(
+        st["snapshot_pictures"]
+            .as_array()
+            .is_some_and(|p| !p.is_empty()),
+        "a statement page picture to draw under the boxes: {st}"
+    );
+}
+
+#[test]
+fn i_bad_areas_are_refused() {
+    let dir = TempDir::new("r1-areas-bad");
+    let mut b = seeded(&dir);
+    for (n, areas) in [
+        json!([{ "kind": "other", "label": "x", "page": 1, "bbox": [0, 0, 10, 10] }]),
+        json!([{ "kind": "title", "label": "", "page": 1, "bbox": [0, 0, 10, 10] }]),
+        json!([{ "kind": "title", "label": "x", "page": 0, "bbox": [0, 0, 10, 10] }]),
+        json!([{ "kind": "title", "label": "x", "page": 1, "bbox": [10, 10, 5, 20] }]),
+        json!([{ "kind": "title", "label": "x", "page": 1 }]),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let mut args = draft_args(&format!("r1-area-{n:04}"), lines());
+        args["areas"] = areas;
+        refused(&mut b, Origin::Agent, tools::STATEMENT_DRAFT_LINES, args);
+    }
+    // a document upload is a PDF, PNG or JPEG the app sent in parts
+    let mut args = draft_args("r1-area-noparts", lines());
+    args["document_upload"] = json!("never-uploaded");
+    args["document_mime"] = json!("application/pdf");
+    refused(&mut b, Origin::Agent, tools::STATEMENT_DRAFT_LINES, args);
+}
+
 #[test]
 fn g_csv_balances_are_kept_and_breaks_counted() {
     let dir = TempDir::new("r1-csv");
@@ -404,6 +551,68 @@ fn g_csv_balances_are_kept_and_breaks_counted() {
         json!({ "client_request_id": "r1-csv-0002", "account": BANK, "month": "2026-08", "lines": broken }),
     );
     assert_eq!(out["balance_breaks"], 1);
+}
+
+#[test]
+fn j_the_snapshot_seed_boxes_every_row_and_keeps_areas() {
+    let dir = TempDir::new("r1-snapshot");
+    books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
+    let mut b = Books::new(Paths::in_dir(dir.0.join("store")));
+    let book: Value = serde_json::from_str(
+        &std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../fixtures/demo/old-app-snapshot-seed.json"
+        ))
+        .unwrap(),
+    )
+    .unwrap();
+    demo::seed(&mut b, &book).unwrap();
+    // 2026-02 on 11200 is the two-page statement (the PDF covers Jan-Mar)
+    let st = ok(
+        &mut b,
+        Origin::App,
+        tools::STATEMENT_GET,
+        json!({ "account": "11200", "month": "2026-02" }),
+    );
+    let st = &st["statement"];
+    let rows = st["rows"].as_array().unwrap();
+    assert_eq!(rows.len(), 11);
+    assert!(
+        rows.iter()
+            .all(|r| r["box"].is_object() && r["page"].is_i64()),
+        "{rows:?}"
+    );
+    assert!(rows.iter().any(|r| r["page"] == 2), "page 2 rows: {rows:?}");
+    let areas = st["areas"].as_array().unwrap();
+    assert_eq!(
+        areas
+            .iter()
+            .map(|a| a["kind"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        ["title", "date"]
+    );
+    assert!(st["evidence"].is_string());
+    assert_eq!(
+        st["snapshot_pictures"].as_array().map(Vec::len),
+        Some(2),
+        "the statement's two pages: {st}"
+    );
+    // the one-page months keep their single page
+    let jan = ok(
+        &mut b,
+        Origin::App,
+        tools::STATEMENT_GET,
+        json!({ "account": "22200", "month": "2026-01" }),
+    );
+    let jan = &jan["statement"];
+    assert!(
+        jan["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|r| r["page"] == 1)
+    );
+    assert_eq!(jan["areas"].as_array().map(Vec::len), Some(2));
 }
 
 fn now_ms() -> i64 {

@@ -12,7 +12,9 @@ use books_store::books::Book;
 use books_store::months::{self, Statement};
 use books_store::plumbing;
 use books_store::rusqlite::Connection;
-use books_store::statement_drafts::{self as drafts, Bbox, Draft, DraftLine, Extra, NewDraft};
+use books_store::statement_drafts::{
+    self as drafts, Bbox, Draft, DraftArea, DraftLine, Extra, NewDraft,
+};
 use serde_json::{Map, Value, json};
 
 use crate::service::{self, Answer, Origin, Refusal, text, ticket, with_subject};
@@ -66,6 +68,39 @@ fn bbox_arg(v: Option<&Value>) -> Result<Option<Bbox>, Refusal> {
         }
         Some(_) => Err(bad()),
     }
+}
+
+fn areas_arg(args: &Map<String, Value>) -> Result<Vec<DraftArea>, Refusal> {
+    let bad = || {
+        Refusal::invalid("`areas` lists page areas: kind (title or date), label, page and bbox.")
+    };
+    let raw = match args.get("areas") {
+        None | Some(Value::Null) => return Ok(Vec::new()),
+        Some(Value::Array(a)) if a.len() <= 50 => a,
+        Some(_) => return Err(bad()),
+    };
+    let mut areas = Vec::new();
+    for v in raw {
+        let a = v.as_object().ok_or_else(bad)?;
+        let kind = text(a, "kind").ok_or_else(bad)?;
+        if kind != "title" && kind != "date" {
+            return Err(bad());
+        }
+        let label = text(a, "label").ok_or_else(bad)?.trim().to_string();
+        if label.is_empty() || label.chars().count() > 120 {
+            return Err(bad());
+        }
+        let label = statement::mask_digit_runs(&label);
+        let page = small_int(a.get("page"), "page", 1, 500)?.ok_or_else(bad)?;
+        let bbox = bbox_arg(a.get("bbox"))?.ok_or_else(bad)?;
+        areas.push(DraftArea {
+            kind: kind.to_string(),
+            label,
+            page,
+            bbox,
+        });
+    }
+    Ok(areas)
 }
 
 fn line_arg(no: usize, v: &Value) -> Result<DraftLine, Refusal> {
@@ -155,8 +190,21 @@ fn pages_arg(
     Ok(pages)
 }
 
-fn draft_arg(conn: &Connection, book: &Book, args: &Map<String, Value>) -> Result<Draft, Refusal> {
+fn draft_arg(
+    conn: &Connection,
+    book: &Book,
+    account_id: i64,
+    period_key: &str,
+    args: &Map<String, Value>,
+) -> Result<Draft, Refusal> {
     let not_ours = || Refusal::new("not_found", "That statement read is not one Books issued.");
+    // "pending" names the account and month's pending read, for callers that
+    // cannot hold the read's ticket (the demo seed replays literal args).
+    if service::required(args, "draft")? == "pending" {
+        return drafts::pending(conn, book.id, account_id, period_key)?
+            .filter(|d| d.book_id == book.id)
+            .ok_or_else(not_ours);
+    }
     let id = match plumbing::subject(conn, service::required(args, "draft")?)? {
         Some((k, id)) if k == "sdraft" => id,
         _ => return Err(not_ours()),
@@ -228,6 +276,7 @@ pub fn draft_lines(conn: &Connection, args: &Map<String, Value>, origin: Origin)
         .collect::<Result<Vec<_>, _>>()?;
     let closing = money_text(args.get("closing"), "closing")?;
     let pages = pages_arg(conn, &book, args)?;
+    let areas = areas_arg(args)?;
     // with no document named, page 1's picture is the statement's: never a
     // later page's, which would then be drawn under page 1's boxes
     let evidence =
@@ -243,6 +292,7 @@ pub fn draft_lines(conn: &Connection, args: &Map<String, Value>, origin: Origin)
             proposed_by,
             lines: &lines,
             pages: &pages,
+            areas: &areas,
         },
     )?;
     let d = drafts::get(conn, id)?.ok_or_else(|| Refusal::new("store", "The draft vanished."))?;
@@ -268,7 +318,7 @@ pub fn accept(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let book = writes::book_in(conn, args)?;
     let account = writes::account_in(conn, &book, service::required(args, "account")?)?;
     let month = month_arg(args)?;
-    let d = draft_arg(conn, &book, args)?;
+    let d = draft_arg(conn, &book, account.id, &month.key, args)?;
     if d.account_id != account.id || d.period_key != month.key {
         return Err(Refusal::invalid(
             "That statement read is for another account or month.",
@@ -342,6 +392,7 @@ pub fn accept(conn: &Connection, args: &Map<String, Value>) -> Answer {
         .collect();
     drafts::keep_extras(conn, id, d.evidence_id, &extras)?;
     drafts::keep_pages(conn, id, &d.pages)?;
+    drafts::keep_areas(conn, id, &d.areas)?;
     // a PDF that came by another way than Import statement has no pictures yet
     if let Some(document) = d.evidence_id {
         crate::page_pictures::keep(conn, document)?;
@@ -362,6 +413,20 @@ fn box_json(b: Option<Bbox>) -> Value {
     b.map_or(Value::Null, |b| {
         json!({ "left": percent(b[0]), "top": percent(b[1]), "width": percent(b[2] - b[0]), "height": percent(b[3] - b[1]) })
     })
+}
+
+fn areas_json(areas: &[DraftArea]) -> Value {
+    areas
+        .iter()
+        .map(|a| {
+            json!({
+                "kind": a.kind,
+                "label": a.label,
+                "page": a.page,
+                "box": box_json(Some(a.bbox)),
+            })
+        })
+        .collect()
 }
 
 fn draft_json(store: &Store, d: &Draft, origin: Origin) -> Result<Value, Refusal> {
@@ -392,6 +457,7 @@ fn draft_json(store: &Store, d: &Draft, origin: Origin) -> Result<Value, Refusal
                 })
             })
             .collect();
+        out["areas"] = areas_json(&d.areas);
     }
     Ok(out)
 }
@@ -431,5 +497,6 @@ pub fn view_extra(
             row["low"] = json!(low(e.confidence));
         }
     }
+    st["areas"] = areas_json(&drafts::areas(c, s.id)?);
     Ok(())
 }

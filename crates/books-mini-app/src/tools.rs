@@ -499,8 +499,16 @@ fn statement_draft_schema() -> Value {
         "account": { "type": "string", "description": "The bank, cash or card account's ticket." },
         "month": { "type": "string", "description": "YYYY-MM" },
         "evidence": { "type": "string", "description": "The attached statement's evidence ticket." },
+        "document_upload": { "type": "string", "description": "The statement's PDF, PNG or JPEG sent in parts with `books_app_upload_part`: kept as the read's document in place of `evidence`." },
+        "document_mime": { "type": "string", "enum": ["application/pdf", "image/png", "image/jpeg"] },
         "pages": { "type": "array", "minItems": 1, "maxItems": 500, "items": { "type": ["string", "null"] }, "description": "When the statement came as one picture for each page: each page's evidence ticket (PNG or JPEG), in page order, so the app shows every page behind its lines. `null` for a page with no picture." },
         "closing": { "type": "string", "description": "The ending balance, two-place text." },
+        "areas": { "type": "array", "maxItems": 50, "items": { "type": "object", "required": ["kind", "label", "page", "bbox"], "properties": {
+            "kind": { "type": "string", "enum": ["title", "date"], "description": "Which part of the page the box names." },
+            "label": { "type": "string", "maxLength": 120, "description": "The area's text, such as the statement title." },
+            "page": { "type": "integer", "minimum": 1, "maximum": 500 },
+            "bbox": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 1000 }, "minItems": 4, "maxItems": 4, "description": "left, top, right, bottom in thousandths of the page." } } },
+            "description": "Named page areas the read boxed, such as the statement's title and its period or date, for the window to highlight." },
         "lines": { "type": "array", "minItems": 1, "maxItems": 2000, "items": { "type": "object", "required": ["date", "amount"], "properties": {
             "date": { "type": "string", "description": "YYYY-MM-DD" },
             "description": { "type": "string", "maxLength": 80 },
@@ -1578,9 +1586,25 @@ pub fn call(
         EVIDENCE_REVIEW => read(books, arguments, |store, _book, args| {
             document_review::review(store.conn(), args)
         }),
-        STATEMENT_DRAFT_LINES => write(books, name, origin, arguments, |tx| {
-            statement_read::draft_lines(tx, arguments, origin)
-        }),
+        STATEMENT_DRAFT_LINES => {
+            // a statement document sent in parts becomes the read's evidence,
+            // inside the same write, so a repeat replays one stored result.
+            if let Some(upload) = service::text(arguments, "document_upload") {
+                let mut uploads = std::mem::take(&mut books.uploads);
+                let out = write(books, name, origin, arguments, |tx| {
+                    let bytes = uploads.take(upload)?;
+                    let doc = reconcile::statement_document(tx, arguments, &bytes)?;
+                    let mut args = arguments.clone();
+                    args.insert("evidence".into(), doc["document"].clone());
+                    statement_read::draft_lines(tx, &args, origin)
+                });
+                books.uploads = uploads;
+                return Some(out);
+            }
+            write(books, name, origin, arguments, |tx| {
+                statement_read::draft_lines(tx, arguments, origin)
+            })
+        }
         RECONCILE_DOCUMENT => {
             if !origin.is_app() {
                 return Some(fail("forbidden", "Only the app may open this page."));
