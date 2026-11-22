@@ -74,9 +74,9 @@ pub(crate) fn person_entries(
     let rows: Vec<(i64, i64)> = {
         let mut stmt = store
             .conn()
-            .prepare("SELECT l.line_id, e.entry_id FROM line l JOIN entry e ON e.entry_id = l.entry_id WHERE e.book_id = ?1 AND e.status IN ('posted','voided') ORDER BY e.entry_date DESC, e.entry_no DESC")
+            .prepare("SELECT l.line_id, e.entry_id FROM line l JOIN entry e ON e.entry_id = l.entry_id WHERE e.book_id = ?1 AND e.status IN ('posted','voided') AND coalesce(l.person_id, e.person_id) = ?2 ORDER BY e.entry_date DESC, e.entry_no DESC")
             .map_err(books_store::StoreError::from)?;
-        stmt.query_map(params![chart.book.id], |r| {
+        stmt.query_map(params![chart.book.id, person_id], |r| {
             Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?))
         })
         .map_err(books_store::StoreError::from)?
@@ -84,10 +84,8 @@ pub(crate) fn person_entries(
         .map_err(books_store::StoreError::from)?
     };
     let mut ids = Vec::new();
-    for (line_id, entry_id) in rows {
-        if people::effective_links(store.conn(), entry_id, line_id)?.person_id == Some(person_id)
-            && !ids.contains(&entry_id)
-        {
+    for (_, entry_id) in rows {
+        if !ids.contains(&entry_id) {
             ids.push(entry_id);
         }
     }
