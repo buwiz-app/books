@@ -568,22 +568,21 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     act(post ? "books_app_post_entry" : "books_entry_draft", a)
       .then(async (r: Any) => {
         // a document staged in the side panel links to the entry it was kept
-        // for; one that fails stays staged so nothing vanishes
+        // for; one that fails stays in the Documents library, unlinked, so
+        // the next form never shows another entry's attachment (PR37 f1)
         let firstLinkError = "";
-        const failed: Any[] = [];
+        let failed = 0;
         for (const d of entryStaged()) {
           try {
-            // a document retried after a failed link keeps its own entry
-            // ticket, never the next form's (PR37 finding 1)
-            await act("books_app_evidence_attach", { op: "link", evidence: d.evidence, target: { kind: "entry", ticket: d.target || r.entry } });
+            await act("books_app_evidence_attach", { op: "link", evidence: d.evidence, target: { kind: "entry", ticket: r.entry } });
           } catch (e: Any) {
             if (!firstLinkError) firstLinkError = errText(e);
-            failed.push({ ...d, target: d.target || r.entry });
+            failed += 1;
           }
         }
-        entryStaged.set(failed);
-        if (failed.length === 0) toast(post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`);
-        else toast(`${post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`}. ${failed.length} document${failed.length === 1 ? "" : "s"} couldn't be linked: ${firstLinkError}`);
+        entryStaged.set([]);
+        if (failed === 0) toast(post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`);
+        else toast(`${post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`}. ${failed} document${failed === 1 ? "" : "s"} couldn't be linked — still in Documents: ${firstLinkError}`);
         savedEntry.set(fresh ? "" : String(r.entry || ""));
         if (close || fresh) {
           amount.set("");

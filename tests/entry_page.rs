@@ -13,18 +13,22 @@ fn books() -> &'static str {
     }
 }
 
-/// Finding 1: a document that failed to link keeps the entry ticket it was
-/// staged for instead of landing on the next saved entry.
+/// Finding 1: a document that fails to link stays in the Documents library
+/// unstaged, so the next form never shows another entry's attachment.
 #[test]
-fn f1_failed_links_keep_their_entry() {
+fn f1_failed_links_leave_staged() {
     let s = books();
     assert!(
-        s.contains("d.target || r.entry"),
-        "the link target ignores a document's kept ticket"
+        s.contains("entryStaged.set([])"),
+        "failed documents still survive a save as staged"
     );
     assert!(
-        s.contains("target: d.target || r.entry"),
-        "failed documents no longer record their entry ticket"
+        !s.contains("entryStaged.set(failed)"),
+        "failed documents are kept staged for the next form"
+    );
+    assert!(
+        s.contains("still in Documents"),
+        "the toast never says where a failed document went"
     );
 }
 
