@@ -164,3 +164,14 @@ fn f11_new_entry_offers_cancel() {
     let s = books();
     assert!(s.contains("Cancel"), "no Cancel action");
 }
+
+/// Cancel drops the documents staged for the entry, so the next entry's Save
+/// never links them.
+#[test]
+fn cancel_drops_staged_documents() {
+    let s = books();
+    assert!(
+        s.contains("entryStaged.set([]);\np.close();"),
+        "Cancel leaves the staged documents for the next entry"
+    );
+}
