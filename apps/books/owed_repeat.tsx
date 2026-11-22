@@ -28,6 +28,9 @@ function RepeatsDue(p: { rows: Any[] }) {
                 {r().doc || ""}
               </Text>
               <Text class={`w-[90px] hidden md:block text-[12.5px] font-mono ${C.ink}`}>{r().issued}</Text>
+              {/* below md the reference and date collapse onto a second line,
+                  so two same-vendor same-amount bills stay tellable apart */}
+              <Text class={`w-full md:hidden text-[11.5px] ${C.mute} -mt-1`}>{`${r().doc || ""} · ${r().issued || ""}`}</Text>
               <Text class={`w-[110px] text-right text-[12.5px] font-mono ${C.ink}`}>{r().amount_shown}</Text>
               <Btn label="Add this month's copy" small onPress={() => add(r().owed)} />
               <Btn label="Stop repeating" small onPress={() => stop(r().owed)} />
