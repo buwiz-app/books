@@ -532,23 +532,25 @@ function TxCols(p: { edit?: boolean; balance?: boolean }) {
     <Text class={`${cls} px-2 text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider`}>{label}</Text>
   );
   return (
-    <View class="hidden md:flex flex-row items-center py-1.5 border-b border-[#f1f5f9] dark:border-slate-800 bg-white dark:bg-[#0f172a]">
-      <View class="w-1" />
-      <If when={p.edit}>
-        <View class="w-8" />
-      </If>
-      {colHead("Date", "w-[72px] text-center")}
-      {colHead("Party", "flex-1 min-w-0")}
-      {colHead("Src", "w-10 text-center")}
-      {colHead("Category", "w-[160px]")}
-      {colHead("Department", "w-[130px] hidden xl:block")}
-      {colHead("Location", "w-[130px] hidden xl:block")}
-      {colHead("Debit", "w-[100px] text-right")}
-      {colHead("Credit", "w-[100px] text-right")}
-      <If when={p.balance}>
-        {colHead("Balance", "w-[110px] text-right")}
-      </If>
-      <View class="w-9" />
+    <View class="hidden md:block">
+      <View class="flex-row items-center py-1.5 border-b border-[#f1f5f9] dark:border-slate-800 bg-white dark:bg-[#0f172a]">
+        <View class="w-1" />
+        <If when={p.edit}>
+          <View class="w-8" />
+        </If>
+        {colHead("Date", "w-[72px] text-center")}
+        {colHead("Party", "flex-1 min-w-0")}
+        {colHead("Src", "w-10 text-center")}
+        {colHead("Category", "w-[160px]")}
+        {colHead("Department", "w-[130px] hidden xl:block")}
+        {colHead("Location", "w-[130px] hidden xl:block")}
+        {colHead("Debit", "w-[100px] text-right")}
+        {colHead("Credit", "w-[100px] text-right")}
+        <If when={p.balance}>
+          {colHead("Balance", "w-[110px] text-right")}
+        </If>
+        <View class="w-9" />
+      </View>
     </View>
   );
 }
@@ -712,7 +714,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
         <TxSide />
       </View>
       <View class="flex-1 min-w-0 flex flex-col">
-        <View class="flex-1 min-h-0 flex flex-col md:mx-3 md:my-3 md:rounded-lg md:border md:border-[#e5e7eb] md:shadow-sm overflow-hidden bg-white dark:bg-slate-900">
+        <View class="flex-1 min-h-0 flex flex-col md:mx-3 md:my-3 md:rounded-lg md:border border-[#e5e7eb] dark:border-slate-700 md:shadow-sm overflow-hidden bg-white dark:bg-slate-900">
           {/* Header — LedgerHeader */}
           <View class="flex-row items-center px-5 py-3 bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c] rounded-t-lg">
             <View class="flex-row items-center gap-3 shrink-0">
