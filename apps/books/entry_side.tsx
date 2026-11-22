@@ -927,7 +927,6 @@ function SideAssistant() {
               </If>
             </View>
             <View class="flex-row items-center gap-2">
-              <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">↵ send · ⇧↵ line</Text>
               <If when={Boolean(sideStream())}>
                 <View
                   class="w-8 h-8 rounded-full items-center justify-center bg-red-500 cursor-pointer"
