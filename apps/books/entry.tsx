@@ -474,7 +474,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     const cents = String(absolute % 100n).padStart(2, "0");
     return `${negative ? "−" : ""}₱${whole}.${cents}`;
   };
-  const args = (): Record<string, Any> | null => {
+  const args = (post: boolean): Record<string, Any> | null => {
     err.set("");
     const base: Record<string, Any> = { form: mode() };
     if (savedEntry()) base.entry = savedEntry();
@@ -484,8 +484,9 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     if (memo()) base.memo = memo();
     if (reference()) base.reference = reference();
     if (mode() === "journal") {
-      if (!journalTotals().balanced || journalTotals().debit === 0n) {
-        err.set("Debits and credits must be equal before saving.");
+      // an unbalanced journal may wait as a draft; only a post refuses it
+      if (post && (!journalTotals().balanced || journalTotals().debit === 0n)) {
+        err.set("Debits and credits must be equal before posting.");
         return null;
       }
       const lines = jl()
@@ -561,7 +562,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     return base;
   };
   const save = (post: boolean, close = true, fresh = false) => {
-    const a = args();
+    const a = args(post);
     if (!a) return;
     busy.set(true);
     act(post ? "books_app_post_entry" : "books_entry_draft", a)
