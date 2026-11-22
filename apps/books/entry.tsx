@@ -558,10 +558,12 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
         const failed: Any[] = [];
         for (const d of entryStaged()) {
           try {
-            await act("books_app_evidence_attach", { op: "link", evidence: d.evidence, target: { kind: "entry", ticket: r.entry } });
+            // a document retried after a failed link keeps its own entry
+            // ticket, never the next form's (PR37 finding 1)
+            await act("books_app_evidence_attach", { op: "link", evidence: d.evidence, target: { kind: "entry", ticket: d.target || r.entry } });
           } catch (e: Any) {
             if (!firstLinkError) firstLinkError = errText(e);
-            failed.push(d);
+            failed.push({ ...d, target: d.target || r.entry });
           }
         }
         entryStaged.set(failed);
