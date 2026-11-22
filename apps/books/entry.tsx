@@ -490,6 +490,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     if (date() || o()?.today) base.date = date() || o()?.today;
     if (payee()) base.payee = payee();
     if (payeeTicket()) base.person = payeeTicket();
+    // an edit of the saved draft says so when the person was taken off
+    else if (savedEntry()) base.person = "";
     if (memo()) base.memo = memo();
     if (reference()) base.reference = reference();
     if (mode() === "journal") {

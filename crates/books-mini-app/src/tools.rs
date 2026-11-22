@@ -212,7 +212,7 @@ fn draft_schema() -> Value {
             "facts": { "type": "object", "description": "Line facts for the category line, e.g. {\"document_kind\": \"sale_invoice\"}." },
             "lines": { "type": "array", "description": "Journal only: [{account, debit, credit, facts, person?, department?, location?, memo?}].", "items": { "type": "object", "properties": { "account": { "type": "string" }, "debit": { "type": "string" }, "credit": { "type": "string" }, "facts": { "type": "object" }, "person": { "type": "string" }, "department": { "type": "string" }, "location": { "type": "string" }, "memo": { "type": "string" } } } },
             "allocations": { "type": "array", "description": "Money in or out only: category rows whose two-place amounts must add up exactly to `amount`.", "items": { "type": "object", "required": ["category", "amount"], "properties": { "category": { "type": "string" }, "amount": { "type": "string" }, "memo": { "type": "string" }, "person": { "type": "string" }, "department": { "type": "string" }, "location": { "type": "string" } } } },
-            "person": { "type": "string", "description": "A person ticket." },
+            "person": { "type": "string", "description": "A person ticket. Empty on a draft edit takes the person off the draft." },
             "person_kind": { "type": "string", "description": "With payee: the kind of person to link or make (vendors, customers, employees, owners, lenders, government)." },
             "department": { "type": "string" },
             "location": { "type": "string" },

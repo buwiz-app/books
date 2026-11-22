@@ -445,6 +445,23 @@ test("a picked payee goes to the draft as person", async () => {
   s.unmount();
 });
 
+test("a vendor replaced by free text leaves the saved draft", async () => {
+  const s = await fresh({});
+  await openEntry(s);
+  fillExpense(s);
+  pick(s, "Vendor", "tkt_ven1");
+  menuSave(s);
+  await s.until(() => calls.some((c) => c.tool === "books_entry_draft"), "the draft save");
+  await settle(s);
+  combos(s, "Vendor")[0].props.onQueryChange({ query: "Walk-in" });
+  menuSave(s);
+  await s.until(() => calls.filter((c) => c.tool === "books_entry_draft").length === 2, "the draft edit");
+  const edit = calls.filter((c) => c.tool === "books_entry_draft")[1];
+  ok(edit.args.entry === "tkt_new1" && edit.args.person === "" && edit.args.payee === "Walk-in",
+    `the edit did not take the vendor off: ${JSON.stringify(edit.args)}`);
+  s.unmount();
+});
+
 test("an unbalanced journal saves as draft and cannot post", async () => {
   const s = await fresh({});
   s.pressContaining("Any balanced set of lines");

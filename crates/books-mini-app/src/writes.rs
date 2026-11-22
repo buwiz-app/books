@@ -109,7 +109,7 @@ fn person_link(
     args: &Map<String, Value>,
     key: &str,
 ) -> Result<Option<i64>, Refusal> {
-    let Some(ticket) = text(args, key) else {
+    let Some(ticket) = text(args, key).filter(|t| !t.trim().is_empty()) else {
         return Ok(None);
     };
     let id = match plumbing::subject(conn, ticket)? {
@@ -380,7 +380,8 @@ pub fn gate<'a>(
     move |d| books_store::months::check_open(conn, book_id, d)
 }
 
-/// A person and tags named by a request: `person` (a ticket), or `payee`
+/// A person and tags named by a request: `person` (a ticket; empty takes the
+/// person off a draft), or `payee`
 /// with `person_kind` (made when new); `department` and `location` by
 /// ticket or name (made when new).
 fn apply_links(
@@ -389,7 +390,9 @@ fn apply_links(
     id: i64,
     args: &Map<String, Value>,
 ) -> Result<(), Refusal> {
-    let person = match text(args, "person") {
+    // an empty `person` on a draft edit says the draft has none any more
+    let no_person = text(args, "person").is_some_and(|t| t.trim().is_empty());
+    let person = match text(args, "person").filter(|t| !t.trim().is_empty()) {
         Some(t) => match plumbing::subject(conn, t)? {
             Some((k, pid)) if k == "person" => Some(pid),
             _ => {
@@ -435,6 +438,9 @@ fn apply_links(
     );
     if person.is_some() || department.is_some() || location.is_some() {
         people::set_entry_links(conn, book, id, person, department, location)?;
+    }
+    if no_person && person.is_none() {
+        people::clear_draft_person(conn, book, id)?;
     }
     Ok(())
 }

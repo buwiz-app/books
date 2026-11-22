@@ -234,6 +234,15 @@ pub fn set_entry_links(
     Ok(())
 }
 
+/// Take the person off a draft. A posted entry keeps its person.
+pub fn clear_draft_person(conn: &Connection, book: &Book, entry_id: i64) -> Result<()> {
+    conn.execute(
+        "UPDATE entry SET person_id = NULL WHERE entry_id = ?1 AND book_id = ?2 AND status = 'draft'",
+        params![entry_id, book.id],
+    )?;
+    Ok(())
+}
+
 /// An entry's `(person, department, location)`.
 pub fn links(conn: &Connection, entry_id: i64) -> Result<(Option<i64>, Option<i64>, Option<i64>)> {
     Ok(conn.query_row(
