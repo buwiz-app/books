@@ -131,11 +131,12 @@ pub(crate) fn person_entries(
                     .sum()
             };
         }
-        summary.debits = attributed_lines
+        // The entry's size as the person's lines see it: one side, not both.
+        let (debit, credit) = attributed_lines
             .iter()
             .chain(money_lines.iter())
-            .map(|line| line.debit + line.credit)
-            .sum();
+            .fold((0, 0), |(d, c), line| (d + line.debit, c + line.credit));
+        summary.debits = debit.max(credit);
         if let Some(line) = attributed_lines.first() {
             summary.category = chart.by_id.get(&line.account_id).cloned();
         }

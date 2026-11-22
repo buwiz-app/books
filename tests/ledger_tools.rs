@@ -1281,3 +1281,50 @@ fn a_person_on_the_entry_header_still_counts_the_payment() {
         .expect("the paid-this-year figure");
     assert_eq!(paid["shown"], "300.00");
 }
+
+#[test]
+fn a_noncash_journal_naming_a_person_on_both_sides_shows_its_amount_once() {
+    let dir = TempDir::new("person-both-sides");
+    let mut bot = Bot::new(&dir);
+    let book = app_data(
+        &mut bot,
+        "books_app_book_create",
+        json!({ "client_request_id": "pbs-book-1", "label": "Synthetic Both-Sides Book" }),
+    )["book"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let vendor = app_data(
+        &mut bot,
+        "books_app_person_create",
+        json!({ "client_request_id": "pbs-per-1", "kind": "vendors", "name": "Synthetic Both-Sides Vendor", "book": book }),
+    )["person"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let draft = app_data(
+        &mut bot,
+        "books_entry_draft",
+        json!({
+            "client_request_id": "pbs-draft-1", "book": book, "form": "journal",
+            "date": "2026-10-19",
+            "lines": [
+                { "account": "66100", "debit": "500.00", "person": vendor },
+                { "account": "67200", "credit": "500.00", "person": vendor }
+            ]
+        }),
+    );
+    let entry = draft["entry"].as_str().unwrap().to_string();
+    data(&bot.app(
+        "books_app_post_entry",
+        json!({ "client_request_id": "pbs-post-1", "entry": entry }),
+    ));
+    let detail = app_data(
+        &mut bot,
+        "books_person_get",
+        json!({ "book": book, "person": vendor }),
+    );
+    let recent = detail["recent"].as_array().expect("recent rows");
+    assert_eq!(recent.len(), 1, "{detail}");
+    assert_eq!(recent[0]["amount"], "500.00", "{detail}");
+}
