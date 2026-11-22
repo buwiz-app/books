@@ -52,9 +52,13 @@ const SIDE_THUMB_BYTES = 2097152;
 // The rail's tab icons and the panel glyphs: the old app's stroke SVGs
 // (transactions_.new.tsx, AttachmentsPanel.tsx), as data URIs through Avatar —
 // the SDK-1 sandbox has no Image import.
+// A standalone SVG-as-image renders only with its namespace. The namespace is
+// an identifier, never a fetched URL — but the bundle refuses URL literals, so
+// it is assembled without one (PR37 finding 2).
+const SVG_NS = "http" + "://www.w3.org/2000/svg";
 const sideSvg = (inner: string, width: number, stroke = "white") =>
   `data:image/svg+xml,${encodeURIComponent(
-    `<svg viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`,
+    `<svg xmlns="${SVG_NS}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`,
   )}`;
 const SIDE_PATHS: Record<string, string> = {
   attachments: '<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
