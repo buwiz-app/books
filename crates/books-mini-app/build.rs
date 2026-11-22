@@ -29,6 +29,7 @@ const BOOKS_FILES: &[&str] = &[
     "../../apps/books/payroll.tsx",
     "../../apps/books/certificates.tsx",
     "../../apps/books/activity.tsx",
+    "../../apps/books/transactions_side.tsx",
     "../../apps/books/transactions.tsx",
     "../../apps/books/window.tsx",
 ];
