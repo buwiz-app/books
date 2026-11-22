@@ -123,8 +123,9 @@ const TX_FORMS: Record<string, string> = {
   journal: "Journal",
 };
 
-function txToggleIn(list: () => string[], set: (v: string[]) => void, v: string) {
-  set(list().includes(v) ? list().filter((x) => x !== v) : [...list(), v]);
+function txToggleIn(list: Any, v: string) {
+  // `x.set` detached loses its signal receiver; pass the signal itself.
+  list.set(list().includes(v) ? list().filter((x: Any) => x !== v) : [...list(), v]);
 }
 function txHasFilters(): boolean {
   return Boolean(
@@ -439,8 +440,8 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
 
   const chips = () => {
     const out: { label: string; clear: () => void }[] = [];
-    for (const t of txTypes()) out.push({ label: TX_FORMS[t] || t, clear: () => txToggleIn(txTypes, txTypes.set, t) });
-    for (const s of txStatuses()) out.push({ label: (TX_STATUS_OPTS.find(([k]) => k === s) || ["", s])[1], clear: () => txToggleIn(txStatuses, txStatuses.set, s) });
+    for (const t of txTypes()) out.push({ label: TX_FORMS[t] || t, clear: () => txToggleIn(txTypes, t) });
+    for (const s of txStatuses()) out.push({ label: (TX_STATUS_OPTS.find(([k]) => k === s) || ["", s])[1], clear: () => txToggleIn(txStatuses, s) });
     if (txAmountMin().trim() || txAmountMax().trim())
       out.push({ label: `Amount ${txAmountMin().trim() || "0"}–${txAmountMax().trim() || "∞"}`, clear: () => { txAmountMin.set(""); txAmountMax.set(""); } });
     if (txPartyText().trim()) out.push({ label: `Party: ${txPartyText().trim()}`, clear: () => txPartyText.set("") });
@@ -567,7 +568,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Type</Text>
                 <View class="flex-row flex-wrap gap-1.5">
                   {TX_TYPE_OPTS.map(([k, label]) => (
-                    <Chip label={label} on={txTypes().includes(k)} onPress={() => txToggleIn(txTypes, txTypes.set, k)} />
+                    <Chip label={label} on={txTypes().includes(k)} onPress={() => txToggleIn(txTypes, k)} />
                   ))}
                 </View>
               </View>
@@ -575,7 +576,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Status</Text>
                 <View class="flex-row flex-wrap gap-1.5">
                   {TX_STATUS_OPTS.map(([k, label]) => (
-                    <Chip label={label} on={txStatuses().includes(k)} onPress={() => txToggleIn(txStatuses, txStatuses.set, k)} />
+                    <Chip label={label} on={txStatuses().includes(k)} onPress={() => txToggleIn(txStatuses, k)} />
                   ))}
                 </View>
               </View>
