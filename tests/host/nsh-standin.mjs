@@ -227,6 +227,7 @@ export const Text = host("Text");
 export const Scroll = host("Scroll");
 export const Input = host("Input");
 export const Image = host("Image");
+export const Overlay = host("Overlay");
 const Fragment = Symbol("Fragment");
 
 // ---- what the compiled JSX calls ----
@@ -505,7 +506,7 @@ export function prepareApp(source, { esbuild }) {
 
 export function mountApp(source, { esbuild, bridge, prepared = false }) {
   const cjs = prepared ? source : prepareApp(source, { esbuild });
-  const nsh = { signal, computed, resource, View, Text, Scroll, Input, Image };
+  const nsh = { signal, computed, resource, View, Text, Scroll, Input, Image, Overlay };
   const base = { Avatar: host("Avatar"), Combobox: host("Combobox"), DatePicker: host("DatePicker") };
   const modules = { nsh, "nsh/base": base, buwiz: { buwiz: bridge, default: bridge } };
   const require = (id) => {

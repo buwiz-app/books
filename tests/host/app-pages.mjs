@@ -3,7 +3,10 @@
 // old-UI PR: batch request ids, eligible-set bulk changes, detached signal
 // setters on filter chips, the amount filter's sign bug, card-mode bulk
 // selection, server-side search past the 200-row cap, the missing Back
-// control, per-line assignments in the inbox, and the hidden nav pages.
+// control, per-line assignments in the inbox, the hidden nav pages, and the
+// new-entry page's draft/post flow (save twice edits, post drafts the new
+// values first, a picked party goes as `person`, an unbalanced journal saves
+// as draft and refuses to post).
 //
 // Run: node tests/host/app-pages.mjs
 // esbuild resolves through $BUWIZ_SDK_DIR's conformance package first, else a
@@ -20,38 +23,15 @@ const req = createRequire(
 );
 const esbuild = req("esbuild");
 
-// The window's join, kept in sync with BOOKS_FILES in
-// crates/books-mini-app/build.rs (kit, the category catalog, then pages).
-const PAGES = [
-  "books/today.tsx",
-  "books/ledger_review.tsx",
-  "books/ledger_findings.tsx",
-  "books/ledger_amend.tsx",
-  "books/ledger_bulk.tsx",
-  "books/entry.tsx",
-  "books/entry_side.tsx",
-  "books/inbox.tsx",
-  "books/accounts.tsx",
-  "books/category_detail.tsx",
-  "books/unpaid.tsx",
-  "books/owed_print.tsx",
-  "books/owed_repeat.tsx",
-  "books/people.tsx",
-  "books/tags.tsx",
-  "books/reports.tsx",
-  "books/reconcile.tsx",
-  "books/statement_read.tsx",
-  "books/statement_snapshot.tsx",
-  "books/reconcile_flags.tsx",
-  "books/settings.tsx",
-  "books/oldbooks.tsx",
-  "books/forms.tsx",
-  "books/payroll.tsx",
-  "books/certificates.tsx",
-  "books/activity.tsx",
-  "books/transactions.tsx",
-  "books/window.tsx",
-];
+// The window's join, read from BOOKS_FILES in crates/books-mini-app/build.rs
+// (kit, the category catalog, then the page files with window.tsx last).
+const FILES = [...readFileSync(join(ROOT, "crates/books-mini-app/build.rs"), "utf8")
+    .matchAll(/"\.\.\/\.\.\/apps\/([^"]+\.(?:tsx|json))"/g)]
+  .map((m) => m[1]);
+if (FILES[0] !== "books/kit.tsx" || FILES[1] !== "books/suggested-categories.json" || FILES.length < 3) {
+  throw new Error("build.rs BOOKS_FILES changed shape; kit and the category catalog must lead");
+}
+const PAGES = FILES.slice(2);
 const read = (f) => readFileSync(join(ROOT, "apps", f), "utf8");
 const SOURCE =
   read("books/kit.tsx") +
@@ -121,6 +101,24 @@ const ENTRY = {
   ],
 };
 
+// Accounts and people the New entry form picks from (synthetic).
+const ACCOUNTS = [
+  { ticket: "tkt_cash1", number: "1010", name: "Cash on hand", label: "1010 Cash on hand", group: "Cash, bank & card", type: "asset", kind: "cash" },
+  { ticket: "tkt_sup1", number: "5010", name: "Supplies", label: "5010 Supplies", group: "Expense categories", type: "expense", kind: "expense" },
+];
+const PEOPLE = [
+  { ticket: "tkt_ven1", name: "Vera Vendor" },
+  { ticket: "tkt_cus1", name: "Cory Customer" },
+];
+const OPTIONS = {
+  book: { ticket: "tkt_book1", name: "Test book", accent: "green", basis: "cash" },
+  today: "2026-10-29",
+  money: [ACCOUNTS[0]],
+  income: [],
+  expense: [ACCOUNTS[1]],
+  all: ACCOUNTS,
+};
+
 const hay = (r) =>
   [r.no, r.title, r.payee, r.category, r.sub, r.form, r.status, r.date, r.amount_shown]
     .map((x) => String(x || "").toLowerCase())
@@ -173,7 +171,21 @@ function makeBridge(props, calls) {
         case "books_ledger_list":
           return Promise.resolve(ledger(args));
         case "books_accounts_list":
+          return Promise.resolve({ rows: args.group === "all" ? ACCOUNTS : [] });
+        case "books_entry_options":
+          return Promise.resolve(OPTIONS);
+        case "books_people_list":
+          return Promise.resolve({ rows: PEOPLE });
+        case "books_tags_list":
           return Promise.resolve({ rows: [] });
+        case "books_entry_draft":
+          return Promise.resolve({ entry: args.entry || "tkt_new1", no: "0009", status: "draft" });
+        case "books_app_post_entry":
+          return Promise.resolve({ entry: args.entry || "tkt_new1", no: "0009", status: "posted" });
+        case "books_app_evidence_attach":
+          return Promise.resolve({});
+        case "books_app_person_create":
+          return Promise.resolve({ person: "tkt_per9" });
         case "books_entry_get":
           return Promise.resolve(ENTRY);
         case "books_app_void_entry": {
@@ -222,6 +234,40 @@ const fresh = async (props) => {
   const s = mount(props);
   await s.until(() => s.hasText("Transactions") || s.hasText("Draft sale") || s.hasText("October"), "the page to render");
   return s;
+};
+
+// New-entry drivers: combos are nsh Combobox host nodes picked by their
+// accessibility label; the save menu opens on its icon View's a11y label.
+const combos = (screen, label) =>
+  screen.nodes().filter((n) => n.host === "Combobox" && n.props.accessibilityLabel === label);
+const pick = (screen, label, ticket, occurrence = 0) => {
+  const n = combos(screen, label)[occurrence];
+  if (!n) throw new Error(`no combo labelled ${JSON.stringify(label)}`);
+  n.props.onChange({ value: [ticket] });
+};
+const inputsByLabel = (screen, label) =>
+  screen.nodes().filter((n) => n.host === "Input" && n.props.accessibilityLabel === label);
+const pressA11y = (screen, label) => {
+  const n = screen.nodes().find((n) => typeof n.props.onPress === "function" && n.props.accessibilityLabel === label);
+  if (!n) throw new Error(`nothing pressable labelled ${JSON.stringify(label)}`);
+  n.props.onPress();
+};
+const openEntry = async (s, tile = "+ Money out") => {
+  s.press(tile);
+  await s.until(() => s.hasText("Save & Close"), "the new entry page");
+};
+const menuSave = (s, item = "Save") => {
+  pressA11y(s, "More save options");
+  s.press(item);
+};
+// a write call is recorded when it starts; further presses are ignored while
+// busy, so wait for the button to leave "Saving..." before pressing again
+const settle = async (s) => s.until(() => !s.hasText("Saving..."), "the write to settle");
+const fillExpense = (s, amount = "100.00") => {
+  s.type("0.00", amount);
+  pick(s, "Money account", "tkt_cash1");
+  pick(s, "Category", "tkt_sup1");
+  s.type("₱0.00", amount);
 };
 
 // ---- tests ----
@@ -331,6 +377,92 @@ test("inbox search reaches rows past the 200-row cap", async () => {
   await s.until(() => s.hasText("waiting to be booked"), "the inbox");
   typePrefix(s, "Search inbox", "Eli");
   await s.until(() => s.hasText("Old draft · Eli"), "inbox search to reach the older row");
+  s.unmount();
+});
+
+test("a second save edits the draft it wrote", async () => {
+  const s = await fresh({});
+  await openEntry(s);
+  fillExpense(s);
+  menuSave(s);
+  await s.until(() => calls.filter((c) => c.tool === "books_entry_draft").length === 1, "the first draft save");
+  await settle(s);
+  menuSave(s);
+  await s.until(() => calls.filter((c) => c.tool === "books_entry_draft").length === 2, "the second draft save");
+  const drafts = calls.filter((c) => c.tool === "books_entry_draft");
+  ok(!drafts[0].args.entry, `the first save already sent entry ${drafts[0].args.entry}`);
+  ok(drafts[1].args.entry === "tkt_new1", `the second save did not edit tkt_new1: ${JSON.stringify(drafts[1].args)}`);
+  ok(!calls.some((c) => c.tool === "books_app_post_entry"), "a post went out on Save");
+  s.unmount();
+});
+
+test("post after save drafts the form's new values first", async () => {
+  const s = await fresh({});
+  await openEntry(s);
+  fillExpense(s, "100.00");
+  menuSave(s);
+  await s.until(() => calls.some((c) => c.tool === "books_entry_draft"), "the draft save");
+  await settle(s);
+  s.type("0.00", "250.00");
+  s.type("₱0.00", "250.00");
+  menuSave(s, "Post");
+  await s.until(() => calls.some((c) => c.tool === "books_app_post_entry"), "the post");
+  const edit = calls.filter((c) => c.tool === "books_entry_draft").at(-1);
+  ok(edit.args.entry === "tkt_new1" && edit.args.amount === "250.00",
+    `no draft edit carried the new amount before posting: ${JSON.stringify(edit.args)}`);
+  const post = calls.find((c) => c.tool === "books_app_post_entry");
+  ok(post.args.entry === "tkt_new1" && !("amount" in post.args) && !("allocations" in post.args),
+    `post carried form values the server ignores: ${JSON.stringify(post.args)}`);
+  const ids = calls.filter((c) => ["books_entry_draft", "books_app_post_entry"].includes(c.tool)).map((c) => c.args.client_request_id);
+  ok(ids.every(Boolean) && new Set(ids).size === ids.length, `request ids repeat: ${ids.join(", ")}`);
+  s.unmount();
+});
+
+test("save & new starts the next draft fresh", async () => {
+  const s = await fresh({});
+  await openEntry(s);
+  fillExpense(s);
+  menuSave(s, "Save & New");
+  await s.until(() => calls.some((c) => c.tool === "books_entry_draft"), "the first save");
+  await settle(s);
+  fillExpense(s, "60.00");
+  menuSave(s);
+  await s.until(() => calls.filter((c) => c.tool === "books_entry_draft").length === 2, "the second save");
+  const second = calls.filter((c) => c.tool === "books_entry_draft")[1];
+  ok(!second.args.entry, `Save & New left a remembered draft: ${JSON.stringify(second.args)}`);
+  s.unmount();
+});
+
+test("a picked payee goes to the draft as person", async () => {
+  const s = await fresh({});
+  await openEntry(s);
+  fillExpense(s);
+  pick(s, "Vendor", "tkt_ven1");
+  menuSave(s);
+  await s.until(() => calls.some((c) => c.tool === "books_entry_draft"), "the draft save");
+  const draft = calls.find((c) => c.tool === "books_entry_draft");
+  ok(draft.args.person === "tkt_ven1", `the picked vendor did not reach the draft: ${JSON.stringify(draft.args)}`);
+  s.unmount();
+});
+
+test("an unbalanced journal saves as draft and cannot post", async () => {
+  const s = await fresh({});
+  s.pressContaining("Any balanced set of lines");
+  await s.until(() => s.hasText("Save & Close"), "the journal page");
+  // each journal line renders tablet, desktop and mobile copies in that
+  // order, all bound to the line's signals — the first copy of each line is
+  // occurrence 0 and 3
+  pick(s, "Account", "tkt_cash1", 0);
+  pick(s, "Account", "tkt_sup1", 3);
+  inputsByLabel(s, "Debit")[0].props.onChange({ value: "100.00" });
+  inputsByLabel(s, "Credit")[3].props.onChange({ value: "50.00" });
+  menuSave(s);
+  await s.until(() => calls.some((c) => c.tool === "books_entry_draft"), "the unbalanced draft save");
+  await settle(s);
+  ok(calls.find((c) => c.tool === "books_entry_draft").args.lines?.length === 2, "the draft went without its lines");
+  menuSave(s, "Post");
+  await s.until(() => s.hasText("Debits and credits must be equal before posting."), "the balance refusal");
+  ok(!calls.some((c) => c.tool === "books_app_post_entry"), "an unbalanced journal posted");
   s.unmount();
 });
 
