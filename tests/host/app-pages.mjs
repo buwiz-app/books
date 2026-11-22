@@ -380,6 +380,22 @@ test("inbox search reaches rows past the 200-row cap", async () => {
   s.unmount();
 });
 
+test("search keeps a row the ledger matched by amount", async () => {
+  const s = await fresh({ page: "transactions" });
+  await s.until(() => s.hasText("Supplies"), "rows");
+  typePrefix(s, "Search ", "80,000");
+  await s.until(() => s.hasText("Rent · Dana"), "an amount search to keep the matched row");
+  s.unmount();
+});
+
+test("inbox search keeps a row the ledger matched by date", async () => {
+  const s = await fresh({ page: "inbox" });
+  await s.until(() => s.hasText("waiting to be booked"), "the inbox");
+  typePrefix(s, "Search inbox", "2026-10-09");
+  await s.until(() => s.hasText("Old draft · Eli"), "a date search to keep the matched row");
+  s.unmount();
+});
+
 test("a second save edits the draft it wrote", async () => {
   const s = await fresh({});
   await openEntry(s);

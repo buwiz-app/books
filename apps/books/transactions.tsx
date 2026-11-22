@@ -80,9 +80,8 @@ function cmpDec(a: string, b: string): number {
   return sa < 0 ? -cmp : cmp;
 }
 
-/** Rows after search + the client-side filters (type, status, amount, party). */
+/** Rows after the client-side filters (type, status, amount, party); the search is books_ledger_list's. */
 function txFiltered(): Any[] {
-  const q = txSearch().trim().toLowerCase();
   const types = txTypes();
   const statuses = txStatuses();
   const min = txAmountMin().trim();
@@ -100,10 +99,7 @@ function txFiltered(): Any[] {
     const amt = String(r.amount_shown || r.amount || "0").replace(/[^0-9.,]/g, "");
     if (min && cmpDec(amt, min) < 0) return false;
     if (max && cmpDec(amt, max) > 0) return false;
-    if (party && !String(r.payee || r.title || "").toLowerCase().includes(party)) return false;
-    if (!q) return true;
-    return [r.title, r.payee, r.category, r.sub, r.no]
-      .some((x) => String(x || "").toLowerCase().includes(q));
+    return !party || String(r.payee || r.title || "").toLowerCase().includes(party);
   });
 }
 

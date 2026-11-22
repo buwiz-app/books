@@ -162,13 +162,8 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
   });
   const waiting = () => (rv()?.counts?.review || 0) + (rv()?.counts?.draft || 0);
   const month = () => rv()?.month || {};
-  const visibleRows = () => {
-    const q = query().trim().toLowerCase();
-    const list = rows();
-    return q
-      ? list.filter((r: Any) => `${r.title || ""} ${r.category || ""} ${r.amount_shown || ""}`.toLowerCase().includes(q))
-      : list;
-  };
+  // books_ledger_list already matched the search, on more fields than a row carries.
+  const visibleRows = () => rows();
   const selectedTicket = () => {
     const cur = inboxOpen();
     const list = visibleRows();
