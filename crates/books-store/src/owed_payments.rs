@@ -139,12 +139,20 @@ pub fn settle(
         debit,
         credit,
         facts: Facts::default(),
+        person_id: None,
+        department_id: None,
+        location_id: None,
+        memo: None,
     };
     let other_line = |debit, credit, facts| LineInput {
         account_id: other,
         debit,
         credit,
         facts,
+        person_id: None,
+        department_id: None,
+        location_id: None,
+        memo: None,
     };
     let (form, lines) = if u.side == "collect" {
         (
@@ -199,12 +207,11 @@ mod tests {
     use super::*;
     use crate::MIGRATIONS;
 
-    /// A store at schema 13 (before 0014) with a bill marked paid the old way (one full
-    /// entry, `status = 'paid'`) gains one payment row from 0014's backfill.
+    /// Migration 0014 recovers a full settlement from the legacy paid-entry fields.
     #[test]
     fn migration_backfills_a_document_paid_before_payments() {
         let conn = Connection::open_in_memory().unwrap();
-        for (n, sql) in MIGRATIONS.iter().filter(|m| m.0 < 14) {
+        for (n, sql) in MIGRATIONS.iter().filter(|m| m.0 != 14) {
             conn.execute_batch(sql)
                 .unwrap_or_else(|e| panic!("migration {n}: {e}"));
         }
@@ -236,12 +243,20 @@ mod tests {
                     debit: 250000,
                     credit: 0,
                     facts: sales_facts(&expense.kind, "pay"),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
                 LineInput {
                     account_id: bank.id,
                     debit: 0,
                     credit: 250000,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
             ],
         };
@@ -252,9 +267,8 @@ mod tests {
             params![unpaid_id, entry],
         )
         .unwrap();
-        for (_, sql) in MIGRATIONS.iter().filter(|m| m.0 >= 14) {
-            conn.execute_batch(sql).unwrap();
-        }
+        let backfill = MIGRATIONS.iter().find(|m| m.0 == 14).unwrap().1;
+        conn.execute_batch(backfill).unwrap();
         let list = payments(&conn, unpaid_id).unwrap();
         assert_eq!(list.len(), 1);
         assert_eq!(list[0].amount, 250000);

@@ -19,7 +19,7 @@ const CERTIFICATES: &str = include_str!("../apps/books/certificates.tsx");
 const REPORTS: &str = include_str!("../apps/books/reports.tsx");
 
 /// Every page with a picker, to find a list of people without its label.
-const PAGES: [&str; 25] = [
+const PAGES: [&str; 26] = [
     KIT,
     UNPAID,
     FORMS,
@@ -30,6 +30,7 @@ const PAGES: [&str; 25] = [
     include_str!("../apps/books/accounts.tsx"),
     include_str!("../apps/books/activity.tsx"),
     include_str!("../apps/books/entry.tsx"),
+    include_str!("../apps/books/inbox.tsx"),
     include_str!("../apps/books/ledger_amend.tsx"),
     include_str!("../apps/books/ledger_bulk.tsx"),
     include_str!("../apps/books/ledger_findings.tsx"),
@@ -93,21 +94,28 @@ fn a_cards_chips_and_post_button_say_what_they_do_not_the_account() {
 
 #[test]
 fn a_picked_file_is_plain_text_beside_a_fixed_button() {
-    for (name, button) in [
-        ("csvChart", r#"label={csvChart() ? "Change the chart…""#),
-        (
-            "csvJournal",
-            r#"label={csvJournal() ? "Change the journal…""#,
-        ),
-    ] {
-        assert!(OLD_BOOKS.contains(button), "{button} is gone");
-        let label = format!("label={{{name}()");
-        for line in OLD_BOOKS.lines().filter(|l| l.contains(&label)) {
-            assert!(
-                !line.contains(".name"),
-                "a file name is back on the button: {line}"
-            );
-        }
+    // The pick zone shows the file's name as plain Text in a chip; the zone's
+    // accessibility label is its fixed title, so the name stays out of it.
+    on_one_element(
+        OLD_BOOKS,
+        "function PickZone(",
+        r#"accessibilityLabel={p.title}"#,
+    );
+    assert!(
+        OLD_BOOKS.contains(r#"{String(p.file?.name || "")}"#),
+        "the file's name is no longer plain text in PickZone"
+    );
+    for zone in ["file={csvChart()}", "file={csvJournal()}"] {
+        assert!(OLD_BOOKS.contains(zone), "{zone} is gone");
+    }
+    for line in OLD_BOOKS.lines().filter(|l| {
+        l.contains("label={")
+            && (l.contains("csvChart") || l.contains("csvJournal") || l.contains("file"))
+    }) {
+        assert!(
+            !line.contains(".name"),
+            "a file name is back on a control: {line}"
+        );
     }
 }
 

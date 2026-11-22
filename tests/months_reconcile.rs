@@ -311,3 +311,225 @@ fn m4_october_matches_the_bank_and_a_closed_month_refuses_changes() {
         );
     }
 }
+
+const SNAPSHOT: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../fixtures/demo/old-app-snapshot-seed.json"
+);
+
+/// The Ledger figures a statement view shows are the account's posted
+/// movement in the statement's month, not only the matched lines.
+#[test]
+fn m4_statement_books_movement_is_the_posted_totals() {
+    books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
+    let dir = TempDir::new("m4-movement");
+    let mut books = Books::new(Paths::in_dir(dir.0.join("store")));
+    let b = &mut books;
+    let seed_book: Value =
+        serde_json::from_str(&std::fs::read_to_string(SNAPSHOT).unwrap()).unwrap();
+    demo::seed(b, &seed_book).unwrap();
+
+    // the seeded Jan 2026 checking statement sits on 11200; the snapshot's
+    // entries post to the parent 11000, so the account starts at 0.00
+    let st = ok(
+        b,
+        "books_statement_get",
+        json!({ "account": "11200", "month": "2026-01" }),
+    );
+    assert_eq!(
+        (
+            st["statement"]["books_in_shown"].as_str(),
+            st["statement"]["books_out_shown"].as_str()
+        ),
+        (Some("0.00"), Some("0.00"))
+    );
+
+    // posted money in and out on that account inside January move them
+    ok(
+        b,
+        "books_app_post_entry",
+        json!({ "client_request_id": "m4m-in-00001", "form": "money_in", "date": "2026-01-10", "amount": "1000.00", "account": "11200", "category": "40000" }),
+    );
+    ok(
+        b,
+        "books_app_post_entry",
+        json!({ "client_request_id": "m4m-out-0001", "form": "money_out", "date": "2026-01-20", "amount": "250.00", "account": "11200", "category": "68300" }),
+    );
+    // outside the statement's month they do not
+    ok(
+        b,
+        "books_app_post_entry",
+        json!({ "client_request_id": "m4m-feb-0001", "form": "money_in", "date": "2026-02-10", "amount": "500.00", "account": "11200", "category": "40000" }),
+    );
+    let st = ok(
+        b,
+        "books_statement_get",
+        json!({ "account": "11200", "month": "2026-01" }),
+    );
+    assert_eq!(
+        (
+            st["statement"]["books_in_shown"].as_str(),
+            st["statement"]["books_out_shown"].as_str()
+        ),
+        (Some("1,000.00"), Some("250.00"))
+    );
+
+    // a voided deposit leaves no trace in either gross figure
+    let deposit = ok(
+        b,
+        "books_app_post_entry",
+        json!({ "client_request_id": "m4m-void-001", "form": "money_in", "date": "2026-01-25", "amount": "400.00", "account": "11200", "category": "40000" }),
+    );
+    ok(
+        b,
+        "books_app_void_entry",
+        json!({ "client_request_id": "m4m-void-002", "entry": deposit["entry"] }),
+    );
+    let st = ok(
+        b,
+        "books_statement_get",
+        json!({ "account": "11200", "month": "2026-01" }),
+    );
+    assert_eq!(
+        (
+            st["statement"]["books_in_shown"].as_str(),
+            st["statement"]["books_out_shown"].as_str()
+        ),
+        (Some("1,000.00"), Some("250.00")),
+        "the voided deposit counts in neither figure"
+    );
+}
+
+/// A draft on the account is in no total, so the movement stays put.
+#[test]
+fn m4_statement_books_movement_ignores_drafts() {
+    books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
+    let dir = TempDir::new("m4-movement-draft");
+    let mut books = Books::new(Paths::in_dir(dir.0.join("store")));
+    let b = &mut books;
+    let seed_book: Value =
+        serde_json::from_str(&std::fs::read_to_string(SNAPSHOT).unwrap()).unwrap();
+    demo::seed(b, &seed_book).unwrap();
+
+    let st = ok(
+        b,
+        "books_statement_get",
+        json!({ "account": "11200", "month": "2026-01" }),
+    );
+    let before = (
+        st["statement"]["books_in_shown"]
+            .as_str()
+            .unwrap()
+            .to_string(),
+        st["statement"]["books_out_shown"]
+            .as_str()
+            .unwrap()
+            .to_string(),
+    );
+    ok(
+        b,
+        "books_entry_draft",
+        json!({ "client_request_id": "m4m-draft-01", "form": "money_out", "date": "2026-01-15", "amount": "777.00", "account": "11200", "category": "68300" }),
+    );
+    let st = ok(
+        b,
+        "books_statement_get",
+        json!({ "account": "11200", "month": "2026-01" }),
+    );
+    let after = (
+        st["statement"]["books_in_shown"]
+            .as_str()
+            .unwrap()
+            .to_string(),
+        st["statement"]["books_out_shown"]
+            .as_str()
+            .unwrap()
+            .to_string(),
+    );
+    assert_eq!(after, before, "a draft changes no posted movement");
+}
+
+#[test]
+fn m4_grid_year_gives_twelve_months_and_the_default_is_unchanged() {
+    books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
+    let dir = TempDir::new("m4-year");
+    let mut books = Books::new(Paths::in_dir(dir.0.join("store")));
+    let b = &mut books;
+    let demo_book: Value = serde_json::from_str(&std::fs::read_to_string(DEMO).unwrap()).unwrap();
+    demo::seed(b, &demo_book).unwrap();
+    let csv = std::fs::read(STATEMENT).unwrap();
+    ok(
+        b,
+        "books_app_statement_import",
+        json!({ "client_request_id": "m4y-import-0001", "account": "11010", "csv_base64": books_mini_app::b64::encode(&csv), "file_name": "bank-4021-2026-10.csv" }),
+    );
+    // no year: four months ending at today, no kind/type on rows, as before
+    let grid = ok(b, "books_reconcile_grid", json!({}));
+    assert_eq!(grid["months"].as_array().unwrap().len(), 4);
+    assert_eq!(grid["months"][0]["key"], "2026-07");
+    assert_eq!(grid["months"][3]["key"], "2026-10");
+    assert_eq!(grid["year"], 2026);
+    assert!(grid["rows"][0].get("kind").is_none());
+    assert!(grid["rows"][0].get("type").is_none());
+
+    // a year: its twelve months, kind and type on every row
+    let grid = ok(b, "books_reconcile_grid", json!({ "year": 2026 }));
+    let months = grid["months"].as_array().unwrap();
+    assert_eq!(months.len(), 12);
+    assert_eq!(months[0]["key"], "2026-01");
+    assert_eq!(months[11]["key"], "2026-12");
+    assert_eq!(grid["year"], 2026);
+    let bank = grid["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["name"] == "Bank •••• 4021")
+        .unwrap();
+    let states: Vec<&str> = bank["cells"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["state"].as_str().unwrap())
+        .collect();
+    assert_eq!(states[9], "draft", "October has an open statement");
+    assert_eq!(states[8], "todo", "September has entries and no statement");
+    assert!(bank["kind"].as_str().is_some());
+    assert!(bank["type"].as_str().is_some());
+
+    // a bad year refuses
+    assert_eq!(
+        refused(b, "books_reconcile_grid", json!({ "year": "yesterday" })),
+        "invalid_args"
+    );
+}
+
+/// The statement view tells the app which way the account's balance rises:
+/// a bank is debit-normal, a card (a liability) is not — the app's summary
+/// normalizes the statement's signs by it.
+#[test]
+fn statement_view_names_the_accounts_balance_direction() {
+    books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
+    let dir = TempDir::new("m4-dir");
+    let mut books = Books::new(Paths::in_dir(dir.0.join("store")));
+    let b = &mut books;
+    let demo_book: Value = serde_json::from_str(&std::fs::read_to_string(DEMO).unwrap()).unwrap();
+    demo::seed(b, &demo_book).unwrap();
+
+    ok(
+        b,
+        "books_app_account_create",
+        json!({ "client_request_id": "m4-dir-acct-1", "number": "22990", "name": "Synthetic Card", "kind": "loan_payable" }),
+    );
+    let bank = ok(
+        b,
+        "books_statement_get",
+        json!({ "account": "11010", "month": "2026-10" }),
+    );
+    assert_eq!(bank["account"]["debit_normal"], true);
+    let card = ok(
+        b,
+        "books_statement_get",
+        json!({ "account": "22990", "month": "2026-10" }),
+    );
+    assert_eq!(card["account"]["debit_normal"], false);
+}

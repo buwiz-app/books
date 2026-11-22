@@ -236,8 +236,8 @@ fn batch_refuses_the_assistant_and_bad_lists() {
 
 /// The bulk panel adds exactly two window tools, `books_app_batch` and the
 /// `books_ledger_list` it reads, both under the 64 cap. The set before
-/// it is the window's own grants with the bulk panel's
-/// source taken out, so no count is written down here.
+/// it is the window's grants with the bulk panel's source taken out, so no
+/// count is written down here.
 #[test]
 fn the_window_grants_batch_and_ledger_list_within_the_cap() {
     let m = books_mini_app::manifest::unsigned(books_mini_app::manifest::RELEASE_KEY_ID);
@@ -258,22 +258,22 @@ fn the_window_grants_batch_and_ledger_list_within_the_cap() {
         books_mini_app::apps::AppSource::Tsx(source) => source,
         books_mini_app::apps::AppSource::Native { .. } => panic!("the window is a tsx app"),
     };
-    let bulk = include_str!("../apps/books/ledger_bulk.tsx");
+    let bulk = include_str!(concat!(env!("OUT_DIR"), "/ledger_bulk.tsx"));
     assert!(source.contains(bulk), "the window carries the bulk panel");
     let before: BTreeSet<String> = books_mini_app::apps::named_tools(&source.replace(bulk, ""))
         .into_iter()
         .collect();
     assert!(before.is_subset(&granted), "a grant was dropped");
     let added: BTreeSet<&String> = granted.difference(&before).collect();
-    let expected = [
-        "books_app_batch".to_string(),
-        "books_app_press_card".to_string(),
-        "books_ledger_list".to_string(),
-    ];
+    // `books_ledger_list` is the Inbox's read too, so the bulk panel alone no longer adds it.
+    assert!(granted.contains("books_ledger_list"));
+    // `books_app_batch` is also the Transactions page's discard — only the
+    // approved-press card is the bulk panel's alone now.
+    let expected = ["books_app_press_card".to_string()];
     assert_eq!(
         added,
         expected.iter().collect::<BTreeSet<&String>>(),
         "{added:?}"
     );
-    assert!(granted.len() <= 64, "{} grants", granted.len());
+    assert_eq!(granted.len(), 64, "the window has {} grants", granted.len());
 }

@@ -11,6 +11,9 @@ use books_store::{Paths, TempDir};
 use ed25519_dalek::SigningKey;
 use serde_json::{Value, json};
 
+#[path = "support/owed_tool.rs"]
+mod owed_tool;
+
 struct Bot {
     server: Server,
     next: i64,
@@ -54,6 +57,7 @@ impl Bot {
     }
 
     fn raw(&mut self, name: &str, args: Value, caller: Value) -> Value {
+        let (name, args) = owed_tool::normalize(name, args);
         let id = self.next;
         self.next += 1;
         let mut params = json!({ "name": name, "arguments": args });

@@ -366,3 +366,62 @@ fn the_ledger_lists_running_balance_matches_account_activity() {
     assert_eq!(all["running_balance"], false);
     assert!(all["rows"][0].get("balance_shown").is_none());
 }
+
+#[test]
+fn a_category_page_sums_its_own_lines_not_the_whole_entry() {
+    let (_dir, mut books) = seeded();
+    let b = &mut books;
+    // 100.00 paid from the bank, split 60.00 office / 40.00 advertising
+    let draft = call(
+        b,
+        "books_entry_draft",
+        json!({
+            "client_request_id": "split-cat-001", "form": "money_out",
+            "date": "2026-10-18", "amount": "100.00", "account": "11000",
+            "allocations": [
+                { "category": "67200", "amount": "60.00" },
+                { "category": "66100", "amount": "40.00" }
+            ]
+        }),
+        Origin::App,
+    );
+    call(
+        b,
+        "books_app_post_entry",
+        json!({ "client_request_id": "split-cat-002", "entry": draft["entry"] }),
+        Origin::App,
+    );
+    let list = call(
+        b,
+        "books_ledger_list",
+        json!({ "account": "67200", "month": "2026-10", "filter": "posted" }),
+        Origin::App,
+    );
+    let rows = list["rows"].as_array().unwrap();
+    let split = rows
+        .iter()
+        .find(|r| r["ticket"] == draft["entry"])
+        .unwrap_or_else(|| panic!("the split entry is listed: {list}"));
+    assert_eq!(
+        split["account_amount_shown"], "60.00",
+        "the office category carries its own 60.00, not the whole 100.00"
+    );
+    // the page's month figure is the account's own movement, not a page sum
+    let summed: i64 = rows
+        .iter()
+        .map(|r| {
+            let text = r["account_amount_shown"].as_str().unwrap_or("0.00");
+            cents(&text.replace('\u{2212}', "-").replace(',', ""))
+        })
+        .sum();
+    let shown = list["account"]["month_shown"]
+        .as_str()
+        .unwrap()
+        .replace('\u{2212}', "-")
+        .replace(',', "");
+    assert_eq!(
+        cents(&shown),
+        summed,
+        "month figure equals the account's lines"
+    );
+}

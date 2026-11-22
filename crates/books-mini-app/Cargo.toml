@@ -16,6 +16,14 @@ path = "src/main.rs"
 
 # The workspace-level tests in `tests/`.
 [[test]]
+name = "entry_page"
+path = "../../tests/entry_page.rs"
+
+[[test]]
+name = "entry_writes"
+path = "../../tests/entry_writes.rs"
+
+[[test]]
 name = "jcs_vectors"
 path = "../../tests/jcs_vectors.rs"
 
@@ -197,3 +205,7 @@ path = "../../tests/engine_rules.rs"
 [[test]]
 name = "privacy_repo"
 path = "../../tests/privacy_repo.rs"
+
+[[test]]
+name = "app_name_collisions"
+path = "../../tests/app_name_collisions.rs"

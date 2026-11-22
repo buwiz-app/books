@@ -11,7 +11,11 @@ use books_mini_app::tools;
 use books_store::{Paths, TempDir};
 use serde_json::{Map, Value, json};
 
+#[path = "support/owed_tool.rs"]
+mod owed_tool;
+
 fn call(books: &mut Books, name: &str, args: Value, origin: Origin) -> Value {
+    let (name, args) = owed_tool::normalize(name, args);
     let args: Map<String, Value> = args.as_object().unwrap().clone();
     let out = tools::call(name, &args, origin, books).unwrap();
     assert_eq!(out["isError"], false, "{name}: {out}");
@@ -324,7 +328,7 @@ fn m1_m2_today_people_and_mark_paid_on_the_golden_book() {
     );
     // marking paid is the user's click in the app
     assert_eq!(
-        tools::find("books_app_owed_settle").unwrap().reach,
+        tools::find("books_app_owed").unwrap().reach,
         tools::Reach::App
     );
 }
@@ -438,4 +442,76 @@ fn m2_m3_an_accrual_book_posts_receivables_ages_them_and_clears_them() {
             .all(|r| r["name"] != "Accounts Payable")
     );
     assert_eq!(tb["balanced"], true);
+}
+
+#[test]
+fn aging_uses_the_period_end_not_todays_balances() {
+    books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
+    let dir = TempDir::new("aging-as-of");
+    let mut books = Books::new(Paths::in_dir(dir.0.join("store")));
+    let b = &mut books;
+    call(
+        b,
+        "books_app_book_create",
+        json!({ "client_request_id": "agf-book-0001", "label": "Aging As Of", "basis": "accrual" }),
+        Origin::App,
+    );
+    // a September bill settled in October: owed at Sep 30
+    let bill = call(
+        b,
+        "books_app_owed_create",
+        json!({ "client_request_id": "agf-bill-0001", "side": "pay", "person_name": "Synthetic Vendor", "amount": "1000.00", "category": "67200", "issued": "2026-09-15", "due": "2026-09-20" }),
+        Origin::App,
+    );
+    // an October bill: nothing owed on it at Sep 30
+    call(
+        b,
+        "books_app_owed_create",
+        json!({ "client_request_id": "agf-bill-0002", "side": "pay", "person_name": "Synthetic Later Vendor", "amount": "700.00", "category": "67200", "issued": "2026-10-05", "due": "2026-11-15" }),
+        Origin::App,
+    );
+    call(
+        b,
+        "books_app_owed_settle",
+        json!({ "client_request_id": "agf-settle-01", "owed": bill["owed"], "account": "11000", "date": "2026-10-05" }),
+        Origin::App,
+    );
+    let named = |report: &Value, who: &str| -> Option<Value> {
+        report["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["name"] == who)
+            .cloned()
+    };
+    let sep = call(
+        b,
+        "books_report",
+        json!({ "kind": "ag", "period": "2026-09", "side": "pay" }),
+        Origin::App,
+    );
+    assert_eq!(
+        named(&sep, "Synthetic Vendor").map(|r| r["cells"].clone()),
+        Some(json!(["", "1,000.00", "", ""])),
+        "ten days late at September 30"
+    );
+    assert!(
+        named(&sep, "Synthetic Later Vendor").is_none(),
+        "a bill issued in October is no September payable"
+    );
+    let oct = call(
+        b,
+        "books_report",
+        json!({ "kind": "ag", "period": "2026-10", "side": "pay" }),
+        Origin::App,
+    );
+    assert!(
+        named(&oct, "Synthetic Vendor").is_none(),
+        "settled through October: nothing owed at October 31"
+    );
+    assert_eq!(
+        named(&oct, "Synthetic Later Vendor").map(|r| r["cells"].clone()),
+        Some(json!(["700.00", "", "", ""])),
+        "not yet due at October 31"
+    );
 }

@@ -14,6 +14,7 @@ use books_core::money;
 use books_store::Store;
 use books_store::books::{self, Account, Book};
 use books_store::entries::{self, Entry, Filter, Form, LineRow};
+use books_store::people;
 use serde_json::{Map, Value, json};
 
 use crate::service::{self, Origin, Refusal, ticket};
@@ -121,7 +122,13 @@ pub struct Summary {
 
 impl Summary {
     pub fn of(store: &Store, chart: &Chart, entry: Entry) -> Result<Self, Refusal> {
-        let lines = entries::lines(store.conn(), entry.id)?;
+        let mut lines = entries::lines(store.conn(), entry.id)?;
+        for line in &mut lines {
+            let effective = people::effective_links(store.conn(), entry.id, line.id)?;
+            line.person_id = effective.person_id;
+            line.department_id = effective.department_id;
+            line.location_id = effective.location_id;
+        }
         let is_cash = |l: &LineRow| chart.by_id.get(&l.account_id).is_some_and(Account::is_cash);
         let cash = lines
             .iter()
@@ -296,6 +303,7 @@ pub fn book_json(store: &Store, book: &Book) -> Result<Value, Refusal> {
         "basis_label": if book.basis == books_core::ledger::Basis::Cash { "Cash basis" } else { "Accrual basis" },
         "year": today.year,
         "fiscal_year_start": book.fiscal_year_start,
+        "accent": book.accent,
     }))
 }
 
@@ -558,6 +566,38 @@ pub fn ledger(
         _ => None,
     };
     let filter = service::text(args, "filter").unwrap_or("all");
+    // `search` narrows the page before the 200-row cap, so a match older
+    // than the cap is still found. Payee, memo and reference stay out of a
+    // non-app caller's matches — the tool shows it no payees or memos.
+    let search = service::text(args, "search")
+        .unwrap_or_default()
+        .to_lowercase();
+    let hit = |s: &Summary| {
+        if search.is_empty() {
+            return true;
+        }
+        let mut fields = vec![
+            format!("{:04}", s.entry.no),
+            s.entry.status.as_str().to_string(),
+            s.entry.form.as_str().to_string(),
+            s.entry.date.to_string(),
+            money::format(s.amount()),
+            signed(s.amount()),
+            s.category
+                .as_ref()
+                .map(|a| a.name.clone())
+                .unwrap_or_default(),
+        ];
+        if origin.is_app() {
+            fields.push(s.what());
+            fields.push(s.entry.payee.clone().unwrap_or_default());
+            fields.push(s.entry.reference.clone().unwrap_or_default());
+            fields.push(s.entry.memo.clone().unwrap_or_default());
+        }
+        fields
+            .iter()
+            .any(|f| !f.is_empty() && f.to_lowercase().contains(&search))
+    };
     let counts = json!({
         "all": list.len(),
         "review": list.iter().filter(|s| is(s, "review")).count(),
@@ -565,9 +605,21 @@ pub fn ledger(
         "posted": list.iter().filter(|s| is(s, "posted")).count(),
         "checks": list.iter().filter(|s| is(s, "checks")).count(),
     });
+    // one account picked: each row also carries that account's own share of
+    // the entry, so a category page sums its lines, not whole payments
+    let account_amount = |s: &Summary, a: &Account| -> i64 {
+        a.natural(
+            s.lines
+                .iter()
+                .filter(|l| l.account_id == a.id)
+                .map(|l| l.debit - l.credit)
+                .sum(),
+        )
+    };
     let rows = list
         .iter()
         .filter(|s| is(s, filter))
+        .filter(|s| hit(s))
         .take(200)
         .map(|s| {
             let mut row = s.row(store, origin)?;
@@ -575,14 +627,35 @@ pub fn ledger(
             if let Some(running) = &running {
                 row["balance_shown"] = json!(running.get(&s.entry.id).map(|b| money::display(*b)));
             }
+            if let Some(a) = &selected {
+                let amount = account_amount(s, a);
+                row["account_amount"] = json!(money::format(amount));
+                row["account_amount_shown"] = json!(money::display(amount));
+                row["account_tone"] = json!(if amount > 0 {
+                    "pos"
+                } else if amount < 0 {
+                    "neg"
+                } else {
+                    ""
+                });
+            }
             Ok(row)
         })
         .collect::<Result<Vec<_>, Refusal>>()?;
     let header = match &selected {
-        Some(a) => json!({
-            "ticket": ticket(store, "account", a.id)?, "number": a.number, "name": a.name,
-            "balance_shown": money::display(a.natural(*balances.get(&a.id).unwrap_or(&0))),
-        }),
+        Some(a) => {
+            let month_moves = books::movements(
+                store.conn(),
+                chart.book.id,
+                Some(month.start),
+                Some(month.end),
+            )?;
+            json!({
+                "ticket": ticket(store, "account", a.id)?, "number": a.number, "name": a.name,
+                "balance_shown": money::display(a.natural(*balances.get(&a.id).unwrap_or(&0))),
+                "month_shown": money::display(a.natural(*month_moves.get(&a.id).unwrap_or(&0))),
+            })
+        }
         None => {
             let cash: i64 = chart
                 .list
@@ -625,15 +698,46 @@ pub fn entry(
     let lines: Vec<Value> = s
         .lines
         .iter()
-        .map(|l| {
+        .map(|l| -> Result<Value, Refusal> {
             let a = chart.by_id.get(&l.account_id);
-            json!({
+            let person = l
+                .person_id
+                .map(|id| -> Result<Value, Refusal> {
+                    let p = people::person(store.conn(), id)?.ok_or_else(|| {
+                        Refusal::new("not_found", "That line links to a missing person.")
+                    })?;
+                    Ok(json!({ "ticket": ticket(store, "person", id)?, "name": p.name }))
+                })
+                .transpose()?;
+            let department = l
+                .department_id
+                .map(|id| -> Result<Value, Refusal> {
+                    let tag = people::tag(store.conn(), id)?.ok_or_else(|| {
+                        Refusal::new("not_found", "That line links to a missing department.")
+                    })?;
+                    Ok(json!({ "ticket": ticket(store, "tag", id)?, "name": tag.name }))
+                })
+                .transpose()?;
+            let location = l
+                .location_id
+                .map(|id| -> Result<Value, Refusal> {
+                    let tag = people::tag(store.conn(), id)?.ok_or_else(|| {
+                        Refusal::new("not_found", "That line links to a missing location.")
+                    })?;
+                    Ok(json!({ "ticket": ticket(store, "tag", id)?, "name": tag.name }))
+                })
+                .transpose()?;
+            Ok(json!({
                 "account": a.map(|a| format!("{} {}", a.number, a.name)),
                 "debit_shown": if l.debit > 0 { money::display(l.debit) } else { String::new() },
                 "credit_shown": if l.credit > 0 { money::display(l.credit) } else { String::new() },
-            })
+                "memo": l.memo,
+                "person": person,
+                "department": department,
+                "location": location,
+            }))
         })
-        .collect();
+        .collect::<std::result::Result<_, Refusal>>()?;
     let e = &s.entry;
     let actions: Vec<&str> = match e.status {
         Status::Draft => vec!["discard", "edit", "post"],

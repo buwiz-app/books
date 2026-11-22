@@ -9,7 +9,7 @@ use books_core::ledger::{KindRef, Status};
 use books_core::money;
 use books_store::Store;
 use books_store::books::{Account, Book};
-use books_store::entries::{self, Filter, Form};
+use books_store::entries::{self, Filter};
 use books_store::owed_payments;
 use books_store::people::{self, Person};
 use books_store::plumbing;
@@ -71,20 +71,77 @@ pub(crate) fn person_entries(
     chart: &Chart,
     person_id: i64,
 ) -> Result<Vec<Summary>, Refusal> {
-    let ids: Vec<i64> = {
+    let rows: Vec<(i64, i64)> = {
         let mut stmt = store
             .conn()
-            .prepare("SELECT entry_id FROM entry WHERE person_id = ?1 AND status IN ('posted','voided') ORDER BY entry_date DESC, entry_no DESC")
+            .prepare("SELECT l.line_id, e.entry_id FROM line l JOIN entry e ON e.entry_id = l.entry_id WHERE e.book_id = ?1 AND e.status IN ('posted','voided') AND coalesce(l.person_id, e.person_id) = ?2 ORDER BY e.entry_date DESC, e.entry_no DESC")
             .map_err(books_store::StoreError::from)?;
-        stmt.query_map(params![person_id], |r| r.get::<_, i64>(0))
-            .map_err(books_store::StoreError::from)?
-            .collect::<Result<_, _>>()
-            .map_err(books_store::StoreError::from)?
+        stmt.query_map(params![chart.book.id, person_id], |r| {
+            Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?))
+        })
+        .map_err(books_store::StoreError::from)?
+        .collect::<Result<_, _>>()
+        .map_err(books_store::StoreError::from)?
     };
-    ids.into_iter()
+    let mut ids = Vec::new();
+    for (_, entry_id) in rows {
+        if !ids.contains(&entry_id) {
+            ids.push(entry_id);
+        }
+    }
+    let mut summaries: Vec<Summary> = ids
+        .into_iter()
         .filter_map(|id| entries::get(store.conn(), id).transpose())
         .map(|e| Summary::of(store, chart, e?))
-        .collect()
+        .collect::<Result<_, _>>()?;
+    for summary in &mut summaries {
+        let is_cash = |line: &&entries::LineRow| {
+            chart
+                .by_id
+                .get(&line.account_id)
+                .is_some_and(Account::is_cash)
+        };
+        let linked: Vec<_> = summary
+            .lines
+            .iter()
+            .filter(|line| line.person_id == Some(person_id))
+            .collect();
+        let attributed_lines: Vec<_> = linked
+            .iter()
+            .copied()
+            .filter(|line| !is_cash(line))
+            .collect();
+        // A party named only on the money side still owns the movement:
+        // its cash lines stand in for the category split there is none of.
+        let money_lines: Vec<_> = if attributed_lines.is_empty() {
+            linked.into_iter().filter(|line| is_cash(line)).collect()
+        } else {
+            Vec::new()
+        };
+        if summary.cash != 0 {
+            summary.cash = if attributed_lines.is_empty() {
+                money_lines
+                    .iter()
+                    .map(|line| line.debit - line.credit)
+                    .sum()
+            } else {
+                attributed_lines
+                    .iter()
+                    .map(|line| line.credit - line.debit)
+                    .sum()
+            };
+        }
+        // The entry's size as the person's lines see it: one side, not both.
+        let (debit, credit) = attributed_lines
+            .iter()
+            .chain(money_lines.iter())
+            .fold((0, 0), |(d, c), line| (d + line.debit, c + line.credit));
+        summary.debits = debit.max(credit);
+        if let Some(line) = attributed_lines.first() {
+            summary.category = chart.by_id.get(&line.account_id).cloned();
+        }
+    }
+    Ok(summaries)
 }
 
 /// Totals by month for the last ten months ending in `month`, as bar heights.
@@ -329,34 +386,55 @@ pub fn tags_list(store: &Store, book: Book, args: &Map<String, Value>) -> Answer
         _ => return Err(Refusal::invalid("`kind` is department or location.")),
     };
     let month = views::month_arg(args)?;
-    let column = if kind == "department" {
-        "department_id"
-    } else {
-        "location_id"
-    };
     let mut rows = Vec::new();
     for t in people::tags(store.conn(), chart.book.id, Some(kind))? {
-        let ids: Vec<i64> = {
+        let line_rows: Vec<(i64, i64)> = {
             let mut stmt = store
                 .conn()
-                .prepare(&format!(
-                    "SELECT entry_id FROM entry WHERE {column} = ?1 AND status IN ('posted','voided') AND entry_date >= ?2 AND entry_date <= ?3"
-                ))
+                .prepare("SELECT l.line_id, e.entry_id FROM line l JOIN entry e ON e.entry_id = l.entry_id WHERE e.book_id = ?1 AND e.status IN ('posted','voided') AND e.entry_date >= ?2 AND e.entry_date <= ?3")
                 .map_err(books_store::StoreError::from)?;
             stmt.query_map(
-                params![t.id, month.start.to_string(), month.end.to_string()],
-                |r| r.get::<_, i64>(0),
+                params![
+                    chart.book.id,
+                    month.start.to_string(),
+                    month.end.to_string()
+                ],
+                |r| Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?)),
             )
             .map_err(books_store::StoreError::from)?
             .collect::<Result<_, _>>()
             .map_err(books_store::StoreError::from)?
         };
+        let mut ids = Vec::new();
+        for (line_id, entry_id) in line_rows {
+            let links = people::effective_links(store.conn(), entry_id, line_id)?;
+            let linked = if kind == "department" {
+                links.department_id
+            } else {
+                links.location_id
+            };
+            if linked == Some(t.id) && !ids.contains(&entry_id) {
+                ids.push(entry_id);
+            }
+        }
         let mut spent = 0i64;
         for id in &ids {
             if let Some(e) = entries::get(store.conn(), *id)? {
                 let s = Summary::of(store, &chart, e)?;
-                if s.cash < 0 && s.entry.form != Form::Transfer {
-                    spent -= s.cash;
+                for line in &s.lines {
+                    let linked = if kind == "department" {
+                        line.department_id
+                    } else {
+                        line.location_id
+                    };
+                    if linked == Some(t.id)
+                        && chart
+                            .by_id
+                            .get(&line.account_id)
+                            .is_some_and(|a| a.account_type.group() == "Expenses")
+                    {
+                        spent += line.debit - line.credit;
+                    }
                 }
             }
         }
@@ -512,7 +590,7 @@ pub fn tag_create(conn: &Connection, args: &Map<String, Value>) -> Answer {
     ))
 }
 
-/// `books_app_owed_create`: an invoice to collect or a bill to pay.
+/// Create an invoice to collect or a bill to pay through `books_app_owed`.
 pub fn owed_create(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let book = writes::book_in(conn, args)?;
     let side = service::required(args, "side")?;
@@ -569,7 +647,7 @@ fn owed_in(conn: &Connection, args: &Map<String, Value>) -> Result<i64, Refusal>
     }
 }
 
-/// `books_app_owed_settle`: settle all of a document, or `amount` of it;
+/// Settle all of a document, or `amount` of it, through `books_app_owed`;
 /// posts the money on that day.
 pub fn owed_settle(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let book = writes::book_in(conn, args)?;
@@ -604,7 +682,7 @@ pub fn owed_settle(conn: &Connection, args: &Map<String, Value>) -> Answer {
     ))
 }
 
-/// `books_app_owed_cancel`.
+/// Cancel an open document through `books_app_owed`.
 pub fn owed_cancel(conn: &Connection, args: &Map<String, Value>) -> Answer {
     let book = writes::book_in(conn, args)?;
     let id = owed_in(conn, args)?;

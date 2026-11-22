@@ -1,29 +1,33 @@
-// The Books window: the rail of pages, the page, the entry drawer
-// and the new-entry sheet. The Ledger row opens the ledger's native screen
+// The Books window: Home, then one page at a time with a way back (no rail
+// beside the page), the entry drawer and the full-page new entry. The Ledger row opens the ledger's native screen
 // instead of a page here. First run makes the book (cash basis unless
 // the owner picks accrual, ADR 0008).
 
-const PAGES: { id: string; label: string; group?: string; bir?: boolean; hidden?: boolean }[] = [
-  { id: "today", label: "Today" },
-  { id: "ledger", label: "Ledger", group: "Money" },
-  { id: "unpaid", label: "Unpaid", group: "Money" },
-  { id: "reconcile", label: "Reconcile", group: "Money" },
-  { id: "reports", label: "Reports", group: "Results" },
-  { id: "forms", label: "Forms", group: "Results", bir: true },
-  { id: "people", label: "People", group: "Records" },
-  { id: "accounts", label: "Accounts", group: "Records" },
-  { id: "tags", label: "Tags", group: "Records" },
-  { id: "payroll", label: "Payroll", group: "Records" },
-  { id: "certificates", label: "Certificates", group: "Records" },
-  { id: "settings", label: "Settings", group: "end" },
-  // reached from Settings › Link & data and the Accounts page
+const PAGES: { id: string; label: string; sub?: string; group?: string; hidden?: boolean }[] = [
+  { id: "today", label: "Home" },
+  { id: "inbox", label: "Inbox", sub: "Drafts waiting to be booked", group: "Money" },
+  { id: "transactions", label: "Transactions", sub: "Every entry, by account", group: "Money" },
+  { id: "unpaid", label: "Unpaid", sub: "Invoices and bills", group: "Money" },
+  { id: "reconcile", label: "Reconcile", sub: "Match the bank statement", group: "Money" },
+  { id: "reports", label: "Reports", sub: "P&L, balance sheet, cash flow", group: "Results" },
+  { id: "people", label: "People", sub: "Customers, vendors, employees", group: "Records" },
+  { id: "accounts", label: "Accounts", sub: "Chart of accounts", group: "Records" },
+  { id: "tags", label: "Tags", sub: "Departments and locations", group: "Records" },
+  { id: "settings", label: "Settings", sub: "Book, defaults, data", group: "Records" },
+  // the full-page new entry, opened by the Add buttons
+  { id: "new", label: "New entry", hidden: true },
+  // reached from Settings and the Accounts page
   { id: "import", label: "Old books", hidden: true },
+  // Also on Home: tax forms, payroll and certificates stay in navigation;
+  // the chat cards and the eBIRForms hand-off open the same pages by link.
+  { id: "forms", label: "Tax hand-off", sub: "Measures to eBIRForms", group: "Records" },
+  { id: "payroll", label: "Pay runs", sub: "Payroll facts and payslips", group: "Records" },
+  { id: "certificates", label: "Certificates", sub: "Withholding certificates", group: "Records" },
 ];
-const BUILT = ["today", "ledger", "unpaid", "reconcile", "reports", "forms", "people", "accounts", "tags", "payroll", "certificates", "settings", "import"];
 
-const page = signal(PAGES.some((x) => x.id === PROPS.page) && PROPS.page !== "ledger" ? String(PROPS.page) : "today");
+const page = signal(PAGES.some((x) => x.id === PROPS.page) && PROPS.page !== "ledger" && PROPS.page !== "new" ? String(PROPS.page) : "today");
 const sheetMode = signal("");
-// `books page:ledger` opens the ledger's native screen once, then shows Today.
+// `books page:ledger` opens the ledger's native screen once, then shows Home.
 if (PROPS.page === "ledger") {
   openLedger({ account: PROPS.account, month: PROPS.month, filter: PROPS.filter });
 }
@@ -34,80 +38,16 @@ function go(id: string, filter?: string) {
     return;
   }
   drawerEntry.set("");
+  sheetMode.set("");
   page.set(id);
 }
+goBack = () => go("today");
 
-function Rail(p: { book: Any; counts: Any }) {
-  let last = "";
-  const rows: Any[] = [];
-  for (const x of PAGES.filter((q) => !q.hidden)) {
-    if (x.group === "end") rows.push({ spacer: true });
-    else if (x.group && x.group !== last) {
-      rows.push({ head: x.group });
-      last = x.group;
-    }
-    rows.push({ page: x });
-  }
-  const count = (id: string) =>
-    id === "ledger" ? (p.counts?.review || 0) + (p.counts?.drafts || 0) : id === "unpaid" ? (p.counts?.unpaid || 0) : 0;
-  return (
-    <View class={`w-[178px] border-r px-2 py-2.5 gap-px ${C.rail} ${C.line}`}>
-      <View class={`flex-row items-center gap-2 px-1.5 pt-1 pb-2.5 mb-1.5 border-b ${C.line}`}>
-        <View class="w-[26px] h-[26px] rounded-lg items-center justify-center bg-[#157a48]">
-          <Text class="text-[13px] font-extrabold text-white">B</Text>
-        </View>
-        <View class="flex-1">
-          <Text class={`text-[12.5px] font-bold ${C.ink}`} numberOfLines={1}>
-            {p.book?.label || "Books"}
-          </Text>
-          <Text class={`text-[11px] ${C.dim}`}>{p.book ? `${p.book.basis_label} · ${String(p.book.year)}` : ""}</Text>
-        </View>
-      </View>
-      <Each of={rows}>
-        {(r: Any) => (
-          <View class={r().spacer ? "flex-1" : ""}>
-            <If when={Boolean(r().head)}>
-              <Text class={`text-[10.5px] uppercase tracking-widest px-2 pt-2.5 pb-1 ${C.dim}`}>{r().head || ""}</Text>
-            </If>
-            <If when={Boolean(r().page)}>
-              <View
-                class={`flex-row items-center gap-2 px-2 py-1.5 rounded-lg ${page() === r().page?.id ? C.raise : ""}`}
-                onPress={() => go(r().page.id)}
-                activeStyle={{ opacity: 0.7 }}
-              >
-                <Text class={`flex-1 text-[13px] ${page() === r().page?.id ? `font-semibold ${C.ink}` : C.mute}`}>{r().page?.label || ""}</Text>
-                <If when={Boolean(r().page?.bir)}>
-                  <View class={`rounded-[5px] px-1.5 ${PILL.bir}`}>
-                    <Text class={`text-[10px] font-bold ${PILL.bir}`}>BIR</Text>
-                  </View>
-                </If>
-                <If when={count(r().page?.id) > 0}>
-                  <View class={`rounded-full px-1.5 ${PILL.draft}`}>
-                    <Text class={`text-[11px] ${PILL.draft}`}>{String(count(r().page?.id))}</Text>
-                  </View>
-                </If>
-              </View>
-            </If>
-          </View>
-        )}
-      </Each>
-      <View class="flex-row items-center gap-2 px-2 py-1.5 rounded-lg" onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)} activeStyle={{ opacity: 0.7 }}>
-        <Text class={`flex-1 text-[13px] ${C.mute}`}>Documents</Text>
-      </View>
-    </View>
-  );
-}
-
-function Later(p: { id: string }) {
-  const label = (PAGES.find((x) => x.id === p.id) || { label: "" }).label;
-  return (
-    <View class="gap-3.5">
-      <Head title={label} />
-      <Panel pad>
-        <Text class={`text-[13px] ${C.mute}`}>{`${label} arrives in a later step of the build.`}</Text>
-      </Panel>
-    </View>
-  );
+/** Add an entry: the full page, in one of its four modes. */
+function newEntry(mode: string) {
+  drawerEntry.set("");
+  sheetMode.set(mode);
+  page.set("new");
 }
 
 /** First run: name the book and pick its basis. */
@@ -128,7 +68,8 @@ function Setup() {
   };
   const Opt = (q: { id: string; title: string; sub: string }) => (
     <View
-      class={`flex-1 rounded-[10px] border p-3 gap-1 ${C.bg} ${basis() === q.id ? "border-[#157a48] dark:border-[#3fcf89]" : C.line}`}
+      class={`flex-1 rounded-[10px] border p-3 gap-1 ${C.bg} ${C.line}`}
+      style={picked(basis() === q.id)}
       onPress={() => basis.set(q.id)}
     >
       <Text class={`text-[13.5px] font-bold ${C.ink}`}>{q.title}</Text>
@@ -168,7 +109,13 @@ export default function Books() {
   );
   const book = resource(
     () => ({ v: ver(), ready: (status() as Any)?.status === "ready" }),
-    (k: Any) => (k.ready ? buwiz.call("books_book_get", {}) : Promise.resolve(null)),
+    (k: Any) =>
+      k.ready
+        ? buwiz.call("books_book_get", {}).then((b: Any) => {
+            accent.set(ACCENTS[b?.accent] ? b.accent : "green");
+            return b;
+          })
+        : Promise.resolve(null),
   );
   const ready = computed(() => (status() as Any)?.status === "ready");
   const b = () => book() as Any;
@@ -189,12 +136,29 @@ export default function Books() {
         <Setup />
       </If>
       <If when={ready()}>
-        <View class="flex-1 flex-row">
-          <Rail book={b()} counts={{ review: b()?.to_review || 0, drafts: b()?.drafts || 0, unpaid: b()?.unpaid || 0 }} />
+        <If when={page() === "new"}>
+          <EntryPage mode={sheetMode} close={() => go("today")} setMode={(m: string) => sheetMode.set(m)} />
+        </If>
+        <If when={page() === "accounts"}>
+          <AccountsPage go={go} />
+        </If>
+        <If when={page() === "category"}>
+          <CategoryDetailPage go={go} />
+        </If>
+        <If when={page() === "inbox"}>
+          <InboxPage go={go} sheet={newEntry} />
+        </If>
+        <If when={page() === "transactions"}>
+          <TransactionsPage go={go} sheet={newEntry} />
+        </If>
+        <If when={page() === "tags"}>
+          <TagsPage go={go} />
+        </If>
+        <If when={page() !== "new" && page() !== "accounts" && page() !== "category" && page() !== "inbox" && page() !== "tags" && page() !== "transactions"}>
           <Scroll class="flex-1">
-            <View class="p-4 gap-3.5">
+            <View class="p-6 gap-5">
               <If when={page() === "today"}>
-                <TodayPage go={go} sheet={(m: string) => sheetMode.set(m)} />
+                <TodayPage go={go} sheet={newEntry} pages={PAGES.filter((x) => x.group)} />
               </If>
               <If when={page() === "unpaid"}>
                 <UnpaidPage go={go} />
@@ -211,12 +175,6 @@ export default function Books() {
               <If when={page() === "people"}>
                 <PeoplePage go={go} />
               </If>
-              <If when={page() === "accounts"}>
-                <AccountsPage go={go} />
-              </If>
-              <If when={page() === "tags"}>
-                <TagsPage go={go} />
-              </If>
               <If when={page() === "forms"}>
                 <FormsPage go={go} />
               </If>
@@ -229,20 +187,14 @@ export default function Books() {
               <If when={page() === "import"}>
                 <ImportPage go={go} />
               </If>
-              <If when={!BUILT.includes(page())}>
-                <Later id={page()} />
-              </If>
             </View>
           </Scroll>
-        </View>
+        </If>
         <If when={Boolean(drawerEntry())}>
           <EntryDrawer />
         </If>
         <If when={Boolean(accountDrawer()) && page() === "accounts"}>
           <AccountDrawer ticket={accountDrawer()} onClose={() => accountDrawer.set("")} go={go} />
-        </If>
-        <If when={Boolean(sheetMode())}>
-          <EntrySheet mode={sheetMode} close={() => sheetMode.set("")} setMode={(m: string) => sheetMode.set(m)} />
         </If>
       </If>
       <If when={Boolean(toastText())}>

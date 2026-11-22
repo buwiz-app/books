@@ -37,12 +37,13 @@ Settings: `BOOKS_DATA_DIR` (default `~/Library/Application Support/app.buwiz.boo
 | fmt, clippy (`-D warnings`), `cargo test` | Nothing else. With `BUWIZ_FORMS_SCHEMAS` set to a folder of the pinned agent-forms schemas, `cargo test` also checks the crosswalks against them; without it, that check prints SKIPPED. |
 | SDK doc links | `cargo` and the SDK's sources, in Cargo's cache or over the network: the pin is read by `tools/sdk-pin.sh` (`cargo metadata --locked`). Links to the SDK in these docs name the pinned revision. |
 | SDK conformance (`tools/conformance.sh`) | `BUWIZ_SDK_DIR` (required): a [buwiz-sdk](https://github.com/buwiz-app/buwiz-sdk) checkout at the revision pinned in the root `Cargo.toml`, with `bun install` run, and `node`. With it set, `cargo test` also compares the SDK's JCS vectors with `tests/fixtures/jcs-vectors.json`. |
+| Node page suites (`tests/host/app-pages.mjs`, `tests/app/agent-d.test.mjs`) | `BUWIZ_SDK_DIR` and `node`, as for conformance: the headless `nsh-standin` harness compiles the app's TSX with the conformance package's `esbuild`. |
 | Bot host test (`tools/bot/host-test.sh`) | `BUWIZ_BROKER_BIN` (required): a `buwiz-broker` binary built from buwiz-bot main, which the test starts on a temporary data directory (it runs no Node). `BUWIZ_SDK_DIR` (required, at the pinned revision, as for conformance): the SDK's runner makes the throwaway key, the test client imports its `src/v1/` modules, and its `esbuild` compiles the Books window's source. The run prints the broker's `/meta` answer and the binary's sha256. It also needs: <ul><li>`node` and `lsof`;</li><li>a port of 8811 or above (`BOOKS_HOST_PORT`).</li></ul> The broker runs with a temporary `HOME` and a `PATH` of `/usr/bin:/bin`, and the test never touches a Keychain. |
 | Privacy scan (`tools/privacy-scan.sh`) | Nothing else. |
 
 `SKIP_BOT=1` skips the Bot host test (the run then isn't green). Gates sign with a throwaway key (`books-test-01`) and a
 file keystore, never the publisher key or a Keychain. Read [AGENTS.md](AGENTS.md) before changing a rule; the
-protocol is [buwiz-sdk `docs/protocol-1.0.md`](https://github.com/buwiz-app/buwiz-sdk/blob/f63038d5cdbb05a20d9f329be3a85a8a6f3e8f8d/docs/protocol-1.0.md).
+protocol is [buwiz-sdk `docs/protocol-1.0.md`](https://github.com/buwiz-app/buwiz-sdk/blob/bf1885946e5c2af2409d4d76cfe3a6ccba3302e9/docs/protocol-1.0.md).
 
 ## Releases
 

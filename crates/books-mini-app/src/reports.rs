@@ -15,7 +15,7 @@ use books_core::ledger::{Basis, KindRef};
 use books_core::money;
 use books_store::Store;
 use books_store::books::{self, Account, Book};
-use books_store::entries::{self, Filter, Form};
+use books_store::entries::{self, Filter, Form, LineRow};
 use books_store::people;
 use books_store::plumbing;
 use books_store::rusqlite::params;
@@ -414,26 +414,61 @@ fn flows(
         ) {
             continue;
         }
-        if let Some(t) = tag {
-            let (_, dept, loc) = people::links(store.conn(), e.id)?;
-            let on = match t.column {
-                TagColumn::Department => dept,
-                TagColumn::Location => loc,
-            };
-            if on != Some(t.id) {
+        let summary = Summary::of(store, chart, e)?;
+        let cash = if let Some(t) = tag {
+            // A journal that moves no money is no cash flow: its tagged
+            // noncash lines only ever split a real movement, never make one.
+            // Net cash of zero is not that: money in and out of equal size
+            // are both movements.
+            let moves_cash = summary.lines.iter().any(|line| {
+                chart
+                    .by_id
+                    .get(&line.account_id)
+                    .is_some_and(Account::is_cash)
+            });
+            if !moves_cash {
                 continue;
             }
-        }
-        kept.push(Summary::of(store, chart, e)?);
+            let is_cash = |line: &&LineRow| {
+                chart
+                    .by_id
+                    .get(&line.account_id)
+                    .is_some_and(Account::is_cash)
+            };
+            let (money, split): (Vec<&LineRow>, Vec<&LineRow>) = summary
+                .lines
+                .iter()
+                .filter(|line| {
+                    let linked = match t.column {
+                        TagColumn::Department => line.department_id,
+                        TagColumn::Location => line.location_id,
+                    };
+                    linked == Some(t.id)
+                })
+                .partition(is_cash);
+            // A tag on the money line alone still owns that movement.
+            let tagged_cash: i64 = if split.is_empty() {
+                money.iter().map(|line| line.debit - line.credit).sum()
+            } else {
+                split.iter().map(|line| line.credit - line.debit).sum()
+            };
+            if tagged_cash == 0 {
+                continue;
+            }
+            tagged_cash
+        } else {
+            summary.cash
+        };
+        kept.push((summary, cash));
     }
     let (mut inflow, mut outflow, mut moved) = (0i64, 0i64, 0i64);
-    for s in &kept {
+    for (s, cash) in &kept {
         if s.entry.form == Form::Transfer {
-            moved += s.cash;
-        } else if s.cash > 0 {
-            inflow += s.cash;
+            moved += cash;
+        } else if *cash > 0 {
+            inflow += cash;
         } else {
-            outflow += s.cash;
+            outflow += cash;
         }
     }
     Ok(Flows {
@@ -558,7 +593,7 @@ fn ag(store: &Store, chart: &Chart, period: &Period, args: &Map<String, Value>) 
     };
     let at = period.end;
     let mut by: Vec<(String, [i64; 4])> = Vec::new();
-    for u in people::open_unpaid(store.conn(), chart.book.id, side)? {
+    for u in people::open_unpaid_as_of(store.conn(), chart.book.id, side, &at)? {
         let who = match u.person_id {
             Some(p) => people::person(store.conn(), p)?
                 .map(|p| p.name)

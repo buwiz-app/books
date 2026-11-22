@@ -89,6 +89,28 @@ fn native_apps_have_no_tsx_source() {
 }
 
 #[test]
+fn books_window_source_stays_under_the_protocol_cap_and_preserves_lines() {
+    const SOURCE_LIMIT: usize = 524_288;
+    let source = tsx_source(apps::find("books").unwrap());
+    let bytes = source.len();
+    let headroom = SOURCE_LIMIT.saturating_sub(bytes);
+    assert!(
+        bytes <= SOURCE_LIMIT,
+        "Books window source is {bytes} bytes; remaining headroom is {headroom} bytes (limit {SOURCE_LIMIT}; plain join is {} bytes)",
+        env!("BOOKS_PLAIN_BYTES")
+    );
+
+    let plain_line_count = env!("BOOKS_PLAIN_LINE_COUNT")
+        .parse::<usize>()
+        .expect("build script exports the plain Books source line count");
+    assert_eq!(
+        source.lines().count(),
+        plain_line_count,
+        "Books window source line count differs from the plain join"
+    );
+}
+
+#[test]
 fn every_app_called_tool_is_granted_and_nothing_more() {
     let m = manifest::unsigned(manifest::RELEASE_KEY_ID);
     let entries = m["apps"].as_array().unwrap();
@@ -543,6 +565,35 @@ fn every_listed_tool_has_a_handler() {
         assert!(
             !(code == "internal" && out.to_string().contains("no handler")),
             "{name} has no handler: {out}"
+        );
+    }
+}
+
+#[test]
+fn compaction_only_trims_indent_and_comment_lines() {
+    // the compactor's contract: never merge, drop or alter a line — only a
+    // leading indent and a whole-line `//` comment may go (a mis-tracked
+    // quote, template or comment would break this on real sources)
+    let compacted = tsx_source(apps::find("books").unwrap());
+    let plain = std::fs::read_to_string(env!("BOOKS_PLAIN_SOURCE"))
+        .expect("the build script writes the plain join for this check");
+    let plain_lines: Vec<&str> = plain.lines().collect();
+    let compacted_lines: Vec<&str> = compacted.lines().collect();
+    assert_eq!(
+        plain_lines.len(),
+        compacted_lines.len(),
+        "compaction changed the line count"
+    );
+    for (index, (raw, compact)) in plain_lines.iter().zip(&compacted_lines).enumerate() {
+        if compact == raw {
+            continue;
+        }
+        let trimmed = raw.trim_start_matches([' ', '\t']);
+        let comment_only = trimmed.starts_with("//");
+        assert!(
+            *compact == trimmed || (comment_only && compact.is_empty()),
+            "line {} changed beyond its indent or a whole-line comment: {raw:?} -> {compact:?}",
+            index + 1
         );
     }
 }

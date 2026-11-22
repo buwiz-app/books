@@ -1,5 +1,5 @@
-// Today: cash now, the month so far, unpaid totals, then what needs the
-// user and the quick actions.
+// Home (Overview): matches buwiz-books Overview dashboard geometry, cards,
+// and color system while exposing every Books page and quick entry.
 
 const ICON_TONE: Record<string, string> = {
   rev: PILL.rev,
@@ -9,26 +9,41 @@ const ICON_TONE: Record<string, string> = {
 };
 
 function Kpi(p: { label: string; shown: string; tone?: string; rows: Any[] }) {
+  const valTone =
+    p.tone === "pos"
+      ? "text-[#10b981] dark:text-[#34d399]"
+      : p.tone === "neg"
+        ? "text-[#ef4444] dark:text-[#f87171]"
+        : C.ink;
   return (
-    <Panel class="flex-1 px-3.5 py-3 gap-1">
-      <Text class={`text-[11.5px] uppercase tracking-wider ${C.mute}`}>{p.label}</Text>
-      <Text class={`text-[22px] font-semibold font-mono ${p.tone === "pos" ? C.green : C.ink}`}>{p.shown}</Text>
-      <View class="gap-1.5 mt-1">
+    <View class={`flex-1 rounded-xl border p-5 gap-1.5 bg-white dark:bg-[#131826] transition-shadow hover:shadow-sm ${C.line}`}>
+      <Text class="text-xs font-medium uppercase tracking-wide text-[#94a3b8] dark:text-white/40">{p.label}</Text>
+      <Text class={`mt-2 text-2xl font-semibold tabular-nums ${valTone}`}>{p.shown}</Text>
+      <View class="gap-1.5 mt-1.5">
         <Each of={p.rows || []}>{(r: Any) => <Bar label={r().label} pct={r().pct} shown={r().shown} tone={r().tone} />}</Each>
       </View>
-    </Panel>
+    </View>
   );
 }
 
 function NeedRow(p: { n: Any; go: (page: string, filter?: string) => void }) {
   return (
-    <View class={`flex-row items-center gap-2.5 px-3.5 py-2.5 border-t ${C.line}`} onPress={() => p.go(p.n.go, p.n.filter)} activeStyle={{ opacity: 0.7 }}>
+    <View
+      class={`flex-row items-center gap-3 px-5 py-3 border-t transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 ${C.line}`}
+      onPress={() => {
+        if (p.n.filter === "review" || p.n.filter === "draft") {
+          inboxFilter.set(p.n.filter);
+          p.go("inbox");
+        } else p.go(p.n.go, p.n.filter);
+      }}
+      activeStyle={{ opacity: 0.7 }}
+    >
       <View class={`w-7 h-7 rounded-lg items-center justify-center ${ICON_TONE[p.n.tone] || PILL.mute}`}>
         <Text class={`text-[12px] font-bold ${ICON_TONE[p.n.tone] || PILL.mute}`}>{String(p.n.count)}</Text>
       </View>
       <View class="flex-1 gap-0.5">
-        <Text class={`text-[13px] font-semibold ${C.ink}`}>{p.n.title}</Text>
-        <Text class={`text-[12px] ${C.dim}`} numberOfLines={1}>
+        <Text class={`text-[13.5px] font-medium ${C.ink}`}>{p.n.title}</Text>
+        <Text class={`text-[12px] ${C.dim} truncate`}>
           {p.n.detail}
         </Text>
       </View>
@@ -39,71 +54,121 @@ function NeedRow(p: { n: Any; go: (page: string, filter?: string) => void }) {
 
 function Quick(p: { title: string; sub: string; onPress: () => void }) {
   return (
-    <View class={`flex-1 rounded-[10px] border p-2.5 gap-0.5 ${C.raise} ${C.line}`} onPress={p.onPress} activeStyle={{ opacity: 0.7 }}>
-      <Text class={`text-[13px] font-bold ${C.ink}`}>{p.title}</Text>
-      <Text class={`text-[11px] ${C.dim}`}>{p.sub}</Text>
+    <View
+      class={`flex-1 rounded-xl border px-3.5 py-3 gap-0.5 bg-[#f8f9fb] transition-colors hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 ${C.line}`}
+      onPress={p.onPress}
+      activeStyle={{ opacity: 0.75 }}
+    >
+      <Text class={`text-[13.5px] font-semibold ${C.ink}`}>{p.title}</Text>
+      <Text class={`text-[11.5px] ${C.dim}`}>{p.sub}</Text>
     </View>
   );
 }
 
-function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mode: string) => void }) {
+/** Home's way to a page: a tile under its group. */
+function NavTile(p: { title: string; sub: string; onPress: () => void }) {
+  return (
+    <View
+      class={`rounded-xl border px-3.5 py-3 gap-0.5 bg-white transition-colors hover:bg-slate-50 dark:bg-[#131826] dark:hover:bg-slate-700/60 ${C.line}`}
+      onPress={p.onPress}
+      activeStyle={{ opacity: 0.75 }}
+    >
+      <Text class={`text-[13.5px] font-semibold ${C.ink}`}>{p.title}</Text>
+      <Text class={`text-[11.5px] ${C.dim} truncate`}>
+        {p.sub}
+      </Text>
+    </View>
+  );
+}
+
+const NAV_GROUPS = ["Money", "Results", "Records"];
+
+function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mode: string) => void; pages: Any[] }) {
   const today = resource(
     () => ({ v: ver() }),
     () => buwiz.call("books_today", {}),
   );
   const t = () => today() as Any;
   return (
-    <View class="gap-3.5">
-      <Head title="Today" sub={t() ? t().today_label : ""}>
-        <View class="flex-row gap-2">
-          <Btn label="+ Money out" onPress={() => p.sheet("money_out")} />
-          <Btn label="+ Money in" tone="go" onPress={() => p.sheet("money_in")} />
+    <View class="gap-5">
+      <View class="flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        <View class="gap-0.5">
+          <Text class={`text-2xl font-semibold ${C.ink}`}>Overview</Text>
+          <Text class={`text-sm ${C.mute}`}>
+            {t()?.today_label ? `Your business at a glance · ${t().today_label}` : "Your business at a glance"}
+          </Text>
         </View>
-      </Head>
+        <View class="flex-row items-center gap-2">
+          <Btn label="+ Money out" onPress={() => p.sheet("money_out")} />
+          <Btn label="+ Money in" onPress={() => p.sheet("money_in")} />
+          <View
+            class="h-10 px-4 rounded-md bg-teal-700 transition-colors hover:bg-teal-800 items-center justify-center"
+            onPress={() => p.sheet("journal")}
+            activeStyle={{ opacity: 0.85 }}
+          >
+            <Text class="text-[13px] font-semibold text-white">+ New Entry</Text>
+          </View>
+        </View>
+      </View>
       <Loading res={today} />
       <If when={Boolean(t())}>
-        <View class="gap-3.5">
-          <View class="flex-row gap-2.5">
-            <Kpi label={t()?.cash.label || ""} shown={`₱ ${t()?.cash.shown || ""}`} rows={t()?.cash.rows} />
-            <Kpi label={t()?.month.label || ""} shown={t()?.month.shown || ""} tone={t()?.month.tone} rows={t()?.month.rows} />
-            <Kpi label={t()?.unpaid.label || ""} shown={`₱ ${t()?.unpaid.shown || ""}`} rows={t()?.unpaid.rows} />
+        <View class="gap-5">
+          <View class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Kpi label={t()?.cash.label || "Cash on hand"} shown={`₱ ${t()?.cash.shown || "0.00"}`} rows={t()?.cash.rows} />
+            <Kpi label={t()?.month.label || "Net income (MTD)"} shown={t()?.month.shown || "₱ 0.00"} tone={t()?.month.tone} rows={t()?.month.rows} />
+            <Kpi label={t()?.unpaid.label || "Unpaid"} shown={`₱ ${t()?.unpaid.shown || "0.00"}`} rows={t()?.unpaid.rows} />
           </View>
-          <View class="flex-row gap-3 items-start">
-            <Panel class="flex-[1.25]">
-              <View class="flex-row items-center justify-between px-3.5 pt-3 pb-1">
-                <Text class={`text-[13px] font-bold ${C.ink}`}>Needs you</Text>
-                <Text class={`text-[12px] ${C.dim}`}>{t()?.needs_count === 1 ? "1 thing" : `${String(t()?.needs_count || 0)} things`}</Text>
+          <View class="flex-col lg:flex-row gap-5 items-stretch lg:items-start">
+            <View class={`flex-[1.25] rounded-xl border overflow-hidden bg-white dark:bg-[#131826] ${C.line}`}>
+              <View class="flex-row items-center justify-between px-5 py-3.5">
+                <Text class={`text-[14px] font-semibold ${C.ink}`}>Needs you</Text>
+                <Text class={`text-[12px] ${C.dim}`}>
+                  {t()?.needs_count === 1 ? "1 item" : `${String(t()?.needs_count || 0)} items`}
+                </Text>
               </View>
               <If when={(t()?.needs || []).length === 0}>
-                <Text class={`text-[12.5px] px-3.5 pb-3 pt-1 ${C.dim}`}>Nothing waits for you. New drafts and bank lines show up here.</Text>
+                <Text class={`text-[13px] px-5 pb-4 pt-1 ${C.dim}`}>
+                  Nothing waits for you. New drafts and bank lines show up here.
+                </Text>
               </If>
               <Each of={t()?.needs || []} key={rowKey}>
                 {(n: Any) => <NeedRow n={n()} go={p.go} />}
               </Each>
-            </Panel>
-            <Panel class="flex-1">
-              <View class="flex-row items-center justify-between px-3.5 pt-3 pb-1">
-                <Text class={`text-[13px] font-bold ${C.ink}`}>Quick</Text>
+            </View>
+            <View class={`flex-1 rounded-xl border overflow-hidden bg-white dark:bg-[#131826] ${C.line}`}>
+              <View class="flex-row items-center justify-between px-5 py-3.5">
+                <Text class={`text-[14px] font-semibold ${C.ink}`}>Quick entry</Text>
                 <Text class={`text-[12px] ${C.dim}`}>also in chat as /books</Text>
               </View>
-              <View class="p-3.5 gap-2">
-                <View class="flex-row gap-2">
+              <View class="px-5 pb-5 gap-2.5">
+                <View class="flex-row gap-2.5">
                   <Quick title="Money in" sub="A customer paid you" onPress={() => p.sheet("money_in")} />
                   <Quick title="Money out" sub="You paid someone" onPress={() => p.sheet("money_out")} />
                 </View>
-                <View class="flex-row gap-2">
+                <View class="flex-row gap-2.5">
                   <Quick title="Transfer" sub="Between your accounts" onPress={() => p.sheet("transfer")} />
-                  <Quick title="Unpaid" sub="Invoices and bills waiting" onPress={() => p.go("unpaid")} />
-                </View>
-                <View class="flex-row gap-2">
-                  <Quick title="Ledger" sub="Every entry this month" onPress={() => p.go("ledger")} />
-                  <Quick title={`${t()?.month_name || "This month"}'s P&L`} sub={`Net ${t()?.month.shown || ""}`} onPress={() => p.go("reports")} />
+                  <Quick title="Journal" sub="Any balanced set of lines" onPress={() => p.sheet("journal")} />
                 </View>
               </View>
-            </Panel>
+            </View>
           </View>
         </View>
       </If>
+      <Each of={NAV_GROUPS}>
+        {(g: Any) => (
+          <View class="gap-2">
+            <Text class={`text-[11px] font-semibold uppercase tracking-wider ${C.dim}`}>{g()}</Text>
+            <View class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+              <Each of={(p.pages || []).filter((x: Any) => x.group === g())} key={(x: Any) => x.id}>
+                {(x: Any) => <NavTile title={x().label} sub={x().sub || ""} onPress={() => p.go(x().id)} />}
+              </Each>
+              <If when={g() === "Records"}>
+                <NavTile title="Documents" sub="Receipts, bills, statements" onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)} />
+              </If>
+            </View>
+          </View>
+        )}
+      </Each>
     </View>
   );
 }

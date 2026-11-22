@@ -46,7 +46,7 @@ function CertificatesPage(p: { go: (page: string, filter?: string) => void }) {
               <View class={`border-b ${C.line}`}>
                 <View class="flex-row items-center gap-3 px-3 py-2.5">
                   <View class="flex-1">
-                    <Text class={`text-[13px] font-semibold ${C.ink}`} numberOfLines={1}>
+                    <Text class={`text-[13px] font-semibold ${C.ink} truncate`}>
                       {c().from}
                     </Text>
                     <Text class={`text-[11.5px] ${C.dim}`}>{`ATC on the paper: ${String(c().atc || "—")}`}</Text>

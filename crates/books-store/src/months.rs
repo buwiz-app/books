@@ -497,12 +497,20 @@ pub fn add_line(
                     debit: c,
                     credit: 0,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
                 LineInput {
                     account_id: category.id,
                     debit: 0,
                     credit: c,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
             ],
         )
@@ -515,12 +523,20 @@ pub fn add_line(
                     debit: c,
                     credit: 0,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
                 LineInput {
                     account_id,
                     debit: 0,
                     credit: c,
                     facts: Facts::default(),
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
             ],
         )
@@ -550,6 +566,47 @@ pub fn difference(conn: &Connection, book: &Book, s: &Statement) -> Result<(i64,
     let m = books::movements(conn, book.id, None, Some(period.end))?;
     let ours = account.natural(*m.get(&account.id).unwrap_or(&0));
     Ok((ours, s.closing - ours))
+}
+
+/// Posted gross debit and credit movement on one account inside a period,
+/// in centavos. Only live entries count (posted, never a reversal): a void
+/// drops the original and its reversal when both fall inside the period;
+/// when the pair spans a boundary each posting still counts in its own
+/// period's gross movement, so the amounts do not silently vanish. An
+/// amend's replacement counts once, and a recategorizing entry counts
+/// because its counter-line cancels the "not sure yet" line it moves.
+/// Drafts are not ledger movement.
+pub fn account_movement(
+    conn: &Connection,
+    book_id: i64,
+    account_id: i64,
+    period: &Period,
+) -> Result<(i64, i64)> {
+    conn.query_row(
+        "SELECT coalesce(sum(l.debit), 0), coalesce(sum(l.credit), 0)
+         FROM line l JOIN entry e ON e.entry_id = l.entry_id
+         WHERE e.book_id = ?1 AND l.account_id = ?2
+           AND e.entry_date >= ?3 AND e.entry_date <= ?4
+           AND (
+             (e.status = 'posted' AND e.reverses_entry_id IS NULL)
+             OR (e.status = 'posted' AND NOT EXISTS (
+                  SELECT 1 FROM entry o
+                  WHERE o.entry_id = e.reverses_entry_id
+                    AND o.entry_date >= ?3 AND o.entry_date <= ?4))
+             OR (e.status = 'voided' AND NOT EXISTS (
+                  SELECT 1 FROM entry r
+                  WHERE r.reverses_entry_id = e.entry_id
+                    AND r.entry_date >= ?3 AND r.entry_date <= ?4))
+           )",
+        params![
+            book_id,
+            account_id,
+            period.start.to_string(),
+            period.end.to_string()
+        ],
+        |r| Ok((r.get(0)?, r.get(1)?)),
+    )
+    .map_err(Into::into)
 }
 
 /// Finish a month: every line matched and the difference 0.00.
@@ -636,12 +693,20 @@ pub fn recategorize(
                 debit: l.debit,
                 credit: l.credit,
                 facts: Facts::default(),
+                person_id: l.person_id,
+                department_id: l.department_id,
+                location_id: l.location_id,
+                memo: l.memo.clone(),
             });
             moves.push(LineInput {
                 account_id: a.id,
                 debit: l.credit,
                 credit: l.debit,
                 facts: Facts::default(),
+                person_id: l.person_id,
+                department_id: l.department_id,
+                location_id: l.location_id,
+                memo: l.memo.clone(),
             });
         }
     }
@@ -854,6 +919,76 @@ mod tests {
             (ev[0].event.as_str(), ev[0].reason.as_deref()),
             ("reopen", Some("A late bank fee"))
         );
+    }
+
+    #[test]
+    fn a_cross_month_reversal_counts_in_each_month() {
+        let (_t, store, book) = setup();
+        let c = store.conn();
+        const OPEN: Gate<'static> = &|_| Ok(());
+        let bank = books::account_by_number(c, book.id, "11000")
+            .unwrap()
+            .unwrap()
+            .id;
+        let income = books::account_by_number(c, book.id, "41000")
+            .unwrap()
+            .unwrap()
+            .id;
+        let post = |date: Date, cents: i64| {
+            let draft = DraftInput {
+                date,
+                form: Form::MoneyIn,
+                payee: None,
+                memo: None,
+                reference: None,
+                needs_review: false,
+                lines: vec![
+                    LineInput {
+                        account_id: bank,
+                        debit: cents,
+                        credit: 0,
+                        facts: Facts::default(),
+                        person_id: None,
+                        department_id: None,
+                        location_id: None,
+                        memo: None,
+                    },
+                    LineInput {
+                        account_id: income,
+                        debit: 0,
+                        credit: cents,
+                        facts: Facts::default(),
+                        person_id: None,
+                        department_id: None,
+                        location_id: None,
+                        memo: None,
+                    },
+                ],
+            };
+            let id = entries::save_draft(c, &book, None, &draft, "app").unwrap();
+            entries::post(c, &book, id, OPEN).unwrap();
+            id
+        };
+        let jan = Period::parse("2026-01").unwrap();
+        let feb = Period::parse("2026-02").unwrap();
+
+        // A January deposit reversed in February counts once in each month.
+        let id = post(Date::new(2026, 1, 15).unwrap(), 10_000);
+        entries::void(c, &book, id, Date::new(2026, 2, 10).unwrap(), OPEN).unwrap();
+        assert_eq!(
+            account_movement(c, book.id, bank, &jan).unwrap(),
+            (10_000, 0)
+        );
+        assert_eq!(
+            account_movement(c, book.id, bank, &feb).unwrap(),
+            (0, 10_000)
+        );
+
+        // A void inside one month still cancels out of that month entirely.
+        let id = post(Date::new(2026, 3, 5).unwrap(), 7_500);
+        entries::void(c, &book, id, Date::new(2026, 3, 20).unwrap(), OPEN).unwrap();
+        let mar = Period::parse("2026-03").unwrap();
+        assert_eq!(account_movement(c, book.id, bank, &mar).unwrap(), (0, 0));
     }
 
     #[test]

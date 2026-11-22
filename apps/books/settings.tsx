@@ -38,7 +38,8 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
   };
   const Opt = (q: { id: string; title: string; sub: string }) => (
     <View
-      class={`flex-1 rounded-[10px] border p-3 gap-1 ${C.bg} ${d()?.book.basis === q.id ? "border-[#157a48] dark:border-[#3fcf89]" : C.line}`}
+      class={`flex-1 rounded-[10px] border p-3 gap-1 ${C.bg} ${C.line}`}
+      style={picked(d()?.book.basis === q.id)}
       onPress={() => (d()?.book.basis === q.id ? null : save({ basis: q.id }))}
     >
       <Text class={`text-[13.5px] font-bold ${C.ink}`}>{q.title}</Text>
@@ -50,11 +51,11 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
       <Head title="Settings" />
       <Loading res={data} />
       <If when={Boolean(d())}>
-        <View class="flex-row gap-3 items-start">
-          <Panel class="w-[180px] p-1.5 gap-0.5">
+        <View class="flex-col md:flex-row gap-3 items-start">
+          <Panel class="w-full flex-row flex-wrap md:w-[180px] md:flex-col md:flex-nowrap p-1.5 gap-0.5">
             <Each of={SET_TABS}>
               {(t: Any) => (
-                <View class={`rounded-[7px] px-2.5 py-1.5 ${setTab() === t()[0] ? C.raise : ""}`} onPress={() => {
+                <View class={`rounded-[7px] px-2.5 py-1.5 ${setTab() === t()[0] ? C.raise : "hover:bg-[#f1f5f9] dark:hover:bg-slate-800"}`} onPress={() => {
                     err.set("");
                     setTab.set(t()[0]);
                   }}>
@@ -69,7 +70,7 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
             </If>
             <If when={setTab() === "book"}>
               <Panel pad class="gap-3.5">
-                <View class="flex-row gap-3">
+                <View class="flex-col md:flex-row gap-3">
                   <Field label="Name shown in the Buwiz Bot" grow>
                     <View class="flex-row gap-2">
                       <View class="flex-1">
@@ -83,12 +84,29 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
                   </Field>
                 </View>
                 <Field label="Accounting basis">
-                  <View class="flex-row gap-2">
+                  <View class="flex-col md:flex-row gap-2">
                     <Opt id="cash" title="Cash (default)" sub="Money counts when it moves. Simplest." />
                     <Opt id="accrual" title="Accrual" sub="Counts at invoice and bill. Adds receivables, payables, aging." />
                   </View>
                 </Field>
                 <Text class={`text-[12px] ${C.dim}`}>The basis changes only from the start of a year with nothing posted yet. Every BIR hand-off records it.</Text>
+                <Field label="Accent colour">
+                  <View class="flex-row gap-2 flex-wrap">
+                    <Each of={Object.keys(ACCENTS)}>
+                      {(k: Any) => (
+                        <View
+                          accessibilityLabel={`Accent ${ACCENTS[k()].name}`}
+                          class={`flex-row items-center gap-1.5 rounded-full border px-2.5 py-1 ${C.bg} ${C.line}`}
+                          style={picked(accent() === k())}
+                          onPress={() => (accent() === k() ? null : save({ accent: k() }))}
+                        >
+                          <View class="w-3 h-3 rounded-full" style={{ backgroundColor: ACCENTS[k()].solid }} />
+                          <Text class={`text-[12.5px] ${C.ink}`}>{ACCENTS[k()].name}</Text>
+                        </View>
+                      )}
+                    </Each>
+                  </View>
+                </Field>
               </Panel>
             </If>
             <If when={setTab() === "months"}>
@@ -122,10 +140,10 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
                   <Panel>
                     <Each of={d()?.events || []} key={rowKey}>
                       {(e: Any) => (
-                        <View class={`flex-row gap-3 px-3 py-2 border-b ${C.line}`}>
+                        <View class={`flex-row flex-wrap gap-3 px-3 py-2 border-b ${C.line}`}>
                           <Text class={`w-[130px] text-[12.5px] ${C.ink}`}>{e().month}</Text>
                           <Pill tone={e().event === "close" ? "ok" : "draft"} label={e().event === "close" ? "Closed" : "Reopened"} />
-                          <Text class={`flex-1 text-[12.5px] ${C.mute}`} numberOfLines={1}>
+                          <Text class={`flex-1 text-[12.5px] ${C.mute} truncate`}>
                             {e().reason || ""}
                           </Text>
                         </View>
@@ -146,14 +164,14 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
                       </View>
                       <Each of={g().rows}>
                         {(r: Any) => (
-                          <View class={`flex-row items-center gap-2 px-3 py-2 border-t ${C.line} ${r().off ? "opacity-50" : ""}`}>
-                            <View class="w-[170px]">
+                          <View class={`flex-col md:flex-row md:items-center gap-2 px-3 py-2 border-t ${C.line} ${r().off ? "opacity-50" : ""}`}>
+                            <View class="w-full md:w-[170px]">
                               <Text class={`text-[13px] ${C.ink}`}>{r().label}</Text>
                               <If when={r().off}>
                                 <Text class={`text-[11px] ${C.dim}`}>accrual books only</Text>
                               </If>
                             </View>
-                            <Text class={C.dim}>→</Text>
+                            <Text class={`hidden md:block ${C.dim}`}>→</Text>
                             <View class="flex-1">
                               <Pick
                                 value={r().account?.ticket || ""}
@@ -181,6 +199,7 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
                   <View class="flex-row gap-2 flex-wrap">
                     <Btn label="Import from web Books" onPress={() => p.go("import")} />
                     <Btn label="Import CSV files" onPress={() => p.go("import")} />
+                    <Btn label="Tax hand-off" onPress={() => p.go("forms")} />
                   </View>
                   <Text class={`text-[12px] ${C.dim}`}>No TIN is stored here. A tax profile links by its ID only, through Buwiz sign-in.</Text>
                 </Panel>
@@ -255,7 +274,7 @@ function CloudLink() {
           {(x: Any) => (
             <View class={`flex-row items-center gap-3 py-1.5 border-t ${C.line}`}>
               <Text class={`text-[13px] font-mono ${C.ink}`}>{x().tin_masked || "—"}</Text>
-              <Text class={`flex-1 text-[12.5px] ${C.mute}`} numberOfLines={1}>
+              <Text class={`flex-1 text-[12.5px] ${C.mute} truncate`}>
                 {x().registered_name || ""}
               </Text>
               <If when={Boolean(x().linked)}>

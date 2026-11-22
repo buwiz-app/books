@@ -90,9 +90,9 @@ pub fn pill(label: impl Into<String>, tone: &'static str) -> View {
 
 pub fn act(label: impl Into<String>, primary: bool, on_press: impl Fn() + 'static) -> View {
     let colors = if primary {
-        "bg-[#1c1c1c] dark:bg-[#f5f5f5]"
+        "bg-[#1c1c1c] dark:bg-[#f5f5f5] hover:bg-[#3a3a3a] dark:hover:bg-white".to_owned()
     } else {
-        K_WELL
+        format!("{K_WELL} hover:bg-[#e0e0de] dark:hover:bg-[#3d3d3d]")
     };
     let ink = if primary {
         "text-white dark:text-[#1f1f1f]"
@@ -101,8 +101,9 @@ pub fn act(label: impl Into<String>, primary: bool, on_press: impl Fn() + 'stati
     };
     view()
         .app_class(Some(
-            format!("h-[28px] px-3 rounded-full items-center justify-center {colors}").into(),
+            format!("h-[28px] px-3 rounded-full items-center justify-center cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-[#2a9d8f] {colors}").into(),
         ))
+        .focusable(true)
         .active(|style| style.opacity(0.7))
         .on_press(on_press)
         .child(

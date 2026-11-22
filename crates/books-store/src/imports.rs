@@ -237,6 +237,15 @@ pub fn apply(
             )
             .optional()?)
     };
+    let tag = |kind: &str, name: Option<&str>| -> Result<Option<i64>> {
+        Ok(match name {
+            Some(n) => people::tags(conn, book.id, Some(kind))?
+                .into_iter()
+                .find(|t| normalized(&t.name) == normalized(n))
+                .map(|t| t.id),
+            None => None,
+        })
+    };
     for e in &plan.entries {
         let mut lines = Vec::with_capacity(e.lines.len());
         for l in &e.lines {
@@ -245,6 +254,10 @@ pub fn apply(
                 debit: l.debit,
                 credit: l.credit,
                 facts: Facts::default(),
+                person_id: l.party.as_deref().map(person_named).transpose()?.flatten(),
+                department_id: tag("department", l.department.as_deref())?,
+                location_id: tag("location", l.location.as_deref())?,
+                memo: None,
             });
         }
         let draft = DraftInput {
@@ -271,22 +284,13 @@ pub fn apply(
                 params![id, p],
             )?;
         }
-        let tag = |kind: &str, name: Option<&str>| -> Result<Option<i64>> {
-            Ok(match name {
-                Some(n) => people::tags(conn, book.id, Some(kind))?
-                    .into_iter()
-                    .find(|t| normalized(&t.name) == normalized(n))
-                    .map(|t| t.id),
-                None => None,
-            })
-        };
         let dept = tag(
             "department",
-            e.lines.iter().find_map(|l| l.department.as_deref()),
+            e.lines.first().and_then(|l| l.department.as_deref()),
         )?;
         let loc = tag(
             "location",
-            e.lines.iter().find_map(|l| l.location.as_deref()),
+            e.lines.first().and_then(|l| l.location.as_deref()),
         )?;
         if dept.is_some() || loc.is_some() {
             people::set_entry_links(conn, book, id, None, dept, loc)?;
@@ -558,4 +562,144 @@ pub fn acknowledged(conn: &Connection, book_id: i64) -> Result<Vec<i64>> {
         conn.prepare("SELECT entry_id FROM return_ack WHERE book_id = ?1 ORDER BY entry_id")?;
     let rows = stmt.query_map(params![book_id], |r| r.get(0))?;
     Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use books_core::import::{Entry as ImportEntry, Line as ImportLine};
+    use books_core::import::{Person as ImportPerson, Tag as ImportTag};
+    use books_core::ledger::Basis;
+
+    use crate::{Paths, Store, TempDir};
+
+    const OPEN: Gate<'static> = &|_| Ok(());
+
+    #[test]
+    fn import_preserves_each_lines_links_and_keeps_first_line_entry_links() {
+        let tmp = TempDir::new("import-line-links");
+        let store = Store::open(&Paths::in_dir(tmp.0.join("d"))).unwrap();
+        let c = store.conn();
+        let book_id = books::create(c, "Synthetic Import Book", Basis::Cash, 1).unwrap();
+        let book = books::get(c, book_id).unwrap().unwrap();
+        let plan = Plan {
+            source: Source::Csv,
+            accounts: Vec::new(),
+            people: vec![
+                ImportPerson {
+                    kind: "vendor",
+                    name: "Synthetic Entry Vendor".into(),
+                },
+                ImportPerson {
+                    kind: "vendor",
+                    name: "Synthetic First Line Vendor".into(),
+                },
+                ImportPerson {
+                    kind: "vendor",
+                    name: "Synthetic Second Line Vendor".into(),
+                },
+            ],
+            tags: vec![
+                ImportTag {
+                    kind: "department",
+                    name: "Synthetic First Department".into(),
+                },
+                ImportTag {
+                    kind: "department",
+                    name: "Synthetic Second Department".into(),
+                },
+                ImportTag {
+                    kind: "location",
+                    name: "Synthetic First Location".into(),
+                },
+                ImportTag {
+                    kind: "location",
+                    name: "Synthetic Second Location".into(),
+                },
+            ],
+            entries: vec![ImportEntry {
+                reference: None,
+                date: Date::new(2026, 10, 18).unwrap(),
+                memo: None,
+                party: Some("Synthetic Entry Vendor".into()),
+                posted: false,
+                lines: vec![
+                    ImportLine {
+                        account: AccountRef::Number("11000".into()),
+                        debit: 10_000,
+                        credit: 0,
+                        description: None,
+                        party: Some("Synthetic First Line Vendor".into()),
+                        department: Some("Synthetic First Department".into()),
+                        location: Some("Synthetic First Location".into()),
+                    },
+                    ImportLine {
+                        account: AccountRef::Number("41000".into()),
+                        debit: 0,
+                        credit: 10_000,
+                        description: None,
+                        party: Some("Synthetic Second Line Vendor".into()),
+                        department: Some("Synthetic Second Department".into()),
+                        location: Some("Synthetic Second Location".into()),
+                    },
+                ],
+            }],
+            skipped: Vec::new(),
+        };
+        let suggest = |_: Option<&str>, _: &str, _: AccountType| Suggestion {
+            kind: "unsure".into(),
+            confidence: 0,
+        };
+        apply(c, &book, &plan, &suggest, None, OPEN).unwrap();
+
+        let entry = entries::list(c, book.id, &entries::Filter::default())
+            .unwrap()
+            .pop()
+            .unwrap();
+        let entry_person =
+            people::person_for(c, &book, "vendor", "Synthetic Entry Vendor").unwrap();
+        let first_person =
+            people::person_for(c, &book, "vendor", "Synthetic First Line Vendor").unwrap();
+        let second_person =
+            people::person_for(c, &book, "vendor", "Synthetic Second Line Vendor").unwrap();
+        let tags = people::tags(c, book.id, None).unwrap();
+        let tag_id = |name: &str| tags.iter().find(|t| t.name == name).unwrap().id;
+        let first_department = tag_id("Synthetic First Department");
+        let second_department = tag_id("Synthetic Second Department");
+        let first_location = tag_id("Synthetic First Location");
+        let second_location = tag_id("Synthetic Second Location");
+        assert_eq!(
+            people::links(c, entry.id).unwrap(),
+            (
+                Some(entry_person),
+                Some(first_department),
+                Some(first_location)
+            )
+        );
+        let lines = entries::lines(c, entry.id).unwrap();
+        assert_eq!(
+            (
+                lines[0].person_id,
+                lines[0].department_id,
+                lines[0].location_id
+            ),
+            (
+                Some(first_person),
+                Some(first_department),
+                Some(first_location)
+            )
+        );
+        assert_eq!(
+            (
+                lines[1].person_id,
+                lines[1].department_id,
+                lines[1].location_id
+            ),
+            (
+                Some(second_person),
+                Some(second_department),
+                Some(second_location)
+            )
+        );
+    }
 }

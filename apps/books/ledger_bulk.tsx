@@ -46,12 +46,12 @@ function BulkRow(p: { r: Any }) {
       <BulkBox r={r} />
       <View class={`flex-1 flex-row items-center gap-3 px-3 py-2.5 border-b ${C.line}`}>
         <Text class={`w-[52px] text-[12.5px] font-mono ${C.ink}`}>{r.date_short}</Text>
-        <Text class={`flex-1 text-[13px] font-semibold ${C.ink}`} numberOfLines={1}>
+        <Text class={`flex-1 text-[13px] font-semibold ${C.ink} truncate`}>
           {r.title}
         </Text>
         <View class="w-[150px] flex-row items-center gap-1.5">
           <Dot color={r.category_color} />
-          <Text class={`text-[12.5px] ${C.ink}`} numberOfLines={1}>
+          <Text class={`text-[12.5px] ${C.ink} truncate`}>
             {r.category || ""}
           </Text>
         </View>

@@ -3,7 +3,7 @@
 //! A person is a name and a kind (vendor, customer, employee, owner,
 //! lender, government); banks and cards are the book's cash and card
 //! accounts. There is no TIN anywhere: the BIR app keeps them. Tags are
-//! departments and locations, set on an entry.
+//! departments and locations, set on an entry or line.
 //!
 //! An unpaid document waits for money. On a cash book (the default, ADR
 //! 0008) it is a reminder and posts nothing; marking it paid posts the
@@ -234,12 +234,41 @@ pub fn set_entry_links(
     Ok(())
 }
 
+/// Take the person off a draft. A posted entry keeps its person.
+pub fn clear_draft_person(conn: &Connection, book: &Book, entry_id: i64) -> Result<()> {
+    conn.execute(
+        "UPDATE entry SET person_id = NULL WHERE entry_id = ?1 AND book_id = ?2 AND status = 'draft'",
+        params![entry_id, book.id],
+    )?;
+    Ok(())
+}
+
 /// An entry's `(person, department, location)`.
 pub fn links(conn: &Connection, entry_id: i64) -> Result<(Option<i64>, Option<i64>, Option<i64>)> {
     Ok(conn.query_row(
         "SELECT person_id, department_id, location_id FROM entry WHERE entry_id = ?1",
         params![entry_id],
         |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+    )?)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EffectiveLinks {
+    pub person_id: Option<i64>,
+    pub department_id: Option<i64>,
+    pub location_id: Option<i64>,
+}
+
+pub fn effective_links(conn: &Connection, entry_id: i64, line_id: i64) -> Result<EffectiveLinks> {
+    Ok(conn.query_row(
+        "SELECT coalesce(l.person_id, e.person_id), coalesce(l.department_id, e.department_id), coalesce(l.location_id, e.location_id)
+         FROM line l JOIN entry e ON e.entry_id = l.entry_id WHERE e.entry_id = ?1 AND l.line_id = ?2",
+        params![entry_id, line_id],
+        |r| Ok(EffectiveLinks {
+            person_id: r.get(0)?,
+            department_id: r.get(1)?,
+            location_id: r.get(2)?,
+        }),
     )?)
 }
 
@@ -330,6 +359,37 @@ pub fn open_unpaid(conn: &Connection, book_id: i64, side: &str) -> Result<Vec<Un
          ORDER BY due IS NULL, due, unpaid_id"
     ))?;
     let rows = stmt.query_map(params![book_id, side], unpaid_row)?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
+
+/// Settlements counted at `at`: posted by then and not undone by then — a
+/// payment voided later still stands at the cutoff.
+macro_rules! paid_sql_at {
+    () => {
+        "(SELECT coalesce(sum(p.amount), 0) FROM owed_payment p JOIN entry e ON e.entry_id = p.entry_id WHERE p.unpaid_id = unpaid.unpaid_id AND e.entry_date <= ?3 AND (e.status = 'posted' OR (e.status = 'voided' AND NOT EXISTS (SELECT 1 FROM entry r WHERE r.reverses_entry_id = e.entry_id AND r.entry_date <= ?3))))"
+    };
+}
+
+/// Documents on one side owed at `at`, by due date: issued by the cutoff
+/// with settlements counted through it, so a later payment or issue date
+/// does not rewrite the past. A cancelled document's accrual entry is
+/// voided on its own date, so it owes nothing at any cutoff.
+pub fn open_unpaid_as_of(
+    conn: &Connection,
+    book_id: i64,
+    side: &str,
+    at: &Date,
+) -> Result<Vec<Unpaid>> {
+    const COLUMNS: &str = concat!(
+        "unpaid_id, book_id, side, person_id, reference, memo, issued, due, amount, category_account_id, status, accrual_entry_id, paid_entry_id, paid_on, ",
+        paid_sql_at!()
+    );
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {COLUMNS} FROM unpaid WHERE book_id = ?1 AND side = ?2 AND issued <= ?3 AND status <> 'cancelled' AND amount > {}
+         ORDER BY due IS NULL, due, unpaid_id",
+        paid_sql_at!()
+    ))?;
+    let rows = stmt.query_map(params![book_id, side, at.to_string()], unpaid_row)?;
     Ok(rows.collect::<rusqlite::Result<_>>()?)
 }
 
@@ -443,6 +503,10 @@ pub fn create_unpaid(
                     } else {
                         Facts::default()
                     },
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
                 LineInput {
                     account_id: cr,
@@ -453,6 +517,10 @@ pub fn create_unpaid(
                     } else {
                         Facts::default()
                     },
+                    person_id: None,
+                    department_id: None,
+                    location_id: None,
+                    memo: None,
                 },
             ],
         };

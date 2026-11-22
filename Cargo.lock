@@ -387,7 +387,7 @@ checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
 [[package]]
 name = "buwiz-app"
 version = "0.1.0"
-source = "git+https://github.com/buwiz-app/buwiz-sdk?rev=f63038d5cdbb05a20d9f329be3a85a8a6f3e8f8d#f63038d5cdbb05a20d9f329be3a85a8a6f3e8f8d"
+source = "git+https://github.com/buwiz-app/buwiz-sdk?rev=bf1885946e5c2af2409d4d76cfe3a6ccba3302e9#bf1885946e5c2af2409d4d76cfe3a6ccba3302e9"
 dependencies = [
  "base64",
  "nsh-core",
@@ -398,7 +398,7 @@ dependencies = [
 [[package]]
 name = "buwiz-plugin"
 version = "0.1.0"
-source = "git+https://github.com/buwiz-app/buwiz-sdk?rev=f63038d5cdbb05a20d9f329be3a85a8a6f3e8f8d#f63038d5cdbb05a20d9f329be3a85a8a6f3e8f8d"
+source = "git+https://github.com/buwiz-app/buwiz-sdk?rev=bf1885946e5c2af2409d4d76cfe3a6ccba3302e9#bf1885946e5c2af2409d4d76cfe3a6ccba3302e9"
 dependencies = [
  "ed25519-dalek 2.2.0",
  "getrandom 0.3.4",

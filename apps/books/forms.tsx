@@ -48,7 +48,7 @@ function FormsPage(p: { go: (page: string, filter?: string) => void }) {
   const o = () => v()?.owners || {};
   return (
     <View class="gap-3.5">
-      <Head title="Forms" sub="Books totals for eBIRForms">
+      <Head title="Tax hand-off" sub="Books totals for your tax app">
         <View class="flex-row gap-2">
           <Btn label="2307s" onPress={() => p.go("certificates")} />
           <Btn label="Payroll" onPress={() => p.go("payroll")} />
@@ -122,7 +122,7 @@ function FormsPage(p: { go: (page: string, filter?: string) => void }) {
                 <View class="flex-1 gap-0.5">
                   <Text class={`text-[13px] font-semibold ${C.ink}`}>{r().measure}</Text>
                   <If when={Boolean(r().sub)}>
-                    <Text class={`text-[11.5px] ${C.mute}`} numberOfLines={2}>
+                    <Text class={`text-[11.5px] ${C.mute} line-clamp-2`}>
                       {r().sub || ""}
                     </Text>
                   </If>
@@ -130,7 +130,7 @@ function FormsPage(p: { go: (page: string, filter?: string) => void }) {
                     <Text class={`text-[11.5px] ${C.amber}`}>{r().flag || ""}</Text>
                   </If>
                   <If when={Boolean(r().held && r().why)}>
-                    <Text class={`text-[11.5px] ${C.amber}`} numberOfLines={2}>
+                    <Text class={`text-[11.5px] ${C.amber} line-clamp-2`}>
                       {`Held: ${String(r().why || "")}`}
                     </Text>
                   </If>
@@ -140,10 +140,10 @@ function FormsPage(p: { go: (page: string, filter?: string) => void }) {
                 </View>
                 <Text class={`w-[16px] text-[13px] ${C.dim}`}>→</Text>
                 <View class={`w-[250px] rounded-lg border px-2 py-1 ${r().held ? "border-dashed" : ""} ${C.line} ${C.raise}`}>
-                  <Text class={`text-[11px] ${C.mute}`} numberOfLines={1}>
+                  <Text class={`text-[11px] ${C.mute} truncate`}>
                     {r().item}
                   </Text>
-                  <Text class={`text-[11px] font-mono ${C.violet}`} numberOfLines={1}>
+                  <Text class={`text-[11px] font-mono ${C.violet} truncate`}>
                     {r().key}
                   </Text>
                 </View>
@@ -180,7 +180,7 @@ function FormsPage(p: { go: (page: string, filter?: string) => void }) {
               {(l: Any) => (
                 <View class={`flex-row gap-3 px-3.5 py-1.5 border-b ${C.line}`}>
                   <Text class={`w-[70px] text-[12.5px] font-mono ${C.mute}`}>{l().date}</Text>
-                  <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>
+                  <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
                     {l().what}
                   </Text>
                   <Text class={`w-[120px] text-right text-[12.5px] font-mono ${C.ink}`}>{l().amount_shown}</Text>
@@ -276,7 +276,7 @@ function CrossChecks() {
           {(r: Any) => (
             <View class={`flex-row items-center gap-3 px-3.5 py-1.5 border-b ${C.line}`}>
               <Text class={`flex-1 text-[12.5px] ${C.ink}`}>{r().check}</Text>
-              <Text class={`w-[260px] text-right text-[12px] font-mono ${C.mute}`} numberOfLines={1}>
+              <Text class={`w-[260px] text-right text-[12px] font-mono ${C.mute} truncate`}>
                 {r().left_shown === r().right_shown ? r().left_shown : `${String(r().left_shown)} / ${String(r().right_shown)}`}
               </Text>
               <View class="w-[190px] items-end">

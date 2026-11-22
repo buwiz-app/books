@@ -38,7 +38,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
       args.amount = amount;
     }
     if (settleOn().trim()) args.on = settleOn().trim();
-    act("books_app_owed_settle", args)
+    act("books_app_owed", { ...args, action: "settle" })
       .then((r: Any) => {
         settling.set("");
         settleAmount.set("");
@@ -75,7 +75,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
       </If>
       <If when={Boolean(d())}>
         <Panel>
-          <View class={`flex-row gap-3 px-3 py-2 border-b ${C.line}`}>
+          <View class={`hidden md:flex flex-row gap-3 px-3 py-2 border-b ${C.line} bg-[#f8fafc] dark:bg-[#0f172a]`}>
             <Text class={`flex-1 text-[10.5px] uppercase tracking-wider ${C.dim}`}>{unpaidSide() === "collect" ? "Customer" : "Vendor"}</Text>
             <Text class={`w-[150px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Document</Text>
             <Text class={`w-[64px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Due</Text>
@@ -87,8 +87,8 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
           </If>
           <Each of={d()?.rows || []} key={rowKey}>
             {(r: Any) => (
-              <View class={`border-b ${C.line}`}>
-                <View class="flex-row items-center gap-3 px-3 py-2.5">
+              <View class={`border-b ${C.line} last:border-b-0`}>
+                <View class="flex-row items-center gap-3 px-3 py-2.5 flex-wrap hover:bg-[#f8fafc] dark:hover:bg-slate-800/50 transition-colors">
                   <View
                     accessibilityLabel="Show payments"
                     accessibilityValue={{ text: r().who }}
@@ -96,18 +96,22 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
                     onPress={() => history.set(history() === r().ticket ? "" : r().ticket)}
                     activeStyle={{ opacity: 0.75 }}
                   >
-                    <Text class={`text-[13px] font-semibold ${C.ink}`} numberOfLines={1}>
+                    <Text class={`text-[13px] font-semibold ${C.ink} truncate`}>
                       {r().who}
                     </Text>
                     <If when={r().state === "part_paid"}>
                       <Pill tone="rev" label="Part paid" />
                     </If>
                   </View>
-                  <Text class={`w-[150px] text-[12.5px] ${C.ink}`} numberOfLines={1}>
+                  <Text class={`w-[150px] hidden md:block text-[12.5px] ${C.ink} truncate`}>
                     {(r().evidence || []).length > 0 ? `${r().doc || ""} · ${String(r().evidence.length)} ${r().evidence.length === 1 ? "file" : "files"}` : r().doc}
                   </Text>
-                  <Text class={`w-[64px] text-[12.5px] font-mono ${r().late ? C.red : C.ink}`}>{r().due_short}</Text>
-                  <Text class={`w-[110px] text-right text-[12.5px] font-mono ${C.ink}`}>{r().balance_shown}</Text>
+                  <Text class={`w-[64px] hidden md:block text-[12.5px] font-mono ${r().late ? C.red : C.ink}`}>{r().due_short}</Text>
+                  <View class="flex-row items-center gap-2 w-full md:w-auto">
+                    <Text class={`md:hidden text-[12.5px] font-mono ${r().late ? C.red : C.ink}`}>{r().due_short}</Text>
+                    <Text class={`md:hidden text-[12.5px] ${C.dim} truncate`}>{(r().evidence || []).length > 0 ? `${r().doc || ""} · ${String(r().evidence.length)} ${r().evidence.length === 1 ? "file" : "files"}` : r().doc}</Text>
+                  </View>
+                  <Text class={`w-[110px] text-right text-[12.5px] font-mono ${C.ink} ml-auto md:ml-0`}>{r().balance_shown}</Text>
                   <View class="w-[100px] items-end">
                     <OwedPrintBtn ticket={r().ticket} side={unpaidSide()} />
                     <Btn label="Mark paid" small onPress={() => settling.set(settling() === r().ticket ? "" : r().ticket)} />
@@ -117,7 +121,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
                   <OwedHistory side={unpaidSide()} owed={r().ticket} />
                 </If>
                 <If when={settling() === r().ticket}>
-                  <View class={`flex-row items-center gap-2 px-3 pb-2.5`}>
+                  <View class={`flex-row items-center gap-2 px-3 pb-2.5 flex-wrap`}>
                     <Text class={`text-[12px] ${C.dim}`}>{unpaidSide() === "collect" ? "Into" : "Paid from"}</Text>
                     <View class="w-[240px]">
                       <Pick value={fromAccount()} options={(opts() as Any)?.money || []} onPick={(a: Any) => fromAccount.set(a.ticket)} placeholder="Bank, cash or card" />
@@ -129,7 +133,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
                       <TextBox value={settleOn()} onChange={(v) => settleOn.set(v)} placeholder="Today" />
                     </View>
                     <Btn label="Record it" tone="go" small onPress={() => settle(r().ticket)} />
-                    <Btn label="Cancel document" small onPress={() => act("books_app_owed_cancel", { owed: r().ticket }).catch(() => null)} />
+            <Btn label="Cancel document" small onPress={() => act("books_app_owed", { owed: r().ticket, action: "cancel" }).catch(() => null)} />
                     <OwedRepeatToggle ticket={r().ticket} on={r().repeat === "monthly"} />
                   </View>
                 </If>
@@ -167,7 +171,7 @@ function ProposalRow(p: { p: Any; side: string; opts: Any }) {
       if (issued()) args.issued = issued();
       args.due = due();
     }
-    act("books_app_owed_create", args)
+    act("books_app_owed", { ...args, action: "create" })
       .then(() => toast(decision === "accept" ? "Accepted" : "Discarded"))
       .catch((e: Any) => err.set(errText(e)));
   };
@@ -175,11 +179,11 @@ function ProposalRow(p: { p: Any; side: string; opts: Any }) {
   return (
     <View class={`gap-2 py-2 border-t ${C.line}`}>
       <View class="flex-row items-center gap-3">
-        <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>{p.p.source}</Text>
+        <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>{p.p.source}</Text>
         <Pill tone={p.p.confidence >= 80 ? "ok" : "draft"} label={`${String(p.p.confidence)}% sure`} />
         <Text class={`w-[110px] text-right text-[12.5px] font-mono ${C.ink}`}>{p.p.amount_shown}</Text>
       </View>
-      <View class="flex-row gap-3">
+      <View class="flex-col md:flex-row gap-3">
         <Field label={p.side === "collect" ? "Customer" : "Vendor"} grow>
           <Pick optionSaid="Choose this person" value={who()} options={people()} onPick={(x: Any) => who.set(x.ticket)} placeholder="Pick an existing person" />
         </Field>
@@ -222,7 +226,7 @@ function OwedSheet(p: { side: string; opts: Any; close: () => void }) {
     else if (whoName().trim()) args.person_name = whoName().trim();
     if (reference()) args.reference = reference();
     if (due()) args.due = due();
-    act("books_app_owed_create", args)
+    act("books_app_owed", { ...args, action: "create" })
       .then(() => {
         toast(p.side === "collect" ? "Invoice saved" : "Bill saved");
         p.close();
@@ -233,7 +237,7 @@ function OwedSheet(p: { side: string; opts: Any; close: () => void }) {
   return (
     <Panel pad class="gap-3">
       <Text class={`text-[14px] font-bold ${C.ink}`}>{p.side === "collect" ? "New invoice to collect" : "New bill to pay"}</Text>
-      <View class="flex-row gap-3">
+      <View class="flex-col md:flex-row gap-3">
         <Field label="Amount" grow>
           <TextBox value={amount()} onChange={(v) => amount.set(v)} placeholder="₱ 0.00" />
         </Field>
@@ -241,7 +245,7 @@ function OwedSheet(p: { side: string; opts: Any; close: () => void }) {
           <TextBox value={due()} onChange={(v) => due.set(v)} placeholder="YYYY-MM-DD" />
         </Field>
       </View>
-      <View class="flex-row gap-3">
+      <View class="flex-col md:flex-row gap-3">
         <Field label={p.side === "collect" ? "Customer" : "Vendor"} grow>
           <Pick optionSaid="Choose this person" value={who()} options={people()} onPick={(x: Any) => who.set(x.ticket)} placeholder="Pick, or type a new name below" />
           <TextBox value={whoName()} onChange={(v) => whoName.set(v)} placeholder="New name" />
@@ -284,7 +288,7 @@ function OwedHistory(p: { side: string; owed: string }) {
             <View class="flex-row items-center gap-3">
               <Text class={`w-[90px] text-[12px] font-mono ${C.ink}`}>{x().date}</Text>
               <Text class={`w-[110px] text-right text-[12px] font-mono ${C.ink}`}>{x().amount_shown}</Text>
-              <Text class={`flex-1 text-[12px] ${C.ink}`} numberOfLines={1}>
+              <Text class={`flex-1 text-[12px] ${C.ink} truncate`}>
                 {x().account || ""}
               </Text>
               <If when={Boolean(x().voided)}>

@@ -21,8 +21,8 @@ lossy_float_literal = "deny"
 [workspace.dependencies]
 # The Buwiz SDK, pinned by commit. The member crates inherit these two entries; the doc links in README.md and
 # AGENTS.md name the same commit, and tools/check-all.sh fails when they drift
-buwiz-plugin = { git = "https://github.com/buwiz-app/buwiz-sdk", rev = "f63038d5cdbb05a20d9f329be3a85a8a6f3e8f8d" }
-buwiz-app = { git = "https://github.com/buwiz-app/buwiz-sdk", rev = "f63038d5cdbb05a20d9f329be3a85a8a6f3e8f8d" }
+buwiz-plugin = { git = "https://github.com/buwiz-app/buwiz-sdk", rev = "bf1885946e5c2af2409d4d76cfe3a6ccba3302e9" }
+buwiz-app = { git = "https://github.com/buwiz-app/buwiz-sdk", rev = "bf1885946e5c2af2409d4d76cfe3a6ccba3302e9" }
 
 [profile.release]
 codegen-units = 1

@@ -104,6 +104,10 @@ pub fn snapshot(conn: &Connection, id: i64) -> Result<Option<DraftInput>, Refusa
             debit: l.debit,
             credit: l.credit,
             facts: l.own,
+            person_id: None,
+            department_id: None,
+            location_id: None,
+            memo: None,
         })
         .collect();
     Ok(Some(DraftInput {

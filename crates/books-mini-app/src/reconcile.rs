@@ -46,17 +46,35 @@ fn grid_accounts(store: &Store, chart: &Chart) -> Result<Vec<Account>, Refusal> 
     Ok(out)
 }
 
-/// The Reconcile grid: accounts down, the last four months across.
-pub fn grid(store: &Store, book: Book) -> Answer {
+/// The Reconcile grid: accounts down, the last four months across — or the
+/// twelve months of `year` when one is given. Without `year` the answer is
+/// unchanged from before the argument existed.
+pub fn grid(store: &Store, book: Book, args: &Map<String, Value>) -> Answer {
     let chart = Chart::load(store, book)?;
     let today = Date::today();
     let mut months_list = Vec::new();
-    let mut p = Period::of(today, PeriodKind::Month);
-    for _ in 0..4 {
-        months_list.push(p.clone());
-        p = p.previous();
-    }
-    months_list.reverse();
+    let year = match args.get("year") {
+        None => {
+            let mut p = Period::of(today, PeriodKind::Month);
+            for _ in 0..4 {
+                months_list.push(p.clone());
+                p = p.previous();
+            }
+            months_list.reverse();
+            today.year
+        }
+        Some(y) => {
+            let y = y
+                .as_i64()
+                .and_then(|y| i32::try_from(y).ok())
+                .filter(|y| (1900..=9999).contains(y))
+                .ok_or_else(|| Refusal::invalid("`year` is a four-digit year."))?;
+            for m in 1..=12 {
+                months_list.push(Period::of(Date::new(y, m, 1).unwrap(), PeriodKind::Month));
+            }
+            y
+        }
+    };
     let statements = months::statements(store.conn(), chart.book.id)?;
     let (mut done, mut todo, mut drafts, mut cells) = (0, 0, 0, 0);
     let mut oldest: Option<(Period, String)> = None;
@@ -90,7 +108,12 @@ pub fn grid(store: &Store, book: Book) -> Answer {
             }
             states.push(json!({ "month": m.key, "state": state, "label": match state { "done" => "✓ Matched", "draft" => "Draft", "todo" => "To do", _ => "—" } }));
         }
-        rows.push(json!({ "ticket": ticket(store, "account", a.id)?, "name": a.name, "number": a.number, "cells": states }));
+        let mut row = json!({ "ticket": ticket(store, "account", a.id)?, "name": a.name, "number": a.number, "cells": states });
+        if args.get("year").is_some() {
+            row["kind"] = json!(a.kind.as_str());
+            row["type"] = json!(a.account_type.as_str());
+        }
+        rows.push(row);
     }
     Ok(json!({
         "months": months_list.iter().map(|m| json!({ "key": m.key, "label": month_short(m) })).collect::<Vec<_>>(),
@@ -101,7 +124,7 @@ pub fn grid(store: &Store, book: Book) -> Answer {
             { "label": "Drafts", "shown": drafts.to_string() },
             { "label": "Oldest open", "shown": oldest.map_or_else(|| "—".to_string(), |(m, a)| format!("{} · {}", month_short(&m), a)) },
         ],
-        "year": today.year,
+        "year": year,
     }))
 }
 
@@ -157,7 +180,7 @@ pub fn statement_view(
 ) -> Answer {
     let account = account_arg(store, &book, args)?;
     let month = month_arg(args)?;
-    let head = json!({ "account": { "ticket": ticket(store, "account", account.id)?, "name": account.name }, "month": { "key": month.key, "label": month.label(), "short": month_short(&month) } });
+    let head = json!({ "account": { "ticket": ticket(store, "account", account.id)?, "name": account.name, "debit_normal": account.account_type.debit_normal() }, "month": { "key": month.key, "label": month.label(), "short": month_short(&month) } });
     let Some((s, lines)) = months::statement(store.conn(), book.id, account.id, &month.key)? else {
         let mut out = head;
         out["statement"] = Value::Null;
@@ -216,6 +239,15 @@ pub fn statement_view(
         rows.push(row);
     }
     let (ours, diff) = months::difference(store.conn(), &book, &s)?;
+    // the book's gross movement on the account inside the statement's
+    // month: "in" rises the balance in the account's own sense (deposits on
+    // a bank account, charges on a card), "out" lowers it
+    let (debit, credit) = months::account_movement(store.conn(), book.id, account.id, &month)?;
+    let (books_in, books_out) = if account.account_type.debit_normal() {
+        (debit, credit)
+    } else {
+        (credit, debit)
+    };
     let hints_used = crate::match_assist::view_extra(
         store, &book, account.id, &lines, &found, &mut rows, origin,
     )?;
@@ -225,6 +257,8 @@ pub fn statement_view(
         "file_name": s.source_name,
         "closing_shown": money::display(s.closing),
         "books_shown": money::display(ours),
+        "books_in_shown": money::display(books_in),
+        "books_out_shown": money::display(books_out),
         "difference": money::format(diff),
         "difference_shown": money::display(diff),
         "suggested": suggested,
@@ -514,11 +548,21 @@ pub fn book_update(conn: &Connection, args: &Map<String, Value>) -> Answer {
                 .ok_or_else(|| Refusal::invalid("`fiscal_year_start` is a month, 1 to 12."))
         })
         .transpose()?;
+    let accent = text(args, "accent")
+        .map(|a| {
+            books::ACCENTS.contains(&a).then_some(a).ok_or_else(|| {
+                Refusal::invalid("`accent` is green, teal, blue, violet, orange or rose.")
+            })
+        })
+        .transpose()?;
     months::update_book(conn, &book, text(args, "label"), fy, basis, Date::today())?;
+    if let Some(a) = accent {
+        books::set_accent(conn, book.id, a)?;
+    }
     let after =
         books::get(conn, book.id)?.ok_or_else(|| Refusal::new("store", "The book vanished."))?;
     Ok(with_subject(
-        json!({ "label": after.label, "basis": after.basis.as_str(), "fiscal_year_start": after.fiscal_year_start }),
+        json!({ "label": after.label, "basis": after.basis.as_str(), "fiscal_year_start": after.fiscal_year_start, "accent": after.accent }),
         "book",
         book.id,
     ))

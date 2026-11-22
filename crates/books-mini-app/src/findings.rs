@@ -83,17 +83,6 @@ pub fn findings_in(
     let chart = Chart::load(store, book)?;
     let book_id = chart.book.id;
     let has_people = !people::people(c, book_id, None)?.is_empty();
-    let no_person: HashSet<i64> = if has_people {
-        let mut stmt = c
-            .prepare("SELECT entry_id FROM entry WHERE book_id = ?1 AND person_id IS NULL")
-            .map_err(books_store::StoreError::from)?;
-        stmt.query_map([book_id], |r| r.get::<_, i64>(0))
-            .map_err(books_store::StoreError::from)?
-            .collect::<Result<_, _>>()
-            .map_err(books_store::StoreError::from)?
-    } else {
-        HashSet::new()
-    };
     let this_month = Period::of(today, PeriodKind::Month);
     let scope = Filter {
         from: within.map(|p| p.start),
@@ -139,7 +128,11 @@ pub fn findings_in(
             if amount >= i128::from(ROUND_FLOOR) && amount % i128::from(ROUND_STEP) == 0 {
                 by_check[4].push(Finding::entry(CHECKS[4], e));
             }
-            if no_person.contains(&e.id) {
+            let category_lines = s
+                .lines
+                .iter()
+                .filter(|l| !chart.by_id.get(&l.account_id).is_some_and(|a| a.is_cash()));
+            if has_people && category_lines.into_iter().any(|l| l.person_id.is_none()) {
                 by_check[5].push(Finding::entry(CHECKS[5], e));
             }
         }

@@ -37,6 +37,33 @@ const MATCH_TONE: Record<string, [string, string]> = {
   unsure: ["rev", "Not matched"],
 };
 
+/** One dashed pick zone, like the reference's drop zone (Linux has no drag-drop:
+ *  the click is the mechanism, so the text names picking). */
+function PickZone(p: { title: string; hint: string; file: Any; onPick: () => void; onClear: () => void }) {
+  return (
+    <View
+      accessibilityLabel={p.title}
+      class={`flex-1 min-w-0 border-2 border-dashed rounded-xl px-4 py-5 items-center gap-1 transition-colors ${C.line} hover:border-[#0d9488]/50 hover:bg-[#f8fafc] dark:hover:bg-[#134e4a]/10`}
+      activeStyle={{ opacity: 0.7 }}
+      onPress={p.onPick}
+    >
+      <Text class="text-[20px] text-[#94a3b8] dark:text-[#71717a]">⇪</Text>
+      <If when={Boolean(p.file)}>
+        <View class="flex-row items-center gap-1.5 max-w-full rounded-full bg-[#f0fdfa] border border-[#99f6e4] px-2.5 py-1 dark:bg-[#134e4a]/30 dark:border-[#0f766e]">
+          <Text class="text-[11.5px] font-medium text-[#0d9488] dark:text-[#2dd4bf] truncate">{String(p.file?.name || "")}</Text>
+          <View class="w-4 h-4 items-center justify-center" onPress={p.onClear}>
+            <Text class="text-[10px] text-[#0d9488]/60 hover:text-[#0d9488] dark:text-[#2dd4bf]">✕</Text>
+          </View>
+        </View>
+      </If>
+      <If when={!p.file}>
+        <Text class={`text-[13px] font-medium ${C.ink} truncate`}>{p.title}</Text>
+        <Text class={`text-[11.5px] ${C.dim} truncate`}>{p.hint}</Text>
+      </If>
+    </View>
+  );
+}
+
 function ImportPage(p: { go: (page: string, filter?: string) => void }) {
   const data = resource(
     () => ({ v: ver() }),
@@ -70,26 +97,53 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
       <Loading res={data} />
       <If when={Boolean(d()?.can_import)}>
         <View class="flex-row gap-3">
-          <Panel pad class="flex-1 gap-2">
-            <Text class={`text-[13.5px] font-bold ${C.ink}`}>Web Buwiz Books</Text>
+          {/* Web export — single file, reads it as soon as it's picked */}
+          <Panel pad class="flex-1 gap-3">
+            <View class="flex-row items-center gap-2">
+              <Text class="text-[13px] text-[#0d9488] dark:text-[#2dd4bf]">⇪</Text>
+              <Text class={`text-[13.5px] font-bold ${C.ink}`}>Web Buwiz Books</Text>
+            </View>
             <Text class={`text-[12.5px] ${C.mute}`}>The export file (.json) from Settings › Export in web Books. Books reads accounts, people, tags and posted transactions. Tax profiles, TINs and certificates stay out.</Text>
             <View class="flex-row">
-              <Btn label="Pick the export…" tone="go" onPress={() => pickOne([".json"], (f: Any) => importWeb(f).catch(() => null))} />
+              <PickZone
+                title="Click to pick the export file"
+                hint="Accepts .json"
+                file={null}
+                onPick={() => pickOne([".json"], (f: Any) => importWeb(f).catch(() => null))}
+                onClear={() => null}
+              />
             </View>
           </Panel>
-          <Panel pad class="flex-1 gap-2">
-            <Text class={`text-[13.5px] font-bold ${C.ink}`}>CSV or Excel files</Text>
+          {/* CSV / Excel — a chart and a journal, then one click to bring both in */}
+          <Panel pad class="flex-1 gap-3">
+            <View class="flex-row items-center gap-2">
+              <Text class="text-[13px] text-[#0d9488] dark:text-[#2dd4bf]">⇪</Text>
+              <Text class={`text-[13.5px] font-bold ${C.ink}`}>CSV or Excel files</Text>
+            </View>
             <Text class={`text-[12.5px] ${C.mute}`}>A chart of accounts and a journal, from QuickBooks, Xero or a spreadsheet (.csv, .xlsx or .xls; a workbook reads its sheet named Chart or Journal, else its first).</Text>
-            <View class="flex-row gap-2 flex-wrap items-center">
-              <Btn label={csvChart() ? "Change the chart…" : "Pick the chart…"} onPress={() => pickOne([".csv", ".xlsx", ".xls"], (f: Any) => csvChart.set(f))} />
-              <If when={Boolean(csvChart())}>
-                <Text class={`text-[12px] ${C.mute}`} numberOfLines={1}>{`Chart: ${String(csvChart()?.name)}`}</Text>
-              </If>
-              <Btn label={csvJournal() ? "Change the journal…" : "Pick the journal…"} onPress={() => pickOne([".csv", ".xlsx", ".xls"], (f: Any) => csvJournal.set(f))} />
-              <If when={Boolean(csvJournal())}>
-                <Text class={`text-[12px] ${C.mute}`} numberOfLines={1}>{`Journal: ${String(csvJournal()?.name)}`}</Text>
-              </If>
-              <Btn label="Bring them in" tone="go" disabled={!csvChart() || !csvJournal()} onPress={() => importCsv().catch(() => null)} />
+            <View class="flex-row gap-2.5">
+              <PickZone
+                title="Chart of accounts"
+                hint="csv · xlsx · xls"
+                file={csvChart()}
+                onPick={() => pickOne([".csv", ".xlsx", ".xls"], (f: Any) => csvChart.set(f))}
+                onClear={() => csvChart.set(null)}
+              />
+              <PickZone
+                title="Journal"
+                hint="csv · xlsx · xls"
+                file={csvJournal()}
+                onPick={() => pickOne([".csv", ".xlsx", ".xls"], (f: Any) => csvJournal.set(f))}
+                onClear={() => csvJournal.set(null)}
+              />
+            </View>
+            <View class="flex-row justify-end">
+              <View
+                class={`h-[38px] px-5 rounded-lg items-center justify-center transition-colors ${csvChart() && csvJournal() ? "bg-[#0d9488] hover:bg-[#0f766e]" : "bg-[#0d9488] opacity-40"}`}
+                onPress={() => (csvChart() && csvJournal() ? importCsv().catch(() => null) : null)}
+              >
+                <Text class="text-[13px] font-medium text-white">Bring them in</Text>
+              </View>
             </View>
           </Panel>
         </View>
@@ -111,12 +165,12 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
           </View>
           <Each of={d()?.matches || []} key={rowKey}>
             {(m: Any) => (
-              <View class={`flex-row items-start gap-3 px-3.5 py-2 border-b ${C.line}`}>
+              <View class={`flex-row items-start gap-3 px-3.5 py-2 border-b transition-colors ${C.line} hover:bg-[#f8fafc] dark:hover:bg-[#1c1c1f]`}>
                 <View class="flex-1">
-                  <Text class={`text-[13px] font-semibold ${C.ink}`} numberOfLines={1}>
+                  <Text class={`text-[13px] font-semibold ${C.ink} truncate`}>
                     {m().imported_name || m().name}
                   </Text>
-                  <Text class={`text-[11.5px] ${C.dim}`} numberOfLines={1}>
+                  <Text class={`text-[11.5px] ${C.dim} truncate`}>
                     {`${m().number} · ${m().type_label}${m().imported_name ? ` · now ${m().name}` : ""}`}
                   </Text>
                 </View>
@@ -124,7 +178,7 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
                 <View class="w-[230px]">
                   <Pick value={m().kind} options={(d()?.kinds || {})[m().side] || []} onPick={(k: Any) => act("books_app_account_match", { account: m().ticket, kind: k.ticket }).catch(() => null)} />
                 </View>
-                <Text class={`w-[170px] text-[12px] ${C.mute}`} numberOfLines={2}>
+                <Text class={`w-[170px] text-[12px] ${C.mute} line-clamp-2`}>
                   {m().feeds}
                 </Text>
                 <View class="w-[96px] gap-1">
@@ -141,7 +195,12 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
               {`${String(d()?.counts.to_confirm || 0)} to confirm · ${String(d()?.counts.per_line || 0)} per line · ${String(d()?.counts.not_matched || 0)} not matched`}
             </Text>
             <Text class={`flex-1 text-[12px] ${d()?.held ? C.amber : C.green}`}>{d()?.held ? "Boxes that could read unmatched lines are held." : "Ready: every account has a kind."}</Text>
-            <Btn label="Confirm all suggested" tone="go" disabled={!d()?.counts.to_confirm} onPress={() => act("books_app_accounts_confirm", { min: 50 }).then((r: Any) => toast(`${String(r.confirmed)} confirmed`)).catch(() => null)} />
+            <View
+              class={`h-[38px] px-4 rounded-lg items-center justify-center transition-colors ${d()?.counts.to_confirm ? "bg-[#0d9488] hover:bg-[#0f766e]" : "bg-[#0d9488] opacity-40"}`}
+              onPress={() => (d()?.counts.to_confirm ? act("books_app_accounts_confirm", { min: 50 }).then((r: Any) => toast(`${String(r.confirmed)} confirmed`)).catch(() => null) : null)}
+            >
+              <Text class="text-[13px] font-medium text-white">Confirm all suggested</Text>
+            </View>
           </View>
         </Panel>
       </If>
@@ -153,11 +212,11 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
           </View>
           <Each of={d()?.openings || []} key={rowKey}>
             {(o: Any) => (
-              <View class={`flex-row items-center gap-3 py-1.5 border-b ${C.line}`}>
+              <View class={`flex-row items-center gap-3 py-1.5 border-b transition-colors ${C.line} hover:bg-[#f8fafc] dark:hover:bg-[#1c1c1f]`}>
                 <Text class={`w-[200px] text-[13px] ${C.ink}`}>{o().label}</Text>
                 <Text class={`w-[130px] text-[12.5px] ${C.mute}`}>{o().range_label}</Text>
                 <Text class={`w-[120px] text-right text-[12.5px] font-mono ${C.ink}`}>{o().amount_shown}</Text>
-                <Text class={`flex-1 text-[12px] ${C.dim}`} numberOfLines={1}>
+                <Text class={`flex-1 text-[12px] ${C.dim} truncate`}>
                   {o().proof || ""}
                 </Text>
                 <Btn label="Remove" small onPress={() => act("books_app_opening_set", { measure: o().measure, from: o().from, delete: true }).catch(() => null)} />
@@ -188,7 +247,13 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
             <Field label="Proof" grow>
               <TextBox value={proof()} onChange={(v) => proof.set(v)} placeholder="Filed 2551Q for Q1 and Q2" />
             </Field>
-            <Btn label="Save" tone="go" onPress={addOpening} />
+            <View
+              class="h-[38px] px-5 rounded-lg items-center justify-center transition-colors bg-[#0d9488] hover:bg-[#0f766e]"
+              activeStyle={{ opacity: 0.7 }}
+              onPress={addOpening}
+            >
+              <Text class="text-[13px] font-medium text-white">Save</Text>
+            </View>
           </View>
           <If when={Boolean(err())}>
             <Text class={`text-[12.5px] ${C.red}`}>{err()}</Text>

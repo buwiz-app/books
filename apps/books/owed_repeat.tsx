@@ -5,11 +5,11 @@
 function RepeatsDue(p: { rows: Any[] }) {
   const n = () => (p.rows || []).length;
   const add = (owed: string) =>
-    act("books_app_owed_repeat", { owed, action: "add" })
+    act("books_app_owed", { owed, action: "repeat", repeat_action: "add" })
       .then(() => toast("This month's copy added"))
       .catch(() => null);
   const stop = (owed: string) =>
-    act("books_app_owed_repeat", { owed, action: "stop" })
+    act("books_app_owed", { owed, action: "repeat", repeat_action: "stop" })
       .then(() => toast("Stopped repeating"))
       .catch(() => null);
   return (
@@ -20,14 +20,17 @@ function RepeatsDue(p: { rows: Any[] }) {
         </Text>
         <Each of={p.rows || []} key={(r: Any) => r.owed}>
           {(r: Any) => (
-            <View class={`flex-row items-center gap-3 px-3 py-2 border-b ${C.line}`}>
-              <Text class={`flex-1 text-[12.5px] ${C.ink}`} numberOfLines={1}>
+            <View class={`flex-row items-center gap-3 px-3 py-2 border-b ${C.line} flex-wrap`}>
+              <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
                 {r().who || ""}
               </Text>
-              <Text class={`w-[150px] text-[12.5px] ${C.ink}`} numberOfLines={1}>
+              <Text class={`w-[150px] hidden md:block text-[12.5px] ${C.ink} truncate`}>
                 {r().doc || ""}
               </Text>
-              <Text class={`w-[90px] text-[12.5px] font-mono ${C.ink}`}>{r().issued}</Text>
+              <Text class={`w-[90px] hidden md:block text-[12.5px] font-mono ${C.ink}`}>{r().issued}</Text>
+              {/* below md the reference and date collapse onto a second line,
+                  so two same-vendor same-amount bills stay tellable apart */}
+              <Text class={`w-full md:hidden text-[11.5px] ${C.mute} -mt-1`}>{`${r().doc || ""} · ${r().issued || ""}`}</Text>
               <Text class={`w-[110px] text-right text-[12.5px] font-mono ${C.ink}`}>{r().amount_shown}</Text>
               <Btn label="Add this month's copy" small onPress={() => add(r().owed)} />
               <Btn label="Stop repeating" small onPress={() => stop(r().owed)} />
@@ -41,7 +44,11 @@ function RepeatsDue(p: { rows: Any[] }) {
 
 function OwedRepeatToggle(p: { ticket: string; on: boolean }) {
   const flip = () =>
-    act("books_app_owed_repeat", { owed: p.ticket, action: p.on ? "stop" : "start" })
+    act("books_app_owed", {
+      owed: p.ticket,
+      action: "repeat",
+      repeat_action: p.on ? "stop" : "start",
+    })
       .then(() => toast(p.on ? "Stopped repeating" : "Repeats monthly"))
       .catch(() => null);
   return <Btn label={p.on ? "Stop repeating" : "Repeat monthly"} small onPress={() => flip()} />;

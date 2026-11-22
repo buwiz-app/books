@@ -401,8 +401,7 @@ pub fn draft_tool(
     service::write(books, name, origin, args, |tx| draft(tx, args))
 }
 
-/// `books_app_owed_create`: unchanged without a proposal; with one, the
-/// user's accept or discard.
+/// The create action of `books_app_owed`.
 pub fn owed_create(
     books: &mut Books,
     name: &str,
@@ -417,9 +416,11 @@ pub fn owed_create(
             )
             .into_result();
         }
-        return service::write(books, name, origin, args, |tx| decide(tx, args));
+        return service::write_with_action(books, name, "create", origin, args, |tx| {
+            decide(tx, args)
+        });
     }
-    service::write(books, name, origin, args, |tx| {
+    service::write_with_action(books, name, "create", origin, args, |tx| {
         records::owed_create(tx, args)
     })
 }

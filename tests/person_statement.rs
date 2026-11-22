@@ -10,7 +10,11 @@ use books_mini_app::tools;
 use books_store::{Paths, TempDir};
 use serde_json::{Map, Value, json};
 
+#[path = "support/owed_tool.rs"]
+mod owed_tool;
+
 fn raw(books: &mut Books, name: &str, args: Value, origin: Origin) -> Value {
+    let (name, args) = owed_tool::normalize(name, args);
     let args: Map<String, Value> = args.as_object().unwrap().clone();
     tools::call(name, &args, origin, books).unwrap()
 }
