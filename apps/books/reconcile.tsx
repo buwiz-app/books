@@ -671,7 +671,7 @@ function MatchView() {
           <View class={side() ? "flex-row items-start gap-3.5" : "gap-3.5"}>
             <If when={side()}>
               <SnapshotPane
-                rows={s()?.rows || []}
+                rows={rowsView()}
                 evidence={Boolean(s()?.snapshot)}
                 kind={String(s()?.snapshot_kind || "")}
                 pictures={s()?.snapshot_pictures || []}
