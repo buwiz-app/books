@@ -416,7 +416,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
 
   return (
     <View class="gap-3.5">
-      <View class="rounded-xl" style={{ backgroundImage: "linear-gradient(to right,#1a6b3c,#27ae60)" }}>
+      <View class="rounded-xl" style={{ backgroundColor: acc() }}>
         <View class="flex-row items-center px-5 py-3 gap-3">
           <View class="flex-row items-end gap-[2px] shrink-0">
             <View class="w-[3px] h-[14px] rounded-[1px] bg-white" />
