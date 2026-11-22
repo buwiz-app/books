@@ -255,7 +255,7 @@ function SideAttachments() {
                 <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">{sideBytesShown(d().size)}</Text>
               </View>
               <View
-                class="w-7 h-7 rounded-md items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer shrink-0 opacity-0 group-hover:opacity-100"
+                class="w-7 h-7 rounded-md items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer shrink-0 opacity-60 group-hover:opacity-100"
                 accessibilityLabel="Remove attachment"
                 onPress={() => entryStaged.set(entryStaged().filter((_: Any, j: number) => j !== i()))}
                 activeStyle={{ opacity: 0.7 }}
