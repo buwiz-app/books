@@ -402,7 +402,7 @@ function sidePickModel(id: string, effort: string) {
 /** The visible exchange as bridge messages: ≤64, user/assistant text, files only on user rows. */
 function sideHistory() {
   return sideChat()
-    .filter((m: Any) => (m.role === "you" || m.role === "assistant") && m.text)
+    .filter((m: Any) => (m.role === "you" || m.role === "assistant") && (m.text || (m.role === "you" && m.chatFiles?.length)))
     .slice(-64)
     .map((m: Any) => {
       const msg: Any = { role: m.role === "you" ? "user" : "assistant", text: m.text };

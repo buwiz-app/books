@@ -175,3 +175,13 @@ fn cancel_drops_staged_documents() {
         "Cancel leaves the staged documents for the next entry"
     );
 }
+
+/// A message with only files attached still goes to the assistant, files and all.
+#[test]
+fn file_only_messages_stay_in_the_side_history() {
+    let s = books();
+    assert!(
+        s.contains(r#"(m.text || (m.role === "you" && m.chatFiles?.length))"#),
+        "sideHistory drops a message that has files but no text"
+    );
+}
