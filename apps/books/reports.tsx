@@ -219,9 +219,9 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
         <Text class={`w-[150px] py-2 px-3 text-right text-[13px] font-medium tabular-nums ${neg && signed ? "text-[#dc2626] dark:text-red-400" : "text-[#111827] dark:text-white"}`}>{r.shown || ""}</Text>
         <If when={two()}>
           {(() => {
-            // Books reports "0.00" for a row absent in the prior period;
-            // the old app shows an em dash and no change badge there.
-            const had = repCents(r.prev_shown) !== 0n;
+            // a row absent in the prior period carries no prev_shown at all;
+            // "0.00" is a real figure: the account was live and netted to zero.
+            const had = r.prev_shown != null && r.prev_shown !== "";
             return (
               <>
                 <Text class="w-[150px] py-2 px-3 text-right text-[13px] tabular-nums text-[#6b7280] dark:text-white/50">{had ? r.prev_shown : "—"}</Text>
