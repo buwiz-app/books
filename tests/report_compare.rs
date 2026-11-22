@@ -378,4 +378,28 @@ fn a_noncash_journal_is_no_tagged_cash_flow() {
         json!({ "client_request_id": "rc-pay-nc-0001", "form": "money_out", "date": "2026-10-22", "amount": "250.00", "account": "11000", "category": "66100", "department": tag }),
     );
     assert_eq!(net(b), "\u{2212}250.00");
+    // a journal that takes money in and pays the same amount out nets to zero
+    // cash, yet each tagged side is a real movement
+    let other = call(
+        b,
+        "books_app_tag_create",
+        json!({ "client_request_id": "rc-tag-nc-0002", "kind": "department", "name": "Synthetic Annex" }),
+    )["tag"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    call(
+        b,
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "rc-jrnl-nc-0002", "form": "journal", "date": "2026-10-23",
+            "lines": [
+                { "account": "11000", "debit": "400.00" },
+                { "account": "41000", "credit": "400.00", "department": other },
+                { "account": "66100", "debit": "400.00", "department": tag },
+                { "account": "11000", "credit": "400.00" }
+            ]
+        }),
+    );
+    assert_eq!(net(b), "\u{2212}650.00");
 }

@@ -418,7 +418,15 @@ fn flows(
         let cash = if let Some(t) = tag {
             // A journal that moves no money is no cash flow: its tagged
             // noncash lines only ever split a real movement, never make one.
-            if summary.cash == 0 {
+            // Net cash of zero is not that: money in and out of equal size
+            // are both movements.
+            let moves_cash = summary.lines.iter().any(|line| {
+                chart
+                    .by_id
+                    .get(&line.account_id)
+                    .is_some_and(Account::is_cash)
+            });
+            if !moves_cash {
                 continue;
             }
             let tagged_cash: i64 = summary
