@@ -25,11 +25,12 @@ const txAmountMax = signal("");
 const txPartyText = signal("");
 
 const txData = resource(
-  () => ({ v: ver(), m: txMonth(), a: txAccount(), f: txFilter() }),
+  () => ({ v: ver(), m: txMonth(), a: txAccount(), f: txFilter(), q: txSearch().trim() }),
   (k: Any) =>
     buwiz.call("books_ledger_list", {
       ...(k.m ? { month: k.m } : {}),
       ...(k.a ? { account: k.a } : {}),
+      ...(k.q ? { search: k.q } : {}),
       filter: k.f,
     }),
 );
@@ -94,7 +95,9 @@ function txFiltered(): Any[] {
       const st = String(r.status || "");
       if (!statuses.some((s) => (s === "review" ? rev : st === s))) return false;
     }
-    const amt = String(r.amount_shown || r.amount || "0").replace("-", "");
+    // amount_shown is display text ("+80,000.00", "−1,350.00"): drop the
+    // sign, whatever its glyph, before cmpDec counts digits.
+    const amt = String(r.amount_shown || r.amount || "0").replace(/[^0-9.,]/g, "");
     if (min && cmpDec(amt, min) < 0) return false;
     if (max && cmpDec(amt, max) > 0) return false;
     if (party && !String(r.payee || r.title || "").toLowerCase().includes(party)) return false;
@@ -123,8 +126,9 @@ const TX_FORMS: Record<string, string> = {
   journal: "Journal",
 };
 
-function txToggleIn(list: () => string[], set: (v: string[]) => void, v: string) {
-  set(list().includes(v) ? list().filter((x) => x !== v) : [...list(), v]);
+function txToggleIn(list: Any, v: string) {
+  // `x.set` detached loses its signal receiver; pass the signal itself.
+  list.set(list().includes(v) ? list().filter((x: Any) => x !== v) : [...list(), v]);
 }
 function txHasFilters(): boolean {
   return Boolean(
@@ -251,15 +255,28 @@ function TxRow(p: { r: Any; balance: boolean; edit: boolean; checked: boolean; o
 }
 
 /** Card-mode row below md (LedgerRow's card: avatar, title, sub, chips, amount). */
-function TxCard(p: { r: Any; onOpen: () => void }) {
+function TxCard(p: { r: Any; edit?: boolean; checked?: boolean; onCheck?: () => void; onOpen: () => void }) {
   const r = () => p.r as Any;
   const [initials, color] = txPartyAvatar(String(r().payee || r().title || "?"));
   return (
     <View
       class="border-b border-[#f1f5f9] dark:border-slate-800 px-4 py-3 transition-colors cursor-pointer hover:bg-[#fafbfc] dark:hover:bg-slate-800"
-      onPress={p.onOpen}
+      onPress={p.edit ? p.onCheck : p.onOpen}
     >
       <View class="flex-row gap-3">
+        <If when={p.edit}>
+          <View class="items-center justify-center shrink-0">
+            <View
+              class={`w-4 h-4 rounded border items-center justify-center transition-all ${
+                p.checked ? "bg-[#2dd4bf] border-[#2dd4bf]" : "bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600"
+              }`}
+            >
+              <If when={p.checked}>
+                <Avatar src={ICONS.check} class="w-2.5 h-2.5" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
+              </If>
+            </View>
+          </View>
+        </If>
         <View class="mt-0.5 h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: color }}>
           <Text class="text-[11px] font-bold text-white">{initials}</Text>
         </View>
@@ -367,15 +384,47 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
   };
   const goMonth = (k: string) => txMonth.set(k);
   const selRows = () => rows().filter((r) => txPicked().includes(String(r.ticket)));
-  const actBatch = async (tool: string) => {
+  const togglePick = (r: Any) =>
+    txPicked.set(
+      txPicked().includes(String(r.ticket))
+        ? txPicked().filter((t) => t !== String(r.ticket))
+        : [...txPicked(), String(r.ticket)],
+    );
+  // Bulk changes send only the rows the button and the confirm counted.
+  // Voids go one by one (there is no batch void tool), so a stop part-way
+  // names which entries committed; discards use the atomic books_app_batch.
+  const actBatch = async () => {
+    const voiding = txConfirm() === "void";
+    const eligible = voiding ? voidables() : drafts();
     txBusy.set(true);
     try {
-      let i = 0;
-      for (const r of selRows()) {
-        await act(tool, { entry: String(r.ticket), client_request_id: `tx-${OPEN_TAG}-${i++}` });
+      if (voiding) {
+        const done: Any[] = [];
+        let stopped = "";
+        for (const r of eligible) {
+          try {
+            await act("books_app_void_entry", { entry: String(r.ticket) });
+            done.push(r);
+          } catch (e: Any) {
+            stopped = errText(e);
+            break;
+          }
+        }
+        toast(
+          stopped
+            ? done.length
+              ? `Voided ${done.map((r) => String(r.no || r.ticket)).join(", ")}. ${stopped}`
+              : stopped
+            : "Voided.",
+        );
+        const doneTickets = new Set(done.map((r) => String(r.ticket)));
+        txPicked.set(txPicked().filter((t) => !doneTickets.has(t)));
+      } else {
+        const ids = eligible.map((r) => String(r.ticket));
+        await act("books_app_batch", { action: "discard", entries: ids });
+        toast("Discarded.");
+        txPicked.set(txPicked().filter((t) => !ids.includes(t)));
       }
-      toast(tool === "books_app_void_entry" ? "Voided." : "Discarded.");
-      txPicked.set([]);
       txConfirm.set("");
       bump();
     } catch (e: Any) {
@@ -384,7 +433,8 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
       txBusy.set(false);
     }
   };
-  const voidables = () => selRows().filter((r) => r.status === "posted");
+  // Reversals stay out of the void set, like the entry drawer's actions.
+  const voidables = () => selRows().filter((r) => r.status === "posted" && r.form !== "reversal");
   const drafts = () => selRows().filter((r) => r.status === "draft");
 
   const colHead = (label: string, cls: string) => (
@@ -412,8 +462,8 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
 
   const chips = () => {
     const out: { label: string; clear: () => void }[] = [];
-    for (const t of txTypes()) out.push({ label: TX_FORMS[t] || t, clear: () => txToggleIn(txTypes, txTypes.set, t) });
-    for (const s of txStatuses()) out.push({ label: (TX_STATUS_OPTS.find(([k]) => k === s) || ["", s])[1], clear: () => txToggleIn(txStatuses, txStatuses.set, s) });
+    for (const t of txTypes()) out.push({ label: TX_FORMS[t] || t, clear: () => txToggleIn(txTypes, t) });
+    for (const s of txStatuses()) out.push({ label: (TX_STATUS_OPTS.find(([k]) => k === s) || ["", s])[1], clear: () => txToggleIn(txStatuses, s) });
     if (txAmountMin().trim() || txAmountMax().trim())
       out.push({ label: `Amount ${txAmountMin().trim() || "0"}–${txAmountMax().trim() || "∞"}`, clear: () => { txAmountMin.set(""); txAmountMax.set(""); } });
     if (txPartyText().trim()) out.push({ label: `Party: ${txPartyText().trim()}`, clear: () => txPartyText.set("") });
@@ -431,6 +481,13 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
           {/* Header — LedgerHeader */}
           <View class="flex-row items-center px-5 py-3 bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c] rounded-t-lg">
             <View class="flex-row items-center gap-3 shrink-0">
+              <View
+                class="h-8 px-2 rounded-lg flex-row items-center justify-center transition-colors hover:bg-white/10 cursor-pointer"
+                onPress={() => p.go("today")}
+                activeStyle={{ opacity: 0.75 }}
+              >
+                <Text class="text-[13px] font-medium text-white/90">‹ Back</Text>
+              </View>
               <View
                 class="w-8 h-8 rounded-lg items-center justify-center transition-colors hover:bg-white/10 cursor-pointer"
                 onPress={() => txSideOpen.set(true)}
@@ -540,7 +597,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Type</Text>
                 <View class="flex-row flex-wrap gap-1.5">
                   {TX_TYPE_OPTS.map(([k, label]) => (
-                    <Chip label={label} on={txTypes().includes(k)} onPress={() => txToggleIn(txTypes, txTypes.set, k)} />
+                    <Chip label={label} on={txTypes().includes(k)} onPress={() => txToggleIn(txTypes, k)} />
                   ))}
                 </View>
               </View>
@@ -548,7 +605,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Status</Text>
                 <View class="flex-row flex-wrap gap-1.5">
                   {TX_STATUS_OPTS.map(([k, label]) => (
-                    <Chip label={label} on={txStatuses().includes(k)} onPress={() => txToggleIn(txStatuses, txStatuses.set, k)} />
+                    <Chip label={label} on={txStatuses().includes(k)} onPress={() => txToggleIn(txStatuses, k)} />
                   ))}
                 </View>
               </View>
@@ -593,20 +650,20 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                     balance={Boolean(txAccount()) && Boolean(txD()?.running_balance)}
                     edit={txMode() === "edit"}
                     checked={txPicked().includes(String(r.ticket))}
-                    onCheck={() =>
-                      txPicked.set(
-                        txPicked().includes(String(r.ticket))
-                          ? txPicked().filter((t) => t !== String(r.ticket))
-                          : [...txPicked(), String(r.ticket)],
-                      )
-                    }
+                    onCheck={() => togglePick(r)}
                     onOpen={() => drawerEntry.set(String(r.ticket))}
                   />
                 ))}
               </View>
               <View class="md:hidden">
                 {rows().map((r) => (
-                  <TxCard r={r} onOpen={() => drawerEntry.set(String(r.ticket))} />
+                  <TxCard
+                    r={r}
+                    edit={txMode() === "edit"}
+                    checked={txPicked().includes(String(r.ticket))}
+                    onCheck={() => togglePick(r)}
+                    onOpen={() => drawerEntry.set(String(r.ticket))}
+                  />
                 ))}
               </View>
             </If>
@@ -679,7 +736,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 label={txConfirm() === "void" ? "Void" : "Discard"}
                 tone="vi"
                 disabled={txBusy()}
-                onPress={() => actBatch(txConfirm() === "void" ? "books_app_void_entry" : "books_app_discard_entry")}
+                onPress={actBatch}
               />
             </View>
           </View>

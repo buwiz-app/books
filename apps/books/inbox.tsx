@@ -87,9 +87,12 @@ function InboxDetail(p: { ticket: string; row?: Any }) {
               <Each of={e()?.lines || []}>
                 {(l: Any) => (
                   <View class={`flex-row gap-1.5 px-2.5 py-1.5 border-t ${C.line}`}>
-                    <Text class={`flex-1 text-[12px] ${C.ink} truncate`}>
-                      {l().account}
-                    </Text>
+                    <View class="flex-1 min-w-0">
+                      <Text class={`text-[12px] ${C.ink} truncate`}>{l().account}</Text>
+                      <If when={Boolean(lineAssignees(l()))}>
+                        <Text class={`text-[10.5px] ${C.dim} truncate`}>{lineAssignees(l())}</Text>
+                      </If>
+                    </View>
                     <Text class={`w-[96px] text-right text-[12px] font-mono ${C.ink}`}>{l().debit_shown}</Text>
                     <Text class={`w-[96px] text-right text-[12px] font-mono ${C.ink}`}>{l().credit_shown}</Text>
                   </View>
@@ -136,10 +139,16 @@ function InboxDetail(p: { ticket: string; row?: Any }) {
 }
 
 function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mode: string) => void }) {
+  const query = signal("");
   const list = (filter: string) =>
     resource(
-      () => ({ v: ver(), m: inboxMonth() }),
-      (k: Any) => buwiz.call("books_ledger_list", k.m ? { filter, month: k.m } : { filter }),
+      () => ({ v: ver(), m: inboxMonth(), q: query().trim() }),
+      (k: Any) =>
+        buwiz.call("books_ledger_list", {
+          ...(k.m ? { month: k.m } : {}),
+          ...(k.q ? { search: k.q } : {}),
+          filter,
+        }),
     );
   const review = list("review");
   const drafts = list("draft");
@@ -153,7 +162,6 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
   });
   const waiting = () => (rv()?.counts?.review || 0) + (rv()?.counts?.draft || 0);
   const month = () => rv()?.month || {};
-  const query = signal("");
   const visibleRows = () => {
     const q = query().trim().toLowerCase();
     const list = rows();

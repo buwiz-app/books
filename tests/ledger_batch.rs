@@ -267,10 +267,9 @@ fn the_window_grants_batch_and_ledger_list_within_the_cap() {
     let added: BTreeSet<&String> = granted.difference(&before).collect();
     // `books_ledger_list` is the Inbox's read too, so the bulk panel alone no longer adds it.
     assert!(granted.contains("books_ledger_list"));
-    let expected = [
-        "books_app_batch".to_string(),
-        "books_app_press_card".to_string(),
-    ];
+    // `books_app_batch` is also the Transactions page's discard — only the
+    // approved-press card is the bulk panel's alone now.
+    let expected = ["books_app_press_card".to_string()];
     assert_eq!(
         added,
         expected.iter().collect::<BTreeSet<&String>>(),
