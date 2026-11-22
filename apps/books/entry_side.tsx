@@ -483,7 +483,9 @@ async function sideSendCopy() {
       error: problems.length > 0,
       text: problems.length
         ? `Couldn't send ${problems.join(", ")} — paste it into the Bot chat yourself.`
-        : `Sent to the Bot chat — the reply shows there, and its draft waits in your Inbox.${files.length ? " The files are staged on this entry and in Documents." : ""}`,
+        : text
+          ? `Prompt copied — paste it into the Bot chat and send it there; the reply shows there, and its draft waits in your Inbox.${files.length ? " The files are staged on this entry and in Documents." : ""}`
+          : "Only text can go to the Bot chat — the files stay staged on this entry and in Documents.",
       at,
     },
   ]);
