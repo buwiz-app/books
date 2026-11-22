@@ -185,3 +185,13 @@ fn file_only_messages_stay_in_the_side_history() {
         "sideHistory drops a message that has files but no text"
     );
 }
+
+/// A category's row opens the ledger on the month the detail is showing.
+#[test]
+fn category_rows_open_the_ledger_on_their_month() {
+    let s = books();
+    assert!(
+        s.contains("openLedger({ account: catDetailTicket(), month: month() ||"),
+        "a category row opens the ledger without its month"
+    );
+}

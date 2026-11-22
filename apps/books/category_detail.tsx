@@ -118,7 +118,7 @@ function CategoryDetailPage(p: { go: (page: string, filter?: string) => void }) 
                 {(r: Any) => (
                   <View
                     class={`flex-row items-center gap-3 px-5 py-2.5 border-b border-[#f0f1f3] dark:border-slate-700 transition-colors hover:bg-[#f8f9fb] dark:hover:bg-slate-800`}
-                    onPress={() => openLedger({ account: catDetailTicket(), entry: r().ticket })}
+                    onPress={() => openLedger({ account: catDetailTicket(), month: month() || String((ledger() as Any)?.month?.key || ""), entry: r().ticket })}
                     activeStyle={{ opacity: 0.75 }}
                   >
                     <Text class={`w-[48px] text-[12px] ${C.dim}`}>{r().date_short || ""}</Text>
