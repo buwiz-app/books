@@ -53,7 +53,7 @@ fn f3_catalog_kind_omits_type() {
         "the new-category form still sends a copyable type"
     );
     assert!(
-        s.contains("name, kind }") && s.contains("args.type = newCategoryType()"),
+        s.contains("kind: newCategoryKind() }") && s.contains("args.type = newCategoryType()"),
         "the suggestion create still sends a copyable type"
     );
 }
