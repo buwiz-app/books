@@ -573,8 +573,17 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
   const save = (post: boolean, close = true, fresh = false) => {
     const a = args(post);
     if (!a) return;
+    // posting a remembered draft: `books_app_post_entry` posts the stored
+    // draft and ignores every other argument, so the form's current values
+    // first go to `books_entry_draft` as an edit; a refused edit keeps the
+    // draft open and no post is sent
+    const posting = post && Boolean(savedEntry());
+    const ticket = savedEntry();
     busy.set(true);
-    act(post ? "books_app_post_entry" : "books_entry_draft", a)
+    const write = posting
+      ? act("books_entry_draft", a).then(() => act("books_app_post_entry", { entry: ticket }))
+      : act(post ? "books_app_post_entry" : "books_entry_draft", a);
+    write
       .then(async (r: Any) => {
         // a document staged in the side panel links to the entry it was kept
         // for; one that fails stays in the Documents library, unlinked, so
