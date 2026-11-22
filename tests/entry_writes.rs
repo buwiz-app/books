@@ -193,5 +193,8 @@ fn f10_an_unbalanced_journal_drafts_but_never_posts() {
         json!({ "entry": draft["entry"] }),
         Origin::App,
     );
-    assert_eq!(got["status"], "draft", "the refused post went through: {got}");
+    assert_eq!(
+        got["status"], "draft",
+        "the refused post went through: {got}"
+    );
 }

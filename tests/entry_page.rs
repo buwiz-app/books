@@ -123,7 +123,9 @@ fn f8_suggested_kinds_parse() {
         serde_json::from_str(include_str!("../apps/books/suggested-categories.json"))
             .expect("suggested-categories.json is not JSON");
     for suggestion in suggestions.as_array().expect("suggestions is not a list") {
-        let kind = suggestion["kind"].as_str().expect("a suggestion has no kind");
+        let kind = suggestion["kind"]
+            .as_str()
+            .expect("a suggestion has no kind");
         assert!(
             books_core::ledger::KindRef::parse(kind).is_some(),
             "suggestion kind {kind} is not a catalog kind id"
