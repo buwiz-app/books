@@ -419,6 +419,13 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
       <View class="rounded-xl" style={{ backgroundColor: acc() }}>
         <View class="flex-col px-5 py-3 gap-3">
           <View class="flex-row items-center gap-3 flex-wrap">
+            <View
+              class="h-8 px-2 rounded-lg flex-row items-center justify-center transition-colors hover:bg-white/10 cursor-pointer"
+              onPress={() => p.go("today")}
+              activeStyle={{ opacity: 0.75 }}
+            >
+              <Text class="text-[13px] font-medium text-white/90">‹ Back</Text>
+            </View>
             <View class="flex-row items-end gap-[2px] shrink-0">
               <View class="w-[3px] h-[14px] rounded-[1px] bg-white" />
               <View class="w-[3px] h-[20px] rounded-[1px] bg-white" />

@@ -168,9 +168,9 @@ const REPORT_FIXTURE = {
   net: { label: "Net income", value: "-500.00", shown: "-500.00", prev_shown: "0.00" },
 };
 
-const mountReports = () =>
+const mountReports = (go = "() => {}") =>
   mount(
-    bundle(["books/reports.tsx"], `function openLedger() {}\nfunction LedgerBulk() { return null; }\nexport default function App() { return <ReportsPage go={() => {}} />; }`),
+    bundle(["books/reports.tsx"], `function openLedger() {}\nfunction LedgerBulk() { return null; }\nexport default function App() { return <ReportsPage go={${go}} />; }`),
     (tool) => (tool === "books_report" ? REPORT_FIXTURE : { rows: [] }),
   );
 
@@ -202,6 +202,16 @@ test("F5: the Financials band uses the book accent like every page header", asyn
   assert.equal(band, undefined, "no fixed gradient: the band follows the accent");
   const accent = screen.nodes().find((n) => textOf(n).includes("Financials") && (n.props.style || {}).backgroundColor === "#22c55e");
   assert.ok(accent, "the band is the book's accent (green is the default)");
+});
+
+test("Reports has a way back home", async () => {
+  globalThis.__wentTo = "";
+  const screen = mountReports("(page) => { globalThis.__wentTo = page; }");
+  await screen.until(() => screen.hasText("Financials"), "the reports band");
+  const back = pressables(screen, "‹ Back")[0];
+  assert.ok(back, "no Back control on the Reports band");
+  back.props.onPress();
+  assert.equal(globalThis.__wentTo, "today", "Back goes Home");
 });
 
 // ── owed_repeat ──────────────────────────────────────────────────────────
