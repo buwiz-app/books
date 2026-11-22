@@ -328,3 +328,46 @@ fn a_tag_narrows_the_pl_and_cash_flow_to_its_entries() {
     );
     assert!(!name.contains(&tag) && !name.contains("tkt"), "{name}");
 }
+
+#[test]
+fn a_noncash_journal_is_no_tagged_cash_flow() {
+    let (_dir, mut books) = seeded();
+    let b = &mut books;
+    let tag = call(
+        b,
+        "books_app_tag_create",
+        json!({ "client_request_id": "rc-tag-nc-0001", "kind": "department", "name": "Synthetic Wing" }),
+    )["tag"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let net = |b: &mut Books| {
+        call(b, "books_report", json!({ "kind": "cf", "period": "2026-10", "tag": tag }))
+            .get("net")
+            .and_then(|n| n.get("shown"))
+            .and_then(|s| s.as_str())
+            .unwrap_or("")
+            .to_string()
+    };
+    let before = net(b);
+    // a journal whose lines never touch a money account reports no tagged cash movement
+    call(
+        b,
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "rc-jrnl-nc-0001", "form": "journal", "date": "2026-10-21",
+            "lines": [
+                { "account": "66100", "debit": "1000.00", "department": tag },
+                { "account": "41000", "credit": "1000.00" }
+            ]
+        }),
+    );
+    assert_eq!(net(b), before, "a journal that moves no cash made tagged flow");
+    // a tagged payment still counts through its noncash split
+    call(
+        b,
+        "books_app_post_entry",
+        json!({ "client_request_id": "rc-pay-nc-0001", "form": "money_out", "date": "2026-10-22", "amount": "250.00", "account": "11000", "category": "66100", "department": tag }),
+    );
+    assert_eq!(net(b), "\u{2212}250.00");
+}

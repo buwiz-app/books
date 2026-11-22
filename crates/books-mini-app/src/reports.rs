@@ -416,6 +416,11 @@ fn flows(
         }
         let summary = Summary::of(store, chart, e)?;
         let cash = if let Some(t) = tag {
+            // A journal that moves no money is no cash flow: its tagged
+            // noncash lines only ever split a real movement, never make one.
+            if summary.cash == 0 {
+                continue;
+            }
             let tagged_cash: i64 = summary
                 .lines
                 .iter()
