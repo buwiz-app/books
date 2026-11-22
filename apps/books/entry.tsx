@@ -384,12 +384,12 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     if (!number) return categoryCreateError.set("Enter an account number.");
     categoryCreating.set(true);
     categoryCreateError.set("");
-    act("books_app_account_create", {
-      number,
-      name,
-      kind: newCategoryKind(),
-      type: newCategoryType(),
-    })
+    // a suggested subtype is not always a catalog kind id (fixed_assets and
+    // friends); a kind refusal retries as unsure rather than failing dead
+    // (PR37 finding 8)
+    const request = (kind: string) => act("books_app_account_create", { number, name, kind, type: newCategoryType() });
+    request(newCategoryKind())
+      .catch((e: Any) => (newCategoryKind() !== "unsure" && /kind/i.test(errText(e)) ? request("unsure") : Promise.reject(e)))
       .then((result: Any) => {
         const ticket = result.account || "";
         if (categoryCreateApply()) categoryCreateApply()(ticket);
