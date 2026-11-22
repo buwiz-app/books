@@ -12,7 +12,13 @@ import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { mountApp, textOf } from "../host/nsh-standin.mjs";
 
-const require = createRequire("/home/ubuntu/repos/buwiz-sdk/packages/conformance/package.json");
+// esbuild resolves through $BUWIZ_SDK_DIR's conformance package, as
+// tests/host/app-pages.mjs does; the home-relative path is a fallback.
+const require = createRequire(
+  process.env.BUWIZ_SDK_DIR
+    ? join(process.env.BUWIZ_SDK_DIR, "packages/conformance/package.json")
+    : "/home/ubuntu/repos/buwiz-sdk/packages/conformance/package.json",
+);
 const esbuild = require("esbuild");
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");

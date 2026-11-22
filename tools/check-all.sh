@@ -3,9 +3,10 @@
 # signal setters in apps/ (`onChange={x.set}` loses `this` when kit.tsx calls
 # p.onChange(v); write `onChange={(v) => x.set(v)}`), rustfmt, clippy with
 # warnings denied, the Rust tests (the vectors byte for byte), the SDK doc links
-# against the pinned revision, the SDK's conformance runner, the Bot host test
-# and the privacy scan. One line per gate, each gate's output kept in a temp
-# folder; exits non-zero when any gate fails.
+# against the pinned revision, the SDK's conformance runner, the headless
+# node suites, the Bot host test and the privacy scan. One line per gate,
+# each gate's output kept in a temp folder; exits non-zero when any gate
+# fails.
 #
 # Env: BUWIZ_SDK_DIR    a buwiz-sdk checkout at the pinned revision, with
 #                       `bun install` run (required): the conformance runner,
@@ -63,6 +64,12 @@ sdk_pins_agree() {
   [ "$PIN_RC" -eq 0 ] || { printf '%s\n' "$PIN_OUT"; return 1; }
 }
 
+node_suites() {
+  # the app pages driven headless (esbuild resolves through BUWIZ_SDK_DIR's
+  # conformance package), then agent-d's node:test suite
+  node tests/host/app-pages.mjs && node --test tests/app/agent-d.test.mjs
+}
+
 sdk_links_follow_the_pin() {
   local stale
   [ "$PIN_RC" -eq 0 ] || { echo "no single pinned revision (see the SDK pins step)"; return 1; }
@@ -85,6 +92,8 @@ gate "cargo test" cargo-test tests_total
 gate "SDK links follow the pin" sdk-links sdk_links_follow_the_pin
 # needs BUWIZ_SDK_DIR (a buwiz-sdk checkout)
 gate "SDK conformance" conformance bash tools/conformance.sh
+# needs BUWIZ_SDK_DIR (the conformance package's node_modules for esbuild)
+gate "node page suites" node-suites node_suites
 # needs BUWIZ_BROKER_BIN (a buwiz-broker binary) and BUWIZ_SDK_DIR
 if [ "${SKIP_BOT:-0}" = "1" ]; then
   printf 'SKIP  %-28s SKIP_BOT=1 (needs BUWIZ_BROKER_BIN)\n' "Bot host test"
