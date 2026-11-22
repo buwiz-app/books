@@ -16,6 +16,10 @@ path = "src/main.rs"
 
 # The workspace-level tests in `tests/`.
 [[test]]
+name = "entry_page"
+path = "../../tests/entry_page.rs"
+
+[[test]]
 name = "jcs_vectors"
 path = "../../tests/jcs_vectors.rs"
 
