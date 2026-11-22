@@ -326,7 +326,16 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
       v: ver(),
       kind: mode() === "money_in" ? "customers" : mode() === "money_out" ? "vendors" : "",
     }),
-    (key: Any) => buwiz.call("books_people_list", key.kind ? { kind: key.kind } : {}),
+    // a mode with no natural kind (journal, transfer) asks every people kind
+    // and merges the rows; omitting kind returns vendors only (PR37 finding 9)
+    (key: Any) =>
+      key.kind
+        ? buwiz.call("books_people_list", { kind: key.kind })
+        : Promise.all(
+            ["vendors", "customers", "employees", "owners", "lenders", "government"].map((kind) =>
+              buwiz.call("books_people_list", { kind }),
+            ),
+          ).then((rs: Any[]) => ({ rows: rs.flatMap((r: Any) => r?.rows || []) })),
   );
   const departments = resource(
     () => ({ v: ver() }),
