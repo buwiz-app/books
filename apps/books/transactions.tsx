@@ -370,9 +370,8 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
   const actBatch = async (tool: string) => {
     txBusy.set(true);
     try {
-      let i = 0;
       for (const r of selRows()) {
-        await act(tool, { entry: String(r.ticket), client_request_id: `tx-${OPEN_TAG}-${i++}` });
+        await act(tool, { entry: String(r.ticket) });
       }
       toast(tool === "books_app_void_entry" ? "Voided." : "Discarded.");
       txPicked.set([]);
