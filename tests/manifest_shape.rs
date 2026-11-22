@@ -568,3 +568,32 @@ fn every_listed_tool_has_a_handler() {
         );
     }
 }
+
+#[test]
+fn compaction_only_trims_indent_and_comment_lines() {
+    // the compactor's contract: never merge, drop or alter a line — only a
+    // leading indent and a whole-line `//` comment may go (a mis-tracked
+    // quote, template or comment would break this on real sources)
+    let compacted = tsx_source(apps::find("books").unwrap());
+    let plain = std::fs::read_to_string(env!("BOOKS_PLAIN_SOURCE"))
+        .expect("the build script writes the plain join for this check");
+    let plain_lines: Vec<&str> = plain.lines().collect();
+    let compacted_lines: Vec<&str> = compacted.lines().collect();
+    assert_eq!(
+        plain_lines.len(),
+        compacted_lines.len(),
+        "compaction changed the line count"
+    );
+    for (index, (raw, compact)) in plain_lines.iter().zip(&compacted_lines).enumerate() {
+        if compact == raw {
+            continue;
+        }
+        let trimmed = raw.trim_start_matches([' ', '\t']);
+        let comment_only = trimmed.starts_with("//");
+        assert!(
+            *compact == trimmed || (comment_only && compact.is_empty()),
+            "line {} changed beyond its indent or a whole-line comment: {raw:?} -> {compact:?}",
+            index + 1
+        );
+    }
+}

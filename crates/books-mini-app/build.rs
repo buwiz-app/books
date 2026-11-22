@@ -223,6 +223,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         out_dir.join("ledger_bulk.tsx"),
         &compacted_sources[bulk_index],
     )?;
+    let plain_path = out_dir.join("books-plain.tsx");
+    fs::write(&plain_path, &plain)?;
+    println!(
+        "cargo:rustc-env=BOOKS_PLAIN_SOURCE={}",
+        plain_path.display()
+    );
     println!(
         "cargo:rustc-env=BOOKS_PLAIN_LINE_COUNT={}",
         plain.lines().count()
