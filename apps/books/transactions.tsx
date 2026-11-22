@@ -9,6 +9,7 @@
 
 const txMonth = signal(String(PROPS.month || "")); // "YYYY-MM", "" = the tool's current month
 const txAccount = signal(""); // account ticket, "" = All accounts
+const txChecked = signal<string[]>([]); // checked account tickets in TxSidebar (filters grouped view)
 const txFilter = signal("all"); // tool enum: all/review/draft/posted/checks
 const txSearch = signal(""); // live text in the search input
 const txQueryChips = signal<string[]>([]); // queries the person committed with Enter
@@ -79,6 +80,11 @@ const txAccounts = resource(
 const txD = () => txData() as Any;
 const txRows = () => ((txD()?.rows as Any[]) || []) as Any[];
 const txGroups = () => ((txD()?.groups as Any[]) || []) as Any[];
+const txVisibleGroups = () => {
+  const checked = txChecked();
+  const all = txGroups();
+  return checked.length ? all.filter((g) => checked.includes(String(g.ticket))) : all;
+};
 
 // Grouped view: each group in the ledger payload already carries its rows
 // for the month (views::ledger embeds them), so the app draws the whole
@@ -547,67 +553,32 @@ function TxCols(p: { edit?: boolean; balance?: boolean }) {
   );
 }
 
-/* ── TxSide: the COA sidebar. Agent B ports this to transactions_side.tsx;
-   keep the props/state it touches (txAccount, txSideOpen, txAccounts, txD)
-   stable so that swap merges clean. ─────────────────────────────────────── */
-
-/** Sidebar account row (AccountSidebar): number · name · balance. */
-function TxSideRow(p: { a: Any; on: boolean; onPress: () => void }) {
-  const a = () => p.a as Any;
-  return (
-    <View
-      class={`flex-row items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${
-        p.on ? "bg-[#f0fdfa] dark:bg-teal-950/40" : "hover:bg-[#f8fafc] dark:hover:bg-slate-800"
-      }`}
-      onPress={p.onPress}
-    >
-      <Text class={`text-[11px] tabular-nums w-[52px] shrink-0 ${p.on ? "text-[#0f766e] dark:text-teal-400" : "text-[#94a3b8] dark:text-slate-500"}`}>
-        {String(a().number || "")}
-      </Text>
-      <Text class={`flex-1 min-w-0 truncate text-[13px] ${p.on ? "font-medium text-[#0f766e] dark:text-teal-300" : "text-[#334155] dark:text-slate-300"}`}>
-        {String(a().name || "")}
-      </Text>
-      <Text class={`tabular-nums text-[11px] shrink-0 ${p.on ? "text-[#0f766e] dark:text-teal-400" : "text-[#94a3b8] dark:text-slate-500"}`}>
-        {String(a().balance_shown || "")}
-      </Text>
-    </View>
-  );
-}
-
-/** The COA sidebar contents, shared by the lg column and the sheet. */
+/* ── TxSide: wires TxSidebar (transactions_side.tsx) to TransactionsPage ─── */
 function TxSide() {
   const accts = () => (((txAccounts() as Any)?.rows as Any[]) || []).filter((a) => !a.off);
-  const groups = () => {
-    const order = ["Assets", "Liabilities", "Equity", "Revenue", "Expenses"];
-    const out: { g: string; rows: Any[] }[] = [];
-    for (const g of order) {
-      const rows = accts().filter((a) => a.group === g);
-      if (rows.length) out.push({ g, rows });
-    }
-    return out;
-  };
-  const pick = (ticket: string) => {
-    txAccount.set(ticket);
-    txSideOpen.set(false);
-  };
   return (
-    <View class="flex-1">
-      <View class="px-3 pt-3 pb-1">
-        <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Accounts</Text>
-      </View>
-      <TxSideRow a={{ number: "", name: "All accounts", balance_shown: txD()?.account?.ticket ? "" : String(txD()?.account?.balance_shown || "") }} on={!txAccount()} onPress={() => pick("")} />
-      {groups().map((g) => (
-        <View>
-          <Text class="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[#cbd5e1] dark:text-slate-600">{g.g}</Text>
-          {g.rows.map((a) => (
-            <TxSideRow a={a} on={txAccount() === a.ticket} onPress={() => pick(a.ticket)} />
-          ))}
-        </View>
-      ))}
-    </View>
+    <TxSidebar
+      accounts={accts()}
+      selectedId={txAccount()}
+      onSelect={(ticket) => {
+        txAccount.set(ticket);
+        txChecked.set([]);
+        txSideOpen.set(false);
+      }}
+      checkedIds={txChecked()}
+      onToggleAccount={(_id, node) => {
+        const next = txSideToggled(txSideNodeIds(node), txChecked());
+        txChecked.set(next);
+        if (next.length) txAccount.set("");
+      }}
+      onSelectAll={() => {
+        txChecked.set(txSideAllIds(accts()));
+        txAccount.set("");
+      }}
+      onClearSelection={() => txChecked.set([])}
+    />
   );
 }
-
 /* ── end TxSide ─────────────────────────────────────────────────────────── */
 
 /** A filter/query chip in the search bar (LedgerSearchBar's tag chips). */
@@ -644,7 +615,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
     // group rows can repeat an entry across accounts: act on each once.
     const seen: Record<string, Any> = {};
     const pool: Any[] = !txAccount()
-      ? txGroups().flatMap((g) => txFiltered(txGroupRows(g)))
+      ? txVisibleGroups().flatMap((g) => txFiltered(txGroupRows(g)))
       : rows();
     for (const r of pool) if (txPicked().includes(String(r.ticket))) seen[String(r.ticket)] = r;
     return Object.values(seen);
@@ -738,7 +709,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
     <View class="flex-1 min-h-0 flex-row bg-white dark:bg-slate-900">
       {/* COA sidebar: fixed 240px column at lg+, an overlay sheet below */}
       <View class="hidden lg:flex w-[240px] shrink-0 flex-col border-r border-[#e5e7eb] dark:border-slate-700 overflow-hidden">
-        <Scroll class="flex-1"><TxSide /></Scroll>
+        <TxSide />
       </View>
       <View class="flex-1 min-w-0 flex flex-col">
         <View class="flex-1 min-h-0 flex flex-col md:mx-3 md:my-3 md:rounded-lg md:border md:border-[#e5e7eb] md:shadow-sm overflow-hidden bg-white dark:bg-slate-900">
@@ -898,12 +869,17 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 <Text class="text-sm text-slate-500 dark:text-slate-400">Loading transactions…</Text>
               </View>
             </If>
-            <If when={Boolean(txData()) && !txAccount() && txGroups().length === 0}>
+            <If when={Boolean(txData()) && !txAccount() && txVisibleGroups().length === 0}>
               <View class="items-center gap-4 px-4 py-12">
                 <Text class="text-sm text-slate-500 dark:text-slate-400">No transactions found matching your filters.</Text>
-                <If when={txHasFilters()}>
-                  <Btn label="Clear filters" onPress={txClearFilters} />
-                </If>
+                <View class="flex-row items-center gap-2">
+                  <If when={txHasFilters()}>
+                    <Btn label="Clear filters" onPress={txClearFilters} />
+                  </If>
+                  <If when={txChecked().length > 0}>
+                    <Btn label="Clear accounts" onPress={() => txChecked.set([])} />
+                  </If>
+                </View>
               </View>
             </If>
             <If when={Boolean(txData()) && Boolean(txAccount()) && rows().length === 0}>
@@ -916,8 +892,8 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
             </If>
 
             {/* Grouped — AccountGroupedList */}
-            <If when={!txAccount() && txGroups().length > 0}>
-              {txGroups().map((g) => {
+            <If when={!txAccount() && txVisibleGroups().length > 0}>
+              {txVisibleGroups().map((g) => {
                 const t = String(g.ticket);
                 const expanded = txExpandOver()[t] ?? !txAllCollapsed();
                 return (
@@ -1040,7 +1016,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 <Avatar src={TX_ICONS.x} class="w-4 h-4" imageClass="tint-[#94a3b8]" fallbackDelay={Infinity} accessibilityLabel="" />
               </View>
             </View>
-            <Scroll class="flex-1"><TxSide /></Scroll>
+            <TxSide />
           </View>
         </View>
       </If>

@@ -142,14 +142,20 @@ impl Scanner {
     }
 }
 
+fn is_standalone_block_comment(trimmed: &str) -> bool {
+    (trimmed.starts_with("/*") && trimmed.ends_with("*/") && trimmed.len() >= 4)
+        || (trimmed.starts_with("{/*") && trimmed.ends_with("*/}") && trimmed.len() >= 6)
+}
+
 fn compact_tsx(source: &str, path: &str) -> String {
     let mut scanner = Scanner::new();
     let mut compacted = String::with_capacity(source.len());
     for line in source.split_inclusive('\n') {
         let protected = scanner.protects_line();
+        let trimmed = line.trim();
         if protected {
             compacted.push_str(line);
-        } else if line.trim().starts_with("//") {
+        } else if trimmed.starts_with("//") || is_standalone_block_comment(trimmed) {
             if line.ends_with("\r\n") {
                 compacted.push_str("\r\n");
             } else if line.ends_with('\n') {
@@ -164,6 +170,14 @@ fn compact_tsx(source: &str, path: &str) -> String {
         scanner.modes.len() == 1 && scanner.modes[0] == Mode::Code,
         "unclosed string, template, or comment in {path}"
     );
+    compacted
+}
+
+fn compact_json_lines(source: &str) -> String {
+    let mut compacted = String::with_capacity(source.len());
+    for line in source.split_inclusive('\n') {
+        compacted.push_str(line.trim_start_matches([' ', '\t']));
+    }
     compacted
 }
 
@@ -202,6 +216,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|(path, source)| {
             if path.ends_with(".tsx") {
                 compact_tsx(source, path)
+            } else if path.ends_with(".json") {
+                compact_json_lines(source)
             } else {
                 source.to_owned()
             }
