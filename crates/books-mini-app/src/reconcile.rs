@@ -180,7 +180,7 @@ pub fn statement_view(
 ) -> Answer {
     let account = account_arg(store, &book, args)?;
     let month = month_arg(args)?;
-    let head = json!({ "account": { "ticket": ticket(store, "account", account.id)?, "name": account.name }, "month": { "key": month.key, "label": month.label(), "short": month_short(&month) } });
+    let head = json!({ "account": { "ticket": ticket(store, "account", account.id)?, "name": account.name, "debit_normal": account.account_type.debit_normal() }, "month": { "key": month.key, "label": month.label(), "short": month_short(&month) } });
     let Some((s, lines)) = months::statement(store.conn(), book.id, account.id, &month.key)? else {
         let mut out = head;
         out["statement"] = Value::Null;

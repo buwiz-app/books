@@ -604,7 +604,11 @@ function MatchView() {
   const wdBank = () => sumOf((r) => centsOf(r.amount_shown) < 0n, (r) => r.amount_shown);
   const depLeg = () => String(s()?.books_in_shown || "—");
   const wdLeg = () => String(s()?.books_out_shown || "—");
-  const isCard = /card|credit/i.test(String(d()?.account?.name || ""));
+  // a credit-normal account (a card) raises its balance on a charge: its
+  // statement's negative rows are the in-flow, so the bank's sign flips too
+  const isCard = () => d()?.account?.debit_normal === false;
+  const depBankN = () => (isCard() ? -wdBank() : depBank());
+  const wdBankN = () => (isCard() ? -depBank() : wdBank());
   const hdrBtnCls = "flex-row items-center gap-1.5 px-3 py-1.5 rounded-lg";
   return (
     <View class="gap-0">
@@ -651,8 +655,8 @@ function MatchView() {
           </If>
           {/* green summary strip: inflow / outflow / Net glass cards (old app's SummaryRow) */}
           <View class="flex-row gap-3 rounded-xl px-4 py-3" style={{ backgroundImage: "linear-gradient(to right,#1a6b3c,#27ae60)" }}>
-            <RecSumCard title={isCard ? "Charges" : "Deposits"} icon="dash" rows={[["Bank", centsShown(depBank(), true)], ["Ledger", depLeg()]]} />
-            <RecSumCard title={isCard ? "Payments" : "Withdrawals"} icon="dash" rows={[["Bank", centsShown(wdBank())], ["Ledger", wdLeg()]]} />
+            <RecSumCard title={isCard() ? "Charges" : "Deposits"} icon="dash" rows={[["Bank", centsShown(depBankN(), true)], ["Ledger", depLeg()]]} />
+            <RecSumCard title={isCard() ? "Payments" : "Withdrawals"} icon="dash" rows={[["Bank", centsShown(wdBankN())], ["Ledger", wdLeg()]]} />
             <RecSumCard title="Net" icon="notEqual" highlight={s()?.difference_shown} rows={[["Bank", String(s()?.closing_shown || "—")], ["Ledger", String(s()?.books_shown || "—")]]} />
           </View>
           <View class={side() ? "flex-row items-start gap-3.5" : "gap-3.5"}>

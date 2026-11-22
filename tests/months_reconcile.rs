@@ -502,3 +502,26 @@ fn m4_grid_year_gives_twelve_months_and_the_default_is_unchanged() {
         "invalid_args"
     );
 }
+
+/// The statement view tells the app which way the account's balance rises:
+/// a bank is debit-normal, a card (a liability) is not — the app's summary
+/// normalizes the statement's signs by it.
+#[test]
+fn statement_view_names_the_accounts_balance_direction() {
+    books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
+    let dir = TempDir::new("m4-dir");
+    let mut books = Books::new(Paths::in_dir(dir.0.join("store")));
+    let b = &mut books;
+    let demo_book: Value = serde_json::from_str(&std::fs::read_to_string(DEMO).unwrap()).unwrap();
+    demo::seed(b, &demo_book).unwrap();
+
+    ok(
+        b,
+        "books_app_account_create",
+        json!({ "client_request_id": "m4-dir-acct-1", "number": "22990", "name": "Synthetic Card", "kind": "loan_payable" }),
+    );
+    let bank = ok(b, "books_statement_get", json!({ "account": "11010", "month": "2026-10" }));
+    assert_eq!(bank["account"]["debit_normal"], true);
+    let card = ok(b, "books_statement_get", json!({ "account": "22990", "month": "2026-10" }));
+    assert_eq!(card["account"]["debit_normal"], false);
+}
