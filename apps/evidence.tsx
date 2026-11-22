@@ -137,7 +137,19 @@ function EvUploadBtn() {
 export default function Evidence() {
   const list = resource(
     () => ({ v: ver() }),
-    () => buwiz.call("books_evidence_list", { limit: 200 }),
+    // every page: the filters and the count cover the whole library, not
+    // only the first 200 documents
+    async () => {
+      const all: Any[] = [];
+      let cursor = "";
+      for (;;) {
+        const page: Any = await buwiz.call("books_evidence_list", { limit: 200, ...(cursor ? { cursor } : {}) });
+        all.push(...((page?.items as Any[]) || []));
+        cursor = String(page?.next_cursor || "");
+        if (!cursor) break;
+      }
+      return { items: all };
+    },
   );
   const review = resource(
     () => ({ v: ver() }),

@@ -246,7 +246,7 @@ test("F7: a filter that matches nothing does not show the first-upload prompt", 
     (tool) => (tool === "books_app_evidence_review" ? { rows: [] } : { items: [DOC_A], next_cursor: null }),
   );
   await screen.until(() => screen.hasText("Receipt"), "the library document");
-  screen.type("Filter 1 documents…", "zzz-nothing-matches");
+  screen.type("Filter 1 document…", "zzz-nothing-matches");
   await screen.until(() => !screen.hasText("Receipt"), "the query to filter it out");
   assert.equal(screen.hasText("No documents yet"), false, "the library is not empty");
   assert.ok(screen.hasText("No documents match"), "a no-match note shows instead");
