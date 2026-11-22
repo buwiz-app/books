@@ -367,14 +367,41 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
   };
   const goMonth = (k: string) => txMonth.set(k);
   const selRows = () => rows().filter((r) => txPicked().includes(String(r.ticket)));
-  const actBatch = async (tool: string) => {
+  // Bulk changes send only the rows the button and the confirm counted.
+  // Voids go one by one (there is no batch void tool), so a stop part-way
+  // names which entries committed; discards use the atomic books_app_batch.
+  const actBatch = async () => {
+    const voiding = txConfirm() === "void";
+    const eligible = voiding ? voidables() : drafts();
     txBusy.set(true);
     try {
-      for (const r of selRows()) {
-        await act(tool, { entry: String(r.ticket) });
+      if (voiding) {
+        const done: Any[] = [];
+        let stopped = "";
+        for (const r of eligible) {
+          try {
+            await act("books_app_void_entry", { entry: String(r.ticket) });
+            done.push(r);
+          } catch (e: Any) {
+            stopped = errText(e);
+            break;
+          }
+        }
+        toast(
+          stopped
+            ? done.length
+              ? `Voided ${done.map((r) => String(r.no || r.ticket)).join(", ")}. ${stopped}`
+              : stopped
+            : "Voided.",
+        );
+        const doneTickets = new Set(done.map((r) => String(r.ticket)));
+        txPicked.set(txPicked().filter((t) => !doneTickets.has(t)));
+      } else {
+        const ids = eligible.map((r) => String(r.ticket));
+        await act("books_app_batch", { action: "discard", entries: ids });
+        toast("Discarded.");
+        txPicked.set(txPicked().filter((t) => !ids.includes(t)));
       }
-      toast(tool === "books_app_void_entry" ? "Voided." : "Discarded.");
-      txPicked.set([]);
       txConfirm.set("");
       bump();
     } catch (e: Any) {
@@ -383,7 +410,8 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
       txBusy.set(false);
     }
   };
-  const voidables = () => selRows().filter((r) => r.status === "posted");
+  // Reversals stay out of the void set, like the entry drawer's actions.
+  const voidables = () => selRows().filter((r) => r.status === "posted" && r.form !== "reversal");
   const drafts = () => selRows().filter((r) => r.status === "draft");
 
   const colHead = (label: string, cls: string) => (
@@ -678,7 +706,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 label={txConfirm() === "void" ? "Void" : "Discard"}
                 tone="vi"
                 disabled={txBusy()}
-                onPress={() => actBatch(txConfirm() === "void" ? "books_app_void_entry" : "books_app_discard_entry")}
+                onPress={actBatch}
               />
             </View>
           </View>
