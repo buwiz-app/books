@@ -346,7 +346,9 @@ export default function Evidence() {
       {/* Content. */}
       <Scroll style={{ flex: 1 }} class="px-4 py-4 md:px-8 md:py-6">
         <Loading res={list} />
-        <If when={Boolean(list()) && evFiltered().length === 0}>
+        {/* the first-upload prompt only when the library is empty; a query or
+            filter that matches nothing says so instead */}
+        <If when={Boolean(list()) && items().length === 0}>
           <View class="items-center justify-center px-4 py-16 md:py-24 gap-1">
             <View class="w-20 h-20 rounded-2xl bg-[#10b981]/10 items-center justify-center mb-4">
               <Text class="text-[30px] text-[#10b981]">▤</Text>
@@ -356,6 +358,14 @@ export default function Evidence() {
               Upload statements, invoices, receipts, and other financial documents to keep everything organized.
             </Text>
             <EvUploadBtn />
+          </View>
+        </If>
+        <If when={Boolean(list()) && items().length > 0 && evFiltered().length === 0}>
+          <View class="items-center justify-center px-4 py-16 md:py-24 gap-1">
+            <Text class="text-lg font-semibold text-[#1e293b] dark:text-white">No documents match</Text>
+            <Text class="text-sm text-center text-[#94a3b8] dark:text-white/40" style={{ maxWidth: 420 }}>
+              Try different words, or change the filters.
+            </Text>
           </View>
         </If>
 
