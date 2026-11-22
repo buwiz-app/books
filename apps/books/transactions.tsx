@@ -25,11 +25,12 @@ const txAmountMax = signal("");
 const txPartyText = signal("");
 
 const txData = resource(
-  () => ({ v: ver(), m: txMonth(), a: txAccount(), f: txFilter() }),
+  () => ({ v: ver(), m: txMonth(), a: txAccount(), f: txFilter(), q: txSearch().trim() }),
   (k: Any) =>
     buwiz.call("books_ledger_list", {
       ...(k.m ? { month: k.m } : {}),
       ...(k.a ? { account: k.a } : {}),
+      ...(k.q ? { search: k.q } : {}),
       filter: k.f,
     }),
 );

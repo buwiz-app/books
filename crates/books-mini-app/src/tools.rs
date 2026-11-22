@@ -165,7 +165,8 @@ fn ledger_schema() -> Value {
             "book": { "type": "string" },
             "month": { "type": "string", "description": "YYYY-MM; this month when absent." },
             "account": { "type": "string", "description": "An account ticket or chart number; every account when absent." },
-            "filter": { "type": "string", "enum": ["all", "review", "draft", "posted", "checks"] }
+            "filter": { "type": "string", "enum": ["all", "review", "draft", "posted", "checks"] },
+            "search": { "type": "string", "description": "Narrows rows before the 200-row cap. Payee and memo match app calls only." }
         }
     })
 }

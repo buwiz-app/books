@@ -566,6 +566,36 @@ pub fn ledger(
         _ => None,
     };
     let filter = service::text(args, "filter").unwrap_or("all");
+    // `search` narrows the page before the 200-row cap, so a match older
+    // than the cap is still found. Payee, memo and reference stay out of a
+    // non-app caller's matches — the tool shows it no payees or memos.
+    let search = service::text(args, "search")
+        .unwrap_or_default()
+        .to_lowercase();
+    let hit = |s: &Summary| {
+        if search.is_empty() {
+            return true;
+        }
+        let mut fields = vec![
+            format!("{:04}", s.entry.no),
+            s.entry.status.as_str().to_string(),
+            s.entry.form.as_str().to_string(),
+            s.entry.date.to_string(),
+            s.category
+                .as_ref()
+                .map(|a| a.name.clone())
+                .unwrap_or_default(),
+        ];
+        if origin.is_app() {
+            fields.push(s.what());
+            fields.push(s.entry.payee.clone().unwrap_or_default());
+            fields.push(s.entry.reference.clone().unwrap_or_default());
+            fields.push(s.entry.memo.clone().unwrap_or_default());
+        }
+        fields
+            .iter()
+            .any(|f| !f.is_empty() && f.to_lowercase().contains(&search))
+    };
     let counts = json!({
         "all": list.len(),
         "review": list.iter().filter(|s| is(s, "review")).count(),
@@ -576,6 +606,7 @@ pub fn ledger(
     let rows = list
         .iter()
         .filter(|s| is(s, filter))
+        .filter(|s| hit(s))
         .take(200)
         .map(|s| {
             let mut row = s.row(store, origin)?;
