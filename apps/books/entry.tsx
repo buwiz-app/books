@@ -381,7 +381,9 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     newCategoryName.set(name || suggestion?.name || "");
     newCategoryNumber.set("");
     newCategoryType.set(suggestion?.accountType || (mode() === "money_in" ? "revenue" : "expense"));
-    newCategoryKind.set(suggestion?.subtype || "unsure");
+    // `kind` is a catalog kind id picked at the source; `subtype` keeps the
+    // old app's vocabulary for the cash/accrual filter (PR37 finding 8)
+    newCategoryKind.set(suggestion?.kind || "unsure");
     categoryCreateApply.set(apply || null);
     categoryCreateError.set("");
     categoryCreateOpen.set(true);
@@ -393,18 +395,11 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     if (!number) return categoryCreateError.set("Enter an account number.");
     categoryCreating.set(true);
     categoryCreateError.set("");
-    // a suggested subtype is not always a catalog kind id (fixed_assets and
-    // friends); a kind refusal retries as unsure rather than failing dead
-    // (PR37 finding 8)
-    const request = (kind: string) => {
-      // a catalog kind fixes the account type, so `type` goes only with
-      // unsure/mixed and the server derives it otherwise (PR37 finding 3)
-      const args: Record<string, Any> = { number, name, kind };
-      if (kind === "unsure" || kind === "mixed") args.type = newCategoryType();
-      return act("books_app_account_create", args);
-    };
-    request(newCategoryKind())
-      .catch((e: Any) => (newCategoryKind() !== "unsure" && /kind/i.test(errText(e)) ? request("unsure") : Promise.reject(e)))
+    // a catalog kind fixes the account type, so `type` goes only with
+    // unsure/mixed and the server derives it otherwise (PR37 finding 3)
+    const args: Record<string, Any> = { number, name, kind: newCategoryKind() };
+    if (newCategoryKind() === "unsure" || newCategoryKind() === "mixed") args.type = newCategoryType();
+    act("books_app_account_create", args)
       .then((result: Any) => {
         const ticket = result.account || "";
         if (categoryCreateApply()) categoryCreateApply()(ticket);

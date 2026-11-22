@@ -105,15 +105,30 @@ fn f7_payee_sends_person_ticket() {
     assert!(s.contains("base.person"), "the payee ticket is never sent");
 }
 
-/// Finding 8: a suggested subtype that is not a catalog kind still creates
-/// the account (the create retried as unsure instead of failing dead).
+/// Finding 8: a suggestion's kind is picked from a catalog id at the
+/// source, and every built-in suggestion's kind parses — unsure is a
+/// deliberate choice up front, never a caught refusal.
 #[test]
-fn f8_legacy_subtype_falls_back_to_unsure() {
+fn f8_suggested_kinds_parse() {
     let s = books();
     assert!(
-        s.contains("\"unsure\")"),
-        "no unsure fallback on kind refusal"
+        s.contains("suggestion?.kind"),
+        "suggestions never carry a catalog kind id"
     );
+    assert!(
+        !s.contains("/kind/i.test"),
+        "the create still retries on an error-text match"
+    );
+    let suggestions: serde_json::Value =
+        serde_json::from_str(include_str!("../apps/books/suggested-categories.json"))
+            .expect("suggested-categories.json is not JSON");
+    for suggestion in suggestions.as_array().expect("suggestions is not a list") {
+        let kind = suggestion["kind"].as_str().expect("a suggestion has no kind");
+        assert!(
+            books_core::ledger::KindRef::parse(kind).is_some(),
+            "suggestion kind {kind} is not a catalog kind id"
+        );
+    }
 }
 
 /// Finding 9: journal and transfer party pickers see every people kind.
