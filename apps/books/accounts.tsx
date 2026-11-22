@@ -711,7 +711,15 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
                 {(k: Any) => (
                   <View
                     class="flex-row items-center gap-2.5 px-4 py-2.5 transition-colors hover:bg-[#f8fafc] dark:hover:bg-white/5"
-                    onPress={() => { ncKind.set(k()); kindMenu.set(false); }}
+                    // a kind fixes the account type; leaving it at the last
+                    // pick (asset by default) files expenses out of the P&L
+                    // (PR37 finding 3)
+                    onPress={() => {
+                      ncKind.set(k());
+                      const named = allRows().find((a: Any) => String(a.kind) === k());
+                      if (named?.type) ncType.set(String(named.type));
+                      kindMenu.set(false);
+                    }}
                     activeStyle={{ opacity: 0.7 }}
                   >
                     <Text class={`text-[13px] ${ncKind() === k() ? `font-semibold ${C.ink}` : C.mute}`}>{acctKindLabel(k())}</Text>
