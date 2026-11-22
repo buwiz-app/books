@@ -95,31 +95,50 @@ pub(crate) fn person_entries(
         .map(|e| Summary::of(store, chart, e?))
         .collect::<Result<_, _>>()?;
     for summary in &mut summaries {
-        let attributed_lines: Vec<_> = summary
+        let is_cash = |line: &&entries::LineRow| {
+            chart
+                .by_id
+                .get(&line.account_id)
+                .is_some_and(Account::is_cash)
+        };
+        let linked: Vec<_> = summary
             .lines
             .iter()
-            .filter(|line| {
-                line.person_id == Some(person_id)
-                    && !chart
-                        .by_id
-                        .get(&line.account_id)
-                        .is_some_and(Account::is_cash)
-            })
+            .filter(|line| line.person_id == Some(person_id))
             .collect();
+        let attributed_lines: Vec<_> = linked
+            .iter()
+            .copied()
+            .filter(|line| !is_cash(line))
+            .collect();
+        // A party named only on the money side still owns the movement:
+        // its cash lines stand in for the category split there is none of.
+        let money_lines: Vec<_> = if attributed_lines.is_empty() {
+            linked.into_iter().filter(|line| is_cash(line)).collect()
+        } else {
+            Vec::new()
+        };
         if summary.cash != 0 {
-            summary.cash = attributed_lines
-                .iter()
-                .map(|line| line.credit - line.debit)
-                .sum();
+            summary.cash = if attributed_lines.is_empty() {
+                money_lines
+                    .iter()
+                    .map(|line| line.debit - line.credit)
+                    .sum()
+            } else {
+                attributed_lines
+                    .iter()
+                    .map(|line| line.credit - line.debit)
+                    .sum()
+            };
         }
         summary.debits = attributed_lines
             .iter()
+            .chain(money_lines.iter())
             .map(|line| line.debit + line.credit)
             .sum();
-        summary.category = attributed_lines
-            .first()
-            .and_then(|line| chart.by_id.get(&line.account_id))
-            .cloned();
+        if let Some(line) = attributed_lines.first() {
+            summary.category = chart.by_id.get(&line.account_id).cloned();
+        }
     }
     Ok(summaries)
 }

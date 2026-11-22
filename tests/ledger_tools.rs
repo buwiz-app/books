@@ -1097,3 +1097,64 @@ fn transfer_parties_persist_show_in_views_and_refuse_foreign_books() {
     assert_eq!(lines[0].person_id, Some(to_person_id));
     assert_eq!(lines[1].person_id, Some(from_person_id));
 }
+
+#[test]
+fn a_person_linked_only_on_the_money_line_still_counts() {
+    let dir = TempDir::new("bank-line-person");
+    let mut bot = Bot::new(&dir);
+    let book = app_data(
+        &mut bot,
+        "books_app_book_create",
+        json!({ "client_request_id": "bankp-book-1", "label": "Synthetic Bank-Link Book" }),
+    )["book"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let vendor = app_data(
+        &mut bot,
+        "books_app_person_create",
+        json!({ "client_request_id": "bankp-per-1", "kind": "vendors", "name": "Synthetic Bank Vendor", "book": book }),
+    )["person"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    // a payment journal whose only party link sits on the bank line
+    let draft = app_data(
+        &mut bot,
+        "books_entry_draft",
+        json!({
+            "client_request_id": "bankp-draft-1", "book": book, "form": "journal",
+            "date": "2026-10-19",
+            "lines": [
+                { "account": "66100", "debit": "500.00" },
+                { "account": "11000", "credit": "500.00", "person": vendor }
+            ]
+        }),
+    );
+    let entry = draft["entry"].as_str().unwrap().to_string();
+    data(&bot.app(
+        "books_app_post_entry",
+        json!({ "client_request_id": "bankp-post-1", "entry": entry }),
+    ));
+    let statement = app_data(
+        &mut bot,
+        "books_report",
+        json!({ "book": book, "kind": "ps", "person": vendor, "period_kind": "month", "period": "2026-10" }),
+    );
+    assert_eq!(
+        statement["activity"]["total_out_shown"], "500.00",
+        "a vendor linked on the money line paid 500.00"
+    );
+    let detail = app_data(
+        &mut bot,
+        "books_person_get",
+        json!({ "book": book, "person": vendor }),
+    );
+    let paid = detail["kpi"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|k| k["label"] == "Paid this year")
+        .expect("the paid-this-year figure");
+    assert_eq!(paid["shown"], "500.00");
+}
