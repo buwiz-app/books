@@ -1223,3 +1223,61 @@ fn a_press_card_preview_makes_no_tags_or_people() {
         "the preview must not save the person: {people}"
     );
 }
+
+#[test]
+fn a_person_on_the_entry_header_still_counts_the_payment() {
+    let dir = TempDir::new("entry-level-person");
+    let mut bot = Bot::new(&dir);
+    let book = app_data(
+        &mut bot,
+        "books_app_book_create",
+        json!({ "client_request_id": "entp-book-1", "label": "Synthetic Header-Person Book" }),
+    )["book"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let vendor = app_data(
+        &mut bot,
+        "books_app_person_create",
+        json!({ "client_request_id": "entp-per-1", "kind": "vendors", "name": "Synthetic Header Vendor", "book": book }),
+    )["person"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    // a plain payment with the vendor on the draft's header, no per-line link
+    let draft = app_data(
+        &mut bot,
+        "books_entry_draft",
+        json!({
+            "client_request_id": "entp-draft-1", "book": book, "form": "money_out",
+            "date": "2026-10-19", "amount": "300.00", "account": "11000",
+            "category": "66100", "person": vendor
+        }),
+    );
+    let entry = draft["entry"].as_str().unwrap().to_string();
+    data(&bot.app(
+        "books_app_post_entry",
+        json!({ "client_request_id": "entp-post-1", "entry": entry }),
+    ));
+    let statement = app_data(
+        &mut bot,
+        "books_report",
+        json!({ "book": book, "kind": "ps", "person": vendor, "period_kind": "month", "period": "2026-10" }),
+    );
+    assert_eq!(
+        statement["activity"]["total_out_shown"], "300.00",
+        "the header-linked vendor paid 300.00"
+    );
+    let detail = app_data(
+        &mut bot,
+        "books_person_get",
+        json!({ "book": book, "person": vendor }),
+    );
+    let paid = detail["kpi"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|k| k["label"] == "Paid this year")
+        .expect("the paid-this-year figure");
+    assert_eq!(paid["shown"], "300.00");
+}
