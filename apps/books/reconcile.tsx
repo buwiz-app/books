@@ -614,6 +614,15 @@ function MatchView() {
     <View class="gap-0">
       {/* light header: account · period, status pill, actions — no Back (the window's × closes) */}
       <View class={`flex-row items-center gap-2 px-4 py-2 rounded-t-xl ${C.panel} border-b ${C.line}`}>
+        <View
+          accessibilityLabel="Back to months"
+          class={`-ml-1 px-1.5 h-7 rounded-md items-center justify-center`}
+          hoverStyle={{ backgroundColor: "rgba(148,163,184,0.2)" }}
+          activeStyle={{ opacity: 0.7 }}
+          onPress={() => recMonth.set("")}
+        >
+          <Text class={`text-[15px] font-bold ${C.dim}`}>‹ Back</Text>
+        </View>
         <Text class={`text-[13px] font-semibold ${C.ink}`}>{d()?.account?.name || ""}</Text>
         <Text class={`text-[12px] ${C.mute}`}>{`· ${d()?.month?.label || ""}`}</Text>
         <If when={Boolean(s())}>
