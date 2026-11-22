@@ -371,9 +371,15 @@ fn new_entry(
         .execute_batch("SAVEPOINT press_card")
         .map_err(books_store::StoreError::from)?;
     let result = new_entry_inner(store, chart, call);
-    let _ = store
+    let rollback = store
         .conn()
-        .execute_batch("ROLLBACK TO SAVEPOINT press_card; RELEASE SAVEPOINT press_card");
+        .execute_batch("ROLLBACK TO SAVEPOINT press_card; RELEASE SAVEPOINT press_card")
+        .map_err(books_store::StoreError::from);
+    // a failed rollback leaves the preview's minted rows inside the outer
+    // transaction — that is the refusal to return, ahead of the card's own
+    if let Err(e) = rollback {
+        return Err(e.into());
+    }
     result
 }
 
