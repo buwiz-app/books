@@ -15,7 +15,7 @@ use books_core::ledger::{Basis, KindRef};
 use books_core::money;
 use books_store::Store;
 use books_store::books::{self, Account, Book};
-use books_store::entries::{self, Filter, Form};
+use books_store::entries::{self, Filter, Form, LineRow};
 use books_store::people;
 use books_store::plumbing;
 use books_store::rusqlite::params;
@@ -429,7 +429,13 @@ fn flows(
             if !moves_cash {
                 continue;
             }
-            let tagged_cash: i64 = summary
+            let is_cash = |line: &&LineRow| {
+                chart
+                    .by_id
+                    .get(&line.account_id)
+                    .is_some_and(Account::is_cash)
+            };
+            let (money, split): (Vec<&LineRow>, Vec<&LineRow>) = summary
                 .lines
                 .iter()
                 .filter(|line| {
@@ -438,13 +444,14 @@ fn flows(
                         TagColumn::Location => line.location_id,
                     };
                     linked == Some(t.id)
-                        && !chart
-                            .by_id
-                            .get(&line.account_id)
-                            .is_some_and(Account::is_cash)
                 })
-                .map(|line| line.credit - line.debit)
-                .sum();
+                .partition(is_cash);
+            // A tag on the money line alone still owns that movement.
+            let tagged_cash: i64 = if split.is_empty() {
+                money.iter().map(|line| line.debit - line.credit).sum()
+            } else {
+                split.iter().map(|line| line.credit - line.debit).sum()
+            };
             if tagged_cash == 0 {
                 continue;
             }

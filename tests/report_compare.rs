@@ -403,3 +403,35 @@ fn a_noncash_journal_is_no_tagged_cash_flow() {
     );
     assert_eq!(net(b), "\u{2212}650.00");
 }
+
+#[test]
+fn a_payment_tagged_only_on_its_money_line_is_tagged_cash_flow() {
+    let (_dir, mut books) = seeded();
+    let b = &mut books;
+    let tag = call(
+        b,
+        "books_app_tag_create",
+        json!({ "client_request_id": "rc-tag-ml-0001", "kind": "department", "name": "Synthetic Till" }),
+    )["tag"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    // the tag sits on the bank line alone: the money that left is still the tag's
+    call(
+        b,
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "rc-jrnl-ml-0001", "form": "journal", "date": "2026-10-21",
+            "lines": [
+                { "account": "66100", "debit": "300.00" },
+                { "account": "11000", "credit": "300.00", "department": tag }
+            ]
+        }),
+    );
+    let report = call(
+        b,
+        "books_report",
+        json!({ "kind": "cf", "period": "2026-10", "tag": tag }),
+    );
+    assert_eq!(report["net"]["shown"], "\u{2212}300.00", "{report}");
+}
