@@ -614,6 +614,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
     <View class="flex-1 flex-row bg-[#f0f2f5] dark:bg-slate-950">
       <View class="flex-1 flex-col overflow-hidden relative">
         <View class={`flex-row items-center gap-3 px-6 py-3 border-b bg-white dark:bg-slate-900 ${C.line}`}>
+          <Btn label="Cancel" small onPress={() => p.close()} />
           <View
             ref={typeMenuAnchor}
             accessibilityLabel="Entry type"
