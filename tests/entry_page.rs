@@ -81,7 +81,8 @@ fn f5_remove_attachment_not_hover_only() {
     );
 }
 
-/// Finding 6: a second save edits the draft it already created.
+/// Finding 6: a second save edits the draft it already created, and the
+/// remembered ticket clears on post, close and reset — never on plain Save.
 #[test]
 fn f6_second_save_edits_the_draft() {
     let s = books();
@@ -89,6 +90,10 @@ fn f6_second_save_edits_the_draft() {
     assert!(
         s.contains("base.entry = savedEntry()"),
         "save never sends the remembered ticket"
+    );
+    assert!(
+        s.contains("savedEntry.set(post || close || fresh"),
+        "the ticket survives post, close or a form reset"
     );
 }
 

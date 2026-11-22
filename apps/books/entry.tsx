@@ -589,7 +589,10 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
         entryStaged.set([]);
         if (failed === 0) toast(post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`);
         else toast(`${post ? `Entry ${r.no} posted` : `Draft ${r.no} saved`}. ${failed} document${failed === 1 ? "" : "s"} couldn't be linked — still in Documents: ${firstLinkError}`);
-        savedEntry.set(fresh ? "" : String(r.entry || ""));
+        // the remembered draft ticket survives only a plain Save that keeps
+        // the form open; Post, Save & Close and Save & New all clear it so a
+        // reused page never edits or re-posts the old entry (PR37 finding 6)
+        savedEntry.set(post || close || fresh ? "" : String(r.entry || ""));
         if (close || fresh) {
           amount.set("");
           date.set("");
