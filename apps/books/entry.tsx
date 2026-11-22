@@ -8,6 +8,11 @@
 const drawerEntry = signal("");
 
 /** Open the ledger's native screen. Set only the props the caller has. */
+// The line's party and tag assignments, joined for display: "Ana Cruz · North".
+function lineAssignees(l: Any): string {
+  return [l?.person?.name, l?.department?.name, l?.location?.name].filter(Boolean).join(" · ");
+}
+
 function openLedger(props: { account?: string; month?: string; filter?: string }) {
   const args: Record<string, Any> = {};
   if (props.account) args.account = props.account;
@@ -102,9 +107,12 @@ function EntryDrawer() {
                   <Each of={e()?.lines || []}>
                     {(l: Any) => (
                       <View class={`flex-row gap-1.5 px-2.5 py-1.5 border-t ${C.line}`}>
-                        <Text class={`flex-1 text-[12px] ${C.ink} truncate`}>
-                          {l().account}
-                        </Text>
+                        <View class="flex-1 min-w-0">
+                          <Text class={`text-[12px] ${C.ink} truncate`}>{l().account}</Text>
+                          <If when={Boolean(lineAssignees(l()))}>
+                            <Text class={`text-[10.5px] ${C.dim} truncate`}>{lineAssignees(l())}</Text>
+                          </If>
+                        </View>
                         <Text class={`w-[84px] text-right text-[12px] font-mono ${C.ink}`}>{l().debit_shown}</Text>
                         <Text class={`w-[84px] text-right text-[12px] font-mono ${C.ink}`}>{l().credit_shown}</Text>
                       </View>
