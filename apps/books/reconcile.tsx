@@ -604,12 +604,25 @@ function MatchView() {
   const wdBank = () => sumOf((r) => centsOf(r.amount_shown) < 0n, (r) => r.amount_shown);
   const depLeg = () => String(s()?.books_in_shown || "—");
   const wdLeg = () => String(s()?.books_out_shown || "—");
-  const isCard = /card|credit/i.test(String(d()?.account?.name || ""));
+  // a credit-normal account (a card) raises its balance on a charge: its
+  // statement's negative rows are the in-flow, so the bank's sign flips too
+  const isCard = () => d()?.account?.debit_normal === false;
+  const depBankN = () => (isCard() ? -wdBank() : depBank());
+  const wdBankN = () => (isCard() ? -depBank() : wdBank());
   const hdrBtnCls = "flex-row items-center gap-1.5 px-3 py-1.5 rounded-lg";
   return (
     <View class="gap-0">
       {/* light header: account · period, status pill, actions — no Back (the window's × closes) */}
       <View class={`flex-row items-center gap-2 px-4 py-2 rounded-t-xl ${C.panel} border-b ${C.line}`}>
+        <View
+          accessibilityLabel="Back to months"
+          class={`-ml-1 px-1.5 h-7 rounded-md items-center justify-center`}
+          hoverStyle={{ backgroundColor: "rgba(148,163,184,0.2)" }}
+          activeStyle={{ opacity: 0.7 }}
+          onPress={() => recMonth.set("")}
+        >
+          <Text class={`text-[15px] font-bold ${C.dim}`}>‹ Back</Text>
+        </View>
         <Text class={`text-[13px] font-semibold ${C.ink}`}>{d()?.account?.name || ""}</Text>
         <Text class={`text-[12px] ${C.mute}`}>{`· ${d()?.month?.label || ""}`}</Text>
         <If when={Boolean(s())}>
@@ -618,7 +631,7 @@ function MatchView() {
           </View>
         </If>
         <View class="flex-1" />
-        <If when={Boolean(s())}>
+        <If when={Boolean(s()) && s()?.status !== "finished"}>
           <View class={`${hdrBtnCls} bg-gray-100 dark:bg-white/5`} hoverStyle={{ backgroundColor: "rgba(148,163,184,0.25)" }} activeStyle={{ opacity: 0.7 }} onPress={() => call("books_app_statement_accept")}>
             <Text class={`text-[12px] font-medium ${C.mute}`}>{`Accept ${String(s()?.suggested || 0)} suggestion${s()?.suggested === 1 ? "" : "s"}`}</Text>
           </View>
@@ -651,14 +664,14 @@ function MatchView() {
           </If>
           {/* green summary strip: inflow / outflow / Net glass cards (old app's SummaryRow) */}
           <View class="flex-row gap-3 rounded-xl px-4 py-3" style={{ backgroundImage: "linear-gradient(to right,#1a6b3c,#27ae60)" }}>
-            <RecSumCard title={isCard ? "Charges" : "Deposits"} icon="dash" rows={[["Bank", centsShown(depBank(), true)], ["Ledger", depLeg()]]} />
-            <RecSumCard title={isCard ? "Payments" : "Withdrawals"} icon="dash" rows={[["Bank", centsShown(wdBank())], ["Ledger", wdLeg()]]} />
+            <RecSumCard title={isCard() ? "Charges" : "Deposits"} icon="dash" rows={[["Bank", centsShown(depBankN(), true)], ["Ledger", depLeg()]]} />
+            <RecSumCard title={isCard() ? "Payments" : "Withdrawals"} icon="dash" rows={[["Bank", centsShown(wdBankN())], ["Ledger", wdLeg()]]} />
             <RecSumCard title="Net" icon="notEqual" highlight={s()?.difference_shown} rows={[["Bank", String(s()?.closing_shown || "—")], ["Ledger", String(s()?.books_shown || "—")]]} />
           </View>
           <View class={side() ? "flex-row items-start gap-3.5" : "gap-3.5"}>
             <If when={side()}>
               <SnapshotPane
-                rows={s()?.rows || []}
+                rows={rowsView()}
                 evidence={Boolean(s()?.snapshot)}
                 kind={String(s()?.snapshot_kind || "")}
                 pictures={s()?.snapshot_pictures || []}
@@ -710,14 +723,16 @@ function MatchView() {
                 >
                   <Text class={`text-[12px] ${recStat() !== "all" || recQ() ? "text-teal-600 dark:text-teal-400" : C.dim}`}>⏷</Text>
                 </View>
-                <View
-                  class="w-8 h-6 rounded-sm items-center justify-center"
-                  hoverStyle={{ backgroundColor: "rgba(148,163,184,0.2)" }}
-                  activeStyle={{ opacity: 0.7 }}
-                  onPress={() => importStatement(recAccount())}
-                >
-                  <Text class={`text-[14px] font-bold ${C.dim}`}>+</Text>
-                </View>
+                <If when={s()?.status !== "finished"}>
+                  <View
+                    class="w-8 h-6 rounded-sm items-center justify-center"
+                    hoverStyle={{ backgroundColor: "rgba(148,163,184,0.2)" }}
+                    activeStyle={{ opacity: 0.7 }}
+                    onPress={() => importStatement(recAccount())}
+                  >
+                    <Text class={`text-[14px] font-bold ${C.dim}`}>+</Text>
+                  </View>
+                </If>
               </View>
               <If when={!side()}>
                 <View class={`flex-row border-b ${C.line}`}>
@@ -780,7 +795,7 @@ function MatchView() {
                             <Text class={`text-[11px] ${C.dim}`}>{`Usually ${r().hint?.category || ""}`}</Text>
                           </If>
                         </View>
-                        <If when={r().match === "x"}>
+                        <If when={r().match === "x" && s()?.status !== "finished"}>
                           <Btn label="+ Add" small onPress={() => call("books_app_statement_add_line", { line: r().ticket })} />
                         </If>
                         <If when={r().match === "s" && s()?.status !== "finished"}>
