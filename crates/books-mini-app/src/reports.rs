@@ -578,7 +578,7 @@ fn ag(store: &Store, chart: &Chart, period: &Period, args: &Map<String, Value>) 
     };
     let at = period.end;
     let mut by: Vec<(String, [i64; 4])> = Vec::new();
-    for u in people::open_unpaid(store.conn(), chart.book.id, side)? {
+    for u in people::open_unpaid_as_of(store.conn(), chart.book.id, side, &at)? {
         let who = match u.person_id {
             Some(p) => people::person(store.conn(), p)?
                 .map(|p| p.name)

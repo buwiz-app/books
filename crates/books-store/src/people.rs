@@ -353,6 +353,37 @@ pub fn open_unpaid(conn: &Connection, book_id: i64, side: &str) -> Result<Vec<Un
     Ok(rows.collect::<rusqlite::Result<_>>()?)
 }
 
+/// Settlements counted at `at`: posted by then and not undone by then — a
+/// payment voided later still stands at the cutoff.
+macro_rules! paid_sql_at {
+    () => {
+        "(SELECT coalesce(sum(p.amount), 0) FROM owed_payment p JOIN entry e ON e.entry_id = p.entry_id WHERE p.unpaid_id = unpaid.unpaid_id AND e.entry_date <= ?3 AND (e.status = 'posted' OR (e.status = 'voided' AND NOT EXISTS (SELECT 1 FROM entry r WHERE r.reverses_entry_id = e.entry_id AND r.entry_date <= ?3))))"
+    };
+}
+
+/// Documents on one side owed at `at`, by due date: issued by the cutoff
+/// with settlements counted through it, so a later payment or issue date
+/// does not rewrite the past. A cancelled document's accrual entry is
+/// voided on its own date, so it owes nothing at any cutoff.
+pub fn open_unpaid_as_of(
+    conn: &Connection,
+    book_id: i64,
+    side: &str,
+    at: &Date,
+) -> Result<Vec<Unpaid>> {
+    const COLUMNS: &str = concat!(
+        "unpaid_id, book_id, side, person_id, reference, memo, issued, due, amount, category_account_id, status, accrual_entry_id, paid_entry_id, paid_on, ",
+        paid_sql_at!()
+    );
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {COLUMNS} FROM unpaid WHERE book_id = ?1 AND side = ?2 AND issued <= ?3 AND status <> 'cancelled' AND amount > {}
+         ORDER BY due IS NULL, due, unpaid_id",
+        paid_sql_at!()
+    ))?;
+    let rows = stmt.query_map(params![book_id, side, at.to_string()], unpaid_row)?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
+
 /// The trade account an accrual book uses for a side.
 pub(crate) fn trade_account(conn: &Connection, book: &Book, side: &str) -> Result<i64> {
     let kind = if side == "collect" {
