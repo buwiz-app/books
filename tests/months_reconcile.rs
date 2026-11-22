@@ -520,8 +520,16 @@ fn statement_view_names_the_accounts_balance_direction() {
         "books_app_account_create",
         json!({ "client_request_id": "m4-dir-acct-1", "number": "22990", "name": "Synthetic Card", "kind": "loan_payable" }),
     );
-    let bank = ok(b, "books_statement_get", json!({ "account": "11010", "month": "2026-10" }));
+    let bank = ok(
+        b,
+        "books_statement_get",
+        json!({ "account": "11010", "month": "2026-10" }),
+    );
     assert_eq!(bank["account"]["debit_normal"], true);
-    let card = ok(b, "books_statement_get", json!({ "account": "22990", "month": "2026-10" }));
+    let card = ok(
+        b,
+        "books_statement_get",
+        json!({ "account": "22990", "month": "2026-10" }),
+    );
     assert_eq!(card["account"]["debit_normal"], false);
 }
