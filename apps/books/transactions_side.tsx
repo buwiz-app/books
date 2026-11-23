@@ -157,7 +157,7 @@ function TxSideNode(p: {
         {/* Icon tile — doubles as expand/collapse (icon shows, chevron on row hover) */}
         {isRoot() ? (
           <View
-            class="w-7 h-7 rounded-lg items-center justify-center shrink-0 cursor-pointer transition-colors"
+            class="w-7 h-7 min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded-lg items-center justify-center shrink-0 cursor-pointer transition-colors"
             style={{ backgroundColor: conf().bg }}
             onPress={toggleExpand}
             accessibilityLabel={expanded() ? "Collapse" : "Expand"}
@@ -273,7 +273,7 @@ function TxSidebar(p: {
             value={search()}
             placeholder="Lookup..."
             onChange={(e: Any) => search.set(typeof e === "string" ? e : e.value)}
-            class="w-full pl-8 pr-3 py-1.5 rounded-md bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 text-[12px] text-[#1e293b] dark:text-slate-200 placeholder:text-[#94a3b8] dark:placeholder:text-slate-500 focus:outline-none focus:border-[#2a9d8f] dark:focus:border-teal-500 focus:ring-1 focus:ring-[#2a9d8f] dark:focus:ring-teal-500 transition-all"
+            class="w-full pl-8 pr-3 py-1.5 rounded-md bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 text-base sm:text-[12px] text-[#1e293b] dark:text-slate-200 placeholder:text-[#94a3b8] dark:placeholder:text-slate-500 focus:outline-none focus:border-[#2a9d8f] dark:focus:border-teal-500 focus:ring-1 focus:ring-[#2a9d8f] dark:focus:ring-teal-500 transition-all"
           />
         </View>
       </View>
