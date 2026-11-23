@@ -6,7 +6,11 @@
 const recAccount = signal("");
 const recMonth = signal("");
 const recQ = signal("");
-const recStat = signal("all"); // "all" | "m" matched | "x" unsettled (suggested or missing)
+const recStat = signal("all"); // "all" | "m" matched | "x" unsettled (suggested or missing) | "f" flagged
+const recType = signal("all"); // "all" | "in" money in | "out" money out
+const recAmtMin = signal("");
+const recAmtMax = signal("");
+const recParty = signal("");
 const recFiltMenu = signal(false);
 let recFiltAnchor: ViewRef | undefined;
 
@@ -220,21 +224,21 @@ function ReconcileGrid() {
       {/* ── Header band ── */}
       <View class="rounded-xl px-4 pt-5 pb-4 gap-4" style={{ backgroundImage: "linear-gradient(to right,#1a6b3c,#27ae60)" }}>
         <View class="flex-row items-center gap-3">
-          <View class="w-8 h-8 rounded-lg bg-white/15 items-center justify-center">
+          <View class={RTB}>
             <Text class="text-[16px] text-white">✓</Text>
           </View>
           <Text class="text-[18px] font-semibold text-white">Reconciliations</Text>
         </View>
-        <View class="flex-row items-center justify-between">
+        <View class={FRJB}>
           {/* year navigator (Books' grid serves the open year; the chevrons stay dimmed) */}
           <View class="flex-row items-center bg-white/10 rounded-lg">
             <View
               class="w-8 h-8 items-center justify-center rounded-l-lg"
               hoverStyle={hdrBtnHover}
-              activeStyle={{ opacity: 0.7 }}
+              activeStyle={AS}
               onPress={() => { const y = Number(year()); if (y) recYear.set(y - 1); }}
             >
-              <Text class="text-[14px] font-bold text-white">‹</Text>
+              <Text class={RT14W}>‹</Text>
             </View>
             <View class="h-8 flex-row items-center gap-1.5 px-2">
               <Text class="text-[12px] text-white/70">▣</Text>
@@ -243,18 +247,18 @@ function ReconcileGrid() {
             <View
               class="w-8 h-8 items-center justify-center rounded-r-lg"
               hoverStyle={hdrBtnHover}
-              activeStyle={{ opacity: 0.7 }}
+              activeStyle={AS}
               onPress={() => { const y = Number(year()); if (y) recYear.set(y + 1); }}
             >
-              <Text class="text-[14px] font-bold text-white">›</Text>
+              <Text class={RT14W}>›</Text>
             </View>
           </View>
-          <View class="flex-row items-center gap-2">
+          <View class={`${FR}`}>
             <View
               ref={recSortAnchor}
               class={hdrBtn}
               hoverStyle={hdrBtnHover}
-              activeStyle={{ opacity: 0.7 }}
+              activeStyle={AS}
               onPress={() => recSortMenu.set(!recSortMenu())}
             >
               <Text class="text-[12px] font-medium text-white">⇅</Text>
@@ -263,19 +267,19 @@ function ReconcileGrid() {
               ref={recStartAnchor}
               class={hdrBtn}
               hoverStyle={hdrBtnHover}
-              activeStyle={{ opacity: 0.7 }}
+              activeStyle={AS}
               onPress={() => recStartMenu.set(!recStartMenu())}
             >
               <Text class="text-[12px] font-medium text-white">+ Start Reconciliation</Text>
             </View>
             <View
               ref={recKebabAnchor}
-              class="w-8 h-8 rounded-lg bg-white/15 items-center justify-center"
+              class={RTB}
               hoverStyle={hdrBtnHover}
-              activeStyle={{ opacity: 0.7 }}
+              activeStyle={AS}
               onPress={() => recKebabMenu.set(!recKebabMenu())}
             >
-              <Text class="text-[14px] font-bold text-white">⋮</Text>
+              <Text class={RT14W}>⋮</Text>
             </View>
           </View>
         </View>
@@ -290,8 +294,8 @@ function ReconcileGrid() {
             <Each of={REC_TILES}>
               {(t: Any, i: Any) => (
                 <View
-                  class={`w-1/2 sm:w-auto sm:flex-1 flex-row items-center gap-3 px-5 py-4 cursor-pointer transition-colors ${i() < 3 ? `border-r ${C.line}` : ""} ${i() < 2 ? `border-b ${C.line} sm:border-b-0` : ""} ${recFilter() === t().key ? t().activeBg : "hover:bg-gray-50 dark:hover:bg-white/5"}`}
-                  activeStyle={{ opacity: 0.7 }}
+                  class={`w-1/2 sm:w-auto sm:flex-1 flex-row items-center gap-3 px-5 py-4 cursor-pointer transition-colors ${i() < 3 ? `border-r ${C.line}` : ""} ${i() < 2 ? `border-b ${C.line} sm:border-b-0` : ""} ${recFilter() === t().key ? t().activeBg : "${RHB}"}`}
+                  activeStyle={AS}
                   onPress={() => recFilter.set(recFilter() === t().key ? "" : String(t().key))}
                 >
                   <Text class={`text-[26px] ${recFilter() === t().key ? "" : "opacity-50"}`} style={{ color: t().color }}>
@@ -315,9 +319,9 @@ function ReconcileGrid() {
           <If when={Boolean(recFilter()) && rows().length === 0}>
             <View class="items-center py-16 gap-3">
               <Text class={`text-[15px] ${C.mute}`}>No Reconciliations</Text>
-              <View class="flex-row items-center gap-1.5" activeStyle={{ opacity: 0.7 }} onPress={() => recFilter.set("")}>
-                <Text class={`text-[13px] ${C.mute}`}>↻</Text>
-                <Text class={`text-[13px] ${C.mute}`}>Reset Filters</Text>
+              <View class="flex-row items-center gap-1.5" activeStyle={AS} onPress={() => recFilter.set("")}>
+                <Text class={`${RT13M}`}>↻</Text>
+                <Text class={`${RT13M}`}>Reset Filters</Text>
               </View>
             </View>
           </If>
@@ -330,13 +334,13 @@ function ReconcileGrid() {
       {/* ── Sort menu ── */}
       <If when={recSortMenu()}>
         <Overlay anchor={recSortAnchor} placement="bottom" align="end" offset={4} margin={8} onPressOutside={() => recSortMenu.set(false)} onCancel={() => recSortMenu.set(false)}>
-          <View class={`w-52 rounded-xl border shadow-xl py-1 ${C.panel} ${C.line}`}>
-            <Text class={`px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Sort By</Text>
+          <View class={`${RW52}`}>
+            <Text class={`${RUPH}`}>Sort By</Text>
             <Each of={REC_SORTS}>
               {(o: Any) => (
                 <View
-                  class={`flex-row items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${recSort() === o()[0] ? "bg-emerald-50 dark:bg-emerald-900/20" : "hover:bg-gray-50 dark:hover:bg-white/5"}`}
-                  activeStyle={{ opacity: 0.7 }}
+                  class={`flex-row items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${recSort() === o()[0] ? "bg-emerald-50 dark:bg-emerald-900/20" : "${RHB}"}`}
+                  activeStyle={AS}
                   onPress={() => {
                     if (recSort() === o()[0]) recSortDesc.set(!recSortDesc());
                     else {
@@ -361,12 +365,12 @@ function ReconcileGrid() {
       <If when={recStartMenu()}>
         <Overlay anchor={recStartAnchor} placement="bottom" align="end" offset={4} margin={8} onPressOutside={() => recStartMenu.set(false)} onCancel={() => recStartMenu.set(false)}>
           <View class={`w-60 rounded-xl border shadow-xl py-1 ${C.panel} ${C.line}`}>
-            <Text class={`px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Start Reconciliation</Text>
+            <Text class={`${RUPH}`}>Start Reconciliation</Text>
             <Each of={d()?.rows || []}>
               {(r: Any) => (
                 <View
-                  class="flex-row items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
-                  activeStyle={{ opacity: 0.7 }}
+                  class={`flex-row items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${RHB}`}
+                  activeStyle={AS}
                   onPress={() => {
                     recStartMenu.set(false);
                     openCell(r(), oldestOpen(r()));
@@ -384,8 +388,8 @@ function ReconcileGrid() {
       {/* ── More actions ── */}
       <If when={recKebabMenu()}>
         <Overlay anchor={recKebabAnchor} placement="bottom" align="end" offset={4} margin={8} onPressOutside={() => recKebabMenu.set(false)} onCancel={() => recKebabMenu.set(false)}>
-          <View class={`w-52 rounded-xl border shadow-xl py-1 ${C.panel} ${C.line}`}>
-            <View class="flex-row items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-white/5" activeStyle={{ opacity: 0.7 }}
+          <View class={`${RW52}`}>
+            <View class={`flex-row items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${RHB}`} activeStyle={AS}
               onPress={() => {
                 recKebabMenu.set(false);
                 toast("Open a month's reconciliation first, then print it.");
@@ -430,7 +434,7 @@ function ReconcileAccount(p: { row: Any; onCell: (r: Any, c: Any) => void }) {
     <View>
       <View
         class="flex-row items-center gap-3 px-4 py-3 border-b border-[#e2e8f0] dark:border-white/10 cursor-pointer transition-colors hover:bg-[#f8fafc] dark:hover:bg-white/[0.02]"
-        activeStyle={{ opacity: 0.7 }}
+        activeStyle={AS}
         onPress={() => recExpanded.set(open() ? recExpanded().filter((x) => x !== String(r().ticket)) : [...recExpanded(), String(r().ticket)])}
       >
         <Text class={`text-[12px] font-bold text-gray-400 dark:text-white/30 ${open() ? "" : "-rotate-0"}`}>{open() ? "▾" : "▸"}</Text>
@@ -484,7 +488,7 @@ function ReconcileAccount(p: { row: Any; onCell: (r: Any, c: Any) => void }) {
                     <If when={!empty()}>
                       <View
                         class="flex-row items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 cursor-pointer transition-colors hover:bg-emerald-600"
-                        activeStyle={{ opacity: 0.7 }}
+                        activeStyle={AS}
                         onPress={() => p.onCell(r(), c())}
                       >
                         <Text class="text-[10px] font-medium text-white">{c().state === "done" ? "◉ View" : "✎ Continue"}</Text>
@@ -493,7 +497,7 @@ function ReconcileAccount(p: { row: Any; onCell: (r: Any, c: Any) => void }) {
                     <If when={empty()}>
                       <View
                         class="flex-row items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-white/5 cursor-pointer transition-colors hover:bg-gray-200 dark:hover:bg-white/10"
-                        activeStyle={{ opacity: 0.7 }}
+                        activeStyle={AS}
                         onPress={() => p.onCell(r(), c())}
                       >
                         <Text class="text-[10px] font-medium text-gray-500 dark:text-white/50">+ Start</Text>
@@ -511,13 +515,34 @@ function ReconcileAccount(p: { row: Any; onCell: (r: Any, c: Any) => void }) {
 }
 
 const MARK: Record<string, string> = { m: "✓", s: "≈", x: "◷" };
+const REC_HDR = "px-3 py-2.5 text-[11px] uppercase tracking-wider border-b";
+const RF1M = "flex-1 min-w-0";
+const FRJB = "flex-row items-center justify-between";
+const RMX640 = "max-h-[640px]";
+const RTB = "w-8 h-8 rounded-lg bg-white/15 items-center justify-center";
+const RY1 = "py-1";
+const RT14W = "text-[14px] font-bold text-white";
+const RT10R = "text-[10px] text-rose-600 dark:text-rose-400";
+const RHB = "hover:bg-gray-50 dark:hover:bg-white/5";
+const RT10D = `text-[10px] ${C.dim}`;
+const RT12D = `text-[12px] ${C.dim}`;
+const RT13S = `text-[13px] font-semibold ${C.ink}`;
+const RT13M = `text-[13px] ${C.mute}`;
+const RT125M = `text-[12.5px] ${C.mute}`;
+const RT12M = `text-[12px] font-medium ${C.mute}`;
+const RW84 = `w-[84px] text-right text-[11.5px] font-mono ${C.ink}`;
+const RW84D = `w-[84px] text-right text-[10px] uppercase tracking-wider ${C.dim}`;
+const RW52 = `w-52 rounded-xl border shadow-xl py-1 ${C.panel} ${C.line}`;
+const RUPH = `px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider ${C.dim}`;
+const RUPH2 = `flex-1 px-3 py-2.5 text-[11px] uppercase tracking-wider ${C.dim}`;
+
 
 /** One glass card of the green summary strip (old app's SummaryCard). */
 function RecSumCard(p: { title: string; icon: string; highlight?: string; rows: [string, string][] }) {
   return (
     <View class="flex-1 min-w-[140px] rounded-xl px-4 py-3 gap-1.5" style={{ backgroundColor: "rgba(255,255,255,0.10)", borderWidth: 1, borderColor: "rgba(255,255,255,0.10)" }}>
-      <View class="flex-row items-center justify-between">
-        <View class="flex-row items-center gap-2">
+      <View class={FRJB}>
+        <View class={`${FR}`}>
           <View class="w-5 h-5 rounded-full bg-white/20 items-center justify-center">
             <Avatar src={ICONS[p.icon]} class="w-3 h-3" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
           </View>
@@ -527,8 +552,8 @@ function RecSumCard(p: { title: string; icon: string; highlight?: string; rows: 
       </View>
       <Each of={[0, 1]}>
         {(i: Any) => (
-          <View class="flex-row items-center justify-between">
-            <View class="flex-row items-center gap-2">
+          <View class={FRJB}>
+            <View class={`${FR}`}>
               <Avatar src={p.rows[i()][0] === "Bank" ? ICONS.landmark : ICONS.bookOpen} class="w-[13px] h-[13px] opacity-60" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
               <Text class="text-[12px] font-medium text-white/60">{p.rows[i()][0]}</Text>
             </View>
@@ -540,30 +565,29 @@ function RecSumCard(p: { title: string; icon: string; highlight?: string; rows: 
   );
 }
 
-/** The funnel's status menu: the same three states the counters toggle. */
+/** The funnel's filter popover: status, type, amount and party (the old app's advanced filter). */
 function RecFilterMenu() {
-  const item = (key: string, label: string) => (
-    <View
-      class={`flex-row items-center gap-2 px-3 py-2 ${recStat() === key ? C.hover : ""}`}
-      hoverStyle={{ backgroundColor: "rgba(148,163,184,0.15)" }}
-      activeStyle={{ opacity: 0.7 }}
-      onPress={() => {
-        recStat.set(key);
-        recFiltMenu.set(false);
-      }}
-    >
-      <Text class={`w-[16px] text-[12px] ${recStat() === key ? C.green : "text-transparent"}`}>✓</Text>
-      <Text class={`text-[12.5px] ${C.ink}`}>{label}</Text>
-    </View>
-  );
   return (
     <Overlay anchor={recFiltAnchor} placement="bottom" align="end" offset={2} margin={8} open={recFiltMenu()} onPressOutside={() => recFiltMenu.set(false)} onCancel={() => recFiltMenu.set(false)}>
-      <View class={`w-[170px] rounded-lg ${C.panel} border ${C.line} py-1`}>
-        <Text class={`px-3 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Status</Text>
-        {item("all", "All lines")}
-        {item("m", "Matched")}
-        {item("x", "Unsettled")}
-      </View>
+      <RecFilterPop
+          stat={recStat()}
+          type={recType()}
+          min={recAmtMin()}
+          max={recAmtMax()}
+          party={recParty()}
+          onStat={(v) => recStat.set(v)}
+          onType={(v) => recType.set(v)}
+          onMin={(v) => recAmtMin.set(v)}
+          onMax={(v) => recAmtMax.set(v)}
+          onParty={(v) => recParty.set(v)}
+          onClear={() => {
+            recStat.set("all");
+            recType.set("all");
+            recAmtMin.set("");
+            recAmtMax.set("");
+            recParty.set("");
+          }}
+        />
     </Overlay>
   );
 }
@@ -596,16 +620,122 @@ function MatchView() {
     if (no !== null) {
       const y = rowTop.get(no);
       if (y !== undefined) rowsScroll?.scrollTo?.({ y: Math.max(0, y - 16), animated: true });
+      ledScrollTo(no);
     }
   };
   const hoverRow = (r: Any | null) => {
     const no = r?.no ?? null;
     hoveredLine.set(no);
     if (no === null) snapApi?.cancel?.();
-    else snapApi?.scrollToLine?.(no);
+    else {
+      snapApi?.scrollToLine?.(no);
+      ledScrollTo(no);
+    }
   };
   // the snapshot on the left and the lines on the right; with none, the full-width list
   const side = () => snapShown(s());
+  // ── centre dual lists (old app's StatementLinesList + LedgerTransactionsList) ──
+  const recEdit = signal(false); // View/Edit mode
+  const reconTarget = signal(""); // ledger entry id waiting on a statement line (Reconcile mode)
+  const recOps = signal<Any[]>([]); // queued unmatch/link ops → the pending-edits bar
+  const recApplying = signal(false);
+  const recSideSheet = signal(false); // right-sidebar sheet below xl
+  const recSideProps = () => ({ s: s(), d: d(), flags: s()?.flags || [], unmatched: unsettled(), isCard: isCard() });
+  const recMatchedFlash = signal<number | null>(null); // flashes a freshly linked line ~1.2s
+  let ledScroll: Any;
+  const ledTop = new Map<number, number>(); // statement line no -> y in the ledger list
+  // the journal's own rows for this account+month, when the backend ships them;
+  // fields are read defensively so an older store without them keeps working
+  const ledgerAll = (): Any[] => {
+    const raw = (s()?.ledger_entries ?? d()?.ledger_entries ?? []) as Any[];
+    if (!Array.isArray(raw)) return [];
+    return raw.map((e: Any, i: number) => {
+      const line = e.linked_line_no ?? e.line ?? null;
+      const amt = String(e.amount_shown ?? "");
+      return {
+        id: String(e.ticket ?? `e${i}`),
+        ticket: e.ticket,
+        line: line === null || line === undefined ? null : Number(line),
+        matched: Boolean(e.matched ?? line !== null),
+        confidence: e.match_confidence,
+        date_short: String(e.date_short ?? e.date ?? ""),
+        year: String(e.date ?? d()?.month?.key ?? "").slice(0, 4),
+        party: String(e.payee ?? ""),
+        name: String(e.payee ?? e.title ?? e.memo ?? e.category ?? ""),
+        desc: String(e.memo ?? e.category ?? ""),
+        amount: amt.replace(/^\+/, ""),
+        credit: Boolean(String(e.debit_shown ?? "").replace(/^0\.0*$/, "") || amt.startsWith("+")),
+        source: String(e.form ?? ""),
+        num: e.no ?? "",
+        status: String(e.status ?? ""),
+        flags: e.flags ?? [],
+      };
+    });
+  };
+  const dual = () => ledgerAll().length > 0;
+  const flagSet = () => new Set((s()?.flags || []).filter((f: Any) => !f.resolved && f.line).map((f: Any) => Number(f.line)));
+  const ledgerView = () =>
+    ledgerAll().filter((e: Any) => {
+      if (recStat() === "m" && !e.matched) return false;
+      if (recStat() === "x" && e.matched) return false;
+      if (recStat() === "f") return false; // flags live on statement lines
+      if (recType() === "in" && !e.credit) return false;
+      if (recType() === "out" && e.credit) return false;
+      const c = centsOf(e.amount);
+      if (recAmtMin() && c < centsOf(recAmtMin())) return false;
+      if (recAmtMax() && c > centsOf(recAmtMax())) return false;
+      const p = recParty().trim().toLowerCase();
+      if (p && ![e.name, e.party, e.desc].some((t) => String(t || "").toLowerCase().includes(p))) return false;
+      if (q() && ![e.name, e.desc, e.num].some((t) => String(t || "").toLowerCase().includes(q()))) return false;
+      return true;
+    });
+  const filtActive = () => recStat() !== "all" || recType() !== "all" || Boolean(recAmtMin() || recAmtMax() || recParty() || q());
+  // queue-based edits: the bar applies them through the statement tools
+  const queueOp = (op: Any) => recOps.set([...recOps(), op]);
+  const applyOps = async () => {
+    const ops = recOps();
+    if (!ops.length || recApplying()) return;
+    recApplying.set(true);
+    let failed = 0;
+    for (const op of ops) {
+      const args: Any = { action: op.kind, line: op.line };
+      if (op.kind === "link") args.entry = op.entry;
+      if ((await call("books_app_statement_action", args)) === null) failed++;
+    }
+    recApplying.set(false);
+    recOps.set(failed ? ops.slice(ops.length - failed) : []);
+    if (failed) toast(`${failed} change${failed === 1 ? "" : "s"} could not be applied`);
+    const linked = ops.find((op: Any) => op.kind === "link");
+    if (linked && !failed) {
+      recMatchedFlash.set(Number(linked.line));
+      setTimeout(() => recMatchedFlash.set(null), 1300);
+    }
+    ver.set(ver() + 1);
+  };
+  const reconEntry = () => ledgerAll().find((e: Any) => e.id === reconTarget());
+  // a statement-line pick during Reconcile mode queues the link instead
+  const pickStmt = (r: Any) => {
+    if (reconTarget() && r.match !== "m" && s()?.status !== "finished") {
+      queueOp({ kind: "link", line: r.no, entry: reconTarget() });
+      reconTarget.set("");
+      return;
+    }
+    pick(r);
+  };
+  const hoverLedger = (e: Any | null) => {
+    const no = e?.line;
+    if (no === null || no === undefined) {
+      hoveredLine.set(null);
+      snapApi?.cancel?.();
+      return;
+    }
+    hoveredLine.set(Number(no));
+    snapApi?.scrollToLine?.(Number(no));
+  };
+  const ledScrollTo = (no: number) => {
+    const y = ledTop.get(no);
+    if (y !== undefined) ledScroll?.scrollTo?.({ y: Math.max(0, y - 16), animated: true });
+  };
   // ── old-app detail page: light header, green summary strip, search bar, tinted rows ──
   const q = () => recQ().trim().toLowerCase();
   const rowsAll = () => (s()?.rows || []) as Any[];
@@ -615,6 +745,14 @@ function MatchView() {
     rowsAll().filter((r: Any) => {
       if (recStat() === "m" && r.match !== "m") return false;
       if (recStat() === "x" && r.match === "m") return false;
+      if (recStat() === "f" && !r.flag && !flagSet().has(Number(r.no))) return false;
+      const c = centsOf(String(r.amount_shown || "0"));
+      if (recType() === "in" && c <= 0n) return false;
+      if (recType() === "out" && c >= 0n) return false;
+      if (recAmtMin() && (c < 0n ? -c : c) < centsOf(recAmtMin())) return false;
+      if (recAmtMax() && (c < 0n ? -c : c) > centsOf(recAmtMax())) return false;
+      const p = recParty().trim().toLowerCase();
+      if (p && ![r.party, r.description, r.books?.title].some((t: Any) => String(t || "").toLowerCase().includes(p))) return false;
       if (q() && ![r.description, r.books?.title, r.books?.sub, r.why].some((t: Any) => String(t || "").toLowerCase().includes(q()))) return false;
       return true;
     });
@@ -638,13 +776,13 @@ function MatchView() {
         <View
           accessibilityLabel="Back to months"
           class={`-ml-1 px-1.5 h-7 rounded-md items-center justify-center`}
-          hoverStyle={{ backgroundColor: "rgba(148,163,184,0.2)" }}
-          activeStyle={{ opacity: 0.7 }}
+          hoverStyle={HS2}
+          activeStyle={AS}
           onPress={() => recMonth.set("")}
         >
           <Text class={`text-[15px] font-bold ${C.dim}`}>‹ Back</Text>
         </View>
-        <Text class={`text-[13px] font-semibold ${C.ink}`}>{d()?.account?.name || ""}</Text>
+        <Text class={`${RT13S}`}>{d()?.account?.name || ""}</Text>
         <Text class={`text-[12px] ${C.mute}`}>{`· ${d()?.month?.label || ""}`}</Text>
         <If when={Boolean(s())}>
           <View class={`rounded-full px-2 py-0.5 ${s()?.status === "finished" ? "bg-emerald-50 dark:bg-emerald-500/10" : "bg-amber-50 dark:bg-amber-500/10"}`}>
@@ -652,14 +790,43 @@ function MatchView() {
           </View>
         </If>
         <View class="flex-1" />
+        <If when={dual() && s()?.status !== "finished"}>
+          <View class="flex-row rounded-lg bg-gray-100 dark:bg-white/5 p-0.5">
+            <View
+              class={`px-2.5 py-1 rounded-md cursor-pointer ${recEdit() ? "" : "bg-white dark:bg-slate-700 shadow-sm"}`}
+              activeStyle={AS}
+              onPress={() => recEdit.set(false)}
+            >
+              <Text class={`text-[11.5px] font-medium ${recEdit() ? C.dim : C.ink}`}>View</Text>
+            </View>
+            <View
+              class={`px-2.5 py-1 rounded-md cursor-pointer ${recEdit() ? "bg-white dark:bg-slate-700 shadow-sm" : ""}`}
+              activeStyle={AS}
+              onPress={() => recEdit.set(true)}
+            >
+              <Text class={`text-[11.5px] font-medium ${recEdit() ? C.ink : C.dim}`}>Edit</Text>
+            </View>
+          </View>
+        </If>
         <If when={Boolean(s()) && s()?.status !== "finished"}>
-          <View class={`${hdrBtnCls} bg-gray-100 dark:bg-white/5`} hoverStyle={{ backgroundColor: "rgba(148,163,184,0.25)" }} activeStyle={{ opacity: 0.7 }} onPress={() => call("books_app_statement_action", { action: "accept" })}>
-            <Text class={`text-[12px] font-medium ${C.mute}`}>{`Accept ${String(s()?.suggested || 0)} suggestion${s()?.suggested === 1 ? "" : "s"}`}</Text>
+          <View class={`${hdrBtnCls} bg-gray-100 dark:bg-white/5`} hoverStyle={HS3} activeStyle={AS} onPress={() => call("books_app_statement_action", { action: "accept" })}>
+            <Text class={`${RT12M}`}>{`Accept ${String(s()?.suggested || 0)} suggestion${s()?.suggested === 1 ? "" : "s"}`}</Text>
           </View>
         </If>
         <If when={s()?.status !== "finished"}>
-          <View class={`${hdrBtnCls} bg-gray-100 dark:bg-white/5`} hoverStyle={{ backgroundColor: "rgba(148,163,184,0.25)" }} activeStyle={{ opacity: 0.7 }} onPress={() => importStatement(recAccount())}>
-            <Text class={`text-[12px] font-medium ${C.mute}`}>Import statement</Text>
+          <View class={`${hdrBtnCls} bg-gray-100 dark:bg-white/5`} hoverStyle={HS3} activeStyle={AS} onPress={() => importStatement(recAccount())}>
+            <Text class={`${RT12M}`}>Import statement</Text>
+          </View>
+        </If>
+        <If when={Boolean(s())}>
+          <View
+            class={`${hdrBtnCls} xl:hidden bg-gray-100 dark:bg-white/5`}
+            hoverStyle={HS3}
+            activeStyle={AS}
+            title="Reconciliation sidebar"
+            onPress={() => recSideSheet.set(true)}
+          >
+            <Text class={`text-[13px] font-bold ${C.mute}`}>≡</Text>
           </View>
         </If>
       </View>
@@ -669,13 +836,13 @@ function MatchView() {
       </If>
       <If when={Boolean(keptFor()) && keptFor() === recAccount() && !d()?.draft}>
         <Panel pad>
-          <Text class={`text-[13px] font-semibold ${C.ink}`}>The statement is kept in Books documents.</Text>
-          <Text class={`text-[12.5px] ${C.mute}`}>Books does not read it. Ask the assistant to read the statement for this account; its lines then show here for you to accept.</Text>
+          <Text class={`${RT13S}`}>The statement is kept in Books documents.</Text>
+          <Text class={`${RT125M}`}>Books does not read it. Ask the assistant to read the statement for this account; its lines then show here for you to accept.</Text>
         </Panel>
       </If>
       <If when={Boolean(d()) && !s()}>
         <Panel pad>
-          <Text class={`text-[13px] ${C.mute}`}>No statement for this month yet. Import the bank's CSV to match it, or its PDF or picture for the assistant to read.</Text>
+          <Text class={`${RT13M}`}>No statement for this month yet. Import the bank's CSV to match it, or its PDF or picture for the assistant to read.</Text>
         </Panel>
       </If>
       <If when={Boolean(s())}>
@@ -723,6 +890,25 @@ function MatchView() {
                   onPage={(n: number) => snapPage.set(n)}
                   account={recAccount()}
                   month={recMonth()}
+                  reconcileMode={Boolean(reconTarget())}
+                  onReconcileSelect={(no: number) => {
+                    const r = rowsAll().find((x: Any) => Number(x.no) === no);
+                    if (r) pickStmt(r);
+                  }}
+                  onQuickMatch={(no: number, ledgerId: string) => queueOp({ kind: "link", line: no, entry: ledgerId })}
+                  matchFor={(row: Any) => {
+                    const e = ledgerAll().find((x: Any) => x.line === Number(row?.no));
+                    return e ? { id: e.id, label: e.name } : null;
+                  }}
+                  onCreateFromLine={(no: number) => {
+                    const r = rowsAll().find((x: Any) => Number(x.no) === no);
+                    if (r?.ticket) call("books_app_statement_action", { action: "add_line", line: r.ticket });
+                  }}
+                  matchingNo={recMatchedFlash()}
+                  onUpload={() => importStatement(recAccount())}
+                  onRemove={() => {
+                    call("books_app_statement_action", { action: "remove" });
+                  }}
                 />
               </View>
             </If>
@@ -739,54 +925,120 @@ function MatchView() {
                     class={`h-7 text-[13px] bg-transparent border-none outline-none placeholder:text-[#8e8e93] focus:ring-0 ${C.ink}`}
                   />
                 </View>
-                <View
-                  class={`flex-row items-center gap-1.5 px-2 py-0.5 rounded-sm bg-[#e6f4ea] dark:bg-emerald-500/10 border cursor-pointer transition-colors ${recStat() === "m" ? "border-emerald-500" : "border-transparent hover:border-emerald-300 dark:hover:border-emerald-600"}`}
-                  activeStyle={{ opacity: 0.7 }}
-                  onPress={() => recStat.set(recStat() === "m" ? "all" : "m")}
-                >
-                  <Text class="text-[12px] font-semibold text-[#1e8e3e] dark:text-emerald-400">{String(matched())}</Text>
-                  <Text class="text-[11px] font-bold text-[#1e8e3e] dark:text-emerald-400">✓</Text>
-                </View>
-                <View
-                  class={`flex-row items-center gap-1.5 px-2 py-0.5 rounded-sm bg-[#fef7e0] dark:bg-amber-500/10 border cursor-pointer transition-colors ${recStat() === "x" ? "border-amber-500" : "border-transparent hover:border-amber-300 dark:hover:border-amber-600"}`}
-                  activeStyle={{ opacity: 0.7 }}
-                  onPress={() => recStat.set(recStat() === "x" ? "all" : "x")}
-                >
-                  <Text class="text-[12px] font-semibold text-[#f9ab00] dark:text-amber-400">{String(unsettled())}</Text>
-                  <Text class="text-[11px] font-bold text-[#f9ab00] dark:text-amber-400">◷</Text>
-                </View>
+                <RecCounter n={matched()} icon="✓" tone="m" active={recStat() === "m"} onPress={() => recStat.set(recStat() === "m" ? "all" : "m")} />
+                <RecCounter n={unsettled()} icon="◷" tone="x" active={recStat() === "x"} onPress={() => recStat.set(recStat() === "x" ? "all" : "x")} />
                 <View
                   ref={recFiltAnchor}
-                  class={`w-8 h-6 rounded-sm items-center justify-center ${recStat() !== "all" || recQ() ? "bg-[#ccece8] dark:bg-teal-900/40" : ""}`}
-                  hoverStyle={{ backgroundColor: "rgba(148,163,184,0.2)" }}
-                  activeStyle={{ opacity: 0.7 }}
+                  class={`w-8 h-6 rounded-sm items-center justify-center ${filtActive() ? "bg-[#ccece8] dark:bg-teal-900/40" : ""}`}
+                  hoverStyle={HS2}
+                  activeStyle={AS}
                   onPress={() => recFiltMenu.set(!recFiltMenu())}
                 >
-                  <Text class={`text-[12px] ${recStat() !== "all" || recQ() ? "text-teal-600 dark:text-teal-400" : C.dim}`}>⏷</Text>
+                  <Text class={`text-[12px] ${filtActive() ? "text-teal-600 dark:text-teal-400" : C.dim}`}>⏷</Text>
                 </View>
                 <If when={s()?.status !== "finished"}>
                   <View
                     class="w-8 h-6 rounded-sm items-center justify-center"
-                    hoverStyle={{ backgroundColor: "rgba(148,163,184,0.2)" }}
-                    activeStyle={{ opacity: 0.7 }}
+                    hoverStyle={HS2}
+                    activeStyle={AS}
                     onPress={() => importStatement(recAccount())}
                   >
                     <Text class={`text-[14px] font-bold ${C.dim}`}>+</Text>
                   </View>
                 </If>
               </View>
+              <If when={Boolean(reconTarget())}>
+                <RecReconBanner name={String(reconEntry()?.name || "the entry")} onCancel={() => reconTarget.set("")} />
+              </If>
+              <If when={recOps().length > 0}>
+                <RecEditBar count={recOps().length} applying={recApplying()} onApply={applyOps} onCancel={() => recOps.set([])} />
+              </If>
+              <If when={dual()}>
+                <View class="flex-col xl:flex-row">
+                  <View class={RF1M}>
+                    <Text class={`${REC_HDR} ${C.line} ${C.dim}`}>Bank statement</Text>
+                    <Scroll ref={rowsScroll} class={RMX640}>
+                      <Each of={rowsView()} key={rowKey}>
+                        {(r: Any) => (
+                          <RecRow
+                            r={{
+                              ...r(),
+                              year: String(d()?.month?.key || "").slice(0, 4),
+                              flags: (s()?.flags || []).filter((f: Any) => !f.resolved && Number(f.line) === Number(r().no)).concat(r().flag ? [{}] : []),
+                            }}
+                            selected={r().no === selectedLine()}
+                            hovered={r().no === hoveredLine()}
+                            finalized={s()?.status === "finished"}
+                            editMode={recEdit()}
+                            recon={Boolean(reconTarget())}
+                            onPick={() => pickStmt(r())}
+                            onHover={() => hoverRow(r())}
+                            onLeave={() => hoverRow(null)}
+                            onUnmatch={() => queueOp({ kind: "unmatch", line: r().no })}
+                            onLayout={(e: Any) => rowTop.set(r().no, Number(e?.bounds?.origin?.y) || 0)}
+                            onView={() => {
+                              if (r().books?.ticket) drawerEntry.set(r().books.ticket);
+                            }}
+                            onQuickAdd={() => call("books_app_statement_action", { action: "add_line", line: r().ticket })}
+                            onQuickMatch={() => call("books_app_statement_action", { action: "accept", line: r().no })}
+                          />
+                        )}
+                      </Each>
+                    </Scroll>
+                  </View>
+                  <View class={`flex-1 min-w-0 border-t xl:border-t-0 xl:border-l ${C.line}`}>
+                    <Text class={`${REC_HDR} ${C.line} ${C.dim}`}>Journal entries</Text>
+                    <Scroll ref={ledScroll} class={RMX640}>
+                      <Each of={ledgerView()} key={rowKey}>
+                        {(e: Any) => (
+                          <RecRow
+                            l
+                            r={e()}
+                            hovered={e().line === hoveredLine()}
+                            linked={e().line === selectedLine()}
+                            recon={e().id === reconTarget()}
+                            finalized={s()?.status === "finished"}
+                            editMode={recEdit()}
+                            onHover={() => hoverLedger(e())}
+                            onLeave={() => hoverLedger(null)}
+                            onPick={() => {
+                              if (recEdit() && !e().matched && selectedLine() !== null && s()?.status !== "finished") {
+                                queueOp({ kind: "link", line: selectedLine(), entry: e().id });
+                              } else if (e().ticket) {
+                                drawerEntry.set(e().ticket);
+                              }
+                            }}
+                            onUnmatch={() => {
+                              if (e().line !== null && e().line !== undefined) queueOp({ kind: "unmatch", line: e().line });
+                            }}
+                            onRecon={() => reconTarget.set(e().id === reconTarget() ? "" : e().id)}
+                            onLayout={(ev: Any) => {
+                              if (e().line !== null && e().line !== undefined) ledTop.set(Number(e().line), Number(ev?.bounds?.origin?.y) || 0);
+                            }}
+                            onView={() => {
+                              if (e().ticket) drawerEntry.set(e().ticket);
+                            }}
+                          />
+                        )}
+                      </Each>
+                      <If when={ledgerView().length === 0}>{sideEmpty("⌕", "Not Found")}</If>
+                    </Scroll>
+                  </View>
+                </View>
+              </If>
+              <If when={!dual()}>
               <If when={!side()}>
                 <View class={`flex-row border-b ${C.line}`}>
-                  <Text class={`flex-1 px-3 py-2.5 text-[11px] uppercase tracking-wider ${C.dim}`}>Bank statement</Text>
+                  <Text class={`${RUPH2}`}>Bank statement</Text>
                   <View class="w-[28px]" />
-                  <Text class={`flex-1 px-3 py-2.5 text-[11px] uppercase tracking-wider ${C.dim}`}>Books</Text>
+                  <Text class={`${RUPH2}`}>Books</Text>
                 </View>
               </If>
               <If when={side()}>
                 <Text class={`px-3 py-2.5 text-[11px] uppercase tracking-wider border-b ${C.line} ${C.dim}`}>Statement lines and Books entries</Text>
               </If>
               {/* the list scrolls inside its card (the old app's column): a box hover can bring its row in */}
-              <Scroll ref={rowsScroll} class="max-h-[640px]">
+              <Scroll ref={rowsScroll} class={RMX640}>
                 <Each of={rowsView()} key={rowKey}>
                   {(r: Any) => (
                     <View
@@ -821,14 +1073,14 @@ function MatchView() {
                     {/* date block: "Oct 15" over the year, like the old row */}
                     <View class="w-[58px] items-center py-2 shrink-0">
                       <Text class={`text-[12.5px] font-semibold ${C.ink}`}>{r().date_short}</Text>
-                      <Text class={`text-[10px] ${C.dim}`}>{String(d()?.month?.key || "").slice(0, 4)}</Text>
+                      <Text class={`${RT10D}`}>{String(d()?.month?.key || "").slice(0, 4)}</Text>
                     </View>
                     <View class={`${side() ? "" : "flex-1"} flex-row items-center gap-2 px-2 py-2 min-h-[38px]`}>
                       <If when={side()}>
                         <Text class={`w-[18px] text-center font-bold ${r().match === "m" ? C.green : r().match === "s" ? C.amber : C.dim}`}>{MARK[r().match]}</Text>
                       </If>
                       <If when={Boolean(r().flag)}>
-                        <Text class="text-[10px] text-rose-600 dark:text-rose-400">⚑</Text>
+                        <Text class={RT10R}>⚑</Text>
                       </If>
                       <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
                         {r().description}
@@ -869,8 +1121,8 @@ function MatchView() {
                         <View class={`border-t ${C.line} pt-1.5 gap-0.5`}>
                           <View class="flex-row gap-2">
                             <Text class={`flex-1 text-[10px] uppercase tracking-wider ${C.dim}`}>Account</Text>
-                            <Text class={`w-[84px] text-right text-[10px] uppercase tracking-wider ${C.dim}`}>Debit</Text>
-                            <Text class={`w-[84px] text-right text-[10px] uppercase tracking-wider ${C.dim}`}>Credit</Text>
+                            <Text class={`${RW84D}`}>Debit</Text>
+                            <Text class={`${RW84D}`}>Credit</Text>
                           </View>
                           <Each of={r().books?.lines || []}>
                             {(l: Any) => (
@@ -878,8 +1130,8 @@ function MatchView() {
                                 <Text class={`flex-1 text-[11.5px] ${C.mute} truncate`}>
                                   {l().account || "—"}
                                 </Text>
-                                <Text class={`w-[84px] text-right text-[11.5px] font-mono ${C.ink}`}>{l().debit_shown}</Text>
-                                <Text class={`w-[84px] text-right text-[11.5px] font-mono ${C.ink}`}>{l().credit_shown}</Text>
+                                <Text class={`${RW84}`}>{l().debit_shown}</Text>
+                                <Text class={`${RW84}`}>{l().credit_shown}</Text>
                               </View>
                             )}
                           </Each>
@@ -890,14 +1142,40 @@ function MatchView() {
                   )}
                 </Each>
               </Scroll>
+              </If>
             </Panel>
+            <View class="hidden xl:flex w-[365px] shrink-0 self-stretch flex-col">
+              <Panel class="flex-1 min-h-0 flex-col">
+                <RecSide {...recSideProps()} onFlagLine={(no: number) => { selectedLine.set(no); hoverBox(no); }} />
+              </Panel>
+            </View>
           </View>
+          <If when={recSideSheet()}>
+            <View class="fixed inset-0 z-40 xl:hidden">
+              <View class="absolute inset-0 bg-black/40" onPress={() => recSideSheet.set(false)} />
+              <View class={`absolute top-0 right-0 bottom-0 w-[90vw] max-w-[365px] flex-col ${C.panel} border-l ${C.line}`}>
+                <View class={`flex-row items-center px-3 py-2 border-b ${C.line}`}>
+                  <Text class={`${RT13S}`}>Reconciliation</Text>
+                  <View class="flex-1" />
+                  <View
+                    class="w-7 h-7 rounded-md items-center justify-center cursor-pointer"
+                    hoverStyle={HS2}
+                    activeStyle={AS}
+                    onPress={() => recSideSheet.set(false)}
+                  >
+                    <Text class={`text-[14px] ${C.dim}`}>×</Text>
+                  </View>
+                </View>
+                <RecSide {...recSideProps()} onFlagLine={(no: number) => { selectedLine.set(no); hoverBox(no); recSideSheet.set(false); }} />
+              </View>
+            </View>
+          </If>
           <If when={!side()}>
             <PrintReconciliation account={recAccount()} month={recMonth()} />
           </If>
           <Panel pad class="flex-row items-center gap-4">
-            <Text class={`text-[12.5px] ${C.mute}`}>{`Statement ending ${s()?.closing_shown || ""}`}</Text>
-            <Text class={`text-[12.5px] ${C.mute}`}>{`Books ${s()?.books_shown || ""}`}</Text>
+            <Text class={`${RT125M}`}>{`Statement ending ${s()?.closing_shown || ""}`}</Text>
+            <Text class={`${RT125M}`}>{`Books ${s()?.books_shown || ""}`}</Text>
             <View class="flex-1" />
             <Text class={`text-[12.5px] font-mono font-bold ${s()?.difference === "0.00" ? C.green : C.ink}`}>{`Difference ${s()?.difference_shown || ""}`}</Text>
             <If when={s()?.status !== "finished"}>

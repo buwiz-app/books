@@ -20,6 +20,7 @@ const BOOKS_FILES: &[&str] = &[
     "../../apps/books/tags.tsx",
     "../../apps/books/reports.tsx",
     "../../apps/books/reconcile.tsx",
+    "../../apps/books/reconcile_side.tsx",
     "../../apps/books/statement_read.tsx",
     "../../apps/books/statement_snapshot.tsx",
     "../../apps/books/reconcile_flags.tsx",

@@ -31,6 +31,7 @@ const REC_FILES = [
   "books/statement_read.tsx",
   "books/statement_snapshot.tsx",
   "books/reconcile.tsx",
+  "books/reconcile_side.tsx",
 ];
 const REC_SHIM = `
 const drawerEntry = signal("");
