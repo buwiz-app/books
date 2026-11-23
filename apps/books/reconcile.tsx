@@ -772,7 +772,7 @@ function MatchView() {
   return (
     <View class="gap-0">
       {/* light header: account · period, status pill, actions — no Back (the window's × closes) */}
-      <View class={`flex-row items-center gap-2 px-4 py-2 rounded-t-xl ${C.panel} border-b ${C.line}`}>
+      <View class={`flex-row flex-wrap items-center gap-2 px-4 py-2 rounded-t-xl ${C.panel} border-b ${C.line}`}>
         <View
           accessibilityLabel="Back to months"
           class={`-ml-1 px-1.5 h-7 rounded-md items-center justify-center`}
