@@ -148,7 +148,7 @@ function SnapTool(p: { label: string; onPress: () => void; disabled?: boolean; a
         if (!p.disabled) p.onPress();
       }}
     >
-      <Text class={`${p.wide ? "text-[11px] font-medium" : "text-[13px]"} text-gray-500 dark:text-gray-400`}>{p.label}</Text>
+      <Text class={`${p.wide ? "text-[11px] font-medium" : "text-[13px]"} text-gray-500 dark:text-[#a1a5b0]`}>{p.label}</Text>
     </View>
   );
 }
@@ -383,7 +383,7 @@ function SnapshotPane(p: {
               </View>
               <If when={Boolean(p.onGenerate)}>
                 <View class="items-center mt-4 pt-4 border-t border-gray-200 dark:border-white/10">
-                  <Text class="text-[11px] text-gray-500 dark:text-gray-400 mb-2">Missing the original PDF?</Text>
+                  <Text class="text-[11px] text-gray-500 dark:text-[#a1a5b0] mb-2">Missing the original PDF?</Text>
                   <View class="px-6 py-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 transition-colors cursor-pointer" accessibilityLabel="Generate Statement PDF" onPress={() => !p.generating && p.onGenerate?.()}>
                     <Text class="text-[12px] font-semibold text-blue-700 dark:text-blue-400">{p.generating ? "Generating…" : "Generate Statement PDF"}</Text>
                   </View>
@@ -403,15 +403,15 @@ function SnapshotPane(p: {
               <Each of={areasPage()} key={(a: Any) => areaKey(a)}>
                 {(a: Any) => (
                   <View
-                    class={`absolute border ${hoverArea() === areaKey(a()) ? "border-sky-500 dark:border-sky-400 bg-sky-500/10" : "border-dashed border-slate-400/70 dark:border-slate-500/60"}`}
+                    class={`absolute border ${hoverArea() === areaKey(a()) ? "border-sky-500 dark:border-sky-400 bg-sky-500/10" : "border-dashed border-slate-400/70 dark:border-[#27282f]"}`}
                     style={{ left: a().box.left, top: a().box.top, width: a().box.width, height: a().box.height }}
                     accessibilityLabel={String(a().label || a().kind || "Statement field")}
                     onMouseEnter={() => hoverArea.set(areaKey(a()))}
                     onMouseLeave={() => hoverArea.set("")}
                   >
                     <If when={hoverArea() === areaKey(a())}>
-                      <View class="absolute -top-4 left-0 rounded-sm px-1 py-px bg-slate-700/90 dark:bg-slate-200/90">
-                        <Text class="text-[9px] font-medium text-white dark:text-slate-800">{a().label || a().kind}</Text>
+                      <View class="absolute -top-4 left-0 rounded-sm px-1 py-px bg-slate-700/90 dark:bg-[#1c1d22]">
+                        <Text class="text-[9px] font-medium text-white dark:text-[#f4f5f7]">{a().label || a().kind}</Text>
                       </View>
                     </If>
                   </View>
@@ -440,7 +440,7 @@ function SnapshotPane(p: {
               {/* hover popover: quick match / create transaction */}
               <If when={Boolean(popRow())}>
                 <View
-                  class="absolute z-20 ml-2 w-[210px] rounded-lg border shadow-xl p-3 gap-2 bg-white dark:bg-[#1a1f2e]"
+                  class="absolute z-20 ml-2 w-[210px] rounded-lg border shadow-xl p-3 gap-2 bg-white dark:bg-[#141519]"
                   style={{ left: popLeft(popRow()), top: popTop(popRow()), borderColor: p.matchFor?.(popRow()) ? "#67e8f966" : "#fcd34d66" }}
                   onMouseEnter={() => popNo.set(popNo())}
                   onMouseLeave={() => {
@@ -456,7 +456,7 @@ function SnapshotPane(p: {
                   </View>
                   <View class="gap-1">
                     <Text class="text-[11px] text-gray-700 dark:text-white/70 font-medium truncate">{popRow()?.description || popRow()?.title || ""}</Text>
-                    <Text class="text-[12px] font-semibold tabular-nums text-gray-900 dark:text-white">{popRow()?.amount_shown || ""}</Text>
+                    <Text class="text-[12px] font-semibold tabular-nums text-gray-900 dark:text-[#f4f5f7]">{popRow()?.amount_shown || ""}</Text>
                   </View>
                   <If when={Boolean(p.matchFor?.(popRow()) && p.onQuickMatch)}>
                     <View

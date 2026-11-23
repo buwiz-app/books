@@ -56,7 +56,7 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
           <Panel class="w-full flex-row flex-wrap md:w-[180px] md:flex-col md:flex-nowrap p-1.5 gap-0.5">
             <Each of={SET_TABS}>
               {(t: Any) => (
-                <View class={`rounded-[7px] px-2.5 py-1.5 transition-colors ${setTab() === t()[0] ? C.raise : "hover:bg-[#f1f5f9] dark:hover:bg-slate-800"}`} onPress={() => {
+                <View class={`rounded-[7px] px-2.5 py-1.5 transition-colors ${setTab() === t()[0] ? C.raise : "hover:bg-[#f1f5f9] dark:hover:bg-[#22232a]"}`} onPress={() => {
                     err.set("");
                     setTab.set(t()[0]);
                   }}>

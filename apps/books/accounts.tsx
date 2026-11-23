@@ -412,11 +412,11 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
   };
 
   const chip = (label: string, dot: string, onX: () => void) => (
-    <View class="flex-row items-center gap-1.5 px-2.5 py-0.5 rounded-[20px] border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700">
+    <View class="flex-row items-center gap-1.5 px-2.5 py-0.5 rounded-[20px] border border-slate-300 dark:border-[#27282f] bg-slate-50 dark:bg-[#1c1d22]">
       <View class="w-2 h-2 rounded-full" style={{ backgroundColor: dot }} />
-      <Text class="text-[12px] font-semibold text-slate-700 dark:text-slate-200">{label}</Text>
+      <Text class="text-[12px] font-semibold text-slate-700 dark:text-[#f4f5f7]">{label}</Text>
       <View class="px-0.5" onPress={onX} activeStyle={{ opacity: 0.6 }}>
-        <Text class="text-[12px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">×</Text>
+        <Text class="text-[12px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-[#f4f5f7]">×</Text>
       </View>
     </View>
   );
@@ -427,7 +427,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
       onPress={onPress}
       activeStyle={{ opacity: 0.7 }}
     >
-      <View class={`w-[18px] h-[18px] rounded-[4px] border items-center justify-center ${on ? "bg-[#2a9d8f] border-[#2a9d8f]" : "border-[#d1d5db] dark:border-slate-500"}`}>
+      <View class={`w-[18px] h-[18px] rounded-[4px] border items-center justify-center ${on ? "bg-[#2a9d8f] border-[#2a9d8f]" : "border-[#d1d5db] dark:border-[#27282f]"}`}>
         <If when={on}>
           <Avatar src={ACCT_ICONS.check} class="w-3 h-3" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
         </If>
@@ -468,7 +468,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
 
   const iconBtn = (a: Any, icon: string, tip: string, onPress: () => void, extra = "") => (
     <View
-      class={`w-9 h-9 rounded-full items-center justify-center transition-colors hover:bg-slate-200/60 dark:hover:bg-slate-600 ${extra || "opacity-0 group-hover:opacity-100"}`}
+      class={`w-9 h-9 rounded-full items-center justify-center transition-colors hover:bg-slate-200/60 dark:hover:bg-[#22232a] ${extra || "opacity-0 group-hover:opacity-100"}`}
       onPress={(e: Any) => {
         e?.stopPropagation?.();
         onPress();
@@ -496,8 +496,8 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
     const hasKids = n.kids.length > 0;
     return (
       <View
-        class={`group grid grid-cols-12 items-center py-3 px-4 transition-colors border-b border-[#f0f1f3] dark:border-slate-700 ${
-          isSel() ? "bg-[#e8f4fe] dark:bg-slate-700" : "hover:bg-[#f8f9fb] dark:hover:bg-slate-800"
+        class={`group grid grid-cols-12 items-center py-3 px-4 transition-colors border-b border-[#f0f1f3] dark:border-[#27282f] ${
+          isSel() ? "bg-[#e8f4fe] dark:bg-[#1c1d22]" : "hover:bg-[#f8f9fb] dark:hover:bg-[#22232a]"
         }`}
         onPress={() => {
           selected.set(isSel() ? null : a);
@@ -633,7 +633,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
         <View class="px-5 pt-6 pb-4">
           <View class="absolute top-3 right-5 flex-row items-center gap-1">
             <View
-              class="w-7 h-7 rounded-full items-center justify-center transition-colors hover:bg-[rgba(50,73,127,0.08)] dark:hover:bg-slate-700"
+              class="w-7 h-7 rounded-full items-center justify-center transition-colors hover:bg-[rgba(50,73,127,0.08)] dark:hover:bg-[#22232a]"
               onPress={() => openCreate(String(a.kind || "unsure"), String(a.type))}
               activeStyle={{ opacity: 0.7 }}
               title="Add child category"
@@ -641,7 +641,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
               <Avatar src={ACCT_ICONS.branch} class="w-3.5 h-3.5" imageClass="tint-[#6b7c93] dark:tint-slate-400" fallbackDelay={Infinity} accessibilityLabel="Add child" />
             </View>
             <View
-              class="w-7 h-7 rounded-full items-center justify-center transition-colors hover:bg-[rgba(50,73,127,0.08)] dark:hover:bg-slate-700"
+              class="w-7 h-7 rounded-full items-center justify-center transition-colors hover:bg-[rgba(50,73,127,0.08)] dark:hover:bg-[#22232a]"
               onPress={() => openEdit(a)}
               activeStyle={{ opacity: 0.7 }}
               title="Edit"
@@ -654,7 +654,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
               <Avatar src={ACCT_ICON_PATHS[ACCT_KIND_ICON[String(a.kind || "unsure")]] || ACCT_TYPE_ICONS[String(a.type)] || ACCT_TYPE_ICONS.asset} class="w-6 h-6" imageClass={`tint-[${t[2]}] dark:tint-[${t[4]}]`} fallbackDelay={Infinity} accessibilityLabel="" />
             </View>
             <View class="flex-1 min-w-0">
-              <Text class="text-[18px] font-bold text-[#32497f] dark:text-slate-200 leading-snug">{a.name}</Text>
+              <Text class="text-[18px] font-bold text-[#32497f] dark:text-[#f4f5f7] leading-snug">{a.name}</Text>
               <If when={Boolean(a.number)}>
                 <Text class={`text-[12px] ${C.dim} mt-0.5`}>{a.number}</Text>
               </If>
@@ -664,7 +664,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
             {`${a.tag_label || acctTypeLabel(String(a.type))} · ${acctKindLabel(String(a.kind || "unsure"))}`}
           </Text>
         </View>
-        <View class="mx-4 mb-4 bg-[#f5f7fb] dark:bg-slate-800 rounded-xl p-4 flex-1">
+        <View class="mx-4 mb-4 bg-[#f5f7fb] dark:bg-[#141519] rounded-xl p-4 flex-1">
           <View class="flex-row items-center gap-2">
             <Avatar src={ACCT_ICON_PATHS[ACCT_KIND_ICON[String(a.kind || "unsure")]] || ACCT_TYPE_ICONS[String(a.type)] || ACCT_TYPE_ICONS.asset} class="w-4 h-4" imageClass={`tint-[${t[2]}] dark:tint-[${t[4]}]`} fallbackDelay={Infinity} accessibilityLabel="" />
             <Text class={`text-[13px] font-semibold ${C.ink}`}>{a.name}</Text>
@@ -865,14 +865,14 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
       {/* Two-Panel Layout */}
       <View class="flex-1 min-h-0 flex-row gap-6 px-3 pb-3 sm:px-6 sm:pb-6 overflow-hidden">
         {/* Main Panel — rounded-2xl card with teal Category Manager header */}
-        <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
+        <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-[#141519] ${C.line}`}>
           <View class="shrink-0 bg-[#2a9d8f] px-5 py-4 flex-row items-center gap-2.5">
             <Avatar src={ACCT_ICONS.folder} class="w-5 h-5" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
             <Text class="text-[16px] font-semibold text-white">Category Manager</Text>
           </View>
 
           {/* Filter bar — funnel button, chips, bare Lookup input (wraps), Clear */}
-          <View class={`shrink-0 flex-row flex-wrap items-center gap-1.5 px-4 py-3 border-b bg-white dark:bg-slate-800 ${C.line} focus-within:border-b-[#2a9d8f] transition-colors`}>
+          <View class={`shrink-0 flex-row flex-wrap items-center gap-1.5 px-4 py-3 border-b bg-white dark:bg-[#141519] ${C.line} focus-within:border-b-[#2a9d8f] transition-colors`}>
             <View
               ref={filterAnchor}
               class={`w-9 h-9 items-center justify-center rounded-md transition-colors ${
@@ -910,7 +910,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
               value={find()}
               placeholder="Lookup category..."
               onChange={(e: Any) => find.set(typeof e === "string" ? e : e.value)}
-              class="h-11 min-w-[220px] flex-1 border-none bg-transparent outline-none text-base sm:text-sm text-[#32497f] dark:text-slate-200 placeholder:text-[#6b7c93] dark:placeholder:text-slate-500"
+              class="h-11 min-w-[220px] flex-1 border-none bg-transparent outline-none text-base sm:text-sm text-[#32497f] dark:text-[#f4f5f7] placeholder:text-[#6b7c93] dark:placeholder:text-[#6e727e]"
             />
             <If when={hasFilters()}>
               <View class="px-2 py-1" onPress={clearFilters} activeStyle={{ opacity: 0.7 }}>
@@ -960,7 +960,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
           <If when={Boolean(d())}>
             <Scroll class="flex-1 min-h-0">
               {/* Column headers */}
-              <View class={`grid shrink-0 grid-cols-12 items-center border-b border-gray-200 dark:border-slate-700 px-3 py-2 sm:px-4`}>
+              <View class={`grid shrink-0 grid-cols-12 items-center border-b border-gray-200 dark:border-[#27282f] px-3 py-2 sm:px-4`}>
                 <Text class={`col-span-9 sm:col-span-6 text-[11px] font-medium uppercase tracking-wider ${C.dim}`}>Category</Text>
                 <Text class={`hidden text-center sm:col-span-3 sm:block text-[11px] font-medium uppercase tracking-wider ${C.dim}`}>Connections</Text>
                 <View class="col-span-3" />
@@ -990,11 +990,11 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
           fill
           body={() =>
             mode() !== "" || Boolean(selected()) ? (
-              <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
+              <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-[#141519] ${C.line}`}>
                 {mode() !== "" ? formCard() : detailCard()}
               </View>
             ) : (
-              <View class={`w-[360px] max-w-full rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line} shadow-[0_4px_24px_rgba(0,0,0,0.08)]`}>
+              <View class={`w-[360px] max-w-full rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-[#141519] ${C.line} shadow-[0_4px_24px_rgba(0,0,0,0.08)]`}>
                 {filterTiles()}
               </View>
             )

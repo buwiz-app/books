@@ -109,7 +109,7 @@ const REC_STATE: Record<string, { label: string; pill: string; dot: string; fill
 };
 
 const REC_TILES: { key: string; glyph: string; color: string; activeBg: string; label: (y: string) => string }[] = [
-  { key: "none", glyph: "◷", color: "#94a3b8", activeBg: "bg-slate-100 dark:bg-slate-800/40", label: () => "No Activity" },
+  { key: "none", glyph: "◷", color: "#94a3b8", activeBg: "bg-slate-100 dark:bg-[#1c1d22]", label: () => "No Activity" },
   { key: "todo", glyph: "👥", color: "#6366f1", activeBg: "bg-indigo-50 dark:bg-indigo-900/25", label: (y) => `Not Started for ${y}` },
   { key: "draft", glyph: "🗎", color: "#f59e0b", activeBg: "bg-blue-50 dark:bg-blue-900/25", label: (y) => `Drafts for ${y}` },
   { key: "done", glyph: "✓", color: "#10b981", activeBg: "bg-emerald-50 dark:bg-emerald-900/25", label: (y) => `Finalized for ${y}` },
@@ -442,7 +442,7 @@ function ReconcileAccount(p: { row: Any; onCell: (r: Any, c: Any) => void }) {
           <View class="w-7 h-7 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 items-center justify-center shrink-0">
             <Text class="text-[12px] text-emerald-500">▭</Text>
           </View>
-          <Text class="text-[13px] font-semibold text-gray-800 dark:text-white truncate">
+          <Text class="text-[13px] font-semibold text-gray-800 dark:text-[#f4f5f7] truncate">
             {r().name}
           </Text>
         </View>
@@ -793,14 +793,14 @@ function MatchView() {
         <If when={dual() && s()?.status !== "finished"}>
           <View class="flex-row rounded-lg bg-gray-100 dark:bg-white/5 p-0.5">
             <View
-              class={`px-2.5 py-1 rounded-md cursor-pointer ${recEdit() ? "" : "bg-white dark:bg-slate-700 shadow-sm"}`}
+              class={`px-2.5 py-1 rounded-md cursor-pointer ${recEdit() ? "" : "bg-white dark:bg-[#1c1d22] shadow-sm"}`}
               activeStyle={AS}
               onPress={() => recEdit.set(false)}
             >
               <Text class={`text-[11.5px] font-medium ${recEdit() ? C.dim : C.ink}`}>View</Text>
             </View>
             <View
-              class={`px-2.5 py-1 rounded-md cursor-pointer ${recEdit() ? "bg-white dark:bg-slate-700 shadow-sm" : ""}`}
+              class={`px-2.5 py-1 rounded-md cursor-pointer ${recEdit() ? "bg-white dark:bg-[#1c1d22] shadow-sm" : ""}`}
               activeStyle={AS}
               onPress={() => recEdit.set(true)}
             >
