@@ -323,10 +323,8 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
   const savedEntry = signal("");
   const busy = signal(false);
   const err = signal("");
-  const saveMenuOpen = signal(false);
   const typeMenuOpen = signal(false);
   let typeMenuAnchor: ViewRef | undefined;
-  let saveMenuAnchor: ViewRef | undefined;
   const mode = () => String(p.mode());
   const switchMode = (next: string) => {
     if (next !== mode()) {
@@ -663,7 +661,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
             accessibilityLabel="Entry type"
             class={`h-9 shrink-0 flex-row items-center gap-2 rounded-lg border ${C.line} px-3 hover:bg-[#f1f5f9] dark:hover:bg-slate-800 transition-colors`}
             activeStyle={{ opacity: 0.7 }}
-            onPress={() => { typeMenuOpen.set(!typeMenuOpen()); saveMenuOpen.set(false); }}
+            onPress={() => { typeMenuOpen.set(!typeMenuOpen()); }}
           >
             <Avatar src={modeIcon(mode())} class="w-4 h-4" imageClass="tint-[#2a9d8f] dark:tint-[#2dd4bf]" fallbackDelay={Infinity} accessibilityLabel="" />
             <Text class={`text-[13px] font-medium ${C.ink}`}>{modeName()}</Text>
@@ -675,24 +673,13 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
           <If when={!Boolean(err())}>
             <View class="flex-1" />
           </If>
-          <View ref={saveMenuAnchor} class="relative shrink-0 flex-row items-stretch">
-            <View
-              class={`items-center justify-center rounded-l-lg px-5 py-2.5 hover:bg-[#248f82] transition-colors ${busy() ? "opacity-50" : ""}`}
-              style={{ backgroundColor: "#2a9d8f" }}
-              activeStyle={{ opacity: 0.7 }}
-              onPress={() => { if (!busy()) save(false, true); }}
-            >
-              <Text class="text-[13px] font-medium text-white">{busy() ? "Saving..." : "Save & Close"}</Text>
-            </View>
-            <View
-              class="w-10 items-center justify-center rounded-r-lg border-l border-white/25 hover:bg-[#248f82] transition-colors"
-              style={{ backgroundColor: "#2a9d8f" }}
-              activeStyle={{ opacity: 0.7 }}
-              accessibilityLabel="More save options"
-              onPress={() => { saveMenuOpen.set(!saveMenuOpen()); typeMenuOpen.set(false); }}
-            >
-              <Avatar src={ICONS.chevronDown} class="w-3.5 h-3.5" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
-            </View>
+          <View
+            class={`shrink-0 items-center justify-center rounded-lg px-5 py-2.5 hover:bg-[#248f82] transition-colors ${busy() ? "opacity-50" : ""}`}
+            style={{ backgroundColor: "#2a9d8f" }}
+            activeStyle={{ opacity: 0.7 }}
+            onPress={() => { if (!busy()) save(false, false, true); }}
+          >
+            <Text class="text-[13px] font-medium text-white">{busy() ? "Saving..." : "Submit"}</Text>
           </View>
         </View>
         <View class="flex-1 flex-row gap-6 p-6 pb-20 lg:pb-4 overflow-hidden">
@@ -1418,29 +1405,6 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                 </View>
               )}
             </Each>
-          </View>
-          </Overlay>
-        </If>
-        <If when={saveMenuOpen()}>
-          <Overlay
-            anchor={saveMenuAnchor}
-            placement="bottom"
-            align="end"
-            offset={2}
-            margin={8}
-            onPressOutside={() => saveMenuOpen.set(false)}
-            onCancel={() => saveMenuOpen.set(false)}
-          >
-          <View class={`w-40 rounded-lg border py-1 shadow-lg ${C.panel} ${C.line}`}>
-            <View class="px-3 py-2 rounded-t-lg hover:bg-[#f9fafb] dark:hover:bg-slate-800 transition-colors" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false); }}>
-              <Text class="text-xs text-[#374151] dark:text-slate-200">Save</Text>
-            </View>
-            <View class="px-3 py-2 hover:bg-[#f9fafb] dark:hover:bg-slate-800 transition-colors" activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(false, false, true); }}>
-              <Text class="text-xs text-[#374151] dark:text-slate-200">Save & New</Text>
-            </View>
-            <View class={`px-3 py-2 border-t rounded-b-lg hover:bg-[#f9fafb] dark:hover:bg-slate-800 transition-colors ${C.line}`} activeStyle={{ opacity: 0.7 }} onPress={() => { saveMenuOpen.set(false); if (!busy()) save(true, true); }}>
-              <Text class="text-xs text-[#374151] dark:text-slate-200">Post</Text>
-            </View>
           </View>
           </Overlay>
         </If>

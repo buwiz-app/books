@@ -174,6 +174,9 @@ pub fn attach(books: &mut Books, name: &str, origin: Origin, args: &Map<String, 
                         kind,
                     },
                 )?;
+                if mime == "application/pdf" {
+                    crate::page_pictures::keep(tx, id)?;
+                }
                 let token = plumbing::ticket_for(tx, "evidence", id)?;
                 let e = evidence::get(tx, id)?
                     .ok_or_else(|| Refusal::new("not_found", "Evidence missing."))?;

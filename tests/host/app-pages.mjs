@@ -261,11 +261,10 @@ const pressA11y = (screen, label) => {
 };
 const openEntry = async (s, tile = "+ Money out") => {
   s.press(tile);
-  await s.until(() => s.hasText("Save & Close"), "the new entry page");
+  await s.until(() => s.hasText("Submit"), "the new entry page");
 };
-const menuSave = (s, item = "Save") => {
-  pressA11y(s, "More save options");
-  s.press(item);
+const submitEntry = (s) => {
+  s.press("Submit");
 };
 // a write call is recorded when it starts; further presses are ignored while
 // busy, so wait for the button to leave "Saving..." before pressing again
@@ -402,56 +401,24 @@ test("inbox search keeps a row the ledger matched by date", async () => {
   s.unmount();
 });
 
-test("a second save edits the draft it wrote", async () => {
+test("submit saves as draft with no dropdown and starts the next draft fresh", async () => {
   const s = await fresh({});
   await openEntry(s);
+  ok(!s.hasText("Save & Close"), "old Save & Close label still rendered");
+  ok(!s.hasText("Post"), "Post action still rendered on new entry");
   fillExpense(s);
-  menuSave(s);
-  await s.until(() => calls.filter((c) => c.tool === "books_entry_draft").length === 1, "the first draft save");
-  await settle(s);
-  menuSave(s);
-  await s.until(() => calls.filter((c) => c.tool === "books_entry_draft").length === 2, "the second draft save");
-  const drafts = calls.filter((c) => c.tool === "books_entry_draft");
-  ok(!drafts[0].args.entry, `the first save already sent entry ${drafts[0].args.entry}`);
-  ok(drafts[1].args.entry === "tkt_new1", `the second save did not edit tkt_new1: ${JSON.stringify(drafts[1].args)}`);
-  ok(!calls.some((c) => c.tool === "books_app_post_entry"), "a post went out on Save");
-  s.unmount();
-});
-
-test("post after save drafts the form's new values first", async () => {
-  const s = await fresh({});
-  await openEntry(s);
-  fillExpense(s, "100.00");
-  menuSave(s);
-  await s.until(() => calls.some((c) => c.tool === "books_entry_draft"), "the draft save");
-  await settle(s);
-  s.type("0.00", "250.00");
-  s.type("₱0.00", "250.00");
-  menuSave(s, "Post");
-  await s.until(() => calls.some((c) => c.tool === "books_app_post_entry"), "the post");
-  const edit = calls.filter((c) => c.tool === "books_entry_draft").at(-1);
-  ok(edit.args.entry === "tkt_new1" && edit.args.amount === "250.00",
-    `no draft edit carried the new amount before posting: ${JSON.stringify(edit.args)}`);
-  const post = calls.find((c) => c.tool === "books_app_post_entry");
-  ok(post.args.entry === "tkt_new1" && !("amount" in post.args) && !("allocations" in post.args),
-    `post carried form values the server ignores: ${JSON.stringify(post.args)}`);
-  const ids = calls.filter((c) => ["books_entry_draft", "books_app_post_entry"].includes(c.tool)).map((c) => c.args.client_request_id);
-  ok(ids.every(Boolean) && new Set(ids).size === ids.length, `request ids repeat: ${ids.join(", ")}`);
-  s.unmount();
-});
-
-test("save & new starts the next draft fresh", async () => {
-  const s = await fresh({});
-  await openEntry(s);
-  fillExpense(s);
-  menuSave(s, "Save & New");
+  submitEntry(s);
   await s.until(() => calls.some((c) => c.tool === "books_entry_draft"), "the first save");
   await settle(s);
   fillExpense(s, "60.00");
-  menuSave(s);
+  submitEntry(s);
   await s.until(() => calls.filter((c) => c.tool === "books_entry_draft").length === 2, "the second save");
-  const second = calls.filter((c) => c.tool === "books_entry_draft")[1];
-  ok(!second.args.entry, `Save & New left a remembered draft: ${JSON.stringify(second.args)}`);
+  const drafts = calls.filter((c) => c.tool === "books_entry_draft");
+  ok(!drafts[0].args.entry, `the first save already sent entry ${drafts[0].args.entry}`);
+  ok(!drafts[1].args.entry, `Submit left a remembered draft: ${JSON.stringify(drafts[1].args)}`);
+  ok(!calls.some((c) => c.tool === "books_app_post_entry"), "a post went out on Submit");
+  const ids = drafts.map((c) => c.args.client_request_id);
+  ok(ids.every(Boolean) && new Set(ids).size === ids.length, `request ids repeat: ${ids.join(", ")}`);
   s.unmount();
 });
 
@@ -460,34 +427,31 @@ test("a picked payee goes to the draft as person", async () => {
   await openEntry(s);
   fillExpense(s);
   pick(s, "Vendor", "tkt_ven1");
-  menuSave(s);
+  submitEntry(s);
   await s.until(() => calls.some((c) => c.tool === "books_entry_draft"), "the draft save");
   const draft = calls.find((c) => c.tool === "books_entry_draft");
   ok(draft.args.person === "tkt_ven1", `the picked vendor did not reach the draft: ${JSON.stringify(draft.args)}`);
   s.unmount();
 });
 
-test("a vendor replaced by free text leaves the saved draft", async () => {
+test("a vendor replaced by free text sends payee without person", async () => {
   const s = await fresh({});
   await openEntry(s);
   fillExpense(s);
   pick(s, "Vendor", "tkt_ven1");
-  menuSave(s);
-  await s.until(() => calls.some((c) => c.tool === "books_entry_draft"), "the draft save");
-  await settle(s);
   combos(s, "Vendor")[0].props.onQueryChange({ query: "Walk-in" });
-  menuSave(s);
-  await s.until(() => calls.filter((c) => c.tool === "books_entry_draft").length === 2, "the draft edit");
-  const edit = calls.filter((c) => c.tool === "books_entry_draft")[1];
-  ok(edit.args.entry === "tkt_new1" && edit.args.person === "" && edit.args.payee === "Walk-in",
-    `the edit did not take the vendor off: ${JSON.stringify(edit.args)}`);
+  submitEntry(s);
+  await s.until(() => calls.some((c) => c.tool === "books_entry_draft"), "the draft save");
+  const draft = calls.find((c) => c.tool === "books_entry_draft");
+  ok(!draft.args.person && draft.args.payee === "Walk-in",
+    `replacing vendor with free text did not clear person: ${JSON.stringify(draft.args)}`);
   s.unmount();
 });
 
-test("an unbalanced journal saves as draft and cannot post", async () => {
+test("an unbalanced journal saves as draft on Submit and never posts", async () => {
   const s = await fresh({});
   s.pressContaining("Any balanced set of lines");
-  await s.until(() => s.hasText("Save & Close"), "the journal page");
+  await s.until(() => s.hasText("Submit"), "the journal page");
   // each journal line renders tablet, desktop and mobile copies in that
   // order, all bound to the line's signals — the first copy of each line is
   // occurrence 0 and 3
@@ -495,12 +459,10 @@ test("an unbalanced journal saves as draft and cannot post", async () => {
   pick(s, "Account", "tkt_sup1", 3);
   inputsByLabel(s, "Debit")[0].props.onChange({ value: "100.00" });
   inputsByLabel(s, "Credit")[3].props.onChange({ value: "50.00" });
-  menuSave(s);
+  submitEntry(s);
   await s.until(() => calls.some((c) => c.tool === "books_entry_draft"), "the unbalanced draft save");
   await settle(s);
   ok(calls.find((c) => c.tool === "books_entry_draft").args.lines?.length === 2, "the draft went without its lines");
-  menuSave(s, "Post");
-  await s.until(() => s.hasText("Debits and credits must be equal before posting."), "the balance refusal");
   ok(!calls.some((c) => c.tool === "books_app_post_entry"), "an unbalanced journal posted");
   s.unmount();
 });

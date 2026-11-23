@@ -134,7 +134,7 @@ async function snapImage(key: string, account: string, month: string, page: numb
   }
   const image = { key, src: `data:${String(first.mime)};base64,${data}`, width: Number(first.width) || 0, height: Number(first.height) || 0 };
   snapKept.push({ key, image });
-  if (snapKept.length > 3) snapKept.shift();
+  if (snapKept.length > 10) snapKept.shift();
   return image;
 }
 
@@ -314,9 +314,9 @@ function SnapshotPane(p: {
           </View>
           <View class="flex-row items-center gap-1">
             <If when={pages().length > 1}>
-              <SnapTool label="‹" acc="Previous page" disabled={page() <= pages()[0]} onPress={() => p.onPage(page() - 1)} />
+              <SnapTool label="‹" acc="Previous page" disabled={page() <= pages()[0]} onPress={() => { const ps = pages(); const idx = ps.indexOf(page()); p.onPage(idx > 0 ? ps[idx - 1] : ps[0]); }} />
               <Text class="text-[11px] tabular-nums font-medium text-gray-400">{`${page()} / ${pages()[pages().length - 1] || 1}`}</Text>
-              <SnapTool label="›" acc="Next page" disabled={page() >= (pages()[pages().length - 1] || 1)} onPress={() => p.onPage(page() + 1)} />
+              <SnapTool label="›" acc="Next page" disabled={page() >= (pages()[pages().length - 1] || 1)} onPress={() => { const ps = pages(); const idx = ps.indexOf(page()); p.onPage(idx >= 0 && idx + 1 < ps.length ? ps[idx + 1] : ps[ps.length - 1]); }} />
             </If>
             <If when={Boolean(p.onScanFields)}>
               <View class="px-2 py-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/10 cursor-pointer" accessibilityLabel={paged().length > 0 ? "Re-scan" : "Scan Fields"} onPress={() => !p.scanning && p.onScanFields?.()}>
