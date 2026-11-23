@@ -653,7 +653,7 @@ function MatchView() {
         </If>
         <View class="flex-1" />
         <If when={Boolean(s()) && s()?.status !== "finished"}>
-          <View class={`${hdrBtnCls} bg-gray-100 dark:bg-white/5`} hoverStyle={{ backgroundColor: "rgba(148,163,184,0.25)" }} activeStyle={{ opacity: 0.7 }} onPress={() => call("books_app_statement_accept")}>
+          <View class={`${hdrBtnCls} bg-gray-100 dark:bg-white/5`} hoverStyle={{ backgroundColor: "rgba(148,163,184,0.25)" }} activeStyle={{ opacity: 0.7 }} onPress={() => call("books_app_statement_action", { action: "accept" })}>
             <Text class={`text-[12px] font-medium ${C.mute}`}>{`Accept ${String(s()?.suggested || 0)} suggestion${s()?.suggested === 1 ? "" : "s"}`}</Text>
           </View>
         </If>
@@ -856,10 +856,10 @@ function MatchView() {
                           </If>
                         </View>
                           <If when={r().match === "x" && s()?.status !== "finished"}>
-                          <Btn label="+ Add" small onPress={() => call("books_app_statement_add_line", { line: r().ticket })} />
+                          <Btn label="+ Add" small onPress={() => call("books_app_statement_action", { action: "add_line", line: r().ticket })} />
                         </If>
                         <If when={r().match === "s" && s()?.status !== "finished"}>
-                          <Btn label="Match" small onPress={() => call("books_app_statement_accept", { line: r().no })} />
+                          <Btn label="Match" small onPress={() => call("books_app_statement_action", { action: "accept", line: r().no })} />
                         </If>
                         <If when={r().match !== "x"}>
                           <Text class={`text-[12.5px] font-mono ${C.ink}`}>{r().books?.amount_shown || ""}</Text>

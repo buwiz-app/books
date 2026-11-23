@@ -395,10 +395,15 @@ fn statement_action_schema() -> Value {
         "properties": {
             "client_request_id": { "type": "string" }, "book": { "type": "string" },
             "account": { "type": "string" }, "month": { "type": "string" },
-            "action": { "type": "string", "enum": ["unmatch", "link", "remove", "comment"] },
+            "action": { "type": "string", "enum": ["unmatch", "link", "remove", "comment", "accept", "add_line"] },
             "line": { "type": ["string", "integer"] },
             "entry": { "type": "string" },
-            "body": { "type": "string" }
+            "body": { "type": "string" },
+            "draft": { "type": "string" },
+            "exclude": { "type": "array", "items": { "type": "integer" } },
+            "closing": { "type": "string" },
+            "dismiss": { "type": "boolean" },
+            "category": { "type": "string" }
         }
     })
 }
@@ -1505,9 +1510,19 @@ pub fn call(
                 Some("link") => reconcile::statement_link(tx, arguments),
                 Some("remove") => reconcile::statement_remove(tx, arguments),
                 Some("comment") => reconcile::statement_comment(tx, arguments),
+                Some("accept") => {
+                    if arguments.contains_key("draft") {
+                        return statement_read::accept(tx, arguments);
+                    }
+                    if crate::match_assist::is_one_line(arguments) {
+                        return crate::match_assist::accept_one(tx, arguments);
+                    }
+                    reconcile::statement_accept(tx, arguments)
+                }
+                Some("add_line") => reconcile::statement_add(tx, arguments),
                 _ => Err(Refusal::new(
                     "invalid_input",
-                    "action must be one of: unmatch, link, remove, comment.",
+                    "action must be one of: unmatch, link, remove, comment, accept, add_line.",
                 )),
             }
         }),
