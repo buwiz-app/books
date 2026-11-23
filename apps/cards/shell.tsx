@@ -75,9 +75,7 @@ function Body(p: { children?: Any; foot?: Any; center?: boolean }) {
 function Meta(p: { text: string; right?: Any }) {
   return (
     <View class="flex-row items-center gap-2 min-h-[20px]">
-      <Text class={`flex-1 text-[12px] ${C.mute}`} numberOfLines={1}>
-        {p.text}
-      </Text>
+      <Text class={`flex-1 truncate text-[12px] ${C.mute}`}>{p.text}</Text>
       {p.right || null}
     </View>
   );
@@ -95,13 +93,9 @@ function Row(p: { label: string; sub?: string; value?: string; prev?: string; te
   return (
     <View class={`flex-row items-center gap-3 min-h-[32px] py-1 border-t ${K.line}`}>
       <View class="flex-1 gap-0.5">
-        <Text class={`text-[13px] ${weight} ${C.ink}`} numberOfLines={1}>
-          {p.label}
-        </Text>
+        <Text class={`truncate text-[13px] ${weight} ${C.ink}`}>{p.label}</Text>
         <If when={Boolean(p.sub)}>
-          <Text class={`text-[12px] ${C.mute}`} numberOfLines={1}>
-            {p.sub || ""}
-          </Text>
+          <Text class={`truncate text-[12px] ${C.mute}`}>{p.sub || ""}</Text>
         </If>
       </View>
       <If when={Boolean(p.value) || p.prev !== undefined}>
@@ -111,9 +105,7 @@ function Row(p: { label: string; sub?: string; value?: string; prev?: string; te
         <Text class={`w-[96px] text-right text-[13px] font-mono ${C.mute}`}>{p.prev || ""}</Text>
       </If>
       <If when={Boolean(p.text)}>
-        <Text class={`text-[13px] ${C.ink}`} numberOfLines={1}>
-          {p.text || ""}
-        </Text>
+        <Text class={`truncate text-[13px] ${C.ink}`}>{p.text || ""}</Text>
       </If>
       {p.right || null}
     </View>
@@ -140,7 +132,7 @@ function Say(p: { text: string; dim?: boolean }) {
 function Foot(p: { status?: string; children?: Any }) {
   return (
     <View class={`flex-row items-center gap-2 px-3 py-2.5 border-t ${K.line}`}>
-      <Text class={`flex-1 text-[12px] ${toastText() ? C.red : C.mute}`} numberOfLines={1}>
+      <Text class={`flex-1 truncate text-[12px] ${toastText() ? C.red : C.mute}`}>
         {toastText() || p.status || ""}
       </Text>
       {p.children}
@@ -159,7 +151,7 @@ function Act(p: { label: string; onPress: () => void; primary?: boolean; disable
       activeStyle={{ opacity: 0.7 }}
       onPress={() => (p.disabled ? null : p.onPress())}
     >
-      <Text class={`text-[12.5px] font-medium ${p.primary ? "text-white dark:text-[#1f1f1f]" : C.ink}`} numberOfLines={1}>
+      <Text class={`truncate text-[12.5px] font-medium ${p.primary ? "text-white dark:text-[#1f1f1f]" : C.ink}`}>
         {p.label}
       </Text>
     </View>
@@ -186,9 +178,7 @@ function Settled(p: { text: string; sub?: string }) {
         <View class={`w-[18px] h-[18px] rounded-full items-center justify-center ${C.greenBg}`}>
           <Text class="text-[11px] font-bold text-white dark:text-[#0d0d0d]">✓</Text>
         </View>
-        <Text class={`flex-1 text-[13px] font-medium ${C.ink}`} numberOfLines={1}>
-          {p.text}
-        </Text>
+        <Text class={`flex-1 truncate text-[13px] font-medium ${C.ink}`}>{p.text}</Text>
       </View>
       <If when={Boolean(p.sub)}>
         <Text class={`text-[12px] ${C.mute}`}>{p.sub || ""}</Text>
