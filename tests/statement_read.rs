@@ -686,5 +686,5 @@ fn window_does_not_call_the_draft_tool() {
         .clone();
     let granted = app["permissions"]["tools"].as_array().unwrap();
     assert!(!granted.iter().any(|t| t == tools::STATEMENT_DRAFT_LINES));
-    assert!(granted.iter().any(|t| t == tools::STATEMENT_ACCEPT));
+    assert!(granted.iter().any(|t| t == tools::STATEMENT_ACTION));
 }
