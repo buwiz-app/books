@@ -210,8 +210,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
           onPress={() => p.go("today")}
           activeStyle={{ opacity: 0.7 }}
         >
-          <Text class={`text-[14px] font-medium transition-colors ${C.ink} hover:text-[#0d9488] dark:hover:text-[#2dd4bf]`}>‹</Text>
-          <Text class={`hidden sm:inline text-[14px] font-medium transition-colors ${C.ink} hover:text-[#0d9488] dark:hover:text-[#2dd4bf]`}>Back to Dashboard</Text>
+          <Text class={`text-[14px] font-medium transition-colors ${C.ink} hover:text-[#0d9488] dark:hover:text-[#2dd4bf]`}>‹ Back</Text>
         </View>
         <View
           class="h-[38px] flex-row items-center gap-1.5 rounded-full bg-[#0d9488] px-4 shadow-sm transition-colors hover:bg-[#0f766e]"
@@ -285,7 +284,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
               <Each of={rows()} key={rowKey}>
                 {(r: Any) => (
                   <View
-                    class={`flex-row items-center gap-2.5 px-4 py-3 border-b transition-colors border-b-[#f0f1f3] dark:border-slate-700 ${
+                    class={`flex-row items-center gap-2.5 px-4 py-4 md:py-3 border-b transition-colors border-b-[#f0f1f3] dark:border-slate-700 ${
                       selected()?.ticket === r().ticket ? "bg-[#e8f4fe] dark:bg-slate-700" : "hover:bg-[#f8f9fb] dark:hover:bg-slate-800"
                     }`}
                     onPress={() => pick(r())}

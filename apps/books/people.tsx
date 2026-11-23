@@ -217,7 +217,7 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
       <If when={Boolean(l())}>
         <View class="flex-row gap-3 items-start">
           <Panel class="w-[300px] p-3">
-            <View class={`flex-row items-center gap-1.5 border rounded-lg px-2.5 ${C.line} dark:border-white/10`}>
+            <View class="flex-row flex-wrap items-center gap-1.5 px-1 py-1">
               <Text class="text-[13px] text-[#94a3b8] dark:text-white/40">⌕</Text>
               <TextBox label="Search people" value={personSearch()} onChange={(v) => personSearch.set(v)} placeholder="Search for…" />
             </View>
@@ -232,9 +232,9 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
               </View>
             </View>
             <If when={peopleRows().length === 0}>
-              <View class="flex-col items-center justify-center py-10 gap-1.5">
-                <Text class="text-[32px] text-[#e2e8f0] dark:text-white/10">☺</Text>
-                <Text class="text-[13px] font-medium text-[#94a3b8] dark:text-white/40">
+              <View class="flex-col items-center justify-center py-16 gap-1.5">
+                <Text class="text-[44px] text-[#e2e8f0] dark:text-white/10 mb-2">☺</Text>
+                <Text class="text-[14px] font-medium text-[#94a3b8] dark:text-white/40">
                   {personSearch().trim() ? `No ${personKindLabel().toLowerCase()} match your search` : `No ${personKindLabel().toLowerCase()} yet`}
                 </Text>
                 <If when={!personSearch().trim() && peopleKind() !== "banks"}>
@@ -246,13 +246,13 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
               <Each of={peopleRows()} key={rowKey}>
                 {(r: Any) => (
                   <View
-                    class={`flex-row items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer ${current()?.ticket === r().ticket ? "border-[#10b981]/40 bg-[#10b981]/5 dark:bg-[#10b981]/10 shadow-sm" : "border-[#e2e8f0] dark:border-white/8 bg-white dark:bg-[#15192a] hover:shadow-md hover:border-[#a7f3d0] dark:hover:border-[#10b981]/30"}`}
+                    class={`flex-row items-center gap-3 p-3.5 rounded-xl border transition-all duration-150 cursor-pointer ${current()?.ticket === r().ticket ? "border-[#10b981]/40 bg-[#10b981]/5 dark:bg-[#10b981]/10 shadow-sm" : "border-[#e2e8f0] dark:border-white/8 bg-white dark:bg-[#15192a] hover:shadow-md hover:border-[#a7f3d0] dark:hover:border-[#10b981]/30"}`}
                     onPress={() => personPick.set(r().ticket)}
                     activeStyle={{ opacity: 0.75 }}
                   >
                     <PersonAvatar initials={r().initials} color={r().color} />
                     <View class="flex-1 gap-0.5">
-                      <Text class="text-[13px] font-medium text-[#1e293b] dark:text-white truncate">
+                      <Text class="text-[14px] font-medium text-[#1e293b] dark:text-white truncate">
                         {r().name}
                       </Text>
                       <Text class="text-[11px] text-[#94a3b8] dark:text-white/40 truncate">
@@ -266,8 +266,10 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
           </Panel>
           <If when={Boolean(d())}>
             <Panel pad class="flex-1 gap-3">
-              <View class="flex-row items-center gap-2.5">
-                <PersonAvatar initials={d()?.initials || ""} color={d()?.color || "#888888"} big />
+              <View class="flex-row items-center gap-3">
+                <View class="w-14 h-14 rounded-xl items-center justify-center shrink-0" style={{ backgroundColor: d()?.color || "#888888" }}>
+                  <Text class="text-[20px] font-bold text-white">{d()?.initials || ""}</Text>
+                </View>
                 <View class="flex-1">
                   <Text class={`text-[16px] font-bold ${C.ink}`}>{d()?.name || ""}</Text>
                   <Text class={`text-[12px] ${C.dim}`}>{d()?.sub || ""}</Text>

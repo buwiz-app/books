@@ -535,12 +535,12 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
           </View>
           <View class="flex-1 min-w-0">
             <View class="flex-row items-center gap-2 min-w-0">
-              <Text class={`text-[14px] font-semibold truncate ${a.off ? C.dim : C.ink}`}>{a.name}</Text>
+              <Text class={`text-[15px] font-semibold truncate ${a.off ? C.dim : C.ink}`}>{a.name}</Text>
               <If when={Boolean(a.number)}>
-                <Text class={`text-[12px] ${C.dim} shrink-0`}>{a.number}</Text>
+                <Text class={`text-[13px] ${C.dim} shrink-0`}>{a.number}</Text>
               </If>
             </View>
-            <Text class={`text-[12px] truncate ${a.off ? C.dim : C.mute}`}>
+            <Text class={`text-[13px] truncate ${a.off ? C.dim : C.mute}`}>
               {a.off ? "Accrual books only" : `${a.tag_label || acctTypeLabel(String(a.type))} · ${acctKindLabel(String(a.kind || "unsure"))}`}
             </Text>
           </View>
@@ -796,7 +796,7 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
             </If>
             <If when={editing}>
               <Text class={`text-[11.5px] ${C.dim} leading-snug`}>
-                Saving edits needs an account-update tool Books doesn't have yet — the form is read-only for now.
+                {"Saving edits needs an account-update tool Books doesn't have yet — the form is read-only for now."}
               </Text>
             </If>
             <View class="flex-row gap-2 pt-1">
@@ -832,8 +832,15 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
 
   return (
     <View class="flex-1 flex-col overflow-hidden relative">
-      {/* Top bar — New Category split pill (no Back row: the Bot window's × closes it) */}
-      <View class="shrink-0 flex-row items-center justify-end px-3 sm:px-6 py-2 sm:py-3">
+      {/* Top Navigation — ‹ Back + New Category split pill */}
+      <View class="shrink-0 flex-row items-center justify-between px-3 sm:px-6 py-2 sm:py-3">
+        <View
+          class="flex-row items-center gap-1.5 py-1.5 pr-2"
+          onPress={() => p.go("today")}
+          activeStyle={{ opacity: 0.7 }}
+        >
+          <Text class={`text-[14px] font-medium transition-colors ${C.ink} hover:text-[#0d9488] dark:hover:text-[#2dd4bf]`}>‹ Back</Text>
+        </View>
         <View ref={catMenuAnchor} class="relative flex-row items-stretch rounded-full bg-[#0d9488] shadow-sm">
           <View
             class="px-4 pl-5 h-[38px] flex-row items-center gap-1.5 rounded-l-full transition-colors hover:bg-[#0f766e]"
