@@ -255,6 +255,12 @@ pub fn import(
             l.amount
         ])?;
     }
+    log_activity(
+        conn,
+        id,
+        "import",
+        Some(&format!("{} lines", parsed.lines.len())),
+    )?;
     Ok(id)
 }
 
@@ -430,6 +436,9 @@ pub fn accept_suggestions(
             n += 1;
         }
     }
+    if n > 0 {
+        log_activity(conn, s.id, "match", Some(&format!("{n} suggestions")))?;
+    }
     Ok(n)
 }
 
@@ -475,7 +484,8 @@ pub fn add_line(
     line_id: i64,
     gate: Gate<'_>,
 ) -> Result<i64> {
-    let (_s, lines) = open_statement(conn, book, account_id, key)?;
+    let (s, lines) = open_statement(conn, book, account_id, key)?;
+    let line_no = lines.iter().position(|l| l.id == line_id).unwrap_or(0) + 1;
     let line = lines
         .iter()
         .find(|l| l.id == line_id)
@@ -553,6 +563,7 @@ pub fn add_line(
     let entry = entries::save_draft(conn, book, None, &draft, "app")?;
     entries::post(conn, book, entry, gate)?;
     set_match(conn, line.id, entry, "added")?;
+    log_activity(conn, s.id, "add", Some(&format!("line {line_no}")))?;
     Ok(entry)
 }
 
@@ -646,7 +657,230 @@ pub fn finish(conn: &Connection, book: &Book, account_id: i64, key: &str) -> Res
         "UPDATE statement SET status = 'finished', finished_at = ?2 WHERE statement_id = ?1",
         params![s.id, now_iso()],
     )?;
+    log_activity(conn, s.id, "finish", None)?;
     Ok(())
+}
+
+// --- statement actions ------------------------------------------------------
+
+/// One row of a statement's Activity Log, oldest first: what a person did
+/// (import, match, unmatch, add, comment, finish, reopen).
+#[derive(Debug, Clone)]
+pub struct Activity {
+    pub event: String,
+    pub detail: Option<String>,
+    pub at: String,
+}
+
+/// Record something a person did on the statement.
+pub fn log_activity(
+    conn: &Connection,
+    statement_id: i64,
+    event: &str,
+    detail: Option<&str>,
+) -> Result<()> {
+    conn.execute(
+        "INSERT INTO statement_activity (statement_id, ord, event, detail, at)
+         SELECT ?1, coalesce(max(ord), 0) + 1, ?2, ?3, ?4 FROM statement_activity WHERE statement_id = ?1",
+        params![statement_id, event, detail, now_iso()],
+    )?;
+    Ok(())
+}
+
+/// A statement's Activity Log rows, oldest first.
+pub fn activities(conn: &Connection, statement_id: i64) -> Result<Vec<Activity>> {
+    let mut stmt = conn.prepare(
+        "SELECT event, detail, at FROM statement_activity WHERE statement_id = ?1 ORDER BY ord",
+    )?;
+    let rows = stmt.query_map(params![statement_id], |r| {
+        Ok(Activity {
+            event: r.get(0)?,
+            detail: r.get(1)?,
+            at: r.get(2)?,
+        })
+    })?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
+
+/// One note a person left on a statement.
+#[derive(Debug, Clone)]
+pub struct Comment {
+    pub id: i64,
+    pub body: String,
+    pub at: String,
+}
+
+/// A statement's notes, oldest first.
+pub fn comments(conn: &Connection, statement_id: i64) -> Result<Vec<Comment>> {
+    let mut stmt = conn.prepare(
+        "SELECT comment_id, body, at FROM statement_comment WHERE statement_id = ?1 ORDER BY comment_id",
+    )?;
+    let rows = stmt.query_map(params![statement_id], |r| {
+        Ok(Comment {
+            id: r.get(0)?,
+            body: r.get(1)?,
+            at: r.get(2)?,
+        })
+    })?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
+
+/// Leave a note on a statement, finished or not. Returns the comment id.
+pub fn comment_add(
+    conn: &Connection,
+    book: &Book,
+    account_id: i64,
+    key: &str,
+    body: &str,
+) -> Result<i64> {
+    let (s, _lines) = statement(conn, book.id, account_id, key)?.ok_or_else(|| {
+        error(
+            "not_found",
+            "There is no statement for that account and month.",
+        )
+    })?;
+    let body = check_text("comment", Some(body), 500)?
+        .filter(|b| !b.trim().is_empty())
+        .ok_or_else(|| error("invalid_args", "A comment is 1 to 500 characters."))?;
+    conn.execute(
+        "INSERT INTO statement_comment (statement_id, body, at) VALUES (?1, ?2, ?3)",
+        params![s.id, body, now_iso()],
+    )?;
+    log_activity(conn, s.id, "comment", None)?;
+    Ok(conn.last_insert_rowid())
+}
+
+/// Unmatch a matched line, back to unsettled. True when a match was
+/// cleared; false when the line was already unmatched.
+pub fn unmatch_line(
+    conn: &Connection,
+    book: &Book,
+    account_id: i64,
+    key: &str,
+    line_id: i64,
+) -> Result<bool> {
+    let (s, lines) = open_statement(conn, book, account_id, key)?;
+    let Some((i, line)) = lines.iter().enumerate().find(|(_, l)| l.id == line_id) else {
+        return Err(error("not_found", "That line is not on this statement."));
+    };
+    if line.matched_entry_id.is_none() {
+        return Ok(false);
+    }
+    conn.execute(
+        "UPDATE statement_line SET matched_entry_id = NULL, match_kind = NULL WHERE line_id = ?1",
+        params![line.id],
+    )?;
+    log_activity(conn, s.id, "unmatch", Some(&format!("line {}", i + 1)))?;
+    Ok(true)
+}
+
+/// Remove an unfinalized statement with its lines, page pictures, areas,
+/// feed and notes. The uploaded document stays in the evidence library.
+pub fn remove_statement(conn: &Connection, book: &Book, account_id: i64, key: &str) -> Result<i64> {
+    let (s, _lines) = open_statement(conn, book, account_id, key)?;
+    for table in [
+        "statement_line",
+        "statement_page",
+        "statement_area",
+        "statement_activity",
+        "statement_comment",
+        "statement_event",
+    ] {
+        conn.execute(
+            &format!("DELETE FROM {table} WHERE statement_id = ?1"),
+            params![s.id],
+        )?;
+    }
+    conn.execute(
+        "DELETE FROM statement WHERE statement_id = ?1",
+        params![s.id],
+    )?;
+    Ok(s.id)
+}
+
+/// A posted or voided entry's movement on the statement's account, for the
+/// ledger list beside the statement's lines.
+#[derive(Debug, Clone)]
+pub struct LedgerEntry {
+    pub entry_id: i64,
+    pub entry_no: i64,
+    pub date: Date,
+    pub status: String,
+    pub form: String,
+    pub payee: Option<String>,
+    pub memo: Option<String>,
+    /// Debit minus credit on the account: the same sign the statement's
+    /// lines use, so a row and its ledger twin carry the same amount.
+    pub moved: i64,
+    pub debit: i64,
+    pub credit: i64,
+    pub matched_line_id: Option<i64>,
+    pub matched_line_no: Option<i64>,
+    pub match_kind: Option<String>,
+    pub match_confidence: Option<i64>,
+    pub counter_account_id: Option<i64>,
+}
+
+/// The ledger's movements on `account` in the statement's month, one row
+/// per entry, each with the statement line it is matched to when there is
+/// one.
+pub fn ledger_entries(
+    conn: &Connection,
+    book_id: i64,
+    account_id: i64,
+    statement_id: i64,
+    period: &Period,
+) -> Result<Vec<LedgerEntry>> {
+    let mut stmt = conn.prepare(
+        "SELECT e.entry_id, e.entry_no, e.entry_date, e.status, e.form, e.payee, e.memo,
+                coalesce(sum(l.debit), 0), coalesce(sum(l.credit), 0),
+                sl.line_id, sl.line_no, sl.match_kind, sl.confidence,
+                (SELECT la.account_id FROM line la WHERE la.entry_id = e.entry_id AND la.account_id != ?2 ORDER BY la.line_no LIMIT 1)
+         FROM entry e JOIN line l ON l.entry_id = e.entry_id AND l.account_id = ?2
+         LEFT JOIN statement_line sl ON sl.matched_entry_id = e.entry_id AND sl.statement_id = ?3
+         WHERE e.book_id = ?1 AND e.status IN ('posted', 'voided')
+           AND e.entry_date >= ?4 AND e.entry_date <= ?5
+         GROUP BY e.entry_id
+         ORDER BY e.entry_date, e.entry_no",
+    )?;
+    let rows = stmt.query_map(
+        params![
+            book_id,
+            account_id,
+            statement_id,
+            period.start.to_string(),
+            period.end.to_string()
+        ],
+        |r| {
+            let d: String = r.get(2)?;
+            Ok(LedgerEntry {
+                entry_id: r.get(0)?,
+                entry_no: r.get(1)?,
+                date: Date::parse(&d).unwrap_or(Date {
+                    year: 1970,
+                    month: 1,
+                    day: 1,
+                }),
+                status: r.get(3)?,
+                form: r.get(4)?,
+                payee: r.get(5)?,
+                memo: r.get(6)?,
+                debit: r.get(7)?,
+                credit: r.get(8)?,
+                moved: r.get::<_, i64>(7)? - r.get::<_, i64>(8)?,
+                matched_line_id: r.get(9)?,
+                matched_line_no: r.get(10)?,
+                match_kind: r.get(11)?,
+                match_confidence: r.get(12)?,
+                counter_account_id: r.get(13)?,
+            })
+        },
+    )?;
+    Ok(rows
+        .collect::<rusqlite::Result<Vec<_>>>()?
+        .into_iter()
+        .filter(|e| e.moved != 0 || e.matched_line_id.is_some())
+        .collect())
 }
 
 // --- recategorize -----------------------------------------------------------

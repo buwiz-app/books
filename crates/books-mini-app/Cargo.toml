@@ -124,6 +124,10 @@ name = "statement_page"
 path = "../../tests/statement_page.rs"
 
 [[test]]
+name = "statement_actions"
+path = "../../tests/statement_actions.rs"
+
+[[test]]
 name = "owed_document"
 path = "../../tests/owed_document.rs"
 

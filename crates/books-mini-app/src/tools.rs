@@ -70,6 +70,10 @@ pub const STATEMENT_IMPORT: &str = "books_app_statement_import";
 pub const STATEMENT_ACCEPT: &str = "books_app_statement_accept";
 pub const STATEMENT_ADD: &str = "books_app_statement_add_line";
 pub const STATEMENT_FINISH: &str = "books_app_statement_finish";
+pub const STATEMENT_UNMATCH: &str = "books_app_statement_unmatch";
+pub const STATEMENT_LINK: &str = "books_app_statement_link";
+pub const STATEMENT_REMOVE: &str = "books_app_statement_remove";
+pub const STATEMENT_COMMENT: &str = "books_app_statement_comment_add";
 pub const RECATEGORIZE: &str = "books_app_recategorize";
 pub const MONTH_CLOSE: &str = "books_app_month_close";
 pub const MONTH_REOPEN: &str = "books_app_month_reopen";
@@ -367,6 +371,18 @@ fn statement_write() -> Value {
         "document_upload": { "type": "string", "description": "A statement's PDF, PNG or JPEG sent in parts: kept as a bank statement document for the assistant to read. Books reads no line from it." },
         "document_mime": { "type": "string", "enum": ["application/pdf", "image/png", "image/jpeg"] },
             "entry": { "type": "string", "description": "With accept and a row `no`: the entry ticket to match that line to." }
+        }
+    })
+}
+
+fn statement_comment_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "account", "body"],
+        "properties": {
+            "client_request_id": { "type": "string" }, "book": { "type": "string" },
+            "account": { "type": "string" }, "month": { "type": "string" },
+            "body": { "type": "string", "description": "The note, 1 to 500 characters." }
         }
     })
 }
@@ -839,6 +855,34 @@ pub const TOOLS: &[Tool] = &[
         write: true,
         schema: crate::statement_flags::finish_schema,
         description: "Finish a month when every line matches and the difference is 0.00, or reopen a finished one (`reopen`) with the user's reason.",
+    },
+    Tool {
+        name: STATEMENT_UNMATCH,
+        reach: Reach::App,
+        write: true,
+        schema: statement_write,
+        description: "Unmatch a matched statement line back to unsettled after the user's click (`line`, a row's `no` or its ticket).",
+    },
+    Tool {
+        name: STATEMENT_LINK,
+        reach: Reach::App,
+        write: true,
+        schema: statement_write,
+        description: "Match one unsettled statement line to a posted entry the user picked, after the click: `line` (a row's `no` or its ticket) and `entry` (an entry ticket).",
+    },
+    Tool {
+        name: STATEMENT_REMOVE,
+        reach: Reach::App,
+        write: true,
+        schema: statement_write,
+        description: "Remove an unfinalized statement with its lines, pages, areas, feed and notes after the user's click. A finished statement must be reopened first.",
+    },
+    Tool {
+        name: STATEMENT_COMMENT,
+        reach: Reach::App,
+        write: true,
+        schema: statement_comment_schema,
+        description: "Leave a note on a statement after the user's click (`body`, 1 to 500 characters).",
     },
     Tool {
         name: RECATEGORIZE,
@@ -1419,6 +1463,18 @@ pub fn call(
         }),
         STATEMENT_FINISH => write(books, name, origin, arguments, |tx| {
             crate::statement_flags::finish_or_reopen(tx, arguments)
+        }),
+        STATEMENT_UNMATCH => write(books, name, origin, arguments, |tx| {
+            reconcile::statement_unmatch(tx, arguments)
+        }),
+        STATEMENT_LINK => write(books, name, origin, arguments, |tx| {
+            reconcile::statement_link(tx, arguments)
+        }),
+        STATEMENT_REMOVE => write(books, name, origin, arguments, |tx| {
+            reconcile::statement_remove(tx, arguments)
+        }),
+        STATEMENT_COMMENT => write(books, name, origin, arguments, |tx| {
+            reconcile::statement_comment(tx, arguments)
         }),
         RECATEGORIZE => write(books, name, origin, arguments, |tx| {
             reconcile::recategorize(tx, arguments)
