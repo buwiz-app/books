@@ -230,29 +230,29 @@ function SideAttachments() {
   return (
     <View class="p-3 gap-3">
       <View
-        class="flex-col items-center justify-center gap-2 px-4 py-6 rounded-xl border-2 border-dashed border-[#cbd5e1] cursor-pointer transition-all dark:border-slate-600 hover:border-[#2a9d8f] dark:hover:border-[#2a9d8f] hover:bg-[#f8fafb] dark:hover:bg-slate-800/50"
+        class="flex-col items-center justify-center gap-2 px-4 py-6 rounded-xl border-2 border-dashed border-[#cbd5e1] cursor-pointer transition-all dark:border-[#27282f] hover:border-[#2a9d8f] dark:hover:border-[#2a9d8f] hover:bg-[#f8fafb] dark:hover:bg-[#22232a]"
         accessibilityLabel="Browse for an attachment"
         onPress={() => sideUpload()}
         activeStyle={{ opacity: 0.75 }}
       >
-        <View class="w-10 h-10 rounded-full flex items-center justify-center bg-[#f1f5f9] dark:bg-slate-800">
+        <View class="w-10 h-10 rounded-full flex items-center justify-center bg-[#f1f5f9] dark:bg-[#141519]">
           <Avatar src={SIDE_GLYPHS.upload} accessibilityLabel="" class="w-5 h-5" fallbackDelay={Infinity} />
         </View>
         <View class="items-center">
           <Text class="text-[12px] font-medium text-[#2a9d8f]">{entryStagedBusy() ? "Uploading…" : "Browse"}</Text>
-          <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">Images or PDF — max 50MB</Text>
+          <Text class="text-[9px] text-[#94a3b8] dark:text-[#6e727e]">Images or PDF — max 50MB</Text>
         </View>
       </View>
       <If when={entryStaged().length > 0}>
         <Each of={entryStaged()} key={rowKey}>
           {(d: Any, i: Any) => (
-            <View class="group flex-row items-center gap-2.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 hover:border-[#2a9d8f]/40 dark:hover:border-[#2a9d8f]/40 transition-colors">
+            <View class="group flex-row items-center gap-2.5 px-3 py-2 rounded-lg bg-white dark:bg-[#141519] border border-[#e2e8f0] dark:border-[#27282f] hover:border-[#2a9d8f]/40 dark:hover:border-[#2a9d8f]/40 transition-colors">
               <View class="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 items-center justify-center shrink-0">
                 <Avatar src={String(d().mime).startsWith("image/") ? SIDE_GLYPHS.image : SIDE_GLYPHS.file} accessibilityLabel="" class="w-4 h-4" fallbackDelay={Infinity} />
               </View>
               <View class="flex-1 min-w-0 gap-0.5">
-                <Text class="text-[10px] font-medium text-[#1e293b] dark:text-white truncate">{d().filename}</Text>
-                <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">{sideBytesShown(d().size)}</Text>
+                <Text class="text-[10px] font-medium text-[#1e293b] dark:text-[#f4f5f7] truncate">{d().filename}</Text>
+                <Text class="text-[9px] text-[#94a3b8] dark:text-[#6e727e]">{sideBytesShown(d().size)}</Text>
               </View>
               <View
                 class="w-7 h-7 rounded-md items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer shrink-0 opacity-60 group-hover:opacity-100"
@@ -267,19 +267,19 @@ function SideAttachments() {
         </Each>
       </If>
       <View
-        class="flex-row items-center justify-center gap-1.5 px-3 py-2 rounded-lg group border border-[#e2e8f0] dark:border-white/10 hover:bg-[#f8fafc] dark:hover:bg-white/5 transition-colors cursor-pointer"
+        class="flex-row items-center justify-center gap-1.5 px-3 py-2 rounded-lg group border border-[#e2e8f0] dark:border-[#27282f] hover:bg-[#f8fafc] dark:hover:bg-[#22232a] transition-colors cursor-pointer"
         accessibilityLabel="Browse existing documents"
         onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)}
         activeStyle={{ opacity: 0.7 }}
       >
         <Avatar src={SIDE_GLYPHS.folder} accessibilityLabel="" class="w-4 h-4" fallbackDelay={Infinity} />
-        <Text class="text-xs font-medium text-[#64748b] dark:text-white/50 group-hover:text-[#1e293b] dark:group-hover:text-white">Browse existing documents</Text>
+        <Text class="text-xs font-medium text-[#64748b] dark:text-[#f4f5f7]/50 group-hover:text-[#1e293b] dark:group-hover:text-[#f4f5f7]">Browse existing documents</Text>
       </View>
       <If when={entryStaged().length === 0}>
         <View class="flex-1 flex-col items-center justify-center py-8 opacity-60 gap-0">
           <Avatar src={SIDE_GLYPHS.fileBig} accessibilityLabel="" class="w-7 h-7 mb-2" fallbackDelay={Infinity} />
-          <Text class="text-[10px] font-medium text-[#94a3b8] dark:text-slate-500">No attachments yet</Text>
-          <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500 mt-0.5">Drop receipts, invoices, or documents</Text>
+          <Text class="text-[10px] font-medium text-[#94a3b8] dark:text-[#6e727e]">No attachments yet</Text>
+          <Text class="text-[9px] text-[#94a3b8] dark:text-[#6e727e] mt-0.5">Drop receipts, invoices, or documents</Text>
         </View>
       </If>
     </View>
@@ -308,7 +308,7 @@ function SideChatFile(p: { d: Any }) {
   }
   return (
     <View
-      class="flex-row items-center gap-2 max-w-[85%] px-2.5 py-2 rounded-lg bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 hover:border-[#2a9d8f]/40 dark:hover:border-[#2a9d8f]/40 transition-colors cursor-pointer"
+      class="flex-row items-center gap-2 max-w-[85%] px-2.5 py-2 rounded-lg bg-white dark:bg-[#141519] border border-[#e2e8f0] dark:border-[#27282f] hover:border-[#2a9d8f]/40 dark:hover:border-[#2a9d8f]/40 transition-colors cursor-pointer"
       accessibilityLabel={`Preview ${d.filename}`}
       onPress={() => sidePreview()}
       activeStyle={{ opacity: 0.8 }}
@@ -317,8 +317,8 @@ function SideChatFile(p: { d: Any }) {
         <Avatar src={SIDE_GLYPHS.file} accessibilityLabel="" class="w-4 h-4" fallbackDelay={Infinity} />
       </View>
       <View class="flex-1 min-w-0 gap-0.5">
-        <Text class="text-[10px] font-medium text-[#1e293b] dark:text-white truncate">{d.filename}</Text>
-        <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">{`${SIDE_MIME[d.mime] || "File"} · ${sideBytesShown(d.size)}`}</Text>
+        <Text class="text-[10px] font-medium text-[#1e293b] dark:text-[#f4f5f7] truncate">{d.filename}</Text>
+        <Text class="text-[9px] text-[#94a3b8] dark:text-[#6e727e]">{`${SIDE_MIME[d.mime] || "File"} · ${sideBytesShown(d.size)}`}</Text>
       </View>
     </View>
   );
@@ -578,7 +578,7 @@ function SideMdLine(p: { line: string }) {
       <Each of={sideMdSegs(p.line)}>
         {(s: Any) => (
           <Text
-            class={`text-[12px] leading-relaxed ${s().b ? "font-semibold text-[#0f172a] dark:text-white" : s().c ? "font-mono text-[11px] bg-[#f1f5f9] dark:bg-slate-700 px-1 rounded" : "text-[#1e293b] dark:text-slate-200"}`}
+            class={`text-[12px] leading-relaxed ${s().b ? "font-semibold text-[#0f172a] dark:text-[#f4f5f7]" : s().c ? "font-mono text-[11px] bg-[#f1f5f9] dark:bg-[#1c1d22] px-1 rounded" : "text-[#1e293b] dark:text-[#f4f5f7]"}`}
           >
             {s().t}
           </Text>
@@ -594,8 +594,8 @@ function SideMd(p: { text: string }) {
       <Each of={sideMdBlocks(p.text)}>
         {(b: Any, i: Any) =>
           b().type === "code" ? (
-            <View class="rounded-lg bg-[#f1f5f9] dark:bg-slate-700/60 px-2.5 py-2">
-              <Text class="font-mono text-[11px] text-[#1e293b] dark:text-slate-200">{b().text}</Text>
+            <View class="rounded-lg bg-[#f1f5f9] dark:bg-[#1c1d22] px-2.5 py-2">
+              <Text class="font-mono text-[11px] text-[#1e293b] dark:text-[#f4f5f7]">{b().text}</Text>
             </View>
           ) : b().type === "ul" ? (
             <View class="gap-0.5">
@@ -660,15 +660,15 @@ function SideModelCard() {
     const on = () => sideModel() === String(m.id);
     return (
       <View
-        class={`flex-row items-center gap-2.5 h-8 px-2.5 rounded-lg cursor-pointer ${on() ? "bg-[#1e86fc]/10" : "hover:bg-black/[0.04] dark:hover:bg-white/5"}`}
+        class={`flex-row items-center gap-2.5 h-8 px-2.5 rounded-lg cursor-pointer ${on() ? "bg-[#1e86fc]/10" : "hover:bg-black/[0.04] dark:hover:bg-[#22232a]"}`}
         accessibilityLabel={String(m.name)}
         onPress={() => sidePickModel(String(m.id), String(m.default_effort || ""))}
         activeStyle={{ opacity: 0.7 }}
       >
         <If when={Boolean(sideModelLogo(m))}>
-          <Avatar src={sideModelLogo(m)} accessibilityLabel="" class="w-4 h-4" imageClass={on() ? "tint-[#1e86fc]" : "tint-[#64748b] dark:tint-slate-300"} fallbackDelay={Infinity} />
+          <Avatar src={sideModelLogo(m)} accessibilityLabel="" class="w-4 h-4" imageClass={on() ? "tint-[#1e86fc]" : "tint-[#64748b] dark:tint-[#a1a5b0]"} fallbackDelay={Infinity} />
         </If>
-        <Text class={`flex-1 truncate text-[12px] ${on() ? "text-[#1e86fc] font-medium" : "text-[#1e293b] dark:text-slate-200"}`}>{m.name}</Text>
+        <Text class={`flex-1 truncate text-[12px] ${on() ? "text-[#1e86fc] font-medium" : "text-[#1e293b] dark:text-[#f4f5f7]"}`}>{m.name}</Text>
         <If when={on()}>
           <Avatar src={SIDE_GLYPHS.check} accessibilityLabel="" class="w-3.5 h-3.5" fallbackDelay={Infinity} />
         </If>
@@ -681,8 +681,8 @@ function SideModelCard() {
       {/* Anchored under the model chip the way models.rs centers the popover on the
           trigger (left = trigger_center - w/2, clamped to 8px): 214 puts its left
           edge at exactly 8px in a 490px window and under the trigger cluster wide. */}
-      <View class="absolute right-[214px] bottom-[148px] w-[268px] max-w-[calc(100%-16px)] rounded-xl bg-white dark:bg-[#1f1f1f] border border-[#e2e8f0] dark:border-slate-700 shadow-[0_10px_24px_-6px_rgba(0,0,0,0.45)] overflow-hidden">
-        <View class="flex-row items-center gap-1.5 h-8 mx-2 mt-2 px-2 rounded-lg bg-[#f1f5f9] dark:bg-slate-800">
+      <View class="absolute right-[214px] bottom-[148px] w-[268px] max-w-[calc(100%-16px)] rounded-xl bg-white dark:bg-[#1c1d22] border border-[#e2e8f0] dark:border-[#27282f] shadow-[0_10px_24px_-6px_rgba(0,0,0,0.45)] overflow-hidden">
+        <View class="flex-row items-center gap-1.5 h-8 mx-2 mt-2 px-2 rounded-lg bg-[#f1f5f9] dark:bg-[#141519]">
           <Avatar src={SIDE_GLYPHS.search} accessibilityLabel="" class="w-3.5 h-3.5" fallbackDelay={Infinity} />
           <Input
             ref={(e: Any) => {
@@ -694,13 +694,13 @@ function SideModelCard() {
             value={sidePickerQ()}
             placeholder="Search models…"
             onChange={(e: Any) => sidePickerQ.set(typeof e === "string" ? e : e.value)}
-            class="flex-1 text-[12px] bg-transparent border-none outline-none placeholder:text-[#8e8e93] text-[#0f172a] dark:text-slate-100 focus:outline-none focus:ring-0"
+            class="flex-1 text-[12px] bg-transparent border-none outline-none placeholder:text-[#8e8e93] text-[#0f172a] dark:text-[#f4f5f7] focus:outline-none focus:ring-0"
           />
         </View>
         <Scroll class="max-h-64 p-1.5">
           <If when={!q() && Boolean(sideModels()?.default)}>
             <View
-              class={`px-2.5 py-1.5 rounded-lg cursor-pointer ${sideModel() === "" ? "bg-[#1e86fc]/10" : "hover:bg-black/[0.04] dark:hover:bg-white/5"}`}
+              class={`px-2.5 py-1.5 rounded-lg cursor-pointer ${sideModel() === "" ? "bg-[#1e86fc]/10" : "hover:bg-black/[0.04] dark:hover:bg-[#22232a]"}`}
               accessibilityLabel="Default model"
               onPress={() => {
                 sidePickModel("", "");
@@ -709,38 +709,38 @@ function SideModelCard() {
               activeStyle={{ opacity: 0.7 }}
             >
               <View class="flex-row items-center">
-                <Text class={`flex-1 text-[12px] font-medium ${sideModel() === "" ? "text-[#1e86fc]" : "text-[#1e293b] dark:text-slate-200"}`}>Default</Text>
+                <Text class={`flex-1 text-[12px] font-medium ${sideModel() === "" ? "text-[#1e86fc]" : "text-[#1e293b] dark:text-[#f4f5f7]"}`}>Default</Text>
                 <If when={sideModel() === ""}>
                   <Avatar src={SIDE_GLYPHS.check} accessibilityLabel="" class="w-3.5 h-3.5" fallbackDelay={Infinity} />
                 </If>
               </View>
-              <Text class="text-[10px] text-[#94a3b8] dark:text-slate-500">{`Recommended · ${sideModelInfo(String(sideModels()?.default || ""))?.name || "the Bot's default"}`}</Text>
+              <Text class="text-[10px] text-[#94a3b8] dark:text-[#6e727e]">{`Recommended · ${sideModelInfo(String(sideModels()?.default || ""))?.name || "the Bot's default"}`}</Text>
             </View>
           </If>
           <Each of={subs()}>{(m: Any) => row(m())}</Each>
           <Each of={groups()}>
             {(g: Any) => (
               <View>
-                <View class="h-px mx-1.5 my-1 bg-[#e2e8f0] dark:bg-slate-700" />
-                <Text class="px-2.5 pt-0.5 pb-1 text-[10px] text-[#94a3b8] dark:text-slate-500">{g()[0]}</Text>
+                <View class="h-px mx-1.5 my-1 bg-[#e2e8f0] dark:bg-[#1c1d22]" />
+                <Text class="px-2.5 pt-0.5 pb-1 text-[10px] text-[#94a3b8] dark:text-[#6e727e]">{g()[0]}</Text>
                 <Each of={g()[1]}>{(m: Any) => row(m())}</Each>
               </View>
             )}
           </Each>
           <If when={list().length === 0}>
-            <Text class="p-2 text-[11px] text-[#94a3b8] dark:text-slate-500">{sideModels() ? "No models match" : "Loading models…"}</Text>
+            <Text class="p-2 text-[11px] text-[#94a3b8] dark:text-[#6e727e]">{sideModels() ? "No models match" : "Loading models…"}</Text>
           </If>
         </Scroll>
         <If when={efforts().length > 0}>
-          <View class="border-t border-[#e2e8f0] dark:border-slate-700 p-1.5">
-            <Text class="px-2.5 pb-1 text-[10px] text-[#94a3b8] dark:text-slate-500">Effort</Text>
+          <View class="border-t border-[#e2e8f0] dark:border-[#27282f] p-1.5">
+            <Text class="px-2.5 pb-1 text-[10px] text-[#94a3b8] dark:text-[#6e727e]">Effort</Text>
             <Each of={efforts()}>
               {(e: Any, i: Any) => {
                 const top = efforts().length > 1 && i() === efforts().length - 1;
                 const on = () => sideEffort() === e().value;
                 return (
                   <View
-                    class={`flex-row items-center h-8 px-2.5 rounded-lg cursor-pointer ${on() ? "bg-[#1e86fc]/10" : "hover:bg-black/[0.04] dark:hover:bg-white/5"}`}
+                    class={`flex-row items-center h-8 px-2.5 rounded-lg cursor-pointer ${on() ? "bg-[#1e86fc]/10" : "hover:bg-black/[0.04] dark:hover:bg-[#22232a]"}`}
                     accessibilityLabel={`Effort ${e().label}`}
                     onPress={() => {
                       sidePickModel(sideModel(), String(e().value));
@@ -748,7 +748,7 @@ function SideModelCard() {
                     }}
                     activeStyle={{ opacity: 0.7 }}
                   >
-                    <Text class={`flex-1 text-[12px] ${on() ? (top ? "text-[#a78bfa]" : "text-[#1e86fc]") : "text-[#1e293b] dark:text-slate-200"}`}>{e().label}</Text>
+                    <Text class={`flex-1 text-[12px] ${on() ? (top ? "text-[#a78bfa]" : "text-[#1e86fc]") : "text-[#1e293b] dark:text-[#f4f5f7]"}`}>{e().label}</Text>
                     <If when={on()}>
                       <Avatar src={SIDE_GLYPHS.check} accessibilityLabel="" class="w-3.5 h-3.5" fallbackDelay={Infinity} />
                     </If>
@@ -779,8 +779,8 @@ function SideAssistant() {
         <If when={msgs().length === 0}>
           <View class="flex-1 flex-col items-center justify-center py-10 gap-2">
             <Avatar src={SIDE_GLYPHS.sparkle} accessibilityLabel="" class="w-8 h-8" fallbackDelay={Infinity} />
-            <Text class="text-[12px] font-medium text-[#64748b] dark:text-slate-400">Ask the assistant</Text>
-            <Text class="text-[10px] text-[#94a3b8] dark:text-slate-500 text-center px-3">Describe a transaction, or attach a receipt or bill. The assistant drafts it; you post it.</Text>
+            <Text class="text-[12px] font-medium text-[#64748b] dark:text-[#a1a5b0]">Ask the assistant</Text>
+            <Text class="text-[10px] text-[#94a3b8] dark:text-[#6e727e] text-center px-3">Describe a transaction, or attach a receipt or bill. The assistant drafts it; you post it.</Text>
           </View>
         </If>
         <Each of={msgs()} key={rowKey}>
@@ -793,36 +793,36 @@ function SideAssistant() {
                   </View>
                 </If>
                 <If when={!m().error}>
-                  <Text class="text-[10px] text-[#94a3b8] dark:text-slate-500 text-center">{m().text}</Text>
+                  <Text class="text-[10px] text-[#94a3b8] dark:text-[#6e727e] text-center">{m().text}</Text>
                 </If>
               </View>
             ) : m().role === "assistant" ? (
               <View class="items-start gap-1 py-1">
                 <If when={Boolean(m().streaming) && !m().text}>
-                  <View class="flex-row items-center gap-1 px-3 py-2 rounded-2xl rounded-bl-md bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700">
+                  <View class="flex-row items-center gap-1 px-3 py-2 rounded-2xl rounded-bl-md bg-white dark:bg-[#141519] border border-[#e2e8f0] dark:border-[#27282f]">
                     <Each of={[0, 1, 2]}>{(d: Any) => <View class="w-1.5 h-1.5 rounded-full bg-[#94a3b8]" />}</Each>
                   </View>
                 </If>
                 <If when={Boolean(m().text)}>
-                  <View class="max-w-[92%] bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 rounded-2xl rounded-bl-md px-3 py-2">
+                  <View class="max-w-[92%] bg-white dark:bg-[#141519] border border-[#e2e8f0] dark:border-[#27282f] rounded-2xl rounded-bl-md px-3 py-2">
                     <SideMd text={m().text} />
                   </View>
                 </If>
                 <If when={Boolean(m().stopped)}>
                   <View class="flex-row items-center gap-2">
-                    <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">Stopped</Text>
+                    <Text class="text-[9px] text-[#94a3b8] dark:text-[#6e727e]">Stopped</Text>
                     <View
-                      class="px-2 py-0.5 rounded-md bg-[#f1f5f9] dark:bg-slate-700 cursor-pointer"
+                      class="px-2 py-0.5 rounded-md bg-[#f1f5f9] dark:bg-[#1c1d22] cursor-pointer"
                       accessibilityLabel="Retry"
                       onPress={() => sideRetry(m().id)}
                       activeStyle={{ opacity: 0.7 }}
                     >
-                      <Text class="text-[10px] font-medium text-[#64748b] dark:text-slate-300">Retry</Text>
+                      <Text class="text-[10px] font-medium text-[#64748b] dark:text-[#a1a5b0]">Retry</Text>
                     </View>
                   </View>
                 </If>
                 <If when={Boolean(m().at) && !m().stopped}>
-                  <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">{m().streaming ? "…" : m().at}</Text>
+                  <Text class="text-[9px] text-[#94a3b8] dark:text-[#6e727e]">{m().streaming ? "…" : m().at}</Text>
                 </If>
               </View>
             ) : m().role === "error" ? (
@@ -850,7 +850,7 @@ function SideAssistant() {
                   </View>
                 </If>
                 <If when={Boolean(m().at)}>
-                  <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">{m().at}</Text>
+                  <Text class="text-[9px] text-[#94a3b8] dark:text-[#6e727e]">{m().at}</Text>
                 </If>
               </View>
             )
@@ -861,26 +861,26 @@ function SideAssistant() {
         <Each of={SIDE_ASK}>
           {(q: Any) => (
             <View
-              class="px-2 py-1 rounded-full bg-[#f1f5f9] dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 hover:bg-[#e2e8f0] dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              class="px-2 py-1 rounded-full bg-[#f1f5f9] dark:bg-[#141519] border border-[#e2e8f0] dark:border-[#27282f] hover:bg-[#e2e8f0] dark:hover:bg-[#22232a] transition-colors cursor-pointer"
               onPress={() => { sideComposer.set(q()[1]); sidePromptError.set(""); }}
               activeStyle={{ opacity: 0.7 }}
             >
-              <Text class="text-[10px] font-medium text-[#475569] dark:text-slate-400">{q()[0]}</Text>
+              <Text class="text-[10px] font-medium text-[#475569] dark:text-[#a1a5b0]">{q()[0]}</Text>
             </View>
           )}
         </Each>
       </View>
-      <View class="p-3 border-t border-[#e2e8f0] dark:border-slate-700">
+      <View class="p-3 border-t border-[#e2e8f0] dark:border-[#27282f]">
         <If when={sideApi() && sideCatalogEmpty()}>
-          <Text class="text-xs text-[#94a3b8] dark:text-slate-500 pb-2">No AI models available. Connect one in Buwiz Bot settings.</Text>
+          <Text class="text-xs text-[#94a3b8] dark:text-[#6e727e] pb-2">No AI models available. Connect one in Buwiz Bot settings.</Text>
         </If>
-        <View class="rounded-xl border border-[#e2e8f0] dark:border-slate-600 bg-[#f8f9fb] dark:bg-slate-800 px-3 py-2 gap-2 focus-within:border-[#2a9d8f] focus-within:ring-1 focus-within:ring-[#2a9d8f] transition-colors">
+        <View class="rounded-xl border border-[#e2e8f0] dark:border-[#27282f] bg-[#f8f9fb] dark:bg-[#141519] px-3 py-2 gap-2 focus-within:border-[#2a9d8f] focus-within:ring-1 focus-within:ring-[#2a9d8f] transition-colors">
           <If when={sideFiles().length > 0}>
             <View class="flex-row gap-1.5 flex-wrap">
               <Each of={sideFiles()} key={rowKey}>
                 {(f: Any, i: Any) => (
-                  <View class="flex-row items-center gap-1 px-2 py-1 rounded-md bg-white dark:bg-slate-700 border border-[#e2e8f0] dark:border-slate-600">
-                    <Text class="text-[9px] font-medium text-[#475569] dark:text-slate-300 max-w-24 truncate">{f().filename}</Text>
+                  <View class="flex-row items-center gap-1 px-2 py-1 rounded-md bg-white dark:bg-[#1c1d22] border border-[#e2e8f0] dark:border-[#27282f]">
+                    <Text class="text-[9px] font-medium text-[#475569] dark:text-[#a1a5b0] max-w-24 truncate">{f().filename}</Text>
                     <View
                       class="w-3.5 h-3.5 rounded items-center justify-center cursor-pointer"
                       accessibilityLabel="Remove file"
@@ -902,12 +902,12 @@ function SideAssistant() {
             submitBehavior="submit"
             onSubmit={() => sideSend()}
             onChange={(e: Any) => { sideComposer.set(typeof e === "string" ? e : e.value); sidePromptError.set(""); }}
-            class="w-full min-h-6 max-h-28 text-[13px] bg-transparent border-none outline-none placeholder:text-[#8e8e93] text-[#0f172a] dark:text-slate-100 focus:outline-none focus:ring-0"
+            class="w-full min-h-6 max-h-28 text-[13px] bg-transparent border-none outline-none placeholder:text-[#8e8e93] text-[#0f172a] dark:text-[#f4f5f7] focus:outline-none focus:ring-0"
           />
           <View class="flex-row items-center justify-between">
             <View class="flex-row items-center gap-1">
               <View
-                class={`w-7 h-7 rounded-lg items-center justify-center transition-colors ${filesOk() ? "hover:bg-[#f1f5f9] dark:hover:bg-slate-700 cursor-pointer" : "opacity-40"}`}
+                class={`w-7 h-7 rounded-lg items-center justify-center transition-colors ${filesOk() ? "hover:bg-[#f1f5f9] dark:hover:bg-[#22232a] cursor-pointer" : "opacity-40"}`}
                 accessibilityLabel={filesOk() ? "Attach a receipt or bill" : "This model takes text only"}
                 onPress={() => filesOk() && sidePickForChat()}
                 activeStyle={{ opacity: 0.7 }}
@@ -916,7 +916,7 @@ function SideAssistant() {
               </View>
               <If when={sideApi() && !sideCatalogEmpty()}>
                 <View
-                  class="flex-row items-center gap-1 h-7 pl-1.5 pr-2 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  class="flex-row items-center gap-1 h-7 pl-1.5 pr-2 rounded-full bg-black/[0.04] dark:bg-[#1c1d22] hover:bg-black/[0.08] dark:hover:bg-[#22232a] transition-colors cursor-pointer"
                   accessibilityLabel="Select model"
                   onPress={() => {
                     sideLoadModels();
@@ -925,9 +925,9 @@ function SideAssistant() {
                   activeStyle={{ opacity: 0.7 }}
                 >
                   <If when={Boolean(sideModelLogo(sideShownModel()))}>
-                    <Avatar src={sideModelLogo(sideShownModel())} accessibilityLabel="" class="w-3.5 h-3.5" imageClass="tint-[#334155] dark:tint-slate-300" fallbackDelay={Infinity} />
+                    <Avatar src={sideModelLogo(sideShownModel())} accessibilityLabel="" class="w-3.5 h-3.5" imageClass="tint-[#334155] dark:tint-[#a1a5b0]" fallbackDelay={Infinity} />
                   </If>
-                  <Text class="text-[11px] text-[#334155] dark:text-slate-300">{sideShownModel()?.name || "Default"}</Text>
+                  <Text class="text-[11px] text-[#334155] dark:text-[#a1a5b0]">{sideShownModel()?.name || "Default"}</Text>
                   <If when={Boolean(sideEffortLabel())}>
                     <Text class={`text-[11px] ${sideTopEffort() ? "text-[#a78bfa]" : "text-[#1e86fc]"}`}>{sideEffortLabel()}</Text>
                   </If>
@@ -979,7 +979,7 @@ function SideActivity() {
         <View class="gap-0.5">
           <Text class={`text-[12px] ${C.ink}`}>
             <Text class="font-medium">User</Text>
-            <Text class="text-[#94a3b8] dark:text-slate-500"> Just now</Text>
+            <Text class="text-[#94a3b8] dark:text-[#6e727e]"> Just now</Text>
           </Text>
           <Text class={`text-[11px] ${C.mute}`}>Creating transaction.</Text>
         </View>
@@ -992,8 +992,8 @@ function SideActivity() {
 function EntrySide() {
   const side = entrySide;
   return (
-    <View class="w-full shrink-0 rounded-[24px] border border-[#e2e8f0] dark:border-slate-600 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex-col h-full bg-white dark:bg-slate-800">
-      <View class={`flex-row justify-evenly px-4 py-3 gap-2 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
+    <View class="w-full shrink-0 rounded-[24px] border border-[#e2e8f0] dark:border-[#27282f] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex-col h-full bg-white dark:bg-[#141519]">
+      <View class={`flex-row justify-evenly px-4 py-3 gap-2 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#12452b] dark:to-[#18663e]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
         <Each of={["attachments", "ai", "activity"]}>
           {(t: Any) => (
             <View
