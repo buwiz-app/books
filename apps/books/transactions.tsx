@@ -952,8 +952,18 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
             <View class="w-8" />
           </View>
 
-          {/* Date navigator — DateRangeNavigator */}
-          <View class="flex-row items-center gap-2 bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] px-2 py-2.5 sm:px-5 dark:from-[#145a30] dark:to-[#1e8c4c]">
+          {/* Outside-click scrim — dismisses the split Add menu and the
+              Filters dropdown, like the old app's overlays. */}
+          <If when={txSplitOpen() || txFiltersOpen()}>
+            <View
+              class="fixed inset-0 z-40"
+              onPress={() => { txSplitOpen.set(false); txFiltersOpen.set(false); }}
+            />
+          </If>
+
+          {/* Date navigator — DateRangeNavigator. z-50 keeps the split Add
+              menu above the search row's z-40. */}
+          <View class="relative z-50 flex-row items-center gap-2 bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] px-2 py-2.5 sm:px-5 dark:from-[#145a30] dark:to-[#1e8c4c]">
             <View class="flex-row items-center rounded-lg bg-white/10 shrink-0">
               <View
                 class={`w-8 h-8 items-center justify-center rounded-l-lg transition-colors ${month().prev ? "cursor-pointer hover:bg-white/10" : ""}`}
@@ -1084,7 +1094,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                   </If>
                   <View
                     accessibilityLabel="Close filters"
-                    class="w-6 h-6 rounded items-center justify-center cursor-pointer transition-colors hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
+                    class="w-7 h-7 rounded items-center justify-center cursor-pointer transition-colors hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
                     onPress={() => txFiltersOpen.set(false)}
                   >
                     <Avatar src={TX_ICONS.x} class="w-3 h-3" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
@@ -1212,7 +1222,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
             </If>
             <If when={Boolean(txData()) && !txAccount() && txVisibleGroups().length === 0}>
               <View class="items-center gap-4 px-4 py-12">
-                <Text class="text-sm text-slate-500 dark:text-slate-400">No transactions found matching your filters.</Text>
+                <Text class="text-sm text-slate-500 dark:text-slate-400">{txHasFilters() ? "No transactions found matching your filters." : "No transactions in this month."}</Text>
                 <View class="flex-row items-center gap-2">
                   <If when={txHasFilters()}>
                     <Btn label="Clear filters" onPress={txClearFilters} />
@@ -1225,7 +1235,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
             </If>
             <If when={Boolean(txData()) && Boolean(txAccount()) && rows().length === 0}>
               <View class="items-center gap-4 px-4 py-12">
-                <Text class="text-sm text-slate-500 dark:text-slate-400">No transactions found matching your filters.</Text>
+                <Text class="text-sm text-slate-500 dark:text-slate-400">{txHasFilters() ? "No transactions found matching your filters." : "No transactions in this month."}</Text>
                 <If when={txHasFilters()}>
                   <Btn label="Clear filters" onPress={txClearFilters} />
                 </If>
