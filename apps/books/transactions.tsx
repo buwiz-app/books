@@ -624,7 +624,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
   };
   // Voidable = posted and not itself a reversal (the entry drawer's rule);
   // drafts go through one atomic books_app_batch "discard".
-  const voidables = () => selRows().filter((r) => r.status === "posted" && !r.reversal);
+  const voidables = () => selRows().filter((r) => r.status === "posted" && r.form !== "reversal" && !r.reversal);
   const drafts = () => selRows().filter((r) => r.status === "draft");
   const actBatch = async (mode: "void" | "discard") => {
     txBusy.set(true);
@@ -647,7 +647,12 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
         }
         if (done === list.length) toast("Voided.");
       }
-      txPicked.set([]);
+      const acted = new Set(
+        mode === "discard"
+          ? drafts().map((r) => String(r.ticket))
+          : voidables().map((r) => String(r.ticket)),
+      );
+      txPicked.set(txPicked().filter((t) => !acted.has(t)));
       txConfirm.set("");
       bump();
     } catch (e: Any) {
@@ -697,6 +702,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
         <Avatar src={TX_ICONS.grid} class="w-4 h-4" imageClass={txAllCollapsed() ? "tint-[#0f766e] dark:tint-teal-400" : "tint-[#94a3b8] dark:tint-slate-500"} fallbackDelay={Infinity} accessibilityLabel="" />
       </View>
       <View
+        accessibilityLabel="Filters"
         class={`w-7 h-7 items-center justify-center rounded-md cursor-pointer transition-colors ${
           filterOn() ? "bg-[#ccece8] dark:bg-teal-900/40" : "hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
         }`}
@@ -895,30 +901,32 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
 
             {/* Grouped — AccountGroupedList */}
             <If when={!txAccount() && txVisibleGroups().length > 0}>
-              {txVisibleGroups().map((g) => {
-                const t = String(g.ticket);
-                const expanded = txExpandOver()[t] ?? !txAllCollapsed();
-                return (
-                  <TxGroup
-                    g={g}
-                    expanded={expanded}
-                    edit={txMode() === "edit"}
-                    onToggle={() => txExpandOver.set({ ...txExpandOver(), [t]: !expanded })}
-                    onToggleAll={(on) => {
-                      const ids = txFiltered(txGroupRows(g)).map((r) => String(r.ticket));
-                      txPicked.set(on ? [...new Set([...txPicked(), ...ids])] : txPicked().filter((x) => !ids.includes(x)));
-                    }}
-                    onCheck={(r) =>
-                      txPicked.set(
-                        txPicked().includes(String(r.ticket))
-                          ? txPicked().filter((x) => x !== String(r.ticket))
-                          : [...txPicked(), String(r.ticket)],
-                      )
-                    }
-                    onOpen={(r) => drawerEntry.set(String(r.ticket))}
-                  />
-                );
-              })}
+              {() =>
+                txVisibleGroups().map((g) => {
+                  const t = String(g.ticket);
+                  const expanded = txExpandOver()[t] ?? !txAllCollapsed();
+                  return (
+                    <TxGroup
+                      g={g}
+                      expanded={expanded}
+                      edit={txMode() === "edit"}
+                      onToggle={() => txExpandOver.set({ ...txExpandOver(), [t]: !expanded })}
+                      onToggleAll={(on) => {
+                        const ids = txFiltered(txGroupRows(g)).map((r) => String(r.ticket));
+                        txPicked.set(on ? [...new Set([...txPicked(), ...ids])] : txPicked().filter((x) => !ids.includes(x)));
+                      }}
+                      onCheck={(r) =>
+                        txPicked.set(
+                          txPicked().includes(String(r.ticket))
+                            ? txPicked().filter((x) => x !== String(r.ticket))
+                            : [...txPicked(), String(r.ticket)],
+                        )
+                      }
+                      onOpen={(r) => drawerEntry.set(String(r.ticket))}
+                    />
+                  );
+                })
+              }
             </If>
 
             {/* Flat — LedgerRows for the picked account */}

@@ -144,6 +144,13 @@ function ledger(args = {}) {
     counts: { all: rows.length, review: 1, draft: 1, posted: 2, checks: 0 },
     running_balance: false,
     rows: rows.slice(0, 200),
+    groups: rows.length
+      ? [{
+          ticket: "tkt_cash1", number: "1010", name: "Cash on hand", type: "asset",
+          count: rows.length, debit_shown: "440.00", credit_shown: "2,700.00", balance_shown: "−2,260.00",
+          rows: rows.slice(0, 200),
+        }]
+      : [],
   };
 }
 
@@ -281,13 +288,12 @@ test("home lists payroll, certificates and tax hand-off", async () => {
   s.unmount();
 });
 
-test("transactions has a way back home", async () => {
+test("transactions renders full-height ledger with accounts sidebar", async () => {
   const s = await fresh({ page: "transactions" });
   await s.until(() => s.hasText("Supplies"), "rows");
-  ok(s.pressable("‹ Back") || s.pressable("‹ Back to Dashboard") || s.pressable("‹ Backto Dashboard"),
-    "no Back control on the Transactions header");
-  s.press("‹ Back");
-  await s.until(() => s.hasText("Reconcile"), "home tiles after Back");
+  ok(s.hasText("Ledger"), "missing Ledger header");
+  ok(s.hasText("Cash on hand"), "missing accounts sidebar");
+  ok(!s.hasText("Back to Dashboard"), "Back to Dashboard should be absent");
   s.unmount();
 });
 
@@ -295,9 +301,9 @@ test("type chip filters the list", async () => {
   const s = await fresh({ page: "transactions" });
   await s.until(() => s.hasText("Supplies"), "rows");
   s.press("Filters");
-  s.press("Money in");
-  ok(!s.hasText("Supplies · Bob"), "money-out row still shown after picking Money in");
-  ok(s.hasText("Deposit · Cory"), "money-in row missing after picking Money in");
+  s.press("Pay In");
+  ok(!s.hasText("Bob"), "money-out row still shown after picking Pay In");
+  ok(s.hasText("Cory"), "money-in row missing after picking Pay In");
   s.unmount();
 });
 
@@ -366,9 +372,9 @@ test("card rows select in edit mode", async () => {
 test("search reaches rows past the 200-row cap", async () => {
   const s = await fresh({ page: "transactions" });
   await s.until(() => s.hasText("Supplies"), "rows");
-  ok(!s.hasText("Rent · Dana"), "capped-out row wrongly visible before search");
+  ok(!s.hasText("Dana"), "capped-out row wrongly visible before search");
   typePrefix(s, "Search ", "Dana");
-  await s.until(() => s.hasText("Rent · Dana"), "search to reach the older row");
+  await s.until(() => s.hasText("Dana"), "search to reach the older row");
   s.unmount();
 });
 
@@ -384,7 +390,7 @@ test("search keeps a row the ledger matched by amount", async () => {
   const s = await fresh({ page: "transactions" });
   await s.until(() => s.hasText("Supplies"), "rows");
   typePrefix(s, "Search ", "80,000");
-  await s.until(() => s.hasText("Rent · Dana"), "an amount search to keep the matched row");
+  await s.until(() => s.hasText("Dana"), "an amount search to keep the matched row");
   s.unmount();
 });
 

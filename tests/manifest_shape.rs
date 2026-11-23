@@ -589,7 +589,14 @@ fn compaction_only_trims_indent_and_comment_lines() {
             continue;
         }
         let trimmed = raw.trim_start_matches([' ', '\t']);
-        let comment_only = trimmed.starts_with("//");
+        let full_trimmed = raw.trim();
+        let comment_only = trimmed.starts_with("//")
+            || (full_trimmed.starts_with("/*")
+                && full_trimmed.ends_with("*/")
+                && full_trimmed.len() >= 4)
+            || (full_trimmed.starts_with("{/*")
+                && full_trimmed.ends_with("*/}")
+                && full_trimmed.len() >= 6);
         assert!(
             *compact == trimmed || (comment_only && compact.is_empty()),
             "line {} changed beyond its indent or a whole-line comment: {raw:?} -> {compact:?}",

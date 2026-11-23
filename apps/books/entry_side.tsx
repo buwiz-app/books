@@ -678,7 +678,7 @@ function SideModelCard() {
   return (
     <View class="fixed inset-0 z-50">
       <View class="absolute inset-0 bg-black/20" onPress={() => sidePicker.set(false)} />
-      <View class="absolute left-3 right-3 bottom-[148px] rounded-xl bg-white dark:bg-slate-900 border border-[#e2e8f0] dark:border-slate-700 shadow-xl overflow-hidden">
+      <View class="absolute right-3 bottom-[148px] w-[268px] max-w-[calc(100%-16px)] rounded-xl bg-white dark:bg-[#1f1f1f] border border-[#e2e8f0] dark:border-slate-700 shadow-[0_10px_24px_-6px_rgba(0,0,0,0.45)] overflow-hidden">
         <View class="flex-row items-center gap-1.5 h-8 mx-2 mt-2 px-2 rounded-lg bg-[#f1f5f9] dark:bg-slate-800">
           <Avatar src={SIDE_GLYPHS.search} accessibilityLabel="" class="w-3.5 h-3.5" fallbackDelay={Infinity} />
           <Input

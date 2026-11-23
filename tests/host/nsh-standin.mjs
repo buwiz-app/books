@@ -557,7 +557,9 @@ class Screen {
 
   /** The innermost pressable node whose whole text is `label`. */
   pressable(label, occurrence = "last") {
-    const hits = this.nodes().filter((n) => typeof n.props.onPress === "function" && textOf(n).trim() === label);
+    const hits = this.nodes().filter(
+      (n) => typeof n.props.onPress === "function" && (textOf(n).trim() === label || n.props.accessibilityLabel === label),
+    );
     const index = occurrence === "last" ? hits.length - 1 : occurrence;
     return hits[index] || null;
   }

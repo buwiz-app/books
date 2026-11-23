@@ -616,11 +616,15 @@ pub fn ledger(
                 .sum(),
         )
     };
-    let rows = list
+    let filtered: Vec<&Summary> = list
         .iter()
         .filter(|s| is(s, filter))
         .filter(|s| hit(s))
         .take(200)
+        .collect();
+    let rows = filtered
+        .iter()
+        .copied()
         .map(|s| {
             let mut row = s.row(store, origin)?;
             row["checks"] = json!(marks.get(&s.entry.id).cloned().unwrap_or_default());
