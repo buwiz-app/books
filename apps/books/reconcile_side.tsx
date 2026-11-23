@@ -81,7 +81,7 @@ const unmatchBtn = (on: () => void) => (
 );
 const viewBtn = (on?: () => void) => (
   <View class="cursor-pointer" onPress={(e: Any) => rStop(e, on)}>
-    <Text class="text-[13px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">›</Text>
+    <Text class="text-[13px] text-gray-400 hover:text-gray-600 dark:hover:text-[#a1a5b0]">›</Text>
   </View>
 );
 
@@ -128,7 +128,7 @@ function RecRow(p: Any) {
               <Text class={`text-[10px] ${C.dim} truncate`}>{why()}</Text>
             </If>
             <If when={Boolean(conf())}>
-              <Text class="text-[10px] text-[#94a3b8] dark:text-slate-500">{`${conf()}% conf`}</Text>
+              <Text class="text-[10px] text-[#94a3b8] dark:text-[#6e727e]">{`${conf()}% conf`}</Text>
             </If>
             <If when={Boolean(p.r.num)}>
               <Text class={`text-[10px] font-mono ${C.dim} truncate`}>{`#${p.r.num}`}</Text>

@@ -75,7 +75,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
       </If>
       <If when={Boolean(d())}>
         <Panel>
-          <View class={`hidden md:flex flex-row gap-3 px-3 py-2 border-b ${C.line} bg-[#f8fafc] dark:bg-[#0f172a]`}>
+          <View class={`hidden md:flex flex-row gap-3 px-3 py-2 border-b ${C.line} bg-[#f8fafc] dark:bg-[#0d0d10]`}>
             <Text class={`flex-1 text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>{unpaidSide() === "collect" ? "Customer" : "Vendor"}</Text>
             <Text class={`w-[150px] text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Document</Text>
             <Text class={`w-[64px] text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Due</Text>
@@ -88,7 +88,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
           <Each of={d()?.rows || []} key={rowKey}>
             {(r: Any) => (
               <View class={`border-b ${C.line} last:border-b-0`}>
-                <View class="flex-row items-center gap-3 px-3 py-2.5 flex-wrap hover:bg-[#f8fafc] dark:hover:bg-slate-800/50 transition-colors">
+                <View class="flex-row items-center gap-3 px-3 py-2.5 flex-wrap hover:bg-[#f8fafc] dark:hover:bg-[#22232a] transition-colors">
                   <View
                     accessibilityLabel="Show payments"
                     accessibilityValue={{ text: r().who }}

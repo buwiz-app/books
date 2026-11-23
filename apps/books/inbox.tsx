@@ -46,7 +46,7 @@ function InboxDetail(p: { ticket: string; row?: Any }) {
     <View>
       <Loading res={data} />
       <If when={Boolean(e())}>
-        <View class="bg-slate-950 px-6 py-6 border-b border-slate-200 dark:border-slate-800">
+        <View class="bg-slate-950 px-6 py-6 border-b border-slate-200 dark:border-[#27282f]">
           <View class="flex-row items-start justify-between gap-4">
             <View class="min-w-0 flex-1 gap-0.5">
               <Text class="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-300">{src()}</Text>
@@ -204,16 +204,16 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
       {/* Split Review Workspace — Queue on left, Source & Suggested Entry on right */}
       <View class="flex-1 min-h-0 flex-row gap-5 px-4 pb-4 sm:px-6 sm:pb-6 overflow-hidden">
         {/* Left Queue Panel */}
-        <View class={`${inboxOpen() ? "hidden lg:flex" : "flex"} flex-1 lg:flex-none lg:w-[420px] shrink-0 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-900 ${C.line}`}>
+        <View class={`${inboxOpen() ? "hidden lg:flex" : "flex"} flex-1 lg:flex-none lg:w-[420px] shrink-0 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-[#0d0d10] ${C.line}`}>
           <View class={`shrink-0 px-3.5 py-3 gap-2 border-b ${C.line}`}>
-            <View class="h-10 flex-row items-center rounded-md border border-slate-200 bg-white pl-3 pr-2 transition-colors focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/15 dark:border-slate-700 dark:bg-slate-900">
-              <Text class="text-[14px] text-slate-400 dark:text-slate-500">⌕</Text>
+            <View class="h-10 flex-row items-center rounded-md border border-slate-200 bg-white pl-3 pr-2 transition-colors focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/15 dark:border-[#27282f] dark:bg-[#0d0d10]">
+              <Text class="text-[14px] text-slate-400 dark:text-[#6e727e]">⌕</Text>
               <Input
                 accessibilityLabel="Search inbox"
                 value={query()}
                 placeholder="Search inbox items..."
                 onChange={(e: Any) => query.set(typeof e === "string" ? e : e.value)}
-                class="flex-1 pl-2 bg-transparent border-none outline-none text-base sm:text-sm text-[#0f172a] dark:text-slate-100 placeholder:text-[#94a3b8]"
+                class="flex-1 pl-2 bg-transparent border-none outline-none text-base sm:text-sm text-[#0f172a] dark:text-[#f4f5f7] placeholder:text-[#94a3b8]"
               />
             </View>
             <View class="flex-row gap-1.5 flex-wrap">
@@ -249,7 +249,7 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
                     class={`relative px-5 py-4 border-b gap-1.5 transition-colors ${C.line} ${
                       selectedTicket() === r().ticket
                         ? "bg-teal-50/70 dark:bg-teal-950/30"
-                        : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                        : "hover:bg-slate-50 dark:hover:bg-[#22232a]"
                     }`}
                     onPress={() => inboxOpen.set(r().ticket)}
                     activeStyle={{ opacity: 0.75 }}
@@ -287,9 +287,9 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
         </View>
 
         {/* Right Detail & Source Preview Pane */}
-        <View class={`${inboxOpen() ? "flex" : "hidden lg:flex"} flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-900 ${C.line}`}>
+        <View class={`${inboxOpen() ? "flex" : "hidden lg:flex"} flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-[#0d0d10] ${C.line}`}>
           <View class={`lg:hidden shrink-0 flex-row items-center border-b px-2 py-1 ${C.line}`}>
-            <View class="h-9 flex-row items-center gap-1.5 rounded-lg px-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800" onPress={() => inboxOpen.set("")} activeStyle={{ opacity: 0.7 }}>
+            <View class="h-9 flex-row items-center gap-1.5 rounded-lg px-2 transition-colors hover:bg-slate-100 dark:hover:bg-[#22232a]" onPress={() => inboxOpen.set("")} activeStyle={{ opacity: 0.7 }}>
               <Text class={`text-[13px] font-semibold ${C.mute}`}>‹ Back to queue</Text>
             </View>
           </View>

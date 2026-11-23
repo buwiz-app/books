@@ -56,7 +56,7 @@ function CategoryDetailPage(p: { go: (page: string, filter?: string) => void }) 
   const tint = () => `tint-[${t()[2]}] dark:tint-[${t()[4]}]`;
   const detailRow = (label: string, body: Any) => (
     <View class="gap-1">
-      <Text class="text-[12px] font-medium text-[#64748b] dark:text-slate-400">{label}</Text>
+      <Text class="text-[12px] font-medium text-[#64748b] dark:text-[#a1a5b0]">{label}</Text>
       {body}
     </View>
   );
@@ -74,7 +74,7 @@ function CategoryDetailPage(p: { go: (page: string, filter?: string) => void }) 
           flex height chain and the page collapses to content size. */}
       <View class="flex-1 min-h-0 flex-row gap-6 px-3 pb-3 sm:px-6 sm:pb-6 overflow-hidden">
           {/* Main column */}
-          <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
+          <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-[#141519] ${C.line}`}>
             <If when={!a()}>
               <View class="flex-1 items-center justify-center gap-2">
                 <Loading res={list} />
@@ -113,7 +113,7 @@ function CategoryDetailPage(p: { go: (page: string, filter?: string) => void }) 
               <Each of={tx()} key={rowKey}>
                 {(r: Any) => (
                   <View
-                    class={`flex-row items-center gap-3 px-5 py-2.5 border-b border-[#f0f1f3] dark:border-slate-700 transition-colors hover:bg-[#f8f9fb] dark:hover:bg-slate-800`}
+                    class={`flex-row items-center gap-3 px-5 py-2.5 border-b border-[#f0f1f3] dark:border-[#27282f] transition-colors hover:bg-[#f8f9fb] dark:hover:bg-[#22232a]`}
                     onPress={() => openLedger({ account: catDetailTicket(), month: month() || String((ledger() as Any)?.month?.key || ""), entry: r().ticket })}
                     activeStyle={{ opacity: 0.75 }}
                   >
@@ -138,7 +138,7 @@ function CategoryDetailPage(p: { go: (page: string, filter?: string) => void }) 
           </View>
 
           {/* Right sidebar — the reference's Details tab */}
-          <View class={`hidden lg:flex w-[340px] min-w-[340px] max-w-[520px] rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
+          <View class={`hidden lg:flex w-[340px] min-w-[340px] max-w-[520px] rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-[#141519] ${C.line}`}>
             <View class="shrink-0 bg-gradient-to-r from-[#4338ca] to-[#6366f1] px-5 py-3 flex-row justify-center">
               <View class="h-11 px-6 items-center justify-center rounded-full bg-white/20 flex-row gap-2">
                 <Avatar src={ACCT_ICONS.doc} class="w-4 h-4" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
@@ -158,7 +158,7 @@ function CategoryDetailPage(p: { go: (page: string, filter?: string) => void }) 
                   )}
                   {detailRow(
                     "Account Number",
-                    <View class={`rounded px-2 py-1 self-start bg-slate-50 dark:bg-slate-800`}>
+                    <View class={`rounded px-2 py-1 self-start bg-slate-50 dark:bg-[#141519]`}>
                       <Text class={`text-[13px] font-mono ${C.ink}`}>{a()?.number || "—"}</Text>
                     </View>,
                   )}
@@ -181,15 +181,15 @@ function CategoryDetailPage(p: { go: (page: string, filter?: string) => void }) 
                 {/* Sub-categories: same-kind siblings */}
                 <If when={siblings().length > 0}>
                   <View class="w-full gap-1 pt-2">
-                    <Text class="text-[12px] font-medium text-[#64748b] dark:text-slate-400">Sub-categories</Text>
+                    <Text class="text-[12px] font-medium text-[#64748b] dark:text-[#a1a5b0]">Sub-categories</Text>
                     <Each of={siblings()} key={rowKey}>
                       {(s: Any) => (
                         <View
-                          class={`w-full flex-row items-center gap-2 py-2 px-3 rounded-lg transition-colors hover:bg-[#f1f5f9] dark:hover:bg-slate-800`}
+                          class={`w-full flex-row items-center gap-2 py-2 px-3 rounded-lg transition-colors hover:bg-[#f1f5f9] dark:hover:bg-[#22232a]`}
                           onPress={() => catDetailTicket.set(String(s().ticket))}
                           activeStyle={{ opacity: 0.75 }}
                         >
-                          <View class="w-1.5 h-1.5 rounded-full bg-[#cbd5e1] dark:bg-slate-600 shrink-0" />
+                          <View class="w-1.5 h-1.5 rounded-full bg-[#cbd5e1] dark:bg-[#6e727e] shrink-0" />
                           <Text class={`flex-1 text-[13px] truncate ${C.ink}`}>{s().name}</Text>
                           <Text class={`text-[12px] font-mono ${C.dim}`}>{s().balance_shown || ""}</Text>
                           <Text class="text-[13px] text-[#cbd5e1]">›</Text>

@@ -246,13 +246,13 @@ function PeoplePage(p: { go: (page: string, filter?: string) => void }) {
               <Each of={peopleRows()} key={rowKey}>
                 {(r: Any) => (
                   <View
-                    class={`flex-row items-center gap-3 p-3.5 rounded-xl border transition-all duration-150 cursor-pointer ${current()?.ticket === r().ticket ? "border-[#10b981]/40 bg-[#10b981]/5 dark:bg-[#10b981]/10 shadow-sm" : "border-[#e2e8f0] dark:border-white/8 bg-white dark:bg-[#15192a] hover:shadow-md hover:border-[#a7f3d0] dark:hover:border-[#10b981]/30"}`}
+                    class={`flex-row items-center gap-3 p-3.5 rounded-xl border transition-all duration-150 cursor-pointer ${current()?.ticket === r().ticket ? "border-[#10b981]/40 bg-[#10b981]/5 dark:bg-[#10b981]/10 shadow-sm" : "border-[#e2e8f0] dark:border-white/8 bg-white dark:bg-[#141519] hover:shadow-md hover:border-[#a7f3d0] dark:hover:border-[#10b981]/30"}`}
                     onPress={() => personPick.set(r().ticket)}
                     activeStyle={{ opacity: 0.75 }}
                   >
                     <PersonAvatar initials={r().initials} color={r().color} />
                     <View class="flex-1 gap-0.5">
-                      <Text class="text-[14px] font-medium text-[#1e293b] dark:text-white truncate">
+                      <Text class="text-[14px] font-medium text-[#1e293b] dark:text-[#f4f5f7] truncate">
                         {r().name}
                       </Text>
                       <Text class="text-[11px] text-[#94a3b8] dark:text-white/40 truncate">
