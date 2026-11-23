@@ -15,6 +15,7 @@ const txSearch = signal(""); // live text in the search input
 const txQueryChips = signal<string[]>([]); // queries the person committed with Enter
 const txChipsOpen = signal(false); // chip bar overflow expanded
 const txFiltersOpen = signal(false);
+const txSplitOpen = signal(false);
 const txMode = signal("view"); // "view" | "edit"
 const txPicked = signal<string[]>([]); // selected entry tickets in edit mode
 const txSideOpen = signal(false); // accounts sheet below lg
@@ -783,16 +784,42 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 </View>
               ))}
             </View>
-            <View
-              class="shrink-0 flex-row items-center gap-1.5 h-8 rounded-lg bg-white/10 px-2.5 sm:px-3 cursor-pointer transition-colors hover:bg-white/20"
-              onPress={() => p.sheet("journal")}
-            >
-              <Text class="text-xs font-medium text-white whitespace-nowrap">+ Add Transaction</Text>
+            <View class="relative flex-row items-stretch shrink-0 bg-white/10 rounded-lg h-8">
+              <View
+                class="flex-row items-center gap-1.5 px-2.5 sm:px-3 rounded-l-lg cursor-pointer transition-colors hover:bg-white/10"
+                onPress={() => { txSplitOpen.set(false); p.sheet("journal"); }}
+              >
+                <Text class="text-xs font-medium text-white whitespace-nowrap">+ Add Transaction</Text>
+              </View>
+              <View
+                accessibilityLabel="More add options"
+                class="w-7 items-center justify-center border-l border-white/20 rounded-r-lg cursor-pointer transition-colors hover:bg-white/10"
+                onPress={() => txSplitOpen.set(!txSplitOpen())}
+              >
+                <Avatar src={ICONS.chevronDown} class="w-3 h-3" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
+              </View>
+              <If when={txSplitOpen()}>
+                <View class="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-slate-900 border border-[#e5e7eb] dark:border-slate-700 rounded-lg shadow-lg z-50 py-1">
+                  <View
+                    class="w-full px-3 py-2 cursor-pointer transition-colors hover:bg-[#f9fafb] dark:hover:bg-slate-800"
+                    onPress={() => { txSplitOpen.set(false); p.go("reconcile"); }}
+                  >
+                    <Text class="text-xs text-[#374151] dark:text-slate-300">Import Bank Transactions…</Text>
+                  </View>
+                  <View
+                    class="w-full px-3 py-2 cursor-pointer transition-colors hover:bg-[#f9fafb] dark:hover:bg-slate-800"
+                    onPress={() => { txSplitOpen.set(false); p.go("oldbooks"); }}
+                  >
+                    <Text class="text-xs text-[#374151] dark:text-slate-300">Import Journal Entries…</Text>
+                  </View>
+                </View>
+              </If>
             </View>
           </View>
 
           {/* Search + filters — LedgerSearchBar: one bordered input until the
               first chip, then chips + a bare inline input in one wrap row. */}
+          <View class="relative z-40">
           <If when={chips().length === 0}>
             <View class="flex-row items-center gap-2 px-5 py-2 border-b border-[#f1f5f9] dark:border-slate-800">
               <View class="flex-1 min-w-0 flex-row items-center gap-2 rounded-md border border-[#e2e8f0] bg-[#f8fafc] px-2.5 h-9 dark:border-slate-700 dark:bg-slate-800/60 focus-within:ring-1 focus-within:ring-[#0d9488] focus-within:border-[#0d9488] transition-colors">
@@ -834,41 +861,61 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
             </View>
           </If>
 
-          {/* Filter popover panel — LedgerFilters (type/status/amount/party) */}
+          {/* Filter dropdown — LedgerFilters (right-anchored w-[280px] rounded-xl shadow-xl) */}
           <If when={txFiltersOpen()}>
-            <View class="border-b border-[#e5e7eb] dark:border-slate-700 px-3 py-3 gap-3 bg-[#f8fafc] dark:bg-slate-950/50">
-              <View class="gap-1">
-                <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Type</Text>
-                <View class="flex-row flex-wrap gap-1.5">
-                  {TX_TYPE_OPTS.map(([k, label]) => (
-                    <Chip label={label} on={txTypes().includes(k)} onPress={() => txToggleIn(txTypes, k)} />
-                  ))}
-                </View>
-              </View>
-              <View class="gap-1">
-                <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Status</Text>
-                <View class="flex-row flex-wrap gap-1.5">
-                  {TX_STATUS_OPTS.map(([k, label]) => (
-                    <Chip label={label} on={txStatuses().includes(k)} onPress={() => txToggleIn(txStatuses, k)} />
-                  ))}
-                </View>
-              </View>
-              <View class="flex-row flex-wrap gap-3">
-                <View class="gap-1">
-                  <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Amount</Text>
-                  <View class="flex-row items-center gap-1.5">
-                    <TextBox value={txAmountMin()} onChange={(v) => txAmountMin.set(v)} placeholder="Min" />
-                    <Text class="text-[#94a3b8]">–</Text>
-                    <TextBox value={txAmountMax()} onChange={(v) => txAmountMax.set(v)} placeholder="Max" />
+            <View class="absolute right-5 top-full mt-1 w-[280px] max-w-[calc(100%-24px)] bg-white dark:bg-slate-900 border border-[#e5e7eb] dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
+              <View class="flex-row items-center justify-between px-4 py-3 border-b border-[#f1f5f9] dark:border-slate-800">
+                <Text class="text-[13px] font-semibold text-[#1e293b] dark:text-slate-100">Filters</Text>
+                <View class="flex-row items-center gap-2">
+                  <If when={txHasFilters()}>
+                    <View class="cursor-pointer" onPress={txClearFilters}>
+                      <Text class="text-[11px] font-medium text-[#2a9d8f] hover:text-[#248f82]">Clear all</Text>
+                    </View>
+                  </If>
+                  <View
+                    accessibilityLabel="Close filters"
+                    class="w-6 h-6 rounded items-center justify-center cursor-pointer transition-colors hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
+                    onPress={() => txFiltersOpen.set(false)}
+                  >
+                    <Text class="text-[12px] text-[#94a3b8] dark:text-slate-500">✕</Text>
                   </View>
                 </View>
-                <View class="gap-1 flex-1 min-w-[160px]">
-                  <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Party</Text>
-                  <TextBox value={txPartyText()} onChange={(v) => txPartyText.set(v)} placeholder="Name contains…" />
-                </View>
               </View>
+              <Scroll class="max-h-[420px]">
+                <View class="px-4 py-3 gap-3.5">
+                  <View class="gap-1.5">
+                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Party</Text>
+                    <TextBox value={txPartyText()} onChange={(v) => txPartyText.set(v)} placeholder="Name contains…" />
+                  </View>
+                  <View class="gap-1.5">
+                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Amount</Text>
+                    <View class="flex-row items-center gap-1.5">
+                      <TextBox value={txAmountMin()} onChange={(v) => txAmountMin.set(v)} placeholder="Min" />
+                      <Text class="text-[#94a3b8]">–</Text>
+                      <TextBox value={txAmountMax()} onChange={(v) => txAmountMax.set(v)} placeholder="Max" />
+                    </View>
+                  </View>
+                  <View class="gap-1.5">
+                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Transaction Type</Text>
+                    <View class="flex-row flex-wrap gap-1.5">
+                      {TX_TYPE_OPTS.map(([k, label]) => (
+                        <Chip label={label} on={txTypes().includes(k)} onPress={() => txToggleIn(txTypes, k)} />
+                      ))}
+                    </View>
+                  </View>
+                  <View class="gap-1.5">
+                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Status</Text>
+                    <View class="flex-row flex-wrap gap-1.5">
+                      {TX_STATUS_OPTS.map(([k, label]) => (
+                        <Chip label={label} on={txStatuses().includes(k)} onPress={() => txToggleIn(txStatuses, k)} />
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              </Scroll>
             </View>
           </If>
+          </View>
 
           {/* List: flat grid when an account is picked, account groups otherwise */}
           <Scroll class="flex-1 min-h-0">
