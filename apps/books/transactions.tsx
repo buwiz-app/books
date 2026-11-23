@@ -34,6 +34,11 @@ const txLocText = signal("");
 const txAmountMin = signal("");
 const txAmountMax = signal("");
 const txPartyText = signal("");
+// LedgerFilters multi-selects (names, the hay is text anyway)
+const txParties = signal<string[]>([]);
+const txDepts = signal<string[]>([]);
+const txLocs = signal<string[]>([]);
+const txSecOpen = signal<Record<string, boolean>>({ Party: true, Amount: true, "Transaction Type": true });
 
 // The server `search` arg: the text being typed, else the first query chip
 // (the rest of the chips AND client-side in txFiltered).
@@ -81,6 +86,21 @@ const txAccounts = resource(
   () => ({ v: ver() }),
   () => buwiz.call("books_accounts_list", {}),
 );
+const txPeople = resource(
+  () => ({ v: ver() }),
+  () => buwiz.call("books_people_list", {}),
+);
+const txTags = resource(
+  () => ({ v: ver() }),
+  () => buwiz.call("books_tags_list", {}),
+);
+const txPartyOpts = () => (((txPeople() as Any)?.rows || (txPeople() as Any)?.parties || []) as Any[]).map((r) => String(r.name || "")).filter(Boolean).sort();
+const txTagOpts = (kind: string) =>
+  (((txTags() as Any)?.rows || (txTags() as Any)?.tags || []) as Any[])
+    .filter((r) => !kind || String(r.kind || r.group || "") === kind)
+    .map((r) => String(r.name || ""))
+    .filter(Boolean)
+    .sort();
 
 const txD = () => txData() as Any;
 const txRows = () => ((txD()?.rows as Any[]) || []) as Any[];
@@ -102,8 +122,21 @@ const TX_ICONS = {
   search: svgIcon('<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>', 2),
   x: svgIcon('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', 2),
   funnel: svgIcon('<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>', 2),
-  grid: svgIcon('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>', 2),
+  grid: svgIcon('<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/>', 2),
   chevronUp: svgIcon('<path d="m18 15-6-6-6 6"/>', 2),
+  eye: svgIcon('<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>', 2),
+  pencil: svgIcon('<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>', 2),
+  panel: svgIcon('<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/>', 1.5),
+  plus: svgIcon('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>', 2.5),
+  upload: svgIcon('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>', 1.5),
+  doc: svgIcon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>', 1.5),
+  fParty: svgIcon('<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>', 1.5),
+  fAmount: svgIcon('<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>', 1.5),
+  fSource: svgIcon('<path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>', 1.5),
+  fMatched: svgIcon('<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>', 1.5),
+  fDept: svgIcon('<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>', 1.5),
+  fLoc: svgIcon('<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>', 1.5),
+  fType: svgIcon('<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>', 1.5),
 };
 const MONTH_KEYS = MONTH_NAMES;
 
@@ -181,11 +214,14 @@ function txFiltered(rowsIn?: Any[]): Any[] {
     }
     if (dept && !String(r.department || "").toLowerCase().includes(dept)) return false;
     if (loc && !String(r.location || "").toLowerCase().includes(loc)) return false;
+    if (txDepts().length && !txDepts().some((x) => String(r.department || "").toLowerCase() === x.toLowerCase())) return false;
+    if (txLocs().length && !txLocs().some((x) => String(r.location || "").toLowerCase() === x.toLowerCase())) return false;
     const amt = String(r.amount_shown || r.amount || "0").replace(/[^0-9.]/g, "");
     if (min && cmpDec(amt, min) < 0) return false;
     if (max && cmpDec(amt, max) > 0) return false;
-    const hay = (terms.length || party) && txHay(r);
+    const hay = (terms.length || party || txParties().length) && txHay(r);
     if (party && !hay.includes(party)) return false;
+    if (txParties().length && !txParties().some((x) => hay && hay.includes(x.toLowerCase()))) return false;
     for (const t of terms) if (!hay.includes(t.toLowerCase())) return false;
     return true;
   });
@@ -234,6 +270,9 @@ function txHasFilters(): boolean {
       txAmountMin().trim() ||
       txAmountMax().trim() ||
       txPartyText().trim() ||
+      txParties().length ||
+      txDepts().length ||
+      txLocs().length ||
       txQueryChips().length ||
       txSearch().trim(),
   );
@@ -248,6 +287,9 @@ function txClearFilters() {
   txAmountMin.set("");
   txAmountMax.set("");
   txPartyText.set("");
+  txParties.set([]);
+  txDepts.set([]);
+  txLocs.set([]);
   txQueryChips.set([]);
   txSearch.set("");
 }
@@ -620,13 +662,108 @@ function TxSide() {
 }
 /* ── end TxSide ─────────────────────────────────────────────────────────── */
 
+/** LedgerFilters' collapsible section: chevron + icon + title + count badge. */
+function TxFilterSection(p: { title: string; icon: string; count: number; children: Any }) {
+  const open = () => Boolean(txSecOpen()[p.title]);
+  return (
+    <View class="border-b border-[#f1f5f9] dark:border-slate-700">
+      <View
+        class="w-full flex-row items-center gap-2 px-4 py-2.5 cursor-pointer transition-colors hover:bg-[#fafbfc] dark:hover:bg-slate-800"
+        onPress={() => txSecOpen.set({ ...txSecOpen(), [p.title]: !open() })}
+      >
+        <Avatar src={open() ? ICONS.chevronDown : ICONS.chevronRight} class="w-2.5 h-2.5 shrink-0" imageClass="tint-[#94a3b8]" fallbackDelay={Infinity} accessibilityLabel="" />
+        <Avatar src={p.icon} class="w-4 h-4 shrink-0" imageClass="tint-[#64748b] dark:tint-slate-400" fallbackDelay={Infinity} accessibilityLabel="" />
+        <Text class="flex-1 text-[13px] font-semibold text-[#1e293b] dark:text-slate-100">{p.title}</Text>
+        <If when={p.count > 0}>
+          <View class="w-5 h-5 rounded-full items-center justify-center shrink-0" style={{ backgroundColor: "#2a9d8f" }}>
+            <Text class="text-[10px] font-bold text-white">{p.count}</Text>
+          </View>
+        </If>
+      </View>
+      <If when={open()}>
+        <View class="px-4 pb-3">{p.children}</View>
+      </If>
+    </View>
+  );
+}
+
+/** LedgerFilters' checkbox row: optional icon/color dot + label + 18px teal check. */
+function TxCheckRow(p: { label: string; on: boolean; icon?: string; color?: string; onPress: () => void }) {
+  return (
+    <View class="flex-row items-center gap-2.5 py-1.5 px-1 -mx-1 rounded-md cursor-pointer group" onPress={p.onPress}>
+      <If when={Boolean(p.icon)}>
+        <Avatar src={p.icon} class="w-3.5 h-3.5 shrink-0" imageClass="tint-[#64748b] dark:tint-slate-400" fallbackDelay={Infinity} accessibilityLabel="" />
+      </If>
+      <If when={Boolean(p.color) && !p.icon}>
+        <View class="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+      </If>
+      <Text class="flex-1 text-[13px] text-[#374151] dark:text-slate-300 group-hover:text-[#1e293b] dark:group-hover:text-slate-100 transition-colors">{p.label}</Text>
+      <TxSideCheck state={p.on ? "all" : "none"} onPress={p.onPress} />
+    </View>
+  );
+}
+
+/** The small search input each checkbox-list section carries (LedgerFilters). */
+function TxListSearch(p: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <View class="relative mb-2">
+      <View class="absolute left-2 top-0 bottom-0 items-center justify-center">
+        <Avatar src={TX_ICONS.search} class="w-3 h-3" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
+      </View>
+      <Input
+        value={p.value}
+        placeholder={p.placeholder}
+        onChange={(e: Any) => p.onChange(typeof e === "string" ? e : e.value)}
+        class="w-full pl-7 pr-2 py-1.5 rounded-lg border border-[#e2e8f0] dark:border-slate-700 text-[12px] text-[#1e293b] dark:text-slate-100 placeholder-[#cbd5e1] dark:placeholder-slate-600 bg-white dark:bg-slate-800 focus:outline-none"
+      />
+    </View>
+  );
+}
+
+/** Searchable checkbox list (SearchableCheckboxList): search + filtered rows. */
+function TxCheckList(p: {
+  options: string[];
+  picked: string[];
+  search: () => string;
+  onSearch: (v: string) => void;
+  onToggle: (v: string) => void;
+  icon?: (v: string) => string | undefined;
+  color?: (v: string) => string | undefined;
+  ph: string;
+  empty: string;
+}) {
+  const q = () => p.search().trim().toLowerCase();
+  const shown = () => (q() ? p.options.filter((o) => o.toLowerCase().includes(q())) : p.options);
+  return (
+    <View>
+      <TxListSearch value={p.search()} onChange={p.onSearch} placeholder={p.ph} />
+      <View class="max-h-[200px] overflow-hidden">
+        <If when={shown().length === 0}>
+          <Text class="text-[11px] text-[#94a3b8] dark:text-slate-500 italic py-2">{p.empty}</Text>
+        </If>
+        {shown()
+          .slice(0, 40)
+          .map((o) => (
+            <TxCheckRow
+              label={o}
+              on={p.picked.includes(o)}
+              icon={p.icon ? p.icon(o) : undefined}
+              color={p.color ? p.color(o) : undefined}
+              onPress={() => p.onToggle(o)}
+            />
+          ))}
+      </View>
+    </View>
+  );
+}
+
 /** A filter/query chip in the search bar (LedgerSearchBar's tag chips). */
 function TxChip(p: { label: string; clear: () => void }) {
   return (
     <View class="flex-row items-center gap-1 px-2 py-0.5 rounded-full bg-[#e6f7f5] dark:bg-teal-950/60 border border-[#b2e0db] dark:border-teal-800 shrink-0">
       <Text class="text-[11px] font-medium text-[#0f766e] dark:text-teal-400">{p.label}</Text>
-      <View class="w-3.5 h-3.5 items-center justify-center rounded-full cursor-pointer hover:bg-[#0f766e]/10" onPress={p.clear}>
-        <Avatar src={TX_ICONS.x} class="w-2.5 h-2.5" imageClass="tint-[#0f766e] dark:tint-teal-400" fallbackDelay={Infinity} accessibilityLabel="" />
+      <View class="w-3.5 h-3.5 items-center justify-center rounded-full cursor-pointer hover:bg-[#ccece8] dark:hover:bg-teal-900/40" onPress={p.clear}>
+        <Avatar src={TX_ICONS.x} class="w-2 h-2" imageClass="tint-[#7cc8bf] dark:tint-teal-500" fallbackDelay={Infinity} accessibilityLabel="" />
       </View>
     </View>
   );
@@ -713,6 +850,9 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
         clear: () => { txAmountMin.set(""); txAmountMax.set(""); },
       });
     if (txPartyText().trim()) out.push({ label: `Party: ${txPartyText().trim()}`, clear: () => txPartyText.set("") });
+    for (const n of txParties()) out.push({ label: `Party: ${n}`, clear: () => txParties.set(txParties().filter((x) => x !== n)) });
+    for (const n of txDepts()) out.push({ label: `Dept: ${n}`, clear: () => txDepts.set(txDepts().filter((x) => x !== n)) });
+    for (const n of txLocs()) out.push({ label: `Location: ${n}`, clear: () => txLocs.set(txLocs().filter((x) => x !== n)) });
     for (const q of txQueryChips()) out.push({ label: q, clear: () => txDropQuery(q) });
     return out;
   };
@@ -725,31 +865,36 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
   const filterOn = () => txFiltersOpen() || txHasFilters();
 
   const togglePill = (
-    <View class="flex-row items-center gap-1 shrink-0">
-      <View
-        class={`w-7 h-7 items-center justify-center rounded-md cursor-pointer transition-colors ${
-          !txAllCollapsed() ? "bg-[#e6f7f5] dark:bg-teal-950/60" : "hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
-        }`}
-        onPress={() => { txAllCollapsed.set(false); txExpandOver.set({}); }}
-      >
-        <Avatar src={ICONS.list} class="w-4 h-4" imageClass={!txAllCollapsed() ? "tint-[#0f766e] dark:tint-teal-400" : "tint-[#94a3b8] dark:tint-slate-500"} fallbackDelay={Infinity} accessibilityLabel="" />
-      </View>
-      <View
-        class={`w-7 h-7 items-center justify-center rounded-md cursor-pointer transition-colors ${
-          txAllCollapsed() ? "bg-[#e6f7f5] dark:bg-teal-950/60" : "hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
-        }`}
-        onPress={() => { txAllCollapsed.set(true); txExpandOver.set({}); }}
-      >
-        <Avatar src={TX_ICONS.grid} class="w-4 h-4" imageClass={txAllCollapsed() ? "tint-[#0f766e] dark:tint-teal-400" : "tint-[#94a3b8] dark:tint-slate-500"} fallbackDelay={Infinity} accessibilityLabel="" />
+    <View class="flex-row items-center gap-1.5 shrink-0">
+      {/* ViewToggle: gray segmented control, active = white card + shadow */}
+      <View class="flex-row items-center bg-[#f1f5f9] dark:bg-slate-800 rounded-lg p-0.5">
+        <View
+          accessibilityLabel="Expand all"
+          class={`w-7 h-7 items-center justify-center rounded-md cursor-pointer transition-all ${
+            !txAllCollapsed() ? "bg-white dark:bg-slate-700 shadow-sm" : ""
+          }`}
+          onPress={() => { txAllCollapsed.set(false); txExpandOver.set({}); }}
+        >
+          <Avatar src={ICONS.list} class="w-3.5 h-3.5" imageClass={!txAllCollapsed() ? "tint-[#1e293b] dark:tint-slate-100" : "tint-[#94a3b8] dark:tint-slate-500"} fallbackDelay={Infinity} accessibilityLabel="" />
+        </View>
+        <View
+          accessibilityLabel="Collapse all"
+          class={`w-7 h-7 items-center justify-center rounded-md cursor-pointer transition-all ${
+            txAllCollapsed() ? "bg-white dark:bg-slate-700 shadow-sm" : ""
+          }`}
+          onPress={() => { txAllCollapsed.set(true); txExpandOver.set({}); }}
+        >
+          <Avatar src={TX_ICONS.grid} class="w-3.5 h-3.5" imageClass={txAllCollapsed() ? "tint-[#1e293b] dark:tint-slate-100" : "tint-[#94a3b8] dark:tint-slate-500"} fallbackDelay={Infinity} accessibilityLabel="" />
+        </View>
       </View>
       <View
         accessibilityLabel="Filters"
-        class={`w-7 h-7 items-center justify-center rounded-md cursor-pointer transition-colors ${
+        class={`w-8 h-8 items-center justify-center rounded-lg cursor-pointer transition-colors ${
           filterOn() ? "bg-[#ccece8] dark:bg-teal-900/40" : "hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
         }`}
         onPress={() => txFiltersOpen.set(!txFiltersOpen())}
       >
-        <Avatar src={TX_ICONS.funnel} class="w-4 h-4" imageClass={filterOn() ? "tint-[#0f766e] dark:tint-teal-400" : "tint-[#94a3b8] dark:tint-slate-500"} fallbackDelay={Infinity} accessibilityLabel="" />
+        <Avatar src={TX_ICONS.funnel} class="w-3.5 h-3.5" imageClass={filterOn() ? "tint-[#0f766e] dark:tint-teal-400" : "tint-[#94a3b8] dark:tint-slate-500"} fallbackDelay={Infinity} accessibilityLabel="" />
       </View>
     </View>
   );
@@ -766,10 +911,11 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
           <View class="flex-row items-center px-5 py-3 bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c] rounded-t-lg">
             <View class="flex-row items-center gap-3 shrink-0">
               <View
+                accessibilityLabel="Accounts"
                 class="w-8 h-8 rounded-lg items-center justify-center transition-colors hover:bg-white/10 cursor-pointer"
                 onPress={() => txSideOpen.set(true)}
               >
-                <Avatar src={ICONS.table} class="w-4 h-4" imageClass="tint-white opacity-70" fallbackDelay={Infinity} accessibilityLabel="" />
+                <Avatar src={TX_ICONS.panel} class="w-4 h-4" imageClass="tint-white opacity-70" fallbackDelay={Infinity} accessibilityLabel="" />
               </View>
               <View
                 accessibilityLabel="Back"
@@ -784,11 +930,18 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
               <View class="flex-row items-center p-1 bg-white/10 rounded-full">
                 {(["view", "edit"] as const).map((m) => (
                   <View
-                    class={`group flex-row items-center px-3 py-1 rounded-full cursor-pointer transition-all ${
+                    class={`group flex-row items-center gap-1.5 px-3 py-1 rounded-full cursor-pointer transition-all ${
                       txMode() === m ? "bg-white/20 shadow-sm" : "hover:bg-white/10"
                     }`}
                     onPress={() => { txMode.set(m); if (m === "view") txPicked.set([]); }}
                   >
+                    <Avatar
+                      src={m === "view" ? TX_ICONS.eye : TX_ICONS.pencil}
+                      class="w-3.5 h-3.5"
+                      imageClass={txMode() === m ? "tint-white" : "tint-white opacity-50 group-hover:opacity-100"}
+                      fallbackDelay={Infinity}
+                      accessibilityLabel=""
+                    />
                     <Text class={`text-[13px] font-medium ${txMode() === m ? "text-white" : "text-white/50 group-hover:text-white"}`}>
                       {m === "view" ? "View" : "Edit"}
                     </Text>
@@ -803,17 +956,17 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
           <View class="flex-row items-center gap-2 bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] px-2 py-2.5 sm:px-5 dark:from-[#145a30] dark:to-[#1e8c4c]">
             <View class="flex-row items-center rounded-lg bg-white/10 shrink-0">
               <View
-                class="w-8 h-8 items-center justify-center rounded-l-lg cursor-pointer transition-colors hover:bg-white/10"
+                class={`w-8 h-8 items-center justify-center rounded-l-lg transition-colors ${month().prev ? "cursor-pointer hover:bg-white/10" : ""}`}
                 onPress={() => month().prev && goMonth(String(month().prev))}
               >
-                <Avatar src={ICONS.chevronLeft} class="w-4 h-4" imageClass="tint-white opacity-70" fallbackDelay={Infinity} accessibilityLabel="" />
+                <Avatar src={ICONS.chevronLeft} class="w-3.5 h-3.5" imageClass={`tint-white ${month().prev ? "opacity-70" : "opacity-20"}`} fallbackDelay={Infinity} accessibilityLabel="" />
               </View>
               <Text class="px-2 text-xs font-medium text-white/70 truncate">{String(month().range || month().label || "")}</Text>
               <View
-                class="w-8 h-8 items-center justify-center rounded-r-lg cursor-pointer transition-colors hover:bg-white/10"
+                class={`w-8 h-8 items-center justify-center rounded-r-lg transition-colors ${month().next ? "cursor-pointer hover:bg-white/10" : ""}`}
                 onPress={() => month().next && goMonth(String(month().next))}
               >
-                <Avatar src={ICONS.chevronRight} class="w-4 h-4" imageClass="tint-white opacity-70" fallbackDelay={Infinity} accessibilityLabel="" />
+                <Avatar src={ICONS.chevronRight} class="w-3.5 h-3.5" imageClass={`tint-white ${month().next ? "opacity-70" : "opacity-20"}`} fallbackDelay={Infinity} accessibilityLabel="" />
               </View>
             </View>
             <View class="flex-1 min-w-0 flex-row items-center gap-1 overflow-hidden p-1">
@@ -827,6 +980,9 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                   <Text class={`text-[13px] font-medium whitespace-nowrap ${k === tabKey() ? "text-white" : "text-white/50 group-hover:text-white"}`}>
                     {MONTH_KEYS[Number(k.slice(5, 7)) - 1]?.slice(0, 3)}
                   </Text>
+                  <If when={k === tabs()[tabs().length - 1]}>
+                    <Text class="text-[9px] text-white/60 italic">Today</Text>
+                  </If>
                   <Text class="text-[10px] text-white/40">{k.slice(0, 4)}</Text>
                 </View>
               ))}
@@ -836,7 +992,8 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 class="flex-row items-center gap-1.5 px-2.5 sm:px-3 rounded-l-lg cursor-pointer transition-colors hover:bg-white/10"
                 onPress={() => { txSplitOpen.set(false); p.sheet("journal"); }}
               >
-                <Text class="text-xs font-medium text-white whitespace-nowrap">+ Add Transaction</Text>
+                <Avatar src={TX_ICONS.plus} class="w-3 h-3" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
+                <Text class="text-xs font-medium text-white whitespace-nowrap hidden sm:block">Add Transaction</Text>
               </View>
               <View
                 accessibilityLabel="More add options"
@@ -848,15 +1005,17 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
               <If when={txSplitOpen()}>
                 <View class="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-slate-900 border border-[#e5e7eb] dark:border-slate-700 rounded-lg shadow-lg z-50 py-1">
                   <View
-                    class="w-full px-3 py-2 cursor-pointer transition-colors hover:bg-[#f9fafb] dark:hover:bg-slate-800"
+                    class="w-full flex-row items-center gap-2 px-3 py-2 cursor-pointer transition-colors hover:bg-[#f9fafb] dark:hover:bg-slate-800 rounded-t-lg"
                     onPress={() => { txSplitOpen.set(false); p.go("reconcile"); }}
                   >
+                    <Avatar src={TX_ICONS.upload} class="w-3.5 h-3.5 shrink-0" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
                     <Text class="text-xs text-[#374151] dark:text-slate-300">Import Bank Transactions…</Text>
                   </View>
                   <View
-                    class="w-full px-3 py-2 cursor-pointer transition-colors hover:bg-[#f9fafb] dark:hover:bg-slate-800"
+                    class="w-full flex-row items-center gap-2 px-3 py-2 cursor-pointer transition-colors hover:bg-[#f9fafb] dark:hover:bg-slate-800 rounded-b-lg"
                     onPress={() => { txSplitOpen.set(false); p.go("oldbooks"); }}
                   >
+                    <Avatar src={TX_ICONS.doc} class="w-3.5 h-3.5 shrink-0" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
                     <Text class="text-xs text-[#374151] dark:text-slate-300">Import Journal Entries…</Text>
                   </View>
                 </View>
@@ -868,8 +1027,8 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
               first chip, then chips + a bare inline input in one wrap row. */}
           <View class="relative z-40">
           <If when={chips().length === 0}>
-            <View class="flex-row items-center gap-2 px-5 py-2 border-b border-[#f1f5f9] dark:border-slate-800">
-              <View class="flex-1 min-w-0 flex-row items-center gap-2 rounded-md border border-[#e2e8f0] bg-[#f8fafc] px-2.5 h-9 dark:border-slate-700 dark:bg-slate-800/60 focus-within:ring-1 focus-within:ring-[#0d9488] focus-within:border-[#0d9488] transition-colors">
+            <View class="flex-row items-center gap-2 px-5 py-2 border-b border-[#e5e7eb] dark:border-slate-700">
+              <View class="flex-1 min-w-0 flex-row items-center gap-2 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-2.5 h-9 dark:border-slate-700 dark:bg-slate-800 focus-within:ring-1 focus-within:ring-[#0d9488] focus-within:border-[#0d9488] dark:focus-within:ring-teal-500 dark:focus-within:border-teal-500 transition-all">
                 <Avatar src={TX_ICONS.search} class="w-3.5 h-3.5 shrink-0" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
                 <Input
                   value={txSearch()}
@@ -883,7 +1042,10 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
             </View>
           </If>
           <If when={chips().length > 0}>
-            <View class="flex-row items-center gap-2 px-5 py-2 border-b border-[#f1f5f9] dark:border-slate-800">
+            <View class="flex-row items-start gap-2 px-5 py-2 border-b border-[#e5e7eb] dark:border-slate-700">
+              <View class="h-8 items-center justify-center shrink-0">
+                <Avatar src={TX_ICONS.search} class="w-3.5 h-3.5" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
+              </View>
               <View class={`flex-1 min-w-0 flex-row flex-wrap items-center gap-1.5 ${txChipsOpen() ? "max-h-[128px]" : "max-h-[32px]"} overflow-hidden`}>
                 {chips().map((c) => (
                   <TxChip label={c.label} clear={c.clear} />
@@ -908,7 +1070,8 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
             </View>
           </If>
 
-          {/* Filter dropdown — LedgerFilters (right-anchored w-[280px] rounded-xl shadow-xl) */}
+          {/* Filter dropdown — LedgerFilters: right-anchored w-[280px] panel of
+              collapsible sections, each a searchable checkbox list. */}
           <If when={txFiltersOpen()}>
             <View class="absolute right-5 top-full mt-1 w-[280px] max-w-[calc(100%-24px)] bg-white dark:bg-slate-900 border border-[#e5e7eb] dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
               <View class="flex-row items-center justify-between px-4 py-3 border-b border-[#f1f5f9] dark:border-slate-800">
@@ -924,64 +1087,116 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                     class="w-6 h-6 rounded items-center justify-center cursor-pointer transition-colors hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
                     onPress={() => txFiltersOpen.set(false)}
                   >
-                    <Text class="text-[12px] text-[#94a3b8] dark:text-slate-500">✕</Text>
+                    <Avatar src={TX_ICONS.x} class="w-3 h-3" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
                   </View>
                 </View>
               </View>
               <Scroll class="max-h-[420px]">
-                <View class="px-4 py-3 gap-3.5">
-                  <View class="gap-1.5">
-                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Party</Text>
-                    <TextBox value={txPartyText()} onChange={(v) => txPartyText.set(v)} placeholder="Name contains…" />
-                  </View>
-                  <View class="gap-1.5">
-                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Amount</Text>
-                    <View class="flex-row items-center gap-1.5">
-                      <TextBox value={txAmountMin()} onChange={(v) => txAmountMin.set(v)} placeholder="Min" />
-                      <Text class="text-[#94a3b8]">–</Text>
-                      <TextBox value={txAmountMax()} onChange={(v) => txAmountMax.set(v)} placeholder="Max" />
+                <View>
+                  <TxFilterSection title="Party" icon={TX_ICONS.fParty} count={txParties().length + (txPartyText().trim() ? 1 : 0)}>
+                    <TxCheckList
+                      options={txPartyOpts()}
+                      picked={txParties()}
+                      search={txPartyText}
+                      onSearch={(v) => txPartyText.set(v)}
+                      onToggle={(v) => txToggleIn(txParties, v)}
+                      ph="Search parties…"
+                      empty="No parties found"
+                    />
+                  </TxFilterSection>
+                  <TxFilterSection title="Amount" icon={TX_ICONS.fAmount} count={txAmountMin().trim() || txAmountMax().trim() ? 1 : 0}>
+                    <View class="flex-row items-center gap-2 py-1">
+                      <View class="flex-1">
+                        <Text class="text-[10px] text-[#94a3b8] dark:text-slate-500 font-medium mb-0.5">Min</Text>
+                        <View class="relative">
+                          <View class="absolute left-2 top-0 bottom-0 items-center justify-center">
+                            <Text class="text-[11px] text-[#94a3b8] dark:text-slate-500">$</Text>
+                          </View>
+                          <Input
+                            value={txAmountMin()}
+                            placeholder="Min 0.00"
+                            onChange={(e: Any) => txAmountMin.set((typeof e === "string" ? e : e.value).replace(/[^0-9.,]/g, ""))}
+                            class="w-full pl-5 pr-2 py-1.5 rounded-lg border border-[#e2e8f0] dark:border-slate-700 text-[12px] text-[#1e293b] dark:text-slate-100 placeholder-[#cbd5e1] dark:placeholder-slate-600 bg-white dark:bg-slate-800 focus:outline-none"
+                          />
+                        </View>
+                      </View>
+                      <Text class="text-[12px] text-[#94a3b8] mt-4">—</Text>
+                      <View class="flex-1">
+                        <Text class="text-[10px] text-[#94a3b8] dark:text-slate-500 font-medium mb-0.5">Max</Text>
+                        <View class="relative">
+                          <View class="absolute left-2 top-0 bottom-0 items-center justify-center">
+                            <Text class="text-[11px] text-[#94a3b8] dark:text-slate-500">$</Text>
+                          </View>
+                          <Input
+                            value={txAmountMax()}
+                            placeholder="Max 0.00"
+                            onChange={(e: Any) => txAmountMax.set((typeof e === "string" ? e : e.value).replace(/[^0-9.,]/g, ""))}
+                            class="w-full pl-5 pr-2 py-1.5 rounded-lg border border-[#e2e8f0] dark:border-slate-700 text-[12px] text-[#1e293b] dark:text-slate-100 placeholder-[#cbd5e1] dark:placeholder-slate-600 bg-white dark:bg-slate-800 focus:outline-none"
+                          />
+                        </View>
+                      </View>
                     </View>
-                  </View>
-                  <View class="gap-1.5">
-                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Transaction Type</Text>
-                    <View class="flex-row flex-wrap gap-1.5">
-                      {TX_TYPE_OPTS.map(([k, label]) => (
-                        <Chip label={label} on={txTypes().includes(k)} onPress={() => txToggleIn(txTypes, k)} />
-                      ))}
-                    </View>
-                  </View>
-                  <View class="gap-1.5">
-                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Status</Text>
-                    <View class="flex-row flex-wrap gap-1.5">
-                      {TX_STATUS_OPTS.map(([k, label]) => (
-                        <Chip label={label} on={txStatuses().includes(k)} onPress={() => txToggleIn(txStatuses, k)} />
-                      ))}
-                    </View>
-                  </View>
-                  <View class="gap-1.5">
-                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Source</Text>
-                    <View class="flex-row flex-wrap gap-1.5">
+                  </TxFilterSection>
+                  <TxFilterSection title="Source" icon={TX_ICONS.fSource} count={txSources().length}>
+                    <View>
                       {TX_SOURCE_OPTS.map(([k, label]) => (
-                        <Chip label={label} on={txSources().includes(k)} onPress={() => txToggleIn(txSources, k)} />
+                        <TxCheckRow label={label} on={txSources().includes(k)} onPress={() => txToggleIn(txSources, k)} />
                       ))}
                     </View>
-                  </View>
-                  <View class="gap-1.5">
-                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Matched Status</Text>
-                    <View class="flex-row flex-wrap gap-1.5">
+                  </TxFilterSection>
+                  <TxFilterSection title="Matched Status" icon={TX_ICONS.fMatched} count={txMatched() ? 1 : 0}>
+                    <View>
                       {TX_MATCHED_OPTS.map(([k, label]) => (
-                        <Chip label={label} on={txMatched() === k} onPress={() => txMatched.set(txMatched() === k ? "" : k)} />
+                        <TxCheckRow label={label} on={txMatched() === k} onPress={() => txMatched.set(txMatched() === k ? "" : k)} />
                       ))}
                     </View>
-                  </View>
-                  <View class="gap-1.5">
-                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Department</Text>
-                    <TextBox value={txDeptText()} onChange={(v) => txDeptText.set(v)} placeholder="Department…" />
-                  </View>
-                  <View class="gap-1.5">
-                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Location</Text>
-                    <TextBox value={txLocText()} onChange={(v) => txLocText.set(v)} placeholder="Location…" />
-                  </View>
+                  </TxFilterSection>
+                  <TxFilterSection title="Department" icon={TX_ICONS.fDept} count={txDepts().length + (txDeptText().trim() ? 1 : 0)}>
+                    <TxCheckList
+                      options={txTagOpts("department")}
+                      picked={txDepts()}
+                      search={txDeptText}
+                      onSearch={(v) => txDeptText.set(v)}
+                      onToggle={(v) => txToggleIn(txDepts, v)}
+                      ph="Search departments…"
+                      empty="No departments found"
+                    />
+                  </TxFilterSection>
+                  <TxFilterSection title="Location" icon={TX_ICONS.fLoc} count={txLocs().length + (txLocText().trim() ? 1 : 0)}>
+                    <TxCheckList
+                      options={txTagOpts("location")}
+                      picked={txLocs()}
+                      search={txLocText}
+                      onSearch={(v) => txLocText.set(v)}
+                      onToggle={(v) => txToggleIn(txLocs, v)}
+                      ph="Search locations…"
+                      empty="No locations found"
+                    />
+                  </TxFilterSection>
+                  <TxFilterSection title="Transaction Type" icon={TX_ICONS.fType} count={txTypes().length}>
+                    <View>
+                      {TX_TYPE_OPTS.map(([k, label]) => (
+                        <TxCheckRow
+                          label={label}
+                          on={txTypes().includes(k)}
+                          icon={k === "money_in" ? ICONS.payIn : k === "money_out" ? ICONS.payOut : k === "transfer" ? ICONS.transfer : ICONS.journal}
+                          onPress={() => txToggleIn(txTypes, k)}
+                        />
+                      ))}
+                    </View>
+                  </TxFilterSection>
+                  <TxFilterSection title="Status" icon={TX_ICONS.fMatched} count={txStatuses().length}>
+                    <View>
+                      {TX_STATUS_OPTS.map(([k, label]) => (
+                        <TxCheckRow
+                          label={label}
+                          on={txStatuses().includes(k)}
+                          color={STATUS_BAR[k] || "#f59e0b"}
+                          onPress={() => txToggleIn(txStatuses, k)}
+                        />
+                      ))}
+                    </View>
+                  </TxFilterSection>
                 </View>
               </Scroll>
             </View>
