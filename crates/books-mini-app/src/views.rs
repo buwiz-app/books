@@ -773,6 +773,7 @@ pub fn ledger(
     let (s, e) = (month.start, month.end);
     Ok(json!({
         "book": book_json(store, &chart.book)?,
+        "today": Date::today().to_string(),
         "month": { "key": month.key, "label": month.label(), "range": format!("{} {} – {} {}", MONTHS[usize::from(s.month - 1)], s.day, MONTHS[usize::from(e.month - 1)], e.day), "prev": month.previous().key, "next": Period::of(month.end.add_days(1), PeriodKind::Month).key },
         "accounts": groups,
         "all_accounts": every,

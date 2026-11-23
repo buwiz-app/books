@@ -8,7 +8,6 @@
 // left out.
 
 const txMonth = signal(String(PROPS.month || "")); // "YYYY-MM", "" = the tool's current month
-const txTodayMonth = signal(""); // actual current YYYY-MM (where month.next is null)
 const txAccount = signal(""); // account ticket, "" = All accounts
 const txChecked = signal<string[]>([]); // checked account tickets in TxSidebar (filters grouped view)
 const txFilter = signal("all"); // tool enum: all/review/draft/posted/checks
@@ -48,17 +47,12 @@ const txServerSearch = () => txSearch().trim() || txQueryChips()[0] || "";
 const txData = resource(
   () => ({ v: ver(), m: txMonth(), a: txAccount(), f: txFilter(), s: txServerSearch(), q: txQueryChips().length }),
   (k: Any) =>
-    buwiz
-      .call("books_ledger_list", {
-        ...(k.m ? { month: k.m } : {}),
-        ...(k.a ? { account: k.a } : {}),
-        ...(k.s ? { search: k.s } : {}),
-        filter: k.f,
-      })
-      .then((res: Any) => {
-        if (res?.month?.key && !res?.month?.next) txTodayMonth.set(String(res.month.key));
-        return res;
-      }),
+    buwiz.call("books_ledger_list", {
+      ...(k.m ? { month: k.m } : {}),
+      ...(k.a ? { account: k.a } : {}),
+      ...(k.s ? { search: k.s } : {}),
+      filter: k.f,
+    }),
 );
 
 // Paging: the tool answers 200 rows + next_cursor; "Load more" appends pages.
@@ -996,7 +990,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                   <Text class={`text-[13px] font-medium whitespace-nowrap ${k === tabKey() ? "text-white" : "text-white/50 group-hover:text-white"}`}>
                     {MONTH_KEYS[Number(k.slice(5, 7)) - 1]?.slice(0, 3)}
                   </Text>
-                  <If when={k === txTodayMonth() || (!month().next && k === tabKey())}>
+                  <If when={k === String(d()?.today || "").slice(0, 7)}>
                     <Text class="text-[9px] text-white/60 italic">Today</Text>
                   </If>
                   <Text class="text-[10px] text-white/40">{k.slice(0, 4)}</Text>
