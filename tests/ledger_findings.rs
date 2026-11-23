@@ -362,8 +362,8 @@ fn a_finished_statement_clears_unmatched_month() {
     );
     data(&import);
     let accept = s.bot.app(
-        "books_app_statement_accept",
-        json!({ "client_request_id": "stmt-accept-01", "account": "11000", "month": prev.key }),
+        "books_app_statement_action",
+        json!({ "client_request_id": "stmt-accept-01", "action": "accept", "account": "11000", "month": prev.key }),
     );
     data(&accept);
     let done = s.bot.app(
