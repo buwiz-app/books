@@ -139,16 +139,16 @@ async function snapImage(key: string, account: string, month: string, page: numb
 }
 
 // The toolbar's small square button, the old viewer's w-7 h-7 rounded-md.
-function SnapTool(p: { label: string; onPress: () => void; disabled?: boolean; acc?: string; tint?: string }) {
+function SnapTool(p: { label: string; onPress: () => void; disabled?: boolean; acc?: string; tint?: string; wide?: boolean }) {
   return (
     <View
-      class={`w-7 h-7 items-center justify-center rounded-md transition-colors ${p.disabled ? "opacity-30" : p.tint || "hover:bg-gray-100 dark:hover:bg-white/5"} cursor-pointer`}
+      class={`${p.wide ? "w-9" : "w-7"} h-7 items-center justify-center rounded-md transition-colors ${p.disabled ? "opacity-30" : p.tint || "hover:bg-gray-100 dark:hover:bg-white/5"} cursor-pointer`}
       accessibilityLabel={p.acc || p.label}
       onPress={() => {
         if (!p.disabled) p.onPress();
       }}
     >
-      <Text class="text-[13px] text-gray-500 dark:text-gray-400">{p.label}</Text>
+      <Text class={`${p.wide ? "text-[11px] font-medium" : "text-[13px]"} text-gray-500 dark:text-gray-400`}>{p.label}</Text>
     </View>
   );
 }
@@ -310,14 +310,7 @@ function SnapshotPane(p: {
             <Text class="text-[11px] font-semibold min-w-[3rem] text-center tabular-nums text-gray-400">{zoom()}%</Text>
             <SnapTool label="+" acc="Zoom in" disabled={zoom() >= SNAP_ZOOM_MAX} onPress={() => zoom.set(Math.min(SNAP_ZOOM_MAX, zoom() + SNAP_ZOOM_STEP))} />
             <View class="w-px h-4 mx-1 bg-gray-200 dark:bg-white/10" />
-            <View
-              class="h-7 min-w-[32px] px-2 items-center justify-center rounded-md hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer"
-              activeStyle={{ opacity: 0.7 }}
-              accessibilityLabel="Fit"
-              onPress={() => zoom.set(100)}
-            >
-              <Text class="text-[11px] font-medium text-gray-500 dark:text-gray-400">Fit</Text>
-            </View>
+            <SnapTool label="Fit" acc="Fit to width" wide onPress={() => zoom.set(100)} />
           </View>
           <View class="flex-row items-center gap-1">
             <If when={pages().length > 1}>
