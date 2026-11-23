@@ -43,7 +43,7 @@ function EntryDrawer() {
   };
   const has = (a: string) => (e()?.actions || []).includes(a);
   return (
-    <View class={`absolute top-0 right-0 bottom-0 w-[340px] border-l ${C.panel} ${C.line}`}>
+    <View class={`absolute top-0 right-0 bottom-0 w-[360px] max-w-full border-l ${C.panel} ${C.line}`}>
       <View class={`flex-row items-center gap-2 px-3.5 py-3 border-b ${C.line}`}>
         <Text class={`flex-1 text-[14px] font-bold ${C.ink} truncate`}>
           {e()?.title || "Entry"}

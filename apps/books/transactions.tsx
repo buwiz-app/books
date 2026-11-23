@@ -736,12 +736,12 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
               <View class="flex-row items-center p-1 bg-white/10 rounded-full">
                 {(["view", "edit"] as const).map((m) => (
                   <View
-                    class={`flex-row items-center px-3 py-1 rounded-full cursor-pointer transition-all ${
+                    class={`group flex-row items-center px-3 py-1 rounded-full cursor-pointer transition-all ${
                       txMode() === m ? "bg-white/20 shadow-sm" : "hover:bg-white/10"
                     }`}
                     onPress={() => { txMode.set(m); if (m === "view") txPicked.set([]); }}
                   >
-                    <Text class={`text-[13px] font-medium ${txMode() === m ? "text-white" : "text-white/50"}`}>
+                    <Text class={`text-[13px] font-medium ${txMode() === m ? "text-white" : "text-white/50 group-hover:text-white"}`}>
                       {m === "view" ? "View" : "Edit"}
                     </Text>
                   </View>
@@ -771,12 +771,12 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
             <View class="flex-1 min-w-0 flex-row items-center gap-1 overflow-hidden p-1">
               {tabs().map((k) => (
                 <View
-                  class={`shrink-0 flex-row items-center gap-1 px-3 py-1 rounded-md cursor-pointer transition-all ${
-                    k === tabKey() ? "bg-white/20 shadow-sm" : "border border-transparent hover:bg-white/10"
+                  class={`group shrink-0 flex-row items-center gap-1 px-3 py-1 rounded-md cursor-pointer transition-all ${
+                    k === tabKey() ? "bg-white/20 shadow-sm border border-white/20" : "border border-transparent hover:bg-white/10"
                   }`}
                   onPress={() => goMonth(k)}
                 >
-                  <Text class={`text-[13px] font-medium whitespace-nowrap ${k === tabKey() ? "text-white" : "text-white/50"}`}>
+                  <Text class={`text-[13px] font-medium whitespace-nowrap ${k === tabKey() ? "text-white" : "text-white/50 group-hover:text-white"}`}>
                     {MONTH_KEYS[Number(k.slice(5, 7)) - 1]?.slice(0, 3)}
                   </Text>
                   <Text class="text-[10px] text-white/40">{k.slice(0, 4)}</Text>
@@ -784,10 +784,10 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
               ))}
             </View>
             <View
-              class="shrink-0 flex-row items-center gap-1 rounded-lg bg-white px-3 py-1.5 cursor-pointer shadow-sm transition-colors hover:bg-[#f1f5f9]"
+              class="shrink-0 flex-row items-center gap-1.5 h-8 rounded-lg bg-white/10 px-2.5 sm:px-3 cursor-pointer transition-colors hover:bg-white/20"
               onPress={() => p.sheet("journal")}
             >
-              <Text class="text-[13px] font-semibold text-[#16a34a]">+ Add</Text>
+              <Text class="text-xs font-medium text-white whitespace-nowrap">+ Add Transaction</Text>
             </View>
           </View>
 
