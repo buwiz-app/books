@@ -27,6 +27,10 @@ const txExpandOver = signal<Record<string, boolean>>({});
 // client-side filters (the tool's own enum stays on `txFilter`)
 const txTypes = signal<string[]>([]);
 const txStatuses = signal<string[]>([]);
+const txSources = signal<string[]>([]);
+const txMatched = signal<string>(""); // "" | "matched" | "unmatched"
+const txDeptText = signal("");
+const txLocText = signal("");
 const txAmountMin = signal("");
 const txAmountMax = signal("");
 const txPartyText = signal("");
@@ -147,6 +151,10 @@ function txHay(r: Any): string {
 function txFiltered(rowsIn?: Any[]): Any[] {
   const types = txTypes();
   const statuses = txStatuses();
+  const sources = txSources();
+  const matched = txMatched();
+  const dept = txDeptText().trim().toLowerCase();
+  const loc = txLocText().trim().toLowerCase();
   // Compare unsigned amounts on digits only ("+40.00" and "1,200" both read).
   const min = txAmountMin().replace(/[^0-9.]/g, "");
   const max = txAmountMax().replace(/[^0-9.]/g, "");
@@ -162,6 +170,17 @@ function txFiltered(rowsIn?: Any[]): Any[] {
       const st = String(r.status || "");
       if (!statuses.some((s) => (s === "review" ? rev : st === s))) return false;
     }
+    if (sources.length) {
+      const src = String(r.source || (r.evidence ? "document" : "manual")).toLowerCase();
+      if (!sources.includes(src)) return false;
+    }
+    if (matched) {
+      const isM = Boolean(r.matched || r.reconciled);
+      if (matched === "matched" && !isM) return false;
+      if (matched === "unmatched" && isM) return false;
+    }
+    if (dept && !String(r.department || "").toLowerCase().includes(dept)) return false;
+    if (loc && !String(r.location || "").toLowerCase().includes(loc)) return false;
     const amt = String(r.amount_shown || r.amount || "0").replace(/[^0-9.]/g, "");
     if (min && cmpDec(amt, min) < 0) return false;
     if (max && cmpDec(amt, max) > 0) return false;
@@ -184,6 +203,15 @@ const TX_STATUS_OPTS: [string, string][] = [
   ["voided", "Voided"],
   ["review", "Needs review"],
 ];
+const TX_SOURCE_OPTS: [string, string][] = [
+  ["manual", "Manual"],
+  ["bank", "Bank"],
+  ["document", "Document"],
+];
+const TX_MATCHED_OPTS: [string, string][] = [
+  ["matched", "Matched"],
+  ["unmatched", "Unmatched"],
+];
 const TX_FORMS: Record<string, string> = {
   money_in: "Pay In",
   money_out: "Pay Out",
@@ -199,6 +227,10 @@ function txHasFilters(): boolean {
   return Boolean(
     txTypes().length ||
       txStatuses().length ||
+      txSources().length ||
+      txMatched() ||
+      txDeptText().trim() ||
+      txLocText().trim() ||
       txAmountMin().trim() ||
       txAmountMax().trim() ||
       txPartyText().trim() ||
@@ -209,6 +241,10 @@ function txHasFilters(): boolean {
 function txClearFilters() {
   txTypes.set([]);
   txStatuses.set([]);
+  txSources.set([]);
+  txMatched.set("");
+  txDeptText.set("");
+  txLocText.set("");
   txAmountMin.set("");
   txAmountMax.set("");
   txPartyText.set("");
@@ -667,6 +703,10 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
     const out: { label: string; clear: () => void }[] = [];
     for (const t of txTypes()) out.push({ label: TX_FORMS[t] || t, clear: () => txToggleIn(txTypes, t) });
     for (const s of txStatuses()) out.push({ label: (TX_STATUS_OPTS.find(([k]) => k === s) || ["", s])[1], clear: () => txToggleIn(txStatuses, s) });
+    for (const sr of txSources()) out.push({ label: (TX_SOURCE_OPTS.find(([k]) => k === sr) || ["", sr])[1], clear: () => txToggleIn(txSources, sr) });
+    if (txMatched()) out.push({ label: txMatched() === "matched" ? "Matched" : "Unmatched", clear: () => txMatched.set("") });
+    if (txDeptText().trim()) out.push({ label: `Dept: ${txDeptText().trim()}`, clear: () => txDeptText.set("") });
+    if (txLocText().trim()) out.push({ label: `Location: ${txLocText().trim()}`, clear: () => txLocText.set("") });
     if (txAmountMin().trim() || txAmountMax().trim())
       out.push({
         label: `${txAmountMin().trim() ? `\u2265 ${txAmountMin().trim()}` : ""}${txAmountMin().trim() && txAmountMax().trim() ? " – " : ""}${txAmountMax().trim() ? (txAmountMin().trim() ? "" : "\u2264 ") + txAmountMax().trim() : ""}` || `${txAmountMin().trim()} – ${txAmountMax().trim()}`,
@@ -730,6 +770,13 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 onPress={() => txSideOpen.set(true)}
               >
                 <Avatar src={ICONS.table} class="w-4 h-4" imageClass="tint-white opacity-70" fallbackDelay={Infinity} accessibilityLabel="" />
+              </View>
+              <View
+                accessibilityLabel="Back"
+                class="flex-row items-center gap-1 px-2 py-1 rounded-lg cursor-pointer transition-colors hover:bg-white/10"
+                onPress={() => p.go("today")}
+              >
+                <Text class="text-[13px] font-medium text-white/80">‹ Back</Text>
               </View>
               <Text class="text-[15px] font-semibold text-white">Ledger</Text>
             </View>
@@ -910,6 +957,30 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                         <Chip label={label} on={txStatuses().includes(k)} onPress={() => txToggleIn(txStatuses, k)} />
                       ))}
                     </View>
+                  </View>
+                  <View class="gap-1.5">
+                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Source</Text>
+                    <View class="flex-row flex-wrap gap-1.5">
+                      {TX_SOURCE_OPTS.map(([k, label]) => (
+                        <Chip label={label} on={txSources().includes(k)} onPress={() => txToggleIn(txSources, k)} />
+                      ))}
+                    </View>
+                  </View>
+                  <View class="gap-1.5">
+                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Matched Status</Text>
+                    <View class="flex-row flex-wrap gap-1.5">
+                      {TX_MATCHED_OPTS.map(([k, label]) => (
+                        <Chip label={label} on={txMatched() === k} onPress={() => txMatched.set(txMatched() === k ? "" : k)} />
+                      ))}
+                    </View>
+                  </View>
+                  <View class="gap-1.5">
+                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Department</Text>
+                    <TextBox value={txDeptText()} onChange={(v) => txDeptText.set(v)} placeholder="Department…" />
+                  </View>
+                  <View class="gap-1.5">
+                    <Text class="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">Location</Text>
+                    <TextBox value={txLocText()} onChange={(v) => txLocText.set(v)} placeholder="Location…" />
                   </View>
                 </View>
               </Scroll>
