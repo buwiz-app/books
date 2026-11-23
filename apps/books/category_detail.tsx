@@ -96,23 +96,19 @@ function CategoryDetailPage(p: { go: (page: string, filter?: string) => void }) 
               </View>
               <Text class="text-[14px] font-semibold text-white font-mono">{a()?.balance_shown || ""}</Text>
             </View>
-            <Scroll class="flex-1 min-h-0">
-              {/* Transactions: month nav + rows (ledger_list) */}
-              <View class={`flex-row items-center justify-between px-5 py-3 border-b ${C.line}`}>
+            {/* Transactions: month nav + rows (ledger_list) */}
+            <View class={`shrink-0 flex-row items-center justify-between px-5 py-3 border-b ${C.line}`}>
                 <View class="flex-row items-center gap-2">
-                  <View class="px-1.5" onPress={() => shiftMonth(-1)} activeStyle={{ opacity: 0.6 }}>
-                    <Text class={`text-[15px] ${C.dim}`}>‹</Text>
-                  </View>
+                  <Btn label="‹" small onPress={() => shiftMonth(-1)} />
                   <Text class={`text-[14px] font-bold ${C.ink}`}>{monthLabel()}</Text>
-                  <View class="px-1.5" onPress={() => shiftMonth(1)} activeStyle={{ opacity: 0.6 }}>
-                    <Text class={`text-[15px] ${C.dim}`}>›</Text>
-                  </View>
+                  <Btn label="›" small onPress={() => shiftMonth(1)} />
                 </View>
                 <View class="items-end">
                   <Text class={`text-[13px] font-semibold ${C.ink}`}>{monthShown()}</Text>
                   <Text class={`text-[11px] ${C.dim}`}>{tx().length > 0 ? countLabel() : ""}</Text>
                 </View>
-              </View>
+            </View>
+            <Scroll class="flex-1 min-h-0">
               <Loading res={ledger} />
               <Each of={tx()} key={rowKey}>
                 {(r: Any) => (

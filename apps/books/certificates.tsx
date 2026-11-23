@@ -54,7 +54,7 @@ function CertificatesPage(p: { go: (page: string, filter?: string) => void }) {
                   <Text class={`w-[70px] text-[12.5px] font-mono ${C.ink}`}>{c().quarter}</Text>
                   <Text class={`w-[120px] text-[12.5px] ${C.ink}`}>{c().kind}</Text>
                   <Text class={`w-[100px] text-right text-[12.5px] font-mono ${C.ink}`}>{c().amount_shown}</Text>
-                  <View class="w-[90px]" onPress={() => changing.set(changing() === c().ticket ? "" : c().ticket)}>
+                  <View class="w-[90px] rounded-md -my-1 py-1 transition-colors hover:bg-[#f1f5f9] dark:hover:bg-slate-800" onPress={() => changing.set(changing() === c().ticket ? "" : c().ticket)}>
                     <Pill tone={CERT_TONE[c().status] || "mute"} label={c().status} />
                   </View>
                   <View class="w-[180px]">

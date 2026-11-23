@@ -58,7 +58,7 @@ function FormsPage(p: { go: (page: string, filter?: string) => void }) {
         <Each of={(cards() as Any)?.cards || []} key={rowKey}>
           {(c: Any) => (
             <View
-              class={`flex-1 rounded-xl border p-3 gap-1 ${C.panel} ${formNow() === c().form ? "border-[#6a46c9] dark:border-[#b79bff]" : C.line}`}
+              class={`flex-1 rounded-xl border p-3 gap-1 transition-colors hover:bg-[#f8f9fb] dark:hover:bg-slate-800 ${C.panel} ${formNow() === c().form ? "border-[#6a46c9] dark:border-[#b79bff]" : C.line}`}
               onPress={() => {
                 lineageKey.set("");
                 formNow.set(c().form);
@@ -159,7 +159,7 @@ function FormsPage(p: { go: (page: string, filter?: string) => void }) {
                     <View
                       accessibilityLabel="Show where this comes from"
                       accessibilityValue={{ text: r().value_shown || "" }}
-                      class={`rounded-md px-1.5 py-0.5 ${lineageKey() === r().key ? C.raise : ""}`}
+                      class={`rounded-md px-1.5 py-0.5 transition-colors hover:bg-[#f1f5f9] dark:hover:bg-slate-800 ${lineageKey() === r().key ? C.raise : ""}`}
                       onPress={() => lineageKey.set(lineageKey() === r().key ? "" : r().key)}
                     >
                       <Text class={`text-[13px] font-mono font-semibold underline ${C.ink}`}>{r().value_shown || ""}</Text>
