@@ -135,11 +135,11 @@ function RepCard(p: { title: string; sub: string; right?: Any; children?: Any })
 }
 
 // A report table's header row: the thin muted labels over a heavy rule.
-function RepHead(p: { cells: { label: string; right?: boolean; wide?: boolean }[] }) {
+function RepHead(p: { cells: { label: string; right?: boolean; wide?: boolean; width?: string }[] }) {
   return (
     <View class={`flex-row border-b-2 ${C.line}`}>
       {p.cells.map((c: Any) => (
-        <Text class={`${c.wide ? "flex-1" : "w-[150px]"} py-2 px-3 ${c.right ? "text-right" : "text-left"} text-xs font-semibold ${C.dim}`}>{c.label}</Text>
+        <Text class={`${c.width ? c.width : c.wide ? "flex-1" : "w-[150px]"} py-2 px-3 ${c.right ? "text-right" : "text-left"} text-xs font-semibold ${C.dim}`}>{c.label}</Text>
       ))}
     </View>
   );
@@ -202,14 +202,19 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
     else toast("Print preview is not available in this Buwiz Bot.");
   };
 
+  const openInTransactions = (account: string, month: string) => {
+    if (!account) return;
+    if (typeof txAccount !== "undefined") txAccount.set(account);
+    if (typeof txMonth !== "undefined") txMonth.set(month || "");
+    if (typeof txFilter !== "undefined") txFilter.set("all");
+    p.go("transactions");
+  };
+
   // One statement line: name left, current (and prior + change) right. A row
-  // with a ticket opens the Ledger on a press; expense rows indent like the
-  // old app's P&L.
+  // with a ticket opens Transactions filtered to that account and period;
+  // expense rows indent like the old app's P&L.
   const row = (r: Any, withNumber: boolean, signed: boolean, indent: boolean) => {
-    const open = () => {
-      if (!r.ticket) return;
-      openLedger({ account: r.ticket, month: r.month || "" });
-    };
+    const open = () => openInTransactions(r.ticket || "", r.month || "");
     const neg = repCents(r.shown) < 0n;
     return (
       <View class={`flex-row items-center border-b ${C.lineSoft} ${r.ticket ? C.hoverBg : ""}`} onPress={open} activeStyle={{ opacity: r.ticket ? 0.75 : 1 }}>
@@ -280,8 +285,9 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
     const kind = repKind();
     if (kind === "tb")
       return [
-        { label: "Acct #", wide: true },
+        { label: "Acct #", width: "w-[100px]" },
         { label: "Account Name", wide: true },
+        { label: "Type", width: "w-[140px]" },
         { label: "Debit", right: true },
         { label: "Credit", right: true },
       ];
@@ -352,9 +358,10 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
         {(s: Any) => (
           <Each of={s().rows}>
             {(r: Any) => (
-              <View class={`flex-row items-center border-b ${C.lineSoft} ${r().ticket ? C.hoverBg : ""}`} onPress={() => r().ticket && openLedger({ account: r().ticket, month: r().month || "" })} activeStyle={{ opacity: r().ticket ? 0.75 : 1 }}>
-                <Text class={`flex-1 py-2 px-3 text-xs ${C.dim} tabular-nums`}>{r().number || "—"}</Text>
+              <View class={`flex-row items-center border-b ${C.lineSoft} ${r().ticket ? C.hoverBg : ""}`} onPress={() => openInTransactions(r().ticket || "", r().month || "")} activeStyle={{ opacity: r().ticket ? 0.75 : 1 }}>
+                <Text class={`w-[100px] py-2 px-3 text-xs ${C.dim} tabular-nums`}>{r().number || "—"}</Text>
                 <Text class={`flex-1 py-2 px-3 text-[13px] ${C.mute} truncate`}>{r().name}</Text>
+                <Text class={`w-[140px] py-2 px-3 text-xs ${C.dim} capitalize`}>{String(r().type || "—").replace(/_/g, " ")}</Text>
                 <Text class={`w-[150px] py-2 px-3 text-right text-[13px] font-medium tabular-nums ${r().debit_shown ? C.ink : C.dim}`}>{r().debit_shown || "—"}</Text>
                 <Text class={`w-[150px] py-2 px-3 text-right text-[13px] font-medium tabular-nums ${r().credit_shown ? C.ink : C.dim}`}>{r().credit_shown || "—"}</Text>
               </View>
@@ -363,7 +370,6 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
         )}
       </Each>
       <View class={`flex-row items-center border-t-2 ${C.line} ${C.subtle}`}>
-        <View class="flex-1" />
         <Text class={`flex-1 p-3 font-bold text-sm ${C.ink}`}>Total</Text>
         <Text class={`w-[150px] p-3 text-right font-bold text-sm tabular-nums ${C.ink}`}>{d()?.net?.debit_shown || ""}</Text>
         <Text class={`w-[150px] p-3 text-right font-bold text-sm tabular-nums ${C.ink}`}>{d()?.net?.credit_shown || ""}</Text>
@@ -430,97 +436,101 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
 
   return (
     <View class={`flex-1 flex-col overflow-hidden ${C.bg}`}>
-      {/* header: back + title left, tab pill nav centre, exports right */}
-      <View class={`${C.emeraldBar} px-5 py-3 shrink-0 flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-3`} style={{ backgroundColor: acc() }}>
-        <View class="flex-row items-center gap-3">
-          <View
-            class="h-8 px-2 rounded-lg flex-row items-center justify-center transition-colors hover:bg-white/10 cursor-pointer"
-            onPress={() => p.go("today")}
-            activeStyle={{ opacity: 0.75 }}
-          >
-            <Text class="text-[13px] font-medium text-white/90">‹ Back</Text>
-          </View>
-          <Avatar src={ICONS.barChart} class="w-[22px] h-[22px]" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
-          <Text class="text-[15px] font-semibold text-white">Financials</Text>
-        </View>
-        <View class="flex-row items-center flex-wrap gap-0.5 p-1 bg-white/10 rounded-full self-start md:self-center">
-          <Each of={REPORT_TABS}>
-            {(t: Any) => (
-              <View
-                class={`group px-4 py-1 rounded-full transition-all ${repKind() === t()[0] ? "bg-white/20 shadow-sm" : "hover:bg-white/10"}`}
-                onPress={() => {
-                  repKind.set(t()[0]);
-                  repCompare.set("none");
-                }}
-                activeStyle={{ opacity: 0.8 }}
-                hoverStyle={{ backgroundColor: repKind() === t()[0] ? undefined : "rgba(255,255,255,0.1)" }}
-              >
-                <Text class={`text-[13px] font-medium whitespace-nowrap ${repKind() === t()[0] ? "text-white" : "text-white/60 group-hover:text-white"}`}>{t()[1]}</Text>
-              </View>
-            )}
-          </Each>
-        </View>
-        <View class="flex-row items-center gap-2">
-          <RepBandBtn label="↓ Export CSV" onPress={exportCsv} />
-          {["pl", "bs", "cf"].includes(repKind()) ? <RepBandBtn label="↓ Excel" onPress={exportXlsx} disabled={xlsxSending()} /> : null}
-          {repPeriodKind() === "month" ? <RepBandBtn label="↓ Month pack" onPress={monthPack} /> : null}
-        </View>
-      </View>
-      {/* toolbar: period nav + month/quarter/year left, compare pills right */}
-      <View class={`${C.emeraldBar} border-t border-white/10 px-5 py-2.5 flex-row flex-wrap items-center justify-between gap-2 shrink-0`} style={{ backgroundColor: acc() }}>
-        <View class="flex-row items-center gap-2">
-          <View class="flex-row items-center bg-white/10 rounded-lg shrink-0">
+      {/* header: back + title left, tab pill nav centre, exports right — inner row matches report max-width */}
+      <View class={`${C.emeraldBar} px-5 py-3 shrink-0`} style={{ backgroundColor: acc() }}>
+        <View class="w-full max-w-[1152px] mx-auto flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-3">
+          <View class="flex-row items-center gap-3">
             <View
-              class={`group w-8 h-8 items-center justify-center rounded-l-lg transition-colors ${d()?.period.prev ? "" : "opacity-40"}`}
-              onPress={() => d()?.period.prev && repPeriod.set(d().period.prev)}
-              activeStyle={{ opacity: 0.7 }}
-              hoverStyle={{ backgroundColor: d()?.period.prev ? "rgba(255,255,255,0.1)" : undefined }}
+              class="h-8 px-2 rounded-lg flex-row items-center justify-center transition-colors hover:bg-white/10 cursor-pointer"
+              onPress={() => p.go("today")}
+              activeStyle={{ opacity: 0.75 }}
             >
-              <Avatar src={ICONS.chevronLeft} class="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
+              <Text class="text-[13px] font-medium text-white/90">‹ Back</Text>
             </View>
-            <Text class="px-2 text-xs font-medium text-white/70">
-              {["bs", "tb", "ag"].includes(repKind()) && d()?.period?.key ? repAsOf(d().period.key, repPeriodKind()) : d()?.period.label || ""}
-            </Text>
-            <View
-              class={`group w-8 h-8 items-center justify-center rounded-r-lg transition-colors ${d()?.period.next ? "" : "opacity-40"}`}
-              onPress={() => d()?.period.next && repPeriod.set(d().period.next)}
-              activeStyle={{ opacity: 0.7 }}
-              hoverStyle={{ backgroundColor: d()?.period.next ? "rgba(255,255,255,0.1)" : undefined }}
-            >
-              <Avatar src={ICONS.chevronRight} class="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
-            </View>
+            <Avatar src={ICONS.barChart} class="w-[22px] h-[22px]" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
+            <Text class="text-[15px] font-semibold text-white">Financials</Text>
           </View>
-          <View class="flex-row items-center bg-white/10 rounded-lg shrink-0">
-            <Each of={[["month", "Month"], ["quarter", "Quarter"], ["year", "Year"]]}>
-              {(o: Any) => (
+          <View class="flex-row items-center flex-wrap gap-0.5 p-1 bg-white/10 rounded-full self-start md:self-center">
+            <Each of={REPORT_TABS}>
+              {(t: Any) => (
                 <View
-                  class={`group px-3 h-8 items-center justify-center transition-colors ${repPeriodKind() === o()[0] ? "bg-white/20 rounded-lg" : ""}`}
+                  class={`group px-4 py-1 rounded-full transition-all ${repKind() === t()[0] ? "bg-white/20 shadow-sm" : "hover:bg-white/10"}`}
                   onPress={() => {
-                    repPeriodKind.set(o()[0]);
-                    repPeriod.set("");
+                    repKind.set(t()[0]);
+                    repCompare.set("none");
                   }}
                   activeStyle={{ opacity: 0.8 }}
-                  hoverStyle={{ backgroundColor: repPeriodKind() === o()[0] ? undefined : "rgba(255,255,255,0.1)" }}
+                  hoverStyle={{ backgroundColor: repKind() === t()[0] ? undefined : "rgba(255,255,255,0.1)" }}
                 >
-                  <Text class={`text-[12px] font-medium ${repPeriodKind() === o()[0] ? "text-white" : "text-white/50 group-hover:text-white"}`}>{o()[1]}</Text>
+                  <Text class={`text-[13px] font-medium whitespace-nowrap ${repKind() === t()[0] ? "text-white" : "text-white/60 group-hover:text-white"}`}>{t()[1]}</Text>
                 </View>
               )}
             </Each>
           </View>
+          <View class="flex-row items-center gap-2">
+            <RepBandBtn label="↓ Export CSV" onPress={exportCsv} />
+            {["pl", "bs", "cf"].includes(repKind()) ? <RepBandBtn label="↓ Excel" onPress={exportXlsx} disabled={xlsxSending()} /> : null}
+            {repPeriodKind() === "month" ? <RepBandBtn label="↓ Month pack" onPress={monthPack} /> : null}
+          </View>
         </View>
-        <View class="flex-row items-center gap-2">
-          <If when={canCompare()}>
-            {comparePill("previous", "vs Prior Period")}
-            {comparePill("last_year", "vs Last Year")}
-          </If>
-          <If when={repKind() === "ag"}>
-            <RepPill label="Accounts Payable" on={repSide() === "pay"} onPress={() => repSide.set("pay")} />
-            <RepPill label="Accounts Receivable" on={repSide() === "collect"} onPress={() => repSide.set("collect")} />
-          </If>
+      </View>
+      {/* toolbar: period nav + month/quarter/year left, compare pills right — aligned to report max-width */}
+      <View class={`${C.emeraldBar} border-t border-white/10 px-5 py-2.5 shrink-0`} style={{ backgroundColor: acc() }}>
+        <View class="w-full max-w-[1152px] mx-auto flex-row flex-wrap items-center justify-between gap-2">
+          <View class="flex-row items-center gap-2">
+            <View class="flex-row items-center bg-white/10 rounded-lg shrink-0">
+              <View
+                class={`group w-8 h-8 items-center justify-center rounded-l-lg transition-colors ${d()?.period.prev ? "" : "opacity-40"}`}
+                onPress={() => d()?.period.prev && repPeriod.set(d().period.prev)}
+                activeStyle={{ opacity: 0.7 }}
+                hoverStyle={{ backgroundColor: d()?.period.prev ? "rgba(255,255,255,0.1)" : undefined }}
+              >
+                <Avatar src={ICONS.chevronLeft} class="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
+              </View>
+              <Text class="px-2 text-xs font-medium text-white/70">
+                {["bs", "tb", "ag"].includes(repKind()) && d()?.period?.key ? repAsOf(d().period.key, repPeriodKind()) : d()?.period.label || ""}
+              </Text>
+              <View
+                class={`group w-8 h-8 items-center justify-center rounded-r-lg transition-colors ${d()?.period.next ? "" : "opacity-40"}`}
+                onPress={() => d()?.period.next && repPeriod.set(d().period.next)}
+                activeStyle={{ opacity: 0.7 }}
+                hoverStyle={{ backgroundColor: d()?.period.next ? "rgba(255,255,255,0.1)" : undefined }}
+              >
+                <Avatar src={ICONS.chevronRight} class="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
+              </View>
+            </View>
+            <View class="flex-row items-center bg-white/10 rounded-lg shrink-0">
+              <Each of={[["month", "Month"], ["quarter", "Quarter"], ["year", "Year"]]}>
+                {(o: Any) => (
+                  <View
+                    class={`group px-3 h-8 items-center justify-center transition-colors ${repPeriodKind() === o()[0] ? "bg-white/20 rounded-lg" : ""}`}
+                    onPress={() => {
+                      repPeriodKind.set(o()[0]);
+                      repPeriod.set("");
+                    }}
+                    activeStyle={{ opacity: 0.8 }}
+                    hoverStyle={{ backgroundColor: repPeriodKind() === o()[0] ? undefined : "rgba(255,255,255,0.1)" }}
+                  >
+                    <Text class={`text-[12px] font-medium ${repPeriodKind() === o()[0] ? "text-white" : "text-white/50 group-hover:text-white"}`}>{o()[1]}</Text>
+                  </View>
+                )}
+              </Each>
+            </View>
+          </View>
+          <View class="flex-row items-center gap-2">
+            <If when={canCompare()}>
+              {comparePill("previous", "vs Prior Period")}
+              {comparePill("last_year", "vs Last Year")}
+            </If>
+            <If when={repKind() === "ag"}>
+              <RepPill label="Accounts Payable" on={repSide() === "pay"} onPress={() => repSide.set("pay")} />
+              <RepPill label="Accounts Receivable" on={repSide() === "collect"} onPress={() => repSide.set("collect")} />
+            </If>
+          </View>
         </View>
       </View>
       <Scroll class="flex-1">
-        <View class="p-3 sm:p-6 gap-4">
+        <View class="w-full max-w-[1152px] mx-auto px-4 sm:px-5 py-4 sm:py-6 gap-4">
           <If when={Boolean(d()?.tag_note)}>
             <Text class={`text-[12px] ${C.dim}`}>{d()?.tag_note || ""}</Text>
           </If>
@@ -554,8 +564,6 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
               </If>
             </RepCard>
           </If>
-          <Text class={`text-[12px] ${C.dim}`}>Click a line to see its transactions in the Ledger.</Text>
-          <LedgerBulk />
         </View>
       </Scroll>
     </View>

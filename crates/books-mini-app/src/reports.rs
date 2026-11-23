@@ -89,6 +89,7 @@ fn row(
         "ticket": ticket(store, "account", a.id)?,
         "number": a.number,
         "name": a.name,
+        "type": a.account_type.as_str(),
         "value": money::format(cur),
         "shown": money::display(cur),
         "month": month.key,
