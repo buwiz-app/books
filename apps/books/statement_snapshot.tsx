@@ -310,8 +310,13 @@ function SnapshotPane(p: {
             <Text class="text-[11px] font-semibold min-w-[3rem] text-center tabular-nums text-gray-400">{zoom()}%</Text>
             <SnapTool label="+" acc="Zoom in" disabled={zoom() >= SNAP_ZOOM_MAX} onPress={() => zoom.set(Math.min(SNAP_ZOOM_MAX, zoom() + SNAP_ZOOM_STEP))} />
             <View class="w-px h-4 mx-1 bg-gray-200 dark:bg-white/10" />
-            <View class="px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer" accessibilityLabel="Fit" onPress={() => zoom.set(100)}>
-              <Text class="text-[11px] font-medium text-gray-400">Fit</Text>
+            <View
+              class="h-7 min-w-[32px] px-2 items-center justify-center rounded-md hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer"
+              activeStyle={{ opacity: 0.7 }}
+              accessibilityLabel="Fit"
+              onPress={() => zoom.set(100)}
+            >
+              <Text class="text-[11px] font-medium text-gray-500 dark:text-gray-400">Fit</Text>
             </View>
           </View>
           <View class="flex-row items-center gap-1">
