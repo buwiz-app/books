@@ -868,7 +868,7 @@ function MatchView() {
               />
             </View>
           </If>
-          <View class={side() ? "lg:flex-row items-start gap-3.5" : "gap-3.5"}>
+          <View class="lg:flex-row items-start gap-3.5">
             <If when={side()}>
               <View class={recPane() === "pdf" ? "block" : "hidden lg:block"}>
                 <SnapshotPane
@@ -912,7 +912,7 @@ function MatchView() {
                 />
               </View>
             </If>
-            <Panel class={side() ? (recPane() === "list" ? "flex-1 w-full" : "hidden lg:flex lg:flex-1") : ""}>
+            <Panel class={!side() || recPane() === "list" ? "flex-1 w-full" : "hidden lg:flex lg:flex-1"}>
               {/* search / filter bar inside the card (old app's ReconciliationSearchBar): magnifier, borderless input, counters, funnel, + */}
               <View class={`flex-row items-center gap-2 px-4 py-2.5 border-b ${C.line}`}>
                 <Text class={`text-[13px] ${C.dim}`}>⌕</Text>
