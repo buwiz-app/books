@@ -24,26 +24,45 @@ const longDate = (iso: string) => {
   return `${MONTH_NAMES[Number(m[2]) - 1] || m[2]} ${String(Number(m[3]))}, ${m[1]}`;
 };
 
-/** Colors: a dark palette, with a light twin for each. */
+/** Books Design System: unified surface, border, ink, and semantic tokens.
+ *  Dark mode uses a neutral obsidian ramp (#0d0d10 → #111216 → #141519 → #1c1d22 → #22232a)
+ *  that harmonizes cleanly with Buwiz Bot's native chrome; light mode pairs crisp porcelain
+ *  surfaces (#f6f7f9 → #f1f3f6 → #ffffff → #f4f5f7). Never mix slate/navy dark shades. */
 const C = {
-  bg: "bg-white dark:bg-[#0a0a0b]",
-  rail: "bg-[#f1f5f9] dark:bg-[#141416]",
-  panel: "bg-white dark:bg-[#141416]",
-  raise: "bg-[#f1f5f9] dark:bg-[#1c1c1f]",
-  hover: "bg-[#f8fafc] dark:bg-[#1c1c1f]",
-  line: "border-[#e2e8f0] dark:border-[#2a2a2d]",
-  ink: "text-[#0f172a] dark:text-[#fafafa]",
-  mute: "text-[#475569] dark:text-[#a1a1aa]",
-  dim: "text-[#94a3b8] dark:text-[#71717a]",
-  green: "text-[#15803d] dark:text-[#22c55e]",
+  bg: "bg-[#f6f7f9] dark:bg-[#0d0d10]",
+  rail: "bg-[#f1f3f6] dark:bg-[#111216]",
+  panel: "bg-white dark:bg-[#141519]",
+  raise: "bg-[#f1f5f9] dark:bg-[#1c1d22]",
+  hover: "bg-[#f8f9fb] dark:bg-[#22232a]",
+  hoverBg: "hover:bg-[#f8f9fb] dark:hover:bg-[#22232a]",
+  subtle: "bg-[#f8f9fb] dark:bg-white/[0.03]",
+  line: "border-[#e5e7eb] dark:border-[#27282f]",
+  lineSoft: "border-[#f1f3f6] dark:border-[#1f2027]",
+  ink: "text-[#111318] dark:text-[#f4f5f7]",
+  mute: "text-[#4b5563] dark:text-[#a1a5b0]",
+  dim: "text-[#8b919d] dark:text-[#6e727e]",
+  green: "text-[#15803d] dark:text-[#34d399]",
   greenBg: "bg-[#16a34a] dark:bg-[#22c55e]",
-  red: "text-[#ef4444] dark:text-[#ff7d75]",
-  redBg: "bg-[#ef4444] dark:bg-[#ff7d75]",
-  amber: "text-[#f59e0b] dark:text-[#f3b64c]",
-  blue: "text-[#2f6fd6] dark:text-[#7fb2ff]",
-  blueBg: "bg-[#2f6fd6] dark:bg-[#7fb2ff]",
-  violet: "text-[#6a46c9] dark:text-[#b79bff]",
-  violetBg: "bg-[#6a46c9] dark:bg-[#b79bff]",
+  red: "text-[#dc2626] dark:text-[#f87171]",
+  redBg: "bg-[#ef4444] dark:bg-[#f87171]",
+  amber: "text-[#d97706] dark:text-[#fbbf24]",
+  blue: "text-[#2563eb] dark:text-[#60a5fa]",
+  blueBg: "bg-[#2563eb] dark:bg-[#60a5fa]",
+  violet: "text-[#6d28d9] dark:text-[#a78bfa]",
+  violetBg: "bg-[#6d28d9] dark:bg-[#a78bfa]",
+  emeraldBar: "bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#12452b] dark:to-[#18663e]",
+};
+
+/** Typography scale: single source of truth for headings, section labels, body, and captions. */
+const TYPO = {
+  hero: `text-[20px] font-bold tracking-tight ${C.ink}`,
+  pageTitle: "text-[15px] font-semibold",
+  cardTitle: `text-[17px] font-bold tracking-tight ${C.ink}`,
+  section: `text-[11px] font-semibold uppercase tracking-wider ${C.dim}`,
+  body: `text-[13px] ${C.ink}`,
+  bodyMute: `text-[13px] ${C.mute}`,
+  caption: `text-[12px] ${C.mute}`,
+  micro: `text-[11px] ${C.dim}`,
 };
 
 /** Old-app icons as data-URI Avatars: the path verbatim, drawn `white` and
@@ -103,6 +122,8 @@ const ICONS: Record<string, string> = {
   // table glyph; locations reuse the location pin.
   building: svgIcon('<rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.0M16 6h.0M12 6h.0M8 10h.0M16 10h.0M12 10h.0M8 14h.0M16 14h.0M12 14h.0"/>', 1.5),
   table: svgIcon('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>', 1.5),
+  // Financials header bar-chart icon (old web financials.tsx:349-362).
+  barChart: svgIcon('<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>', 2),
 };
 
 // Weekday labels by day number (0 = Sunday): the owner's "M T W Th F S Su".
@@ -131,10 +152,10 @@ const BOOKS_TOKENS = {
       buttonNeon: "#00ffbe", buttonNeonDark: "#00d9a0",
     },
     dark: {
-      background: "#0a0a0b", surface: "#141416", surfaceElevated: "#1c1c1f",
-      border: "#2a2a2d", borderSubtle: "#1f1f22", textPrimary: "#fafafa",
-      textSecondary: "#a1a1aa", textMuted: "#71717a",
-      app: { backgroundStart: "#0f172a", backgroundEnd: "#1e293b", card: "#1e293b", textNavy: "#e2e8f0", textLight: "#94a3b8" },
+      background: "#0d0d10", surface: "#141519", surfaceElevated: "#1c1d22",
+      border: "#27282f", borderSubtle: "#1f2027", textPrimary: "#f4f5f7",
+      textSecondary: "#a1a5b0", textMuted: "#6e727e",
+      app: { backgroundStart: "#0d0d10", backgroundEnd: "#141519", card: "#141519", textNavy: "#f4f5f7", textLight: "#a1a5b0" },
     },
   },
   spacing: { xs: "0.25rem", sm: "0.5rem", md: "1rem", lg: "1.5rem", xl: "2rem", "2xl": "3rem" },
@@ -322,7 +343,7 @@ function SidePanel(p: {
 }) {
   const sheetBody = () =>
     p.card ? (
-      <View class={`rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>{p.body()}</View>
+      <View class={`rounded-[16px] border overflow-hidden flex-col ${C.panel} ${C.line}`}>{p.body()}</View>
     ) : (
       p.body()
     );
@@ -330,7 +351,7 @@ function SidePanel(p: {
     <>
       <View class={`hidden lg:flex flex-col w-1/4 min-w-[340px] max-w-[520px] shrink-0 ${p.class || ""}`}>{p.body()}</View>
       <If when={p.open()}>
-        <View class="fixed inset-0 lg:hidden flex-col bg-[#e8f0f2] dark:bg-slate-900">
+        <View class={`fixed inset-0 lg:hidden flex-col ${C.bg}`}>
           <View class="shrink-0 flex-row items-center px-2 py-1">
             <View
               accessibilityLabel="Back"
@@ -442,7 +463,7 @@ function TextBox(p: { value: string; onChange: (v: string) => void; placeholder?
       onChange={(e: Any) => p.onChange(typeof e === "string" ? e : e.value)}
       class={p.transferAmount
         ? "w-28 h-8 text-right text-xl font-semibold text-white tabular-nums bg-transparent border-none outline-none placeholder:text-white/40 focus:ring-0"
-        : `placeholder:text-[#8e8e93] transition-colors ${p.entry ? "rounded-md" : "rounded-lg"} border px-2.5 ${p.big ? "h-10 text-[18px] font-mono" : "h-8 text-[13px]"} focus:outline-none focus:ring-1 focus:ring-[#2a9d8f] focus:border-[#2a9d8f] ${p.entry ? "bg-white dark:bg-slate-700 border-[#e2e8f0] dark:border-slate-600 text-[#0f172a] dark:text-slate-100" : `${C.bg} ${C.line} ${C.ink}`}`}
+        : `placeholder:text-[#8e8e93] transition-colors ${p.entry ? "rounded-md" : "rounded-lg"} border px-2.5 ${p.big ? "h-10 text-[18px] font-mono" : "h-8 text-[13px]"} focus:outline-none focus:ring-1 focus:ring-[#2a9d8f] focus:border-[#2a9d8f] ${p.entry ? "bg-white dark:bg-[#1c1d22] border-[#e5e7eb] dark:border-[#27282f] text-[#111318] dark:text-[#f4f5f7]" : `${C.bg} ${C.line} ${C.ink}`}`}
     />
   );
 }
@@ -557,11 +578,11 @@ function BooksCombo(p: {
   // stays inline so open() re-evaluates it; a hoisted string freezes at mount.
   return (
     <View
-      class={chip ? "relative w-full" : `flex-col justify-center w-full min-h-11 sm:min-h-0 px-3 py-2 rounded-lg transition-colors ${open() ? "border-2 border-[#2a9d8f] dark:border-[#2dd4bf]" : "border border-gray-200 hover:border-gray-300 dark:border-slate-600 dark:hover:border-slate-500"} bg-white dark:bg-slate-800`}
+      class={chip ? "relative w-full" : `flex-col justify-center w-full min-h-11 sm:min-h-0 px-3 py-2 rounded-lg transition-colors ${open() ? "border-2 border-[#2a9d8f] dark:border-[#2dd4bf]" : "border border-[#e5e7eb] hover:border-[#d1d5db] dark:border-[#27282f] dark:hover:border-[#383a44]"} bg-white dark:bg-[#1c1d22]`}
     >
       {chip && (
         <View
-          class={`absolute inset-0 flex-row items-center gap-2 rounded-lg border bg-white px-3 py-2 transition-colors cursor-pointer dark:bg-slate-800 ${open() ? "border-[#2a9d8f] dark:border-[#2dd4bf]" : "border-[#e5e7eb] hover:border-[#d1d5db] dark:border-slate-600 dark:hover:border-[#64748b]"}`}
+          class={`absolute inset-0 flex-row items-center gap-2 rounded-lg border bg-white px-3 py-2 transition-colors cursor-pointer dark:bg-[#1c1d22] ${open() ? "border-[#2a9d8f] dark:border-[#2dd4bf]" : "border-[#e5e7eb] hover:border-[#d1d5db] dark:border-[#27282f] dark:hover:border-[#383a44]"}`}
           onPress={() => open.set(!open())}
         >
           <If when={Boolean(p.icon && ICONS[p.icon || ""])}>
@@ -611,11 +632,11 @@ function BooksCombo(p: {
             ? `w-full py-2 text-sm ${p.icon ? "pl-[38px] pr-3" : "px-3"} ${typing() ? "text-[#1e293b] dark:text-slate-100" : "opacity-0"}`
             : `flex-1 min-w-0 text-sm text-[#1e293b] dark:text-slate-100 focus:outline-none${p.icon ? " pl-2" : ""}`
         }
-        popupClass={`rounded-xl border border-[#e2e8f0] bg-white shadow-xl overflow-hidden dark:border-slate-700 dark:bg-slate-800${chip ? " min-w-[240px]" : ""}`}
+        popupClass={`rounded-xl border border-[#e5e7eb] bg-white shadow-xl overflow-hidden dark:border-[#27282f] dark:bg-[#141519]${chip ? " min-w-[240px]" : ""}`}
       popupStartingClass="opacity-0"
       listClass="max-h-[280px]"
-      groupClass="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#94a3b8] bg-[#f8fafc] border-t border-[#e2e8f0] dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700"
-      itemClass="px-4 min-h-10 text-[13px] text-[#0f172a] focus:bg-[#f8fafc] selected:bg-[#eaf6f6] dark:text-slate-100 dark:focus:bg-slate-700 dark:selected:bg-teal-900/30"
+      groupClass="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#8b919d] bg-[#f8f9fb] border-t border-[#e5e7eb] dark:bg-[#111216] dark:text-[#6e727e] dark:border-[#27282f]"
+      itemClass="px-4 min-h-10 text-[13px] text-[#111318] focus:bg-[#f8f9fb] selected:bg-[#eaf6f6] dark:text-[#f4f5f7] dark:focus:bg-[#22232a] dark:selected:bg-teal-900/30"
       searchAccessibilityLabel={`Find ${p.label || p.placeholder || "account"}`}
       searchPlaceholder="Type to filter..."
       empty={<Text class="px-4 py-2.5 text-[13px] text-[#94a3b8]">No matches found</Text>}
@@ -704,10 +725,10 @@ function BooksDate(p: { value: string; onChange: (value: string) => void; today?
       accessibilityLabel="Date"
       dateFormat="%B %-d, %Y"
       presets={p.today ? [{ label: "Today", value: p.today }, { label: "Cancel", value: p.value || p.today }] : []}
-      popupClass="rounded-xl border border-[#e2e8f0] bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
+      popupClass="rounded-xl border border-[#e5e7eb] bg-white shadow-xl dark:border-[#27282f] dark:bg-[#141519]"
       popupStyle={{ width: 264 }}
       contentClass="flex flex-col-reverse"
-      presetsClass="flex-row items-center justify-between border-t border-[#e2e8f0] dark:border-slate-700 mt-3 mx-4 mb-4 pt-3"
+      presetsClass="flex-row items-center justify-between border-t border-[#e5e7eb] dark:border-[#27282f] mt-3 mx-4 mb-4 pt-3"
       presetClass="text-xs font-medium transition-colors first:text-[#27ae60] first:dark:text-[#2ecc71] first:hover:underline last:px-4 last:py-1.5 last:text-[#64748b] last:dark:text-slate-400 last:hover:text-[#334155] last:dark:hover:text-slate-200"
       calendarClass="p-4"
       headerClass="mb-2"

@@ -155,7 +155,10 @@ export default function Books() {
         <If when={page() === "tags"}>
           <TagsPage go={go} />
         </If>
-        <If when={page() !== "new" && page() !== "accounts" && page() !== "category" && page() !== "inbox" && page() !== "tags" && page() !== "transactions"}>
+        <If when={page() === "reports"}>
+          <ReportsPage go={go} />
+        </If>
+        <If when={page() !== "new" && page() !== "accounts" && page() !== "category" && page() !== "inbox" && page() !== "tags" && page() !== "transactions" && page() !== "reports"}>
           <Scroll class="flex-1">
             <View class="p-6 gap-5">
               <If when={page() === "today"}>
@@ -169,9 +172,6 @@ export default function Books() {
               </If>
               <If when={page() === "settings"}>
                 <SettingsPage go={go} />
-              </If>
-              <If when={page() === "reports"}>
-                <ReportsPage go={go} />
               </If>
               <If when={page() === "people"}>
                 <PeoplePage go={go} />
