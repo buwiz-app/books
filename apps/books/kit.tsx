@@ -65,6 +65,8 @@ const ICONS: Record<string, string> = {
   // ui/Combobox.tsx: the selected tick and the create/suggest `+`.
   check: svgIcon('<path d="M20 6L9 17l-5-5"/>', 2.5),
   plus: svgIcon('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>', 2.5),
+  copy: svgIcon('<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>', 2),
+  trash: svgIcon('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>', 2),
   // transactions/shared/constants.tsx: Award03, Consultant, Operations (accounts/icons.ts), LOCATION_ICON.
   category: svgIcon('<path d="M7.8 15.4 7 22l4.5-2.7c.1-.0.2-.1.3-.1a.5.5 0 0 1 .2 0c.0.0.1.0.3.1L17 22l-.8-6.5m.2-11.2c.1.3.4.6.8.8l1.3.5a1.5 1.5 0 0 1 .8 1.9l-.5 1.3a1.5 1.5 0 0 0 0 1.1l.5 1.3a1.5 1.5 0 0 1-.8 1.9l-1.3.5c-.3.1-.6.4-.8.8l-.5 1.3a1.5 1.5 0 0 1-1.9.8l-1.3-.5a1.5 1.5 0 0 0-1.1 0l-1.3.5a1.5 1.5 0 0 1-1.9-.8l-.5-1.3a1.5 1.5 0 0 0-.8-.8l-1.3-.5a1.5 1.5 0 0 1-.8-1.9l.5-1.3a1.5 1.5 0 0 0 0-1.1l-.5-1.3a1.5 1.5 0 0 1 .8-1.9l1.3-.5c.3-.1.6-.4.8-.8l.5-1.3a1.5 1.5 0 0 1 1.9-.8l1.3.5c.3.1.7.1 1.1-.0l1.3-.5a1.5 1.5 0 0 1 1.9.8l.5 1.3z"/>', 1.5),
   party: svgIcon('<path d="M16 3.4a4.5 4.5 0 0 1 0 8.0m2 5.2c1.5.6 2.8 1.7 4 3.2M2 20c1.9-2.4 4.5-4 7.5-4s5.5 1.5 7.5 4M14 7.5a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0"/>', 1.5),

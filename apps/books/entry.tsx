@@ -2,12 +2,13 @@ const E_AMT = "w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8
 const E_DESC = "w-full min-w-0 bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors";
 const E_AMTLG = "w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-lg px-3 py-2 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] focus:ring-1 focus:ring-[#2a9d8f] transition-colors";
 const E_REF = "flex-row items-center justify-end gap-1 border border-white/20 rounded-lg px-3 py-1.5 bg-white/10 focus-within:border-white/40 focus-within:ring-1 focus-within:ring-white/30 transition-colors";
-const E_IC_DEL = "text-[15px] text-[#94a3b8] hover:text-[#f87171]";
-const E_IC_DUP = "text-[15px] text-[#94a3b8] hover:text-[#475569] dark:hover:text-slate-300";
-const E_IC_ADD = "text-[16px] font-semibold text-[#94a3b8] hover:text-[#2a9d8f]";
+const E_IC = (src: string, hover: string) => <Avatar src={src} class="w-4 h-4" imageClass={`tint-[#94a3b8] ${hover}`} fallbackDelay={Infinity} accessibilityLabel="" />;
+const E_IC_DEL = () => E_IC(ICONS.trash, "group-hover:tint-[#f87171]");
+const E_IC_DUP = () => E_IC(ICONS.copy, "group-hover:tint-[#475569] dark:group-hover:tint-slate-300");
+const E_IC_ADD = () => E_IC(ICONS.plus, "group-hover:tint-[#2a9d8f]");
 const E_ROWNO = "w-5 shrink-0 text-[11px] font-semibold text-center text-[#94a3b8] dark:text-slate-500";
-const E_ACT_G = "w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700 transition-colors";
-const E_ACT_T = "w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center hover:bg-[#f0fdfa] dark:hover:bg-slate-700 transition-colors";
+const E_ACT_G = "group w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700 transition-colors";
+const E_ACT_T = "group w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center hover:bg-[#f0fdfa] dark:hover:bg-slate-700 transition-colors";
 // The entry parts of the Books window: the drawer (the double entry behind
 // an entry, Post or Void) and the new-entry page (Money in, Money out,
 // Transfer, Journal). The Ledger itself is a native screen
@@ -882,7 +883,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                   activeStyle={{ opacity: 0.7 }}
                                   onPress={() => { allocations.set(allocations().filter((_: Any, i: number) => i !== index())); err.set(""); }}
                                 >
-                                  <Text class={E_IC_DEL}>×</Text>
+                                  {E_IC_DEL()}
                                 </View>
                               </If>
                               <View
@@ -903,7 +904,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                   err.set("");
                                 }}
                               >
-                                <Text class={E_IC_DUP}>⧉</Text>
+                                {E_IC_DUP()}
                               </View>
                               <View
                                 accessibilityLabel="Add allocation below"
@@ -911,7 +912,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 activeStyle={{ opacity: 0.7 }}
                                 onPress={() => { const next = [...allocations()]; next.splice(index() + 1, 0, allocationLine()); allocations.set(next); err.set(""); }}
                               >
-                                <Text class={E_IC_ADD}>+</Text>
+                                {E_IC_ADD()}
                               </View>
                             </View>
                           </View>
@@ -976,7 +977,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                   activeStyle={{ opacity: 0.7 }}
                                   onPress={() => { allocations.set(allocations().filter((_: Any, i: number) => i !== index())); err.set(""); }}
                                 >
-                                  <Text class={E_IC_DEL}>×</Text>
+                                  {E_IC_DEL()}
                                 </View>
                               </If>
                               <View
@@ -997,7 +998,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                   err.set("");
                                 }}
                               >
-                                <Text class={E_IC_DUP}>⧉</Text>
+                                {E_IC_DUP()}
                               </View>
                               <View
                                 accessibilityLabel="Add allocation below"
@@ -1005,7 +1006,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 activeStyle={{ opacity: 0.7 }}
                                 onPress={() => { const next = [...allocations()]; next.splice(index() + 1, 0, allocationLine()); allocations.set(next); err.set(""); }}
                               >
-                                <Text class={E_IC_ADD}>+</Text>
+                                {E_IC_ADD()}
                               </View>
                             </View>
                           </View>
@@ -1100,7 +1101,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               activeStyle={jl().length > 2 ? { opacity: 0.7 } : undefined}
                               onPress={() => { if (jl().length > 2) { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); } }}
                             >
-                              <Text class={E_IC_DEL}>🗑</Text>
+                              {E_IC_DEL()}
                             </View>
                             <View
                               accessibilityLabel="Copy line"
@@ -1122,7 +1123,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 err.set("");
                               }}
                             >
-                              <Text class={E_IC_DUP}>⧉</Text>
+                              {E_IC_DUP()}
                             </View>
                             <View
                               accessibilityLabel="Add line below"
@@ -1130,7 +1131,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               activeStyle={{ opacity: 0.7 }}
                               onPress={() => { const next = [...jl()]; next.splice(i() + 1, 0, journalLine()); jl.set(next); err.set(""); }}
                             >
-                              <Text class={E_IC_ADD}>+</Text>
+                              {E_IC_ADD()}
                             </View>
                           </View>
                         </View>
@@ -1189,7 +1190,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               activeStyle={jl().length > 2 ? { opacity: 0.7 } : undefined}
                               onPress={() => { if (jl().length > 2) { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); } }}
                             >
-                              <Text class={E_IC_DEL}>🗑</Text>
+                              {E_IC_DEL()}
                             </View>
                             <View
                               accessibilityLabel="Copy line"
@@ -1211,7 +1212,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 err.set("");
                               }}
                             >
-                              <Text class={E_IC_DUP}>⧉</Text>
+                              {E_IC_DUP()}
                             </View>
                             <View
                               accessibilityLabel="Add line below"
@@ -1219,7 +1220,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               activeStyle={{ opacity: 0.7 }}
                               onPress={() => { const next = [...jl()]; next.splice(i() + 1, 0, journalLine()); jl.set(next); err.set(""); }}
                             >
-                              <Text class={E_IC_ADD}>+</Text>
+                              {E_IC_ADD()}
                             </View>
                           </View>
                         </View>
@@ -1297,7 +1298,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                   activeStyle={{ opacity: 0.7 }}
                                   onPress={() => { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); }}
                                 >
-                                  <Text class={E_IC_DEL}>🗑</Text>
+                                  {E_IC_DEL()}
                                 </View>
                               </If>
                               <View
@@ -1320,7 +1321,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                   err.set("");
                                 }}
                               >
-                                <Text class={E_IC_DUP}>⧉</Text>
+                                {E_IC_DUP()}
                               </View>
                               <View
                                 accessibilityLabel="Add line below"
@@ -1328,7 +1329,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 activeStyle={{ opacity: 0.7 }}
                                 onPress={() => { const next = [...jl()]; next.splice(i() + 1, 0, journalLine()); jl.set(next); err.set(""); }}
                               >
-                                <Text class="text-[15px] font-semibold text-[#94a3b8] hover:text-[#2a9d8f]">+</Text>
+                                {E_IC_ADD()}
                               </View>
                             </View>
                           </View>
