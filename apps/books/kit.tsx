@@ -284,7 +284,11 @@ function Seg(p: { options: [string, string][]; value: string; onPick: (v: string
     <View class={`flex-row rounded-[9px] border p-0.5 gap-0.5 self-start ${C.panel} ${C.line}`}>
       <Each of={p.options}>
         {(o: Any) => (
-          <View class={`rounded-[7px] px-2.5 py-1 transition-colors ${o()[0] === p.value ? C.raise : "hover:bg-[#e2e8f0] dark:hover:bg-[#26262a]"}`} onPress={() => p.onPick(o()[0])}>
+          <View
+            class={`rounded-[7px] px-2.5 py-1 transition-colors ${o()[0] === p.value ? C.raise : "hover:bg-[#e2e8f0] dark:hover:bg-[#26262a]"}`}
+            onPress={() => p.onPick(o()[0])}
+            activeStyle={{ opacity: 0.7 }}
+          >
             <Text class={`text-[12.5px] ${o()[0] === p.value ? `font-semibold ${C.ink}` : C.mute}`}>{o()[1]}</Text>
           </View>
         )}
@@ -453,7 +457,12 @@ function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; plac
   const current = computed(() => (p.options || []).find((o: Any) => o.ticket === p.value));
   return (
     <View class="gap-1">
-      <View accessibilityLabel={p.label} class={`flex-row items-center rounded-lg border px-2.5 h-8 transition-colors ${C.bg} ${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]`} onPress={() => open.set(!open())}>
+      <View
+        accessibilityLabel={p.label}
+        class={`flex-row items-center rounded-lg border px-2.5 h-8 transition-colors ${C.bg} ${open() ? "border-[#2a9d8f] dark:border-[#2dd4bf]" : `${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]`}`}
+        onPress={() => open.set(!open())}
+        activeStyle={{ opacity: 0.7 }}
+      >
         <Text accessibilityElementsHidden={Boolean(p.label)} class={`flex-1 text-[13px] ${current() ? C.ink : C.dim} truncate`}>
           {current() ? current().label || current().name : p.placeholder || "Pick one"}
         </Text>
@@ -461,6 +470,9 @@ function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; plac
       </View>
       <If when={open()}>
         <View class={`rounded-lg border max-h-[180px] ${C.panel} ${C.line}`}>
+          <If when={(p.options || []).length === 0}>
+            <Text class={`px-2.5 py-1.5 text-[12.5px] ${C.dim}`}>No options</Text>
+          </If>
           <Scroll class="max-h-[178px]">
             <Each of={p.options || []} key={rowKey}>
               {(o: Any) => (
@@ -763,7 +775,7 @@ function BooksDate(p: { value: string; onChange: (value: string) => void; today?
       }}
       trigger={
         header ? (
-          <View class="flex-row items-center justify-center gap-1.5 rounded-md bg-black/20 px-3 py-1.5 hover:bg-black/30">
+          <View class="flex-row items-center justify-center gap-1.5 rounded-md bg-black/20 px-3 py-1.5 transition-colors hover:bg-black/30">
             <Text class="text-sm font-medium text-white/90">{longDate(p.value || p.today || "Select date")}</Text>
             <Avatar src={ICONS.calendar} class="w-3.5 h-3.5" imageClass="tint-white/90" fallbackDelay={Infinity} accessibilityLabel="" />
           </View>

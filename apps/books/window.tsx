@@ -68,9 +68,10 @@ function Setup() {
   };
   const Opt = (q: { id: string; title: string; sub: string }) => (
     <View
-      class={`flex-1 rounded-[10px] border p-3 gap-1 ${C.bg} ${C.line}`}
+      class={`flex-1 rounded-[10px] border p-3 gap-1 transition-colors ${C.bg} ${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]`}
       style={picked(basis() === q.id)}
       onPress={() => basis.set(q.id)}
+      activeStyle={{ opacity: 0.7 }}
     >
       <Text class={`text-[13.5px] font-bold ${C.ink}`}>{q.title}</Text>
       <Text class={`text-[12px] ${C.mute}`}>{q.sub}</Text>
