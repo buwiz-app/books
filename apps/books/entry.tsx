@@ -1,3 +1,13 @@
+const E_AMT = "w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors";
+const E_DESC = "w-full min-w-0 bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors";
+const E_AMTLG = "w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-lg px-3 py-2 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] focus:ring-1 focus:ring-[#2a9d8f] transition-colors";
+const E_REF = "flex-row items-center justify-end gap-1 border border-white/20 rounded-lg px-3 py-1.5 bg-white/10 focus-within:border-white/40 focus-within:ring-1 focus-within:ring-white/30 transition-colors";
+const E_IC_DEL = "text-[15px] text-[#94a3b8] hover:text-[#f87171]";
+const E_IC_DUP = "text-[15px] text-[#94a3b8] hover:text-[#475569] dark:hover:text-slate-300";
+const E_IC_ADD = "text-[16px] font-semibold text-[#94a3b8] hover:text-[#2a9d8f]";
+const E_ROWNO = "w-5 shrink-0 text-[11px] font-semibold text-center text-[#94a3b8] dark:text-slate-500";
+const E_ACT_G = "w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700 transition-colors";
+const E_ACT_T = "w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center hover:bg-[#f0fdfa] dark:hover:bg-slate-700 transition-colors";
 // The entry parts of the Books window: the drawer (the double entry behind
 // an entry, Post or Void) and the new-entry page (Money in, Money out,
 // Transfer, Journal). The Ledger itself is a native screen
@@ -734,13 +744,13 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                 </View>
                 <View class="flex-col items-end gap-1 ml-auto shrink-0">
                   <If when={mode() === "transfer"}>
-                    <View class="flex-row items-center justify-end gap-1 border border-white/20 rounded-lg px-3 py-1.5 bg-white/10 focus-within:border-white/40 focus-within:ring-1 focus-within:ring-white/30 transition-colors">
+                    <View class={E_REF}>
                       <Text class="text-xl font-semibold text-white/60">₱</Text>
                       <TextBox label="Amount" value={amount()} onChange={(v) => { amount.set(v); err.set(""); }} placeholder="0.00" transferAmount />
                     </View>
                   </If>
                   <If when={mode() === "money_in" || mode() === "money_out"}>
-                    <View class="flex-row items-center justify-end gap-1 border border-white/20 rounded-lg px-3 py-1.5 bg-white/10 focus-within:border-white/40 focus-within:ring-1 focus-within:ring-white/30 transition-colors">
+                    <View class={E_REF}>
                       <Text class="text-xl font-semibold text-white/60">₱</Text>
                       <TextBox label="Amount" value={amount()} onChange={(v) => { amount.set(v); err.set(""); }} placeholder="0.00" transferAmount />
                     </View>
@@ -834,12 +844,12 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                         <View class="gap-2 rounded-xl border border-[#e2e8f0] dark:border-slate-600 bg-white dark:bg-slate-800 p-3 md:p-0 md:py-3 md:rounded-none md:border-0 md:border-b md:border-[#f0f2f5] md:dark:border-slate-800 md:bg-transparent md:dark:bg-transparent md:last:border-b-0">
                           {/* Desktop (md+): row 1 = # + description + amount */}
                           <View class="hidden md:flex flex-row items-center gap-2">
-                            <Text class="w-5 shrink-0 text-[11px] font-semibold text-center text-[#94a3b8] dark:text-slate-500">{String(index() + 1)}</Text>
+                            <Text class={E_ROWNO}>{String(index() + 1)}</Text>
                             <View class="flex-[2] lg:flex-1 min-w-0">
-                              <Input accessibilityLabel="Allocation description" value={line().memo()} onChange={(e: Any) => line().memo.set(typeof e === "string" ? e : e.value)} placeholder="Add description for this item..." class="w-full min-w-0 bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
+                              <Input accessibilityLabel="Allocation description" value={line().memo()} onChange={(e: Any) => line().memo.set(typeof e === "string" ? e : e.value)} placeholder="Add description for this item..." class={E_DESC} />
                             </View>
                             <View class="flex-1 min-w-0 lg:flex-none lg:w-20">
-                              <Input accessibilityLabel="Allocation amount" value={line().amount()} onChange={(e: Any) => { line().amount.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
+                              <Input accessibilityLabel="Allocation amount" value={line().amount()} onChange={(e: Any) => { line().amount.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class={E_AMT} />
                             </View>
                           </View>
                           {/* Desktop (md+): combos 2×2 at md–lg, one row at lg+, icons on the right */}
@@ -885,12 +895,12 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                   activeStyle={{ opacity: 0.7 }}
                                   onPress={() => { allocations.set(allocations().filter((_: Any, i: number) => i !== index())); err.set(""); }}
                                 >
-                                  <Text class="text-[15px] text-[#94a3b8] hover:text-[#f87171]">×</Text>
+                                  <Text class={E_IC_DEL}>×</Text>
                                 </View>
                               </If>
                               <View
                                 accessibilityLabel="Copy allocation"
-                                class="w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700 transition-colors"
+                                class={E_ACT_G}
                                 activeStyle={{ opacity: 0.7 }}
                                 onPress={() => {
                                   const copy = allocationLine();
@@ -906,15 +916,15 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                   err.set("");
                                 }}
                               >
-                                <Text class="text-[15px] text-[#94a3b8] hover:text-[#475569] dark:hover:text-slate-300">⧉</Text>
+                                <Text class={E_IC_DUP}>⧉</Text>
                               </View>
                               <View
                                 accessibilityLabel="Add allocation below"
-                                class="w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center hover:bg-[#f0fdfa] dark:hover:bg-slate-700 transition-colors"
+                                class={E_ACT_T}
                                 activeStyle={{ opacity: 0.7 }}
                                 onPress={() => { const next = [...allocations()]; next.splice(index() + 1, 0, allocationLine()); allocations.set(next); err.set(""); }}
                               >
-                                <Text class="text-[16px] font-semibold text-[#94a3b8] hover:text-[#2a9d8f]">+</Text>
+                                <Text class={E_IC_ADD}>+</Text>
                               </View>
                             </View>
                           </View>
@@ -930,7 +940,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                             </View>
                             <View class="gap-1 pb-2">
                               <Text class={`text-[10px] font-medium uppercase tracking-wider ${C.dim}`}>Amount</Text>
-                              <Input accessibilityLabel="Allocation amount" value={line().amount()} onChange={(e: Any) => { line().amount.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-lg px-3 py-2 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] focus:ring-1 focus:ring-[#2a9d8f] transition-colors" />
+                              <Input accessibilityLabel="Allocation amount" value={line().amount()} onChange={(e: Any) => { line().amount.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class={E_AMTLG} />
                             </View>
                             <View class="gap-2 pb-2">
                               <BooksCombo
@@ -979,7 +989,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                   activeStyle={{ opacity: 0.7 }}
                                   onPress={() => { allocations.set(allocations().filter((_: Any, i: number) => i !== index())); err.set(""); }}
                                 >
-                                  <Text class="text-[15px] text-[#94a3b8] hover:text-[#f87171]">×</Text>
+                                  <Text class={E_IC_DEL}>×</Text>
                                 </View>
                               </If>
                               <View
@@ -1000,7 +1010,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                   err.set("");
                                 }}
                               >
-                                <Text class="text-[15px] text-[#94a3b8] hover:text-[#475569] dark:hover:text-slate-300">⧉</Text>
+                                <Text class={E_IC_DUP}>⧉</Text>
                               </View>
                               <View
                                 accessibilityLabel="Add allocation below"
@@ -1008,7 +1018,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 activeStyle={{ opacity: 0.7 }}
                                 onPress={() => { const next = [...allocations()]; next.splice(index() + 1, 0, allocationLine()); allocations.set(next); err.set(""); }}
                               >
-                                <Text class="text-[16px] font-semibold text-[#94a3b8] hover:text-[#2a9d8f]">+</Text>
+                                <Text class={E_IC_ADD}>+</Text>
                               </View>
                             </View>
                           </View>
@@ -1044,15 +1054,15 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                         {/* Tablet (md–lg): desc flex-[2] + flexible amounts */}
                         <View class="hidden md:flex lg:hidden md:flex-col gap-2">
                         <View class="flex-row gap-2 items-center">
-                          <Text class="w-5 shrink-0 text-[11px] font-semibold text-center text-[#94a3b8] dark:text-slate-500">{String(i() + 1)}</Text>
+                          <Text class={E_ROWNO}>{String(i() + 1)}</Text>
                           <View class="flex-[2] min-w-0">
-                            <Input accessibilityLabel="Line description" value={l().memo()} onChange={(e: Any) => l().memo.set(typeof e === "string" ? e : e.value)} placeholder="Add description for this item..." class="w-full min-w-0 bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
+                            <Input accessibilityLabel="Line description" value={l().memo()} onChange={(e: Any) => l().memo.set(typeof e === "string" ? e : e.value)} placeholder="Add description for this item..." class={E_DESC} />
                           </View>
                           <View class="flex-1 min-w-0">
-                            <Input accessibilityLabel="Debit" value={l().debit()} onChange={(e: Any) => { l().debit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
+                            <Input accessibilityLabel="Debit" value={l().debit()} onChange={(e: Any) => { l().debit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class={E_AMT} />
                           </View>
                           <View class="flex-1 min-w-0">
-                            <Input accessibilityLabel="Credit" value={l().credit()} onChange={(e: Any) => { l().credit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
+                            <Input accessibilityLabel="Credit" value={l().credit()} onChange={(e: Any) => { l().credit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class={E_AMT} />
                           </View>
                         </View>
                         <View class="flex-row items-center gap-2 pl-7">
@@ -1103,7 +1113,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               activeStyle={jl().length > 2 ? { opacity: 0.7 } : undefined}
                               onPress={() => { if (jl().length > 2) { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); } }}
                             >
-                              <Text class="text-[15px] text-[#94a3b8] hover:text-[#f87171]">🗑</Text>
+                              <Text class={E_IC_DEL}>🗑</Text>
                             </View>
                             <View
                               accessibilityLabel="Copy line"
@@ -1125,7 +1135,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 err.set("");
                               }}
                             >
-                              <Text class="text-[15px] text-[#94a3b8] hover:text-[#475569] dark:hover:text-slate-300">⧉</Text>
+                              <Text class={E_IC_DUP}>⧉</Text>
                             </View>
                             <View
                               accessibilityLabel="Add line below"
@@ -1133,7 +1143,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               activeStyle={{ opacity: 0.7 }}
                               onPress={() => { const next = [...jl()]; next.splice(i() + 1, 0, journalLine()); jl.set(next); err.set(""); }}
                             >
-                              <Text class="text-[16px] font-semibold text-[#94a3b8] hover:text-[#2a9d8f]">+</Text>
+                              <Text class={E_IC_ADD}>+</Text>
                             </View>
                           </View>
                         </View>
@@ -1141,15 +1151,15 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                         {/* Desktop (lg+): two compact rows */}
                         <View class="hidden lg:flex lg:flex-col gap-2">
                         <View class="flex-row gap-2 items-center">
-                          <Text class="w-5 shrink-0 text-[11px] font-semibold text-center text-[#94a3b8] dark:text-slate-500">{String(i() + 1)}</Text>
+                          <Text class={E_ROWNO}>{String(i() + 1)}</Text>
                           <View class="flex-1 min-w-0">
-                            <Input accessibilityLabel="Line description" value={l().memo()} onChange={(e: Any) => l().memo.set(typeof e === "string" ? e : e.value)} placeholder="Add description for this item..." class="w-full min-w-0 bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
+                            <Input accessibilityLabel="Line description" value={l().memo()} onChange={(e: Any) => l().memo.set(typeof e === "string" ? e : e.value)} placeholder="Add description for this item..." class={E_DESC} />
                           </View>
                           <View class="w-20 shrink-0">
-                            <Input accessibilityLabel="Debit" value={l().debit()} onChange={(e: Any) => { l().debit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
+                            <Input accessibilityLabel="Debit" value={l().debit()} onChange={(e: Any) => { l().debit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class={E_AMT} />
                           </View>
                           <View class="w-20 shrink-0">
-                            <Input accessibilityLabel="Credit" value={l().credit()} onChange={(e: Any) => { l().credit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-md px-2 py-1.5 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] transition-colors" />
+                            <Input accessibilityLabel="Credit" value={l().credit()} onChange={(e: Any) => { l().credit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class={E_AMT} />
                           </View>
                         </View>
                         <View class="flex-row items-center gap-2 pl-7">
@@ -1192,11 +1202,11 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                               activeStyle={jl().length > 2 ? { opacity: 0.7 } : undefined}
                               onPress={() => { if (jl().length > 2) { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); } }}
                             >
-                              <Text class="text-[15px] text-[#94a3b8] hover:text-[#f87171]">🗑</Text>
+                              <Text class={E_IC_DEL}>🗑</Text>
                             </View>
                             <View
                               accessibilityLabel="Copy line"
-                              class="w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center hover:bg-[#f1f5f9] dark:hover:bg-slate-700 transition-colors"
+                              class={E_ACT_G}
                               activeStyle={{ opacity: 0.7 }}
                               onPress={() => {
                                 const copy = journalLine();
@@ -1214,15 +1224,15 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                 err.set("");
                               }}
                             >
-                              <Text class="text-[15px] text-[#94a3b8] hover:text-[#475569] dark:hover:text-slate-300">⧉</Text>
+                              <Text class={E_IC_DUP}>⧉</Text>
                             </View>
                             <View
                               accessibilityLabel="Add line below"
-                              class="w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-center hover:bg-[#f0fdfa] dark:hover:bg-slate-700 transition-colors"
+                              class={E_ACT_T}
                               activeStyle={{ opacity: 0.7 }}
                               onPress={() => { const next = [...jl()]; next.splice(i() + 1, 0, journalLine()); jl.set(next); err.set(""); }}
                             >
-                              <Text class="text-[16px] font-semibold text-[#94a3b8] hover:text-[#2a9d8f]">+</Text>
+                              <Text class={E_IC_ADD}>+</Text>
                             </View>
                           </View>
                         </View>
@@ -1246,11 +1256,11 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                           <View class="grid grid-cols-2 gap-2 px-3 pb-2">
                             <View>
                               <Text class="text-[10px] font-medium text-[#94a3b8] dark:text-slate-500 uppercase mb-1">Debit</Text>
-                              <Input accessibilityLabel="Debit" value={l().debit()} onChange={(e: Any) => { l().debit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-lg px-3 py-2 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] focus:ring-1 focus:ring-[#2a9d8f] transition-colors" />
+                              <Input accessibilityLabel="Debit" value={l().debit()} onChange={(e: Any) => { l().debit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class={E_AMTLG} />
                             </View>
                             <View>
                               <Text class="text-[10px] font-medium text-[#94a3b8] dark:text-slate-500 uppercase mb-1">Credit</Text>
-                              <Input accessibilityLabel="Credit" value={l().credit()} onChange={(e: Any) => { l().credit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class="w-full text-right bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 rounded-lg px-3 py-2 text-base sm:text-sm tabular-nums text-[#1e293b] dark:text-slate-200 placeholder:text-[#cbd5e1] dark:placeholder:text-slate-600 outline-none focus:border-[#2a9d8f] dark:focus:border-[#2a9d8f] focus:ring-1 focus:ring-[#2a9d8f] transition-colors" />
+                              <Input accessibilityLabel="Credit" value={l().credit()} onChange={(e: Any) => { l().credit.set(typeof e === "string" ? e : e.value); err.set(""); }} placeholder="₱0.00" class={E_AMTLG} />
                             </View>
                           </View>
                           <View class="px-3 pb-2">
@@ -1300,7 +1310,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                   activeStyle={{ opacity: 0.7 }}
                                   onPress={() => { jl.set(jl().filter((_: Any, j: number) => j !== i())); err.set(""); }}
                                 >
-                                  <Text class="text-[15px] text-[#94a3b8] hover:text-[#f87171]">🗑</Text>
+                                  <Text class={E_IC_DEL}>🗑</Text>
                                 </View>
                               </If>
                               <View
@@ -1323,7 +1333,7 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
                                   err.set("");
                                 }}
                               >
-                                <Text class="text-[15px] text-[#94a3b8] hover:text-[#475569] dark:hover:text-slate-300">⧉</Text>
+                                <Text class={E_IC_DUP}>⧉</Text>
                               </View>
                               <View
                                 accessibilityLabel="Add line below"
