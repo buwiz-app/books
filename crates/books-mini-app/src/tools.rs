@@ -74,6 +74,7 @@ pub const STATEMENT_UNMATCH: &str = "books_app_statement_unmatch";
 pub const STATEMENT_LINK: &str = "books_app_statement_link";
 pub const STATEMENT_REMOVE: &str = "books_app_statement_remove";
 pub const STATEMENT_COMMENT: &str = "books_app_statement_comment_add";
+pub const STATEMENT_ACTION: &str = "books_app_statement_action";
 pub const RECATEGORIZE: &str = "books_app_recategorize";
 pub const MONTH_CLOSE: &str = "books_app_month_close";
 pub const MONTH_REOPEN: &str = "books_app_month_reopen";
@@ -383,6 +384,21 @@ fn statement_comment_schema() -> Value {
             "client_request_id": { "type": "string" }, "book": { "type": "string" },
             "account": { "type": "string" }, "month": { "type": "string" },
             "body": { "type": "string", "description": "The note, 1 to 500 characters." }
+        }
+    })
+}
+
+fn statement_action_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "account", "action"],
+        "properties": {
+            "client_request_id": { "type": "string" }, "book": { "type": "string" },
+            "account": { "type": "string" }, "month": { "type": "string" },
+            "action": { "type": "string", "enum": ["unmatch", "link", "remove", "comment"] },
+            "line": { "type": ["string", "integer"] },
+            "entry": { "type": "string" },
+            "body": { "type": "string" }
         }
     })
 }
@@ -883,6 +899,13 @@ pub const TOOLS: &[Tool] = &[
         write: true,
         schema: statement_comment_schema,
         description: "Leave a note on a statement after the user's click (`body`, 1 to 500 characters).",
+    },
+    Tool {
+        name: STATEMENT_ACTION,
+        reach: Reach::App,
+        write: true,
+        schema: statement_action_schema,
+        description: "Run one statement action after the user's click (`action`: `unmatch`, `link`, `remove`, or `comment`).",
     },
     Tool {
         name: RECATEGORIZE,
@@ -1475,6 +1498,18 @@ pub fn call(
         }),
         STATEMENT_COMMENT => write(books, name, origin, arguments, |tx| {
             reconcile::statement_comment(tx, arguments)
+        }),
+        STATEMENT_ACTION => write(books, name, origin, arguments, |tx| {
+            match arguments.get("action").and_then(Value::as_str) {
+                Some("unmatch") => reconcile::statement_unmatch(tx, arguments),
+                Some("link") => reconcile::statement_link(tx, arguments),
+                Some("remove") => reconcile::statement_remove(tx, arguments),
+                Some("comment") => reconcile::statement_comment(tx, arguments),
+                _ => Err(Refusal::new(
+                    "invalid_input",
+                    "action must be one of: unmatch, link, remove, comment.",
+                )),
+            }
         }),
         RECATEGORIZE => write(books, name, origin, arguments, |tx| {
             reconcile::recategorize(tx, arguments)
