@@ -8,6 +8,7 @@
 // left out.
 
 const txMonth = signal(String(PROPS.month || "")); // "YYYY-MM", "" = the tool's current month
+const txTodayMonth = signal(""); // actual current YYYY-MM (where month.next is null)
 const txAccount = signal(""); // account ticket, "" = All accounts
 const txChecked = signal<string[]>([]); // checked account tickets in TxSidebar (filters grouped view)
 const txFilter = signal("all"); // tool enum: all/review/draft/posted/checks
@@ -773,7 +774,11 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
   const d = () => txD();
   const month = () => (d()?.month || {}) as Any;
   const rows = () => txFiltered();
-  const tabKey = () => String(month().key || "");
+  const tabKey = () => {
+    const k = String(month().key || "");
+    if (k && !month().next && txTodayMonth() !== k) txTodayMonth.set(k);
+    return k;
+  };
   // Old app tabs: a window of month pills around the selected month, newest at today.
   const tabs = () => {
     const key = tabKey() || "0000-00";
@@ -990,7 +995,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                   <Text class={`text-[13px] font-medium whitespace-nowrap ${k === tabKey() ? "text-white" : "text-white/50 group-hover:text-white"}`}>
                     {MONTH_KEYS[Number(k.slice(5, 7)) - 1]?.slice(0, 3)}
                   </Text>
-                  <If when={k === tabs()[tabs().length - 1]}>
+                  <If when={Boolean(txTodayMonth()) && k === txTodayMonth()}>
                     <Text class="text-[9px] text-white/60 italic">Today</Text>
                   </If>
                   <Text class="text-[10px] text-white/40">{k.slice(0, 4)}</Text>
