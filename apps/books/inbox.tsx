@@ -181,7 +181,6 @@ function InboxPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
             activeStyle={{ opacity: 0.7 }}
           >
             <Text class={`text-[14px] font-medium transition-colors ${C.ink} group-hover:text-[#0f766e] dark:group-hover:text-[#2dd4bf]`}>‹ Back</Text>
-            <Text class={`hidden sm:inline text-[14px] font-medium transition-colors ${C.ink} group-hover:text-[#0f766e] dark:group-hover:text-[#2dd4bf]`}>to Dashboard</Text>
           </View>
           <Text class={`text-[18px] font-semibold ${C.ink}`}>Inbox</Text>
           <Text class={`text-[12.5px] ${C.mute}`}>
