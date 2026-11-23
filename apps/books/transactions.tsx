@@ -352,7 +352,7 @@ function TxCheck(p: { checked: boolean }) {
       class={`w-4 h-4 rounded border items-center justify-center transition-all ${
         p.checked
           ? "bg-[#2dd4bf] border-[#2dd4bf] dark:bg-teal-500 dark:border-teal-500"
-          : "bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600 group-hover:border-gray-400 dark:group-hover:border-slate-500"
+          : "bg-white dark:bg-[#141519] border-gray-300 dark:border-[#27282f] group-hover:border-gray-400 dark:group-hover:border-[#383a44]"
       }`}
     >
       <If when={p.checked}>
@@ -388,7 +388,7 @@ function TxRow(p: {
       class={`group flex-row items-stretch cursor-pointer border-b transition-colors ${
         p.checked
           ? "bg-[#eff6ff] dark:bg-blue-950/60 border-[#dbeafe] dark:border-blue-900/40"
-          : `border-[#f1f5f9] dark:border-slate-800 ${p.inGroup ? "hover:bg-[#f8fafc] dark:hover:bg-slate-800/70" : "hover:bg-[#fafbfc] dark:hover:bg-slate-800"}`
+          : `border-[#f1f5f9] dark:border-[#27282f] ${p.inGroup ? "hover:bg-[#f8fafc] dark:hover:bg-[#22232a]" : "hover:bg-[#fafbfc] dark:hover:bg-[#22232a]"}`
       }`}
       onPress={p.edit ? p.onCheck : p.onOpen}
     >
@@ -403,17 +403,17 @@ function TxRow(p: {
         </View>
       </If>
       <View class="w-[72px] py-2.5 px-2 items-center shrink-0">
-        <Text class="text-[13px] font-semibold text-[#1e293b] dark:text-slate-100 leading-tight">{md}</Text>
-        <Text class="text-[10px] text-[#94a3b8] dark:text-slate-500">{yr}</Text>
+        <Text class="text-[13px] font-semibold text-[#1e293b] dark:text-[#f4f5f7] leading-tight">{md}</Text>
+        <Text class="text-[10px] text-[#94a3b8] dark:text-[#6e727e]">{yr}</Text>
       </View>
       <View class="flex-1 min-w-0 flex-row items-center gap-2.5 py-2.5 px-2">
         <View class="w-7 h-7 rounded-full items-center justify-center shrink-0" style={{ backgroundColor: color }}>
           <Text class="text-[10px] font-bold text-white">{initials}</Text>
         </View>
         <View class="flex-1 min-w-0">
-          <Text class="text-[13px] font-medium text-[#1e293b] dark:text-slate-100 truncate">{title}</Text>
+          <Text class="text-[13px] font-medium text-[#1e293b] dark:text-[#f4f5f7] truncate">{title}</Text>
           <If when={Boolean(sub)}>
-            <Text class="text-[11px] text-[#94a3b8] dark:text-slate-500 truncate">{sub}</Text>
+            <Text class="text-[11px] text-[#94a3b8] dark:text-[#6e727e] truncate">{sub}</Text>
           </If>
         </View>
       </View>
@@ -426,22 +426,22 @@ function TxRow(p: {
         <If when={Boolean(cat)}>
           <View class="flex-row items-center gap-1.5">
             <View class="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: catColor }} />
-            <Text class="text-[12px] text-[#475569] dark:text-slate-300 truncate">{cat}</Text>
+            <Text class="text-[12px] text-[#475569] dark:text-[#a1a5b0] truncate">{cat}</Text>
           </View>
         </If>
         <If when={!cat}>
-          <Text class="text-[11px] text-[#cbd5e1] dark:text-slate-600 italic">—</Text>
+          <Text class="text-[11px] text-[#cbd5e1] dark:text-[#6e727e] italic">—</Text>
         </If>
       </View>
       <View class="w-[130px] py-2.5 px-2 shrink-0 hidden xl:block">
-        <Text class="text-[11px] text-[#cbd5e1] dark:text-slate-600 italic">None</Text>
+        <Text class="text-[11px] text-[#cbd5e1] dark:text-[#6e727e] italic">None</Text>
       </View>
       <View class="w-[130px] py-2.5 px-2 shrink-0 hidden xl:block">
-        <Text class="text-[11px] text-[#cbd5e1] dark:text-slate-600 italic">None</Text>
+        <Text class="text-[11px] text-[#cbd5e1] dark:text-[#6e727e] italic">None</Text>
       </View>
       <View class="w-[100px] py-2.5 px-2 items-end justify-center shrink-0">
         <If when={Boolean(debit)}>
-          <Text class="text-[13px] font-semibold tabular-nums text-[#1e293b] dark:text-slate-100">{debit}</Text>
+          <Text class="text-[13px] font-semibold tabular-nums text-[#1e293b] dark:text-[#f4f5f7]">{debit}</Text>
         </If>
       </View>
       <View class="w-[100px] py-2.5 px-2 items-end justify-center shrink-0">
@@ -451,14 +451,14 @@ function TxRow(p: {
       </View>
       <If when={p.balance}>
         <View class="w-[110px] py-2.5 px-2 items-end justify-center shrink-0">
-          <Text class="tabular-nums text-[12px] text-[#64748b] dark:text-slate-400">{String(r().balance_shown || "")}</Text>
+          <Text class="tabular-nums text-[12px] text-[#64748b] dark:text-[#a1a5b0]">{String(r().balance_shown || "")}</Text>
         </View>
       </If>
       <View class="w-9 items-center justify-center shrink-0">
         <Avatar
           src={ICONS.chevronRight}
           class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity"
-          imageClass="tint-[#cbd5e1] dark:tint-slate-600"
+          imageClass="tint-[#cbd5e1] dark:tint-[#6e727e]"
           fallbackDelay={Infinity}
           accessibilityLabel=""
         />
@@ -480,7 +480,7 @@ function TxCard(p: { r: Any; edit?: boolean; checked?: boolean; onCheck?: () => 
       class={`border-b px-4 py-3 transition-colors cursor-pointer ${
         p.checked
           ? "bg-[#eff6ff] dark:bg-blue-950/60 border-[#dbeafe] dark:border-blue-900/40"
-          : "border-[#f1f5f9] dark:border-slate-800 hover:bg-[#fafbfc] dark:hover:bg-slate-800"
+          : "border-[#f1f5f9] dark:border-[#27282f] hover:bg-[#fafbfc] dark:hover:bg-[#22232a]"
       }`}
       onPress={p.edit ? p.onCheck : p.onOpen}
     >
@@ -494,12 +494,12 @@ function TxCard(p: { r: Any; edit?: boolean; checked?: boolean; onCheck?: () => 
           <Text class="text-[11px] font-bold text-white">{initials}</Text>
         </View>
         <View class="flex-1 min-w-0">
-          <Text class="truncate text-sm font-semibold text-[#1e293b] dark:text-slate-100">{String(r().payee || r().title || "—")}</Text>
-          <Text class="mt-0.5 truncate text-xs text-[#94a3b8] dark:text-slate-500">
+          <Text class="truncate text-sm font-semibold text-[#1e293b] dark:text-[#f4f5f7]">{String(r().payee || r().title || "—")}</Text>
+          <Text class="mt-0.5 truncate text-xs text-[#94a3b8] dark:text-[#6e727e]">
             {`${md}, ${yr}${r().category ? ` · ${String(r().category)}` : ""}`}
           </Text>
           <View class="mt-1 flex-row flex-wrap items-center gap-1.5">
-            <Text class="text-[10px] font-medium uppercase tracking-wider text-[#94a3b8] dark:text-slate-500">
+            <Text class="text-[10px] font-medium uppercase tracking-wider text-[#94a3b8] dark:text-[#6e727e]">
               {TX_FORMS[String(r().form)] || String(r().form || "")}
             </Text>
             <If when={unposted}>
@@ -509,17 +509,17 @@ function TxCard(p: { r: Any; edit?: boolean; checked?: boolean; onCheck?: () => 
         </View>
         <View class="shrink-0 items-end gap-0.5">
           <If when={Boolean(debit || credit)}>
-            <Text class={`tabular-nums text-[15px] font-semibold ${debit ? "text-[#1e293b] dark:text-slate-100" : "text-[#16a34a] dark:text-emerald-400"}`}>
+            <Text class={`tabular-nums text-[15px] font-semibold ${debit ? "text-[#1e293b] dark:text-[#f4f5f7]" : "text-[#16a34a] dark:text-emerald-400"}`}>
               {debit ? `Dr ${debit}` : `Cr ${credit}`}
             </Text>
           </If>
           <If when={!debit && !credit}>
-            <Text class={`tabular-nums text-[15px] font-semibold ${String(r().tone) === "neg" ? "text-[#1e293b] dark:text-slate-100" : "text-[#16a34a] dark:text-emerald-400"}`}>
+            <Text class={`tabular-nums text-[15px] font-semibold ${String(r().tone) === "neg" ? "text-[#1e293b] dark:text-[#f4f5f7]" : "text-[#16a34a] dark:text-emerald-400"}`}>
               {String(r().amount_shown || r().amount || "")}
             </Text>
           </If>
           <If when={Boolean(r().balance_shown)}>
-            <Text class="text-xs tabular-nums text-[#94a3b8] dark:text-slate-500">{`Bal ${String(r().balance_shown)}`}</Text>
+            <Text class="text-xs tabular-nums text-[#94a3b8] dark:text-[#6e727e]">{`Bal ${String(r().balance_shown)}`}</Text>
           </If>
         </View>
       </View>
@@ -545,7 +545,7 @@ function TxGroup(p: {
   return (
     <View>
       <View
-        class={`group flex-row items-center gap-2 px-3 py-2 border-b border-[#f1f5f9] dark:border-slate-800 cursor-pointer transition-colors bg-[#fafbfc] dark:bg-slate-800/50 hover:bg-[#f1f5f9] dark:hover:bg-slate-800`}
+        class={`group flex-row items-center gap-2 px-3 py-2 border-b border-[#f1f5f9] dark:border-[#27282f] cursor-pointer transition-colors bg-[#fafbfc] dark:bg-[#141519] hover:bg-[#f1f5f9] dark:hover:bg-[#22232a]`}
         onPress={p.onToggle}
       >
         <If when={p.edit}>
@@ -569,19 +569,19 @@ function TxGroup(p: {
         </View>
         <View class="flex-1 min-w-0">
           <View class="flex-row items-baseline gap-2 min-w-0">
-            <Text class="text-[13px] font-semibold text-[#1e293b] dark:text-slate-100 truncate">{String(g().name || "")}</Text>
-            <Text class="text-[11px] tabular-nums text-[#94a3b8] dark:text-slate-500 shrink-0">{String(g().number || "")}</Text>
+            <Text class="text-[13px] font-semibold text-[#1e293b] dark:text-[#f4f5f7] truncate">{String(g().name || "")}</Text>
+            <Text class="text-[11px] tabular-nums text-[#94a3b8] dark:text-[#6e727e] shrink-0">{String(g().number || "")}</Text>
           </View>
-          <Text class="text-[11px] text-[#94a3b8] dark:text-slate-500">{`${Number(g().count || 0)} Transactions`}</Text>
+          <Text class="text-[11px] text-[#94a3b8] dark:text-[#6e727e]">{`${Number(g().count || 0)} Transactions`}</Text>
         </View>
         <View class="w-[100px] items-end shrink-0 hidden md:flex">
-          <Text class="tabular-nums text-[12px] text-[#1e293b] dark:text-slate-100">{String(g().debit_shown || "")}</Text>
+          <Text class="tabular-nums text-[12px] text-[#1e293b] dark:text-[#f4f5f7]">{String(g().debit_shown || "")}</Text>
         </View>
         <View class="w-[100px] items-end shrink-0 hidden md:flex">
           <Text class="tabular-nums text-[12px] text-[#16a34a] dark:text-emerald-400">{String(g().credit_shown || "")}</Text>
         </View>
         <View class="w-[110px] items-end shrink-0">
-          <Text class={`tabular-nums text-[12px] font-semibold ${neg() ? "text-[#dc2626] dark:text-red-400" : "text-[#1e293b] dark:text-slate-100"}`}>
+          <Text class={`tabular-nums text-[12px] font-semibold ${neg() ? "text-[#dc2626] dark:text-red-400" : "text-[#1e293b] dark:text-[#f4f5f7]"}`}>
             {String(g().balance_shown || "")}
           </Text>
         </View>
@@ -608,11 +608,11 @@ function TxGroup(p: {
 /** Column labels over the grid (flat list header or a group's own header). */
 function TxCols(p: { edit?: boolean; balance?: boolean }) {
   const colHead = (label: string, cls: string) => (
-    <Text class={`${cls} px-2 text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider`}>{label}</Text>
+    <Text class={`${cls} px-2 text-[10px] font-semibold text-slate-500 dark:text-[#a1a5b0] uppercase tracking-wider`}>{label}</Text>
   );
   return (
     <View class="hidden md:block">
-      <View class="flex-row items-center py-1.5 border-b border-[#f1f5f9] dark:border-slate-800 bg-white dark:bg-[#0f172a]">
+      <View class="flex-row items-center py-1.5 border-b border-[#f1f5f9] dark:border-[#27282f] bg-white dark:bg-[#0d0d10]">
         <View class="w-1" />
         <If when={p.edit}>
           <View class="w-8" />
@@ -666,14 +666,14 @@ function TxSide() {
 function TxFilterSection(p: { title: string; icon: string; count: number; children: Any }) {
   const open = () => Boolean(txSecOpen()[p.title]);
   return (
-    <View class="border-b border-[#f1f5f9] dark:border-slate-700">
+    <View class="border-b border-[#f1f5f9] dark:border-[#27282f]">
       <View
-        class="w-full flex-row items-center gap-2 px-4 py-2.5 cursor-pointer transition-colors hover:bg-[#fafbfc] dark:hover:bg-slate-800"
+        class="w-full flex-row items-center gap-2 px-4 py-2.5 cursor-pointer transition-colors hover:bg-[#fafbfc] dark:hover:bg-[#22232a]"
         onPress={() => txSecOpen.set({ ...txSecOpen(), [p.title]: !open() })}
       >
         <Avatar src={open() ? ICONS.chevronDown : ICONS.chevronRight} class="w-2.5 h-2.5 shrink-0" imageClass="tint-[#94a3b8]" fallbackDelay={Infinity} accessibilityLabel="" />
-        <Avatar src={p.icon} class="w-4 h-4 shrink-0" imageClass="tint-[#64748b] dark:tint-slate-400" fallbackDelay={Infinity} accessibilityLabel="" />
-        <Text class="flex-1 text-[13px] font-semibold text-[#1e293b] dark:text-slate-100">{p.title}</Text>
+        <Avatar src={p.icon} class="w-4 h-4 shrink-0" imageClass="tint-[#64748b] dark:tint-[#a1a5b0]" fallbackDelay={Infinity} accessibilityLabel="" />
+        <Text class="flex-1 text-[13px] font-semibold text-[#1e293b] dark:text-[#f4f5f7]">{p.title}</Text>
         <If when={p.count > 0}>
           <View class="w-5 h-5 rounded-full items-center justify-center shrink-0" style={{ backgroundColor: "#2a9d8f" }}>
             <Text class="text-[10px] font-bold text-white">{p.count}</Text>
@@ -692,12 +692,12 @@ function TxCheckRow(p: { label: string; on: boolean; icon?: string; color?: stri
   return (
     <View class="flex-row items-center gap-2.5 py-1.5 px-1 -mx-1 rounded-md cursor-pointer group" onPress={p.onPress}>
       <If when={Boolean(p.icon)}>
-        <Avatar src={p.icon} class="w-3.5 h-3.5 shrink-0" imageClass="tint-[#64748b] dark:tint-slate-400" fallbackDelay={Infinity} accessibilityLabel="" />
+        <Avatar src={p.icon} class="w-3.5 h-3.5 shrink-0" imageClass="tint-[#64748b] dark:tint-[#a1a5b0]" fallbackDelay={Infinity} accessibilityLabel="" />
       </If>
       <If when={Boolean(p.color) && !p.icon}>
         <View class="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
       </If>
-      <Text class="flex-1 text-[13px] text-[#374151] dark:text-slate-300 group-hover:text-[#1e293b] dark:group-hover:text-slate-100 transition-colors">{p.label}</Text>
+      <Text class="flex-1 text-[13px] text-[#374151] dark:text-[#a1a5b0] group-hover:text-[#1e293b] dark:group-hover:text-[#f4f5f7] transition-colors">{p.label}</Text>
       <TxSideCheck state={p.on ? "all" : "none"} onPress={p.onPress} />
     </View>
   );
@@ -708,13 +708,13 @@ function TxListSearch(p: { value: string; onChange: (v: string) => void; placeho
   return (
     <View class="relative mb-2">
       <View class="absolute left-2 top-0 bottom-0 items-center justify-center">
-        <Avatar src={TX_ICONS.search} class="w-3 h-3" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
+        <Avatar src={TX_ICONS.search} class="w-3 h-3" imageClass="tint-[#94a3b8] dark:tint-[#6e727e]" fallbackDelay={Infinity} accessibilityLabel="" />
       </View>
       <Input
         value={p.value}
         placeholder={p.placeholder}
         onChange={(e: Any) => p.onChange(typeof e === "string" ? e : e.value)}
-        class="w-full pl-7 pr-2 py-1.5 rounded-lg border border-[#e2e8f0] dark:border-slate-700 text-[12px] text-[#1e293b] dark:text-slate-100 placeholder-[#cbd5e1] dark:placeholder-slate-600 bg-white dark:bg-slate-800 focus:outline-none"
+        class="w-full pl-7 pr-2 py-1.5 rounded-lg border border-[#e2e8f0] dark:border-[#27282f] text-[12px] text-[#1e293b] dark:text-[#f4f5f7] placeholder-[#cbd5e1] dark:placeholder-[#6e727e] bg-white dark:bg-[#141519] focus:outline-none"
       />
     </View>
   );
@@ -739,7 +739,7 @@ function TxCheckList(p: {
       <TxListSearch value={p.search()} onChange={p.onSearch} placeholder={p.ph} />
       <View class="max-h-[200px] overflow-hidden">
         <If when={shown().length === 0}>
-          <Text class="text-[11px] text-[#94a3b8] dark:text-slate-500 italic py-2">{p.empty}</Text>
+          <Text class="text-[11px] text-[#94a3b8] dark:text-[#6e727e] italic py-2">{p.empty}</Text>
         </If>
         {shown()
           .slice(0, 40)
@@ -867,48 +867,48 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
   const togglePill = (
     <View class="flex-row items-center gap-1.5 shrink-0">
       {/* ViewToggle: gray segmented control, active = white card + shadow */}
-      <View class="flex-row items-center bg-[#f1f5f9] dark:bg-slate-800 rounded-lg p-0.5">
+      <View class="flex-row items-center bg-[#f1f5f9] dark:bg-[#141519] rounded-lg p-0.5">
         <View
           accessibilityLabel="Expand all"
           class={`w-7 h-7 items-center justify-center rounded-md cursor-pointer transition-all ${
-            !txAllCollapsed() ? "bg-white dark:bg-slate-700 shadow-sm" : ""
+            !txAllCollapsed() ? "bg-white dark:bg-[#1c1d22] shadow-sm" : ""
           }`}
           onPress={() => { txAllCollapsed.set(false); txExpandOver.set({}); }}
         >
-          <Avatar src={ICONS.list} class="w-3.5 h-3.5" imageClass={!txAllCollapsed() ? "tint-[#1e293b] dark:tint-slate-100" : "tint-[#94a3b8] dark:tint-slate-500"} fallbackDelay={Infinity} accessibilityLabel="" />
+          <Avatar src={ICONS.list} class="w-3.5 h-3.5" imageClass={!txAllCollapsed() ? "tint-[#1e293b] dark:tint-[#f4f5f7]" : "tint-[#94a3b8] dark:tint-[#6e727e]"} fallbackDelay={Infinity} accessibilityLabel="" />
         </View>
         <View
           accessibilityLabel="Collapse all"
           class={`w-7 h-7 items-center justify-center rounded-md cursor-pointer transition-all ${
-            txAllCollapsed() ? "bg-white dark:bg-slate-700 shadow-sm" : ""
+            txAllCollapsed() ? "bg-white dark:bg-[#1c1d22] shadow-sm" : ""
           }`}
           onPress={() => { txAllCollapsed.set(true); txExpandOver.set({}); }}
         >
-          <Avatar src={TX_ICONS.grid} class="w-3.5 h-3.5" imageClass={txAllCollapsed() ? "tint-[#1e293b] dark:tint-slate-100" : "tint-[#94a3b8] dark:tint-slate-500"} fallbackDelay={Infinity} accessibilityLabel="" />
+          <Avatar src={TX_ICONS.grid} class="w-3.5 h-3.5" imageClass={txAllCollapsed() ? "tint-[#1e293b] dark:tint-[#f4f5f7]" : "tint-[#94a3b8] dark:tint-[#6e727e]"} fallbackDelay={Infinity} accessibilityLabel="" />
         </View>
       </View>
       <View
         accessibilityLabel="Filters"
         class={`w-8 h-8 items-center justify-center rounded-lg cursor-pointer transition-colors ${
-          filterOn() ? "bg-[#ccece8] dark:bg-teal-900/40" : "hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
+          filterOn() ? "bg-[#ccece8] dark:bg-teal-900/40" : "hover:bg-[#f1f5f9] dark:hover:bg-[#22232a]"
         }`}
         onPress={() => txFiltersOpen.set(!txFiltersOpen())}
       >
-        <Avatar src={TX_ICONS.funnel} class="w-3.5 h-3.5" imageClass={filterOn() ? "tint-[#0f766e] dark:tint-teal-400" : "tint-[#94a3b8] dark:tint-slate-500"} fallbackDelay={Infinity} accessibilityLabel="" />
+        <Avatar src={TX_ICONS.funnel} class="w-3.5 h-3.5" imageClass={filterOn() ? "tint-[#0f766e] dark:tint-teal-400" : "tint-[#94a3b8] dark:tint-[#6e727e]"} fallbackDelay={Infinity} accessibilityLabel="" />
       </View>
     </View>
   );
 
   return (
-    <View class="flex-1 min-h-0 flex-row bg-white dark:bg-slate-900">
+    <View class="flex-1 min-h-0 flex-row bg-white dark:bg-[#0d0d10]">
       {/* COA sidebar: fixed 240px column at lg+, an overlay sheet below */}
-      <View class="hidden lg:flex w-[240px] shrink-0 flex-col border-r border-[#e5e7eb] dark:border-slate-700 overflow-hidden">
+      <View class="hidden lg:flex w-[240px] shrink-0 flex-col border-r border-[#e5e7eb] dark:border-[#27282f] overflow-hidden">
         <TxSide />
       </View>
       <View class="flex-1 min-w-0 flex flex-col">
-        <View class="flex-1 min-h-0 flex flex-col md:mx-3 md:my-3 md:rounded-lg md:border border-[#e5e7eb] dark:border-slate-700 md:shadow-sm overflow-hidden bg-white dark:bg-slate-900">
+        <View class="flex-1 min-h-0 flex flex-col md:mx-3 md:my-3 md:rounded-lg md:border border-[#e5e7eb] dark:border-[#27282f] md:shadow-sm overflow-hidden bg-white dark:bg-[#0d0d10]">
           {/* Header — LedgerHeader */}
-          <View class="flex-row items-center px-5 py-3 bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c] rounded-t-lg">
+          <View class="flex-row items-center px-5 py-3 bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#12452b] dark:to-[#18663e] rounded-t-lg">
             <View class="flex-row items-center gap-3 shrink-0">
               <View
                 accessibilityLabel="Accounts"
@@ -963,7 +963,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
 
           {/* Date navigator — DateRangeNavigator. z-50 keeps the split Add
               menu above the search row's z-40. */}
-          <View class="relative z-50 flex-row items-center gap-2 bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] px-2 py-2.5 sm:px-5 dark:from-[#145a30] dark:to-[#1e8c4c]">
+          <View class="relative z-50 flex-row items-center gap-2 bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] px-2 py-2.5 sm:px-5 dark:from-[#12452b] dark:to-[#18663e]">
             <View class="flex-row items-center rounded-lg bg-white/10 shrink-0">
               <View
                 class={`w-8 h-8 items-center justify-center rounded-l-lg transition-colors ${month().prev ? "cursor-pointer hover:bg-white/10" : ""}`}
@@ -1013,20 +1013,20 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 <Avatar src={ICONS.chevronDown} class="w-3 h-3" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
               </View>
               <If when={txSplitOpen()}>
-                <View class="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-slate-900 border border-[#e5e7eb] dark:border-slate-700 rounded-lg shadow-lg z-50 py-1">
+                <View class="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-[#0d0d10] border border-[#e5e7eb] dark:border-[#27282f] rounded-lg shadow-lg z-50 py-1">
                   <View
-                    class="w-full flex-row items-center gap-2 px-3 py-2 cursor-pointer transition-colors hover:bg-[#f9fafb] dark:hover:bg-slate-800 rounded-t-lg"
+                    class="w-full flex-row items-center gap-2 px-3 py-2 cursor-pointer transition-colors hover:bg-[#f9fafb] dark:hover:bg-[#22232a] rounded-t-lg"
                     onPress={() => { txSplitOpen.set(false); p.go("reconcile"); }}
                   >
-                    <Avatar src={TX_ICONS.upload} class="w-3.5 h-3.5 shrink-0" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
-                    <Text class="text-xs text-[#374151] dark:text-slate-300">Import Bank Transactions…</Text>
+                    <Avatar src={TX_ICONS.upload} class="w-3.5 h-3.5 shrink-0" imageClass="tint-[#94a3b8] dark:tint-[#6e727e]" fallbackDelay={Infinity} accessibilityLabel="" />
+                    <Text class="text-xs text-[#374151] dark:text-[#a1a5b0]">Import Bank Transactions…</Text>
                   </View>
                   <View
-                    class="w-full flex-row items-center gap-2 px-3 py-2 cursor-pointer transition-colors hover:bg-[#f9fafb] dark:hover:bg-slate-800 rounded-b-lg"
+                    class="w-full flex-row items-center gap-2 px-3 py-2 cursor-pointer transition-colors hover:bg-[#f9fafb] dark:hover:bg-[#22232a] rounded-b-lg"
                     onPress={() => { txSplitOpen.set(false); p.go("oldbooks"); }}
                   >
-                    <Avatar src={TX_ICONS.doc} class="w-3.5 h-3.5 shrink-0" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
-                    <Text class="text-xs text-[#374151] dark:text-slate-300">Import Journal Entries…</Text>
+                    <Avatar src={TX_ICONS.doc} class="w-3.5 h-3.5 shrink-0" imageClass="tint-[#94a3b8] dark:tint-[#6e727e]" fallbackDelay={Infinity} accessibilityLabel="" />
+                    <Text class="text-xs text-[#374151] dark:text-[#a1a5b0]">Import Journal Entries…</Text>
                   </View>
                 </View>
               </If>
@@ -1037,24 +1037,24 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
               first chip, then chips + a bare inline input in one wrap row. */}
           <View class="relative z-40">
           <If when={chips().length === 0}>
-            <View class="flex-row items-center gap-2 px-5 py-2 border-b border-[#e5e7eb] dark:border-slate-700">
-              <View class="flex-1 min-w-0 flex-row items-center gap-2 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-2.5 h-9 dark:border-slate-700 dark:bg-slate-800 focus-within:ring-1 focus-within:ring-[#0d9488] focus-within:border-[#0d9488] dark:focus-within:ring-teal-500 dark:focus-within:border-teal-500 transition-all">
-                <Avatar src={TX_ICONS.search} class="w-3.5 h-3.5 shrink-0" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
+            <View class="flex-row items-center gap-2 px-5 py-2 border-b border-[#e5e7eb] dark:border-[#27282f]">
+              <View class="flex-1 min-w-0 flex-row items-center gap-2 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-2.5 h-9 dark:border-[#27282f] dark:bg-[#141519] focus-within:ring-1 focus-within:ring-[#0d9488] focus-within:border-[#0d9488] dark:focus-within:ring-teal-500 dark:focus-within:border-teal-500 transition-all">
+                <Avatar src={TX_ICONS.search} class="w-3.5 h-3.5 shrink-0" imageClass="tint-[#94a3b8] dark:tint-[#6e727e]" fallbackDelay={Infinity} accessibilityLabel="" />
                 <Input
                   value={txSearch()}
                   placeholder={`Search ${txRows().length || Number(txD()?.total || 0)} transactions…`}
                   onChange={(e: Any) => txSearch.set(typeof e === "string" ? e : e.value)}
                   onSubmit={() => txCommitQuery()}
-                  class="flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] text-[#1e293b] dark:text-slate-100 placeholder:text-[#94a3b8] focus:ring-0"
+                  class="flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] text-[#1e293b] dark:text-[#f4f5f7] placeholder:text-[#94a3b8] focus:ring-0"
                 />
               </View>
               {togglePill}
             </View>
           </If>
           <If when={chips().length > 0}>
-            <View class="flex-row items-start gap-2 px-5 py-2 border-b border-[#e5e7eb] dark:border-slate-700">
+            <View class="flex-row items-start gap-2 px-5 py-2 border-b border-[#e5e7eb] dark:border-[#27282f]">
               <View class="h-8 items-center justify-center shrink-0">
-                <Avatar src={TX_ICONS.search} class="w-3.5 h-3.5" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
+                <Avatar src={TX_ICONS.search} class="w-3.5 h-3.5" imageClass="tint-[#94a3b8] dark:tint-[#6e727e]" fallbackDelay={Infinity} accessibilityLabel="" />
               </View>
               <View class={`flex-1 min-w-0 flex-row flex-wrap items-center gap-1.5 ${txChipsOpen() ? "max-h-[128px]" : "max-h-[32px]"} overflow-hidden`}>
                 {chips().map((c) => (
@@ -1065,11 +1065,11 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                   placeholder="Search or add filter…"
                   onChange={(e: Any) => txSearch.set(typeof e === "string" ? e : e.value)}
                   onSubmit={() => txCommitQuery()}
-                  class="flex-1 min-w-[120px] py-0.5 bg-transparent border-none outline-none text-[13px] text-[#1e293b] dark:text-slate-100 placeholder:text-[#94a3b8] focus:ring-0"
+                  class="flex-1 min-w-[120px] py-0.5 bg-transparent border-none outline-none text-[13px] text-[#1e293b] dark:text-[#f4f5f7] placeholder:text-[#94a3b8] focus:ring-0"
                 />
               </View>
               <If when={chipsWrap()}>
-                <View class="w-6 h-6 items-center justify-center rounded cursor-pointer hover:bg-[#f1f5f9] dark:hover:bg-slate-800 shrink-0" onPress={() => txChipsOpen.set(!txChipsOpen())}>
+                <View class="w-6 h-6 items-center justify-center rounded cursor-pointer hover:bg-[#f1f5f9] dark:hover:bg-[#22232a] shrink-0" onPress={() => txChipsOpen.set(!txChipsOpen())}>
                   <Avatar src={txChipsOpen() ? TX_ICONS.chevronUp : ICONS.chevronDown} class="w-3.5 h-3.5" imageClass="tint-[#94a3b8]" fallbackDelay={Infinity} accessibilityLabel="" />
                 </View>
               </If>
@@ -1083,9 +1083,9 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
           {/* Filter dropdown — LedgerFilters: right-anchored w-[280px] panel of
               collapsible sections, each a searchable checkbox list. */}
           <If when={txFiltersOpen()}>
-            <View class="absolute right-5 top-full mt-1 w-[280px] max-w-[calc(100%-24px)] bg-white dark:bg-slate-900 border border-[#e5e7eb] dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
-              <View class="flex-row items-center justify-between px-4 py-3 border-b border-[#f1f5f9] dark:border-slate-800">
-                <Text class="text-[13px] font-semibold text-[#1e293b] dark:text-slate-100">Filters</Text>
+            <View class="absolute right-5 top-full mt-1 w-[280px] max-w-[calc(100%-24px)] bg-white dark:bg-[#0d0d10] border border-[#e5e7eb] dark:border-[#27282f] rounded-xl shadow-xl z-50 overflow-hidden">
+              <View class="flex-row items-center justify-between px-4 py-3 border-b border-[#f1f5f9] dark:border-[#27282f]">
+                <Text class="text-[13px] font-semibold text-[#1e293b] dark:text-[#f4f5f7]">Filters</Text>
                 <View class="flex-row items-center gap-2">
                   <If when={txHasFilters()}>
                     <View class="cursor-pointer" onPress={txClearFilters}>
@@ -1094,10 +1094,10 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                   </If>
                   <View
                     accessibilityLabel="Close filters"
-                    class="w-7 h-7 rounded items-center justify-center cursor-pointer transition-colors hover:bg-[#f1f5f9] dark:hover:bg-slate-800"
+                    class="w-7 h-7 rounded items-center justify-center cursor-pointer transition-colors hover:bg-[#f1f5f9] dark:hover:bg-[#22232a]"
                     onPress={() => txFiltersOpen.set(false)}
                   >
-                    <Avatar src={TX_ICONS.x} class="w-3 h-3" imageClass="tint-[#94a3b8] dark:tint-slate-500" fallbackDelay={Infinity} accessibilityLabel="" />
+                    <Avatar src={TX_ICONS.x} class="w-3 h-3" imageClass="tint-[#94a3b8] dark:tint-[#6e727e]" fallbackDelay={Infinity} accessibilityLabel="" />
                   </View>
                 </View>
               </View>
@@ -1117,31 +1117,31 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                   <TxFilterSection title="Amount" icon={TX_ICONS.fAmount} count={txAmountMin().trim() || txAmountMax().trim() ? 1 : 0}>
                     <View class="flex-row items-center gap-2 py-1">
                       <View class="flex-1">
-                        <Text class="text-[10px] text-[#94a3b8] dark:text-slate-500 font-medium mb-0.5">Min</Text>
+                        <Text class="text-[10px] text-[#94a3b8] dark:text-[#6e727e] font-medium mb-0.5">Min</Text>
                         <View class="relative">
                           <View class="absolute left-2 top-0 bottom-0 items-center justify-center">
-                            <Text class="text-[11px] text-[#94a3b8] dark:text-slate-500">$</Text>
+                            <Text class="text-[11px] text-[#94a3b8] dark:text-[#6e727e]">$</Text>
                           </View>
                           <Input
                             value={txAmountMin()}
                             placeholder="Min 0.00"
                             onChange={(e: Any) => txAmountMin.set((typeof e === "string" ? e : e.value).replace(/[^0-9.,]/g, ""))}
-                            class="w-full pl-5 pr-2 py-1.5 rounded-lg border border-[#e2e8f0] dark:border-slate-700 text-[12px] text-[#1e293b] dark:text-slate-100 placeholder-[#cbd5e1] dark:placeholder-slate-600 bg-white dark:bg-slate-800 focus:outline-none"
+                            class="w-full pl-5 pr-2 py-1.5 rounded-lg border border-[#e2e8f0] dark:border-[#27282f] text-[12px] text-[#1e293b] dark:text-[#f4f5f7] placeholder-[#cbd5e1] dark:placeholder-[#6e727e] bg-white dark:bg-[#141519] focus:outline-none"
                           />
                         </View>
                       </View>
                       <Text class="text-[12px] text-[#94a3b8] mt-4">—</Text>
                       <View class="flex-1">
-                        <Text class="text-[10px] text-[#94a3b8] dark:text-slate-500 font-medium mb-0.5">Max</Text>
+                        <Text class="text-[10px] text-[#94a3b8] dark:text-[#6e727e] font-medium mb-0.5">Max</Text>
                         <View class="relative">
                           <View class="absolute left-2 top-0 bottom-0 items-center justify-center">
-                            <Text class="text-[11px] text-[#94a3b8] dark:text-slate-500">$</Text>
+                            <Text class="text-[11px] text-[#94a3b8] dark:text-[#6e727e]">$</Text>
                           </View>
                           <Input
                             value={txAmountMax()}
                             placeholder="Max 0.00"
                             onChange={(e: Any) => txAmountMax.set((typeof e === "string" ? e : e.value).replace(/[^0-9.,]/g, ""))}
-                            class="w-full pl-5 pr-2 py-1.5 rounded-lg border border-[#e2e8f0] dark:border-slate-700 text-[12px] text-[#1e293b] dark:text-slate-100 placeholder-[#cbd5e1] dark:placeholder-slate-600 bg-white dark:bg-slate-800 focus:outline-none"
+                            class="w-full pl-5 pr-2 py-1.5 rounded-lg border border-[#e2e8f0] dark:border-[#27282f] text-[12px] text-[#1e293b] dark:text-[#f4f5f7] placeholder-[#cbd5e1] dark:placeholder-[#6e727e] bg-white dark:bg-[#141519] focus:outline-none"
                           />
                         </View>
                       </View>
@@ -1217,12 +1217,12 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
           <Scroll class="flex-1 min-h-0">
             <If when={!txData() && !txData.error()}>
               <View class="items-center px-4 py-12">
-                <Text class="text-sm text-slate-500 dark:text-slate-400">Loading transactions…</Text>
+                <Text class="text-sm text-slate-500 dark:text-[#a1a5b0]">Loading transactions…</Text>
               </View>
             </If>
             <If when={Boolean(txData()) && !txAccount() && txVisibleGroups().length === 0}>
               <View class="items-center gap-4 px-4 py-12">
-                <Text class="text-sm text-slate-500 dark:text-slate-400">{txHasFilters() ? "No transactions found matching your filters." : "No transactions in this month."}</Text>
+                <Text class="text-sm text-slate-500 dark:text-[#a1a5b0]">{txHasFilters() ? "No transactions found matching your filters." : "No transactions in this month."}</Text>
                 <View class="flex-row items-center gap-2">
                   <If when={txHasFilters()}>
                     <Btn label="Clear filters" onPress={txClearFilters} />
@@ -1235,7 +1235,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
             </If>
             <If when={Boolean(txData()) && Boolean(txAccount()) && rows().length === 0}>
               <View class="items-center gap-4 px-4 py-12">
-                <Text class="text-sm text-slate-500 dark:text-slate-400">{txHasFilters() ? "No transactions found matching your filters." : "No transactions in this month."}</Text>
+                <Text class="text-sm text-slate-500 dark:text-[#a1a5b0]">{txHasFilters() ? "No transactions found matching your filters." : "No transactions in this month."}</Text>
                 <If when={txHasFilters()}>
                   <Btn label="Clear filters" onPress={txClearFilters} />
                 </If>
@@ -1312,7 +1312,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
               </View>
               {/* "Showing N of M" + Load more while the tool has another page */}
               <View class="flex-row items-center justify-between px-3 py-2">
-                <Text class="text-[11px] text-slate-500 dark:text-slate-400">
+                <Text class="text-[11px] text-slate-500 dark:text-[#a1a5b0]">
                   {`Showing ${rows().length} of ${Number(txD()?.total || rows().length)}`}
                 </Text>
                 <If when={Boolean(txNextCursor())}>
@@ -1329,11 +1329,11 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
           {/* Account summary card — AccountSummaryCard */}
           <If when={Boolean(txAccount()) && Boolean(d()?.account)}>
             <View class="flex-row justify-end px-3 pb-2">
-              <View class="rounded-lg border border-[#e5e7eb] dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 shadow-sm">
-                <Text class="text-[12px] text-[#94a3b8] dark:text-slate-500">
+              <View class="rounded-lg border border-[#e5e7eb] dark:border-[#27282f] bg-white dark:bg-[#0d0d10] px-4 py-2.5 shadow-sm">
+                <Text class="text-[12px] text-[#94a3b8] dark:text-[#6e727e]">
                   {String(d()?.account?.number || "")} {String(d()?.account?.name || "")}
                 </Text>
-                <Text class="tabular-nums text-[15px] font-bold text-[#1e293b] dark:text-slate-100">
+                <Text class="tabular-nums text-[15px] font-bold text-[#1e293b] dark:text-[#f4f5f7]">
                   {String(d()?.account?.balance_shown || "")}
                 </Text>
               </View>
@@ -1342,8 +1342,8 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
 
           {/* Batch bar (edit mode) — BatchActionBar */}
           <If when={txMode() === "edit" && txPicked().length > 0}>
-            <View class="flex-row flex-wrap items-center gap-3 min-h-[52px] md:min-h-0 border-t border-[#e5e7eb] dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 shadow">
-              <Text class="text-[13px] font-medium text-[#334155] dark:text-slate-300">{txPicked().length} selected</Text>
+            <View class="flex-row flex-wrap items-center gap-3 min-h-[52px] md:min-h-0 border-t border-[#e5e7eb] dark:border-[#27282f] bg-white dark:bg-[#0d0d10] px-4 py-2.5 shadow">
+              <Text class="text-[13px] font-medium text-[#334155] dark:text-[#a1a5b0]">{txPicked().length} selected</Text>
               <View class="flex-1" />
               <If when={voidables().length > 0}>
                 <Btn label={`Void ${voidables().length} posted`} tone="vi" disabled={txBusy()} onPress={() => txConfirm.set("void")} />
@@ -1362,10 +1362,10 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
       <If when={txSideOpen()}>
         <View class="fixed inset-0 lg:hidden">
           <View class="absolute inset-0 bg-black/30" onPress={() => txSideOpen.set(false)} />
-          <View class="absolute left-0 top-0 bottom-0 w-[280px] bg-white dark:bg-slate-900 shadow-2xl border-r border-[#e5e7eb] dark:border-slate-700">
-            <View class="flex-row items-center justify-between border-b border-[#e5e7eb] dark:border-slate-700 pl-4 pr-2 py-2">
-              <Text class="text-sm font-semibold text-[#1e293b] dark:text-slate-100">Accounts</Text>
-              <View class="w-8 h-8 items-center justify-center rounded-lg cursor-pointer hover:bg-[#f1f5f9] dark:hover:bg-slate-700" onPress={() => txSideOpen.set(false)}>
+          <View class="absolute left-0 top-0 bottom-0 w-[280px] bg-white dark:bg-[#0d0d10] shadow-2xl border-r border-[#e5e7eb] dark:border-[#27282f]">
+            <View class="flex-row items-center justify-between border-b border-[#e5e7eb] dark:border-[#27282f] pl-4 pr-2 py-2">
+              <Text class="text-sm font-semibold text-[#1e293b] dark:text-[#f4f5f7]">Accounts</Text>
+              <View class="w-8 h-8 items-center justify-center rounded-lg cursor-pointer hover:bg-[#f1f5f9] dark:hover:bg-[#22232a]" onPress={() => txSideOpen.set(false)}>
                 <Avatar src={TX_ICONS.x} class="w-4 h-4" imageClass="tint-[#94a3b8]" fallbackDelay={Infinity} accessibilityLabel="" />
               </View>
             </View>
@@ -1378,11 +1378,11 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
       <If when={Boolean(txConfirm())}>
         <View class="fixed inset-0 items-center justify-center">
           <View class="absolute inset-0 bg-black/30" onPress={() => txConfirm.set("")} />
-          <View class="w-[380px] rounded-xl bg-white dark:bg-slate-900 p-5 gap-3 shadow-xl border border-[#e5e7eb] dark:border-slate-700">
-            <Text class="text-[15px] font-semibold text-[#1e293b] dark:text-slate-100">
+          <View class="w-[380px] rounded-xl bg-white dark:bg-[#0d0d10] p-5 gap-3 shadow-xl border border-[#e5e7eb] dark:border-[#27282f]">
+            <Text class="text-[15px] font-semibold text-[#1e293b] dark:text-[#f4f5f7]">
               {txConfirm() === "void" ? "Void transactions" : "Discard drafts"}
             </Text>
-            <Text class="text-[13px] text-[#475569] dark:text-slate-400">
+            <Text class="text-[13px] text-[#475569] dark:text-[#a1a5b0]">
               {txConfirm() === "void"
                 ? `Void ${voidables().length} posted transaction(s)? A reversing entry is recorded — it cannot be undone.`
                 : `Discard ${drafts().length} draft(s)? This cannot be undone.`}

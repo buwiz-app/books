@@ -102,7 +102,7 @@ function TxSideRight(p: {
   const state = () => txSideCheckState(p.node, p.checked || []);
   const toggle = () => p.onToggle?.(String(p.node.group ? `group:${p.node.group}` : p.node.ticket), p.node);
   if (!p.onToggle) {
-    return p.badge ? <Text class="text-[10px] font-medium text-[#94a3b8] dark:text-slate-500 tabular-nums shrink-0">{p.badge}</Text> : <View />;
+    return p.badge ? <Text class="text-[10px] font-medium text-[#94a3b8] dark:text-[#6e727e] tabular-nums shrink-0">{p.badge}</Text> : <View />;
   }
   return (
     <>
@@ -114,7 +114,7 @@ function TxSideRight(p: {
           <TxSideCheck state="none" onPress={toggle} />
         </View>
         <If when={Boolean(p.badge)}>
-          <Text class="group-hover:hidden text-[10px] font-medium text-[#94a3b8] dark:text-slate-500 tabular-nums shrink-0">{p.badge}</Text>
+          <Text class="group-hover:hidden text-[10px] font-medium text-[#94a3b8] dark:text-[#6e727e] tabular-nums shrink-0">{p.badge}</Text>
         </If>
       </If>
     </>
@@ -149,8 +149,8 @@ function TxSideNode(p: {
       <View
         class={`group flex-row items-center gap-2 px-3 py-[7px] cursor-pointer transition-colors ${
           selected()
-            ? "bg-[#e6f7f5] dark:bg-slate-700 border-r-2 border-[#2a9d8f]"
-            : "hover:bg-[#f8fafc] dark:hover:bg-slate-800"
+            ? "bg-[#e6f7f5] dark:bg-[#1c1d22] border-r-2 border-[#2a9d8f]"
+            : "hover:bg-[#f8fafc] dark:hover:bg-[#22232a]"
         }`}
         style={{ paddingLeft: 8 + p.depth * 14 }}
       >
@@ -189,14 +189,14 @@ function TxSideNode(p: {
           <Text
             class={`block truncate ${
               isRoot()
-                ? "text-[13px] font-semibold text-[#1e293b] dark:text-slate-100"
-                : "text-[12px] text-[#475569] dark:text-slate-400"
+                ? "text-[13px] font-semibold text-[#1e293b] dark:text-[#f4f5f7]"
+                : "text-[12px] text-[#475569] dark:text-[#a1a5b0]"
             }`}
           >
             {isRoot() ? conf().label : String(node().name || "")}
           </Text>
           <If when={!isRoot() && Boolean(node().number)}>
-            <Text class="block text-[10px] text-[#94a3b8] dark:text-slate-500 leading-tight">{String(node().number)}</Text>
+            <Text class="block text-[10px] text-[#94a3b8] dark:text-[#6e727e] leading-tight">{String(node().number)}</Text>
           </If>
         </View>
 
@@ -261,9 +261,9 @@ function TxSidebar(p: {
   const leafCount = () => p.accounts.length;
   const checkedCount = () => (p.checkedIds || []).length;
   return (
-    <View class="flex-1 flex-col bg-[#f8fafc] dark:bg-slate-900">
+    <View class="flex-1 flex-col bg-[#f8fafc] dark:bg-[#0d0d10]">
       {/* Lookup */}
-      <View class="px-3 py-2.5 border-b border-[#e5e7eb] dark:border-slate-700">
+      <View class="px-3 py-2.5 border-b border-[#e5e7eb] dark:border-[#27282f]">
         <View class="relative">
           <View class="absolute left-2.5 top-0 bottom-0 items-center justify-center">
             <Avatar src={TX_SIDE_ICONS.search} class="w-[13px] h-[13px]" imageClass="tint-[#94a3b8]" fallbackDelay={Infinity} accessibilityLabel="" />
@@ -273,7 +273,7 @@ function TxSidebar(p: {
             value={search()}
             placeholder="Lookup..."
             onChange={(e: Any) => search.set(typeof e === "string" ? e : e.value)}
-            class="w-full pl-8 pr-3 py-1.5 rounded-md bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-600 text-base sm:text-[12px] text-[#1e293b] dark:text-slate-200 placeholder:text-[#94a3b8] dark:placeholder:text-slate-500 focus:outline-none focus:border-[#2a9d8f] dark:focus:border-teal-500 focus:ring-1 focus:ring-[#2a9d8f] dark:focus:ring-teal-500 transition-all"
+            class="w-full pl-8 pr-3 py-1.5 rounded-md bg-white dark:bg-[#141519] border border-[#e2e8f0] dark:border-[#27282f] text-base sm:text-[12px] text-[#1e293b] dark:text-[#f4f5f7] placeholder:text-[#94a3b8] dark:placeholder:text-[#6e727e] focus:outline-none focus:border-[#2a9d8f] dark:focus:border-teal-500 focus:ring-1 focus:ring-[#2a9d8f] dark:focus:ring-teal-500 transition-all"
           />
         </View>
       </View>
@@ -299,8 +299,8 @@ function TxSidebar(p: {
       {/* Select all / Clear — the old MultiCheckboxCombobox footer, drawn only
           when the caller wires the callbacks (the sidebar itself has none). */}
       <If when={Boolean(p.onSelectAll || p.onClearSelection)}>
-        <View class="flex-row items-center justify-between border-t border-[#e5e7eb] dark:border-slate-700 px-3 py-2.5">
-          <Text class="text-[11px] text-slate-500 dark:text-slate-400">
+        <View class="flex-row items-center justify-between border-t border-[#e5e7eb] dark:border-[#27282f] px-3 py-2.5">
+          <Text class="text-[11px] text-slate-500 dark:text-[#a1a5b0]">
             {`${checkedCount()} of ${leafCount()} selected`}
           </Text>
           <View class="flex-row items-center gap-1">

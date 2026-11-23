@@ -16,8 +16,8 @@ function Kpi(p: { label: string; shown: string; tone?: string; rows: Any[] }) {
         ? "text-[#ef4444] dark:text-[#f87171]"
         : C.ink;
   return (
-    <View class={`flex-1 rounded-xl border p-5 gap-1.5 bg-white dark:bg-[#131826] transition-shadow hover:shadow-sm ${C.line}`}>
-      <Text class="text-xs font-medium uppercase tracking-wide text-[#94a3b8] dark:text-white/40">{p.label}</Text>
+    <View class={`flex-1 rounded-xl border p-5 gap-1.5 bg-white dark:bg-[#141519] transition-shadow hover:shadow-sm ${C.line}`}>
+      <Text class="text-xs font-medium uppercase tracking-wide text-[#94a3b8] dark:text-[#f4f5f7]/40">{p.label}</Text>
       <Text class={`mt-2 text-2xl font-semibold tabular-nums ${valTone}`}>{p.shown}</Text>
       <View class="gap-1.5 mt-1.5">
         <Each of={p.rows || []}>{(r: Any) => <Bar label={r().label} pct={r().pct} shown={r().shown} tone={r().tone} />}</Each>
@@ -29,7 +29,7 @@ function Kpi(p: { label: string; shown: string; tone?: string; rows: Any[] }) {
 function NeedRow(p: { n: Any; go: (page: string, filter?: string) => void }) {
   return (
     <View
-      class={`flex-row items-center gap-3 px-5 py-3 border-t transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 ${C.line}`}
+      class={`flex-row items-center gap-3 px-5 py-3 border-t transition-colors hover:bg-slate-50 dark:hover:bg-[#22232a] ${C.line}`}
       onPress={() => {
         if (p.n.filter === "review" || p.n.filter === "draft") {
           inboxFilter.set(p.n.filter);
@@ -55,7 +55,7 @@ function NeedRow(p: { n: Any; go: (page: string, filter?: string) => void }) {
 function Quick(p: { title: string; sub: string; onPress: () => void }) {
   return (
     <View
-      class={`flex-1 rounded-xl border px-3.5 py-3 gap-0.5 bg-[#f8f9fb] transition-colors hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 ${C.line}`}
+      class={`flex-1 rounded-xl border px-3.5 py-3 gap-0.5 bg-[#f8f9fb] transition-colors hover:bg-slate-100 dark:bg-[#0d0d10] dark:hover:bg-[#22232a] ${C.line}`}
       onPress={p.onPress}
       activeStyle={{ opacity: 0.75 }}
     >
@@ -69,7 +69,7 @@ function Quick(p: { title: string; sub: string; onPress: () => void }) {
 function NavTile(p: { title: string; sub: string; onPress: () => void }) {
   return (
     <View
-      class={`rounded-xl border px-3.5 py-3 gap-0.5 bg-white transition-colors hover:bg-slate-50 dark:bg-[#131826] dark:hover:bg-slate-700/60 ${C.line}`}
+      class={`rounded-xl border px-3.5 py-3 gap-0.5 bg-white transition-colors hover:bg-slate-50 dark:bg-[#141519] dark:hover:bg-[#22232a] ${C.line}`}
       onPress={p.onPress}
       activeStyle={{ opacity: 0.75 }}
     >
@@ -119,7 +119,7 @@ function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
             <Kpi label={t()?.unpaid.label || "Unpaid"} shown={`₱ ${t()?.unpaid.shown || "0.00"}`} rows={t()?.unpaid.rows} />
           </View>
           <View class="flex-col lg:flex-row gap-5 items-stretch lg:items-start">
-            <View class={`flex-[1.25] rounded-xl border overflow-hidden bg-white dark:bg-[#131826] ${C.line}`}>
+            <View class={`flex-[1.25] rounded-xl border overflow-hidden bg-white dark:bg-[#141519] ${C.line}`}>
               <View class="flex-row items-center justify-between px-5 py-3.5">
                 <Text class={`text-[14px] font-semibold ${C.ink}`}>Needs you</Text>
                 <Text class={`text-[12px] ${C.dim}`}>
@@ -135,7 +135,7 @@ function TodayPage(p: { go: (page: string, filter?: string) => void; sheet: (mod
                 {(n: Any) => <NeedRow n={n()} go={p.go} />}
               </Each>
             </View>
-            <View class={`flex-1 rounded-xl border overflow-hidden bg-white dark:bg-[#131826] ${C.line}`}>
+            <View class={`flex-1 rounded-xl border overflow-hidden bg-white dark:bg-[#141519] ${C.line}`}>
               <View class="flex-row items-center justify-between px-5 py-3.5">
                 <Text class={`text-[14px] font-semibold ${C.ink}`}>Quick entry</Text>
                 <Text class={`text-[12px] ${C.dim}`}>also in chat as /books</Text>
