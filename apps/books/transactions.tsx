@@ -48,12 +48,17 @@ const txServerSearch = () => txSearch().trim() || txQueryChips()[0] || "";
 const txData = resource(
   () => ({ v: ver(), m: txMonth(), a: txAccount(), f: txFilter(), s: txServerSearch(), q: txQueryChips().length }),
   (k: Any) =>
-    buwiz.call("books_ledger_list", {
-      ...(k.m ? { month: k.m } : {}),
-      ...(k.a ? { account: k.a } : {}),
-      ...(k.s ? { search: k.s } : {}),
-      filter: k.f,
-    }),
+    buwiz
+      .call("books_ledger_list", {
+        ...(k.m ? { month: k.m } : {}),
+        ...(k.a ? { account: k.a } : {}),
+        ...(k.s ? { search: k.s } : {}),
+        filter: k.f,
+      })
+      .then((res: Any) => {
+        if (res?.month?.key && !res?.month?.next) txTodayMonth.set(String(res.month.key));
+        return res;
+      }),
 );
 
 // Paging: the tool answers 200 rows + next_cursor; "Load more" appends pages.
@@ -774,11 +779,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
   const d = () => txD();
   const month = () => (d()?.month || {}) as Any;
   const rows = () => txFiltered();
-  const tabKey = () => {
-    const k = String(month().key || "");
-    if (k && !month().next && txTodayMonth() !== k) txTodayMonth.set(k);
-    return k;
-  };
+  const tabKey = () => String(month().key || "");
   // Old app tabs: a window of month pills around the selected month, newest at today.
   const tabs = () => {
     const key = tabKey() || "0000-00";
@@ -995,7 +996,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                   <Text class={`text-[13px] font-medium whitespace-nowrap ${k === tabKey() ? "text-white" : "text-white/50 group-hover:text-white"}`}>
                     {MONTH_KEYS[Number(k.slice(5, 7)) - 1]?.slice(0, 3)}
                   </Text>
-                  <If when={Boolean(txTodayMonth()) && k === txTodayMonth()}>
+                  <If when={k === txTodayMonth() || (!month().next && k === tabKey())}>
                     <Text class="text-[9px] text-white/60 italic">Today</Text>
                   </If>
                   <Text class="text-[10px] text-white/40">{k.slice(0, 4)}</Text>
