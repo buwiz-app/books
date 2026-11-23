@@ -256,7 +256,7 @@ function grouped(text: string): string {
 function Btn(p: { label: string; onPress: () => void; tone?: "go" | "vi" | "plain"; disabled?: boolean; small?: boolean }) {
   const tone =
     p.tone === "go"
-      ? `bg-[${acc()}] hover:bg-[${accShade(6)}] border-transparent`
+      ? `bg-[${accShade(6)}] hover:bg-[${accShade(7)}] dark:bg-[${accShade(7)}] dark:hover:bg-[${accShade(8)}] border-white/15`
       : p.tone === "vi"
         ? `${C.violetBg} border-[#6a46c9] dark:border-[#b79bff] hover:bg-[#5a35b3] dark:hover:bg-[#9d7ef2]`
         : `${C.raise} ${C.line} hover:bg-[#e2e8f0] dark:hover:bg-[#2a2a2d]`;
@@ -404,7 +404,10 @@ let goBack: (() => void) | null = null;
 /** The page header: a green band with the way back, the title, and buttons on the right. */
 function Head(p: { title: string; sub?: string; children?: Any; home?: boolean }) {
   return (
-    <View class="flex-row items-center gap-2.5 flex-wrap rounded-xl px-3.5 py-2.5" style={{ backgroundColor: acc() }}>
+    <View
+      class={`flex-row items-center gap-2.5 flex-wrap rounded-xl px-4 py-3 ${accent() === "green" ? C.emeraldBar : ""}`}
+      style={accent() === "green" ? undefined : { backgroundColor: accShade(7) }}
+    >
       <If when={Boolean(goBack) && !p.home}>
         <View
           accessibilityLabel="Back to Home"
