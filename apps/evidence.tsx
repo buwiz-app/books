@@ -198,7 +198,7 @@ export default function Evidence() {
     return (
       <View class="flex-col gap-1.5 mb-3">
         <Text class="text-[11px] md:text-xs font-semibold uppercase tracking-wider text-[#94a3b8] dark:text-white/40">{label}</Text>
-        <View class="flex-col rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#0f172a]">
+        <View class="flex-col rounded-lg border border-[#e5e7eb] dark:border-[#27282f] bg-white dark:bg-[#1c1d22]">
           <View
             class="h-11 md:h-auto md:py-2 flex-row items-center px-3 transition-colors"
             activeStyle={{ opacity: 0.7 }}
@@ -266,7 +266,7 @@ export default function Evidence() {
   );
 
   return (
-    <View style={{ flex: 1 }} class={`bg-[#fafbfc] dark:bg-[#0c1322]`}>
+    <View style={{ flex: 1 }} class={`bg-[#f6f7f9] dark:bg-[#0d0d10]`}>
       {/* ‹ Back — Books' way home. */}
       <View
         class="group flex-row items-center gap-1.5 h-11 min-w-11 justify-center rounded-lg transition-colors sm:min-w-0 sm:justify-start"
@@ -295,7 +295,7 @@ export default function Evidence() {
             value={evQuery()}
             placeholder={`Filter ${evFiltered().length} document${evFiltered().length !== 1 ? "s" : ""}…`}
             onChange={(e: Any) => evQuery.set(typeof e === "string" ? e : e.value)}
-            class={`flex-1 h-11 pl-10 pr-4 rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#111827] text-base md:text-sm text-[#1e293b] dark:text-white placeholder:text-[#94a3b8] dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all`}
+            class={`flex-1 h-11 pl-10 pr-4 rounded-lg border border-[#e5e7eb] dark:border-[#27282f] bg-white dark:bg-[#1c1d22] text-base md:text-sm text-[#111318] dark:text-[#f4f5f7] placeholder:text-[#8b919d] dark:placeholder:text-[#6e727e] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all`}
           />
         </View>
         <View class="flex-row items-center gap-2 md:gap-3">
@@ -329,7 +329,7 @@ export default function Evidence() {
               (Actions.tsx:125-148). */}
           <View
             accessibilityLabel="Filters"
-            class="md:hidden flex-row items-center gap-2 h-11 px-4 rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#111827]"
+            class="md:hidden flex-row items-center gap-2 h-11 px-4 rounded-lg border border-[#e5e7eb] dark:border-[#27282f] bg-white dark:bg-[#1c1d22]"
             activeStyle={{ opacity: 0.7 }}
             onPress={() => {
               evSheetOpen.set(true);
@@ -375,8 +375,8 @@ export default function Evidence() {
             <Each of={evFiltered()} key={(e: Any) => String(e.evidence)}>
               {(e: Any) => (
                 <View class="w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5 p-1.5 md:p-2.5">
-                  <View class={`rounded-xl border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#111827] overflow-hidden hover:shadow-lg hover:border-[#a7f3d0] dark:hover:border-[#10b981]/30 transition-all cursor-pointer`}>
-                    <View class="w-full h-[120px] bg-[#f1f5f9] dark:bg-[#0f172a] items-center justify-center overflow-hidden">
+                  <View class={`rounded-xl border border-[#e5e7eb] dark:border-[#27282f] bg-white dark:bg-[#141519] overflow-hidden hover:shadow-lg hover:border-[#a7f3d0] dark:hover:border-[#10b981]/30 transition-all cursor-pointer`}>
+                    <View class="w-full h-[120px] bg-[#f1f3f6] dark:bg-[#111216] items-center justify-center overflow-hidden">
                       <View class="items-center gap-2">
                         <EvTypeTile mime={String(e().mime)} big />
                         <Text class="text-xs text-[#94a3b8] dark:text-white/30">{e().mime === "application/pdf" ? "PDF Document" : "Image"}</Text>
@@ -408,8 +408,8 @@ export default function Evidence() {
         {/* List view: the old app's table (documents.tsx:624-890). "Uploaded On" is dropped —
             books_evidence_list carries no date; "Uploaded By" is the source (user/assistant). */}
         <If when={Boolean(list()) && evFiltered().length > 0 && evView() === "list"}>
-          <View class={`rounded-xl border border-[#e2e8f0] dark:border-white/10 overflow-hidden bg-white dark:bg-[#111827]`}>
-            <View class={`hidden md:flex flex-row items-center px-5 py-3 border-b border-[#e2e8f0] dark:border-white/10 bg-[#f8fafc] dark:bg-[#0f172a]`}>
+          <View class={`rounded-xl border border-[#e5e7eb] dark:border-[#27282f] overflow-hidden bg-white dark:bg-[#141519]`}>
+            <View class={`hidden md:flex flex-row items-center px-5 py-3 border-b border-[#e5e7eb] dark:border-[#27282f] bg-[#f8f9fb] dark:bg-[#111216]`}>
               <Text class="flex-1 text-[11px] font-semibold text-[#94a3b8] dark:text-white/40 uppercase tracking-wider">Document Name</Text>
               <Text class="w-[140px] text-[11px] font-semibold text-[#94a3b8] dark:text-white/40 uppercase tracking-wider">Document Type</Text>
               <Text class="w-[140px] text-[11px] font-semibold text-[#94a3b8] dark:text-white/40 uppercase tracking-wider">Uploaded By</Text>
@@ -477,7 +477,7 @@ export default function Evidence() {
           onPressOutside={() => evFilterOpen.set(false)}
           onCancel={() => evFilterOpen.set(false)}
         >
-          <View class={`hidden md:flex md:flex-col w-64 rounded-xl border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#1e293b] shadow-xl py-3 px-4`}>
+          <View class={`hidden md:flex md:flex-col w-64 rounded-xl border border-[#e5e7eb] dark:border-[#27282f] bg-white dark:bg-[#141519] shadow-xl py-3 px-4`}>
             {evFilterFields()}
           </View>
         </Overlay>
@@ -489,7 +489,7 @@ export default function Evidence() {
         <View class="fixed inset-0 md:hidden" onPress={() => evSheetOpen.set(false)}>
           <View class="absolute inset-0 bg-black/40" />
           <View
-            class={`absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white dark:bg-[#1e293b] pt-4 pb-4`}
+            class={`absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white dark:bg-[#141519] pt-4 pb-4`}
             onPress={() => null}
           >
             <View class="flex-row items-center justify-between px-4 mb-3">
@@ -524,7 +524,7 @@ export default function Evidence() {
           onPressOutside={() => evActionsFor.set("")}
           onCancel={() => evActionsFor.set("")}
         >
-          <View class={`w-44 rounded-xl border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#1e293b] shadow-xl py-1`}>
+          <View class={`w-44 rounded-xl border border-[#e5e7eb] dark:border-[#27282f] bg-white dark:bg-[#141519] shadow-xl py-1`}>
             <View class="px-3 py-2 hover:bg-[#f8fafc] dark:hover:bg-white/5 transition-colors" activeStyle={{ opacity: 0.7 }} onPress={() => { const id = evActionsFor(); evActionsFor.set(""); evPreview(id); }}>
               <Text class="text-sm text-[#64748b] dark:text-white/50">Preview</Text>
             </View>

@@ -15,10 +15,10 @@ const CARD = String(CP.card || "");
 
 /** The Bot's card surface, hairline, button well and a skeleton bar, as solid colors (theme CARD, BORDER_S, HOVER). */
 const K = {
-  surface: "bg-white dark:bg-[#1f1f1f]",
-  line: "border-[#e0e0e0] dark:border-[#3a3a3a]",
-  well: "bg-[#ebebeb] dark:bg-[#333333]",
-  skel: "bg-[#efefef] dark:bg-[#2c2c2c]",
+  surface: "bg-white dark:bg-[#141519]",
+  line: "border-[#e5e7eb] dark:border-[#27282f]",
+  well: "bg-[#f1f3f6] dark:bg-[#1c1d22]",
+  skel: "bg-[#f1f3f6] dark:bg-[#22232a]",
 };
 
 /** A list's own max height, about seven rows: past it the list scrolls, the card and its footer do not. */
