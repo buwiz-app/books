@@ -5,6 +5,12 @@
 const csvChart = signal(null as Any);
 const csvJournal = signal(null as Any);
 
+// ImportPanel's upload glyph as an SVG (lucide upload, 1.75px); `xmlns` left
+// out like kit.tsx's ICONS — the privacy gate rejects URL literals.
+const UPLOAD_ICON = `data:image/svg+xml,${encodeURIComponent(
+  '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+)}`;
+
 function pickOne(extensions: string[], then: (f: Any) => void) {
   if (!buwiz.pickFile) return toast("Picking files is not available in this Buwiz Bot.");
   buwiz
@@ -47,7 +53,7 @@ function PickZone(p: { title: string; hint: string; file: Any; onPick: () => voi
       activeStyle={{ opacity: 0.7 }}
       onPress={p.onPick}
     >
-      <Text class="text-[20px] text-[#94a3b8] dark:text-[#71717a]">⇪</Text>
+      <Avatar src={UPLOAD_ICON} class="w-5 h-5" imageClass="tint-[#94a3b8] dark:tint-[#71717a]" fallbackDelay={Infinity} accessibilityLabel="" />
       <If when={Boolean(p.file)}>
         <View class="flex-row items-center gap-1.5 max-w-full rounded-full bg-[#f0fdfa] border border-[#99f6e4] px-2.5 py-1 dark:bg-[#134e4a]/30 dark:border-[#0f766e]">
           <Text class="text-[11.5px] font-medium text-[#0d9488] dark:text-[#2dd4bf] truncate">{String(p.file?.name || "")}</Text>
@@ -96,11 +102,11 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
       </Head>
       <Loading res={data} />
       <If when={Boolean(d()?.can_import)}>
-        <View class="flex-row gap-3">
+        <View class="flex-col lg:flex-row gap-3">
           {/* Web export — single file, reads it as soon as it's picked */}
           <Panel pad class="flex-1 gap-3">
             <View class="flex-row items-center gap-2">
-              <Text class="text-[13px] text-[#0d9488] dark:text-[#2dd4bf]">⇪</Text>
+              <Avatar src={UPLOAD_ICON} class="w-4 h-4" imageClass="tint-[#0d9488] dark:tint-[#2dd4bf]" fallbackDelay={Infinity} accessibilityLabel="" />
               <Text class={`text-[13.5px] font-bold ${C.ink}`}>Web Buwiz Books</Text>
             </View>
             <Text class={`text-[12.5px] ${C.mute}`}>The export file (.json) from Settings › Export in web Books. Books reads accounts, people, tags and posted transactions. Tax profiles, TINs and certificates stay out.</Text>
@@ -117,7 +123,7 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
           {/* CSV / Excel — a chart and a journal, then one click to bring both in */}
           <Panel pad class="flex-1 gap-3">
             <View class="flex-row items-center gap-2">
-              <Text class="text-[13px] text-[#0d9488] dark:text-[#2dd4bf]">⇪</Text>
+              <Avatar src={UPLOAD_ICON} class="w-4 h-4" imageClass="tint-[#0d9488] dark:tint-[#2dd4bf]" fallbackDelay={Infinity} accessibilityLabel="" />
               <Text class={`text-[13.5px] font-bold ${C.ink}`}>CSV or Excel files</Text>
             </View>
             <Text class={`text-[12.5px] ${C.mute}`}>A chart of accounts and a journal, from QuickBooks, Xero or a spreadsheet (.csv, .xlsx or .xls; a workbook reads its sheet named Chart or Journal, else its first).</Text>
@@ -140,6 +146,7 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
             <View class="flex-row justify-end">
               <View
                 class={`h-[38px] px-5 rounded-lg items-center justify-center transition-colors ${csvChart() && csvJournal() ? "bg-[#0d9488] hover:bg-[#0f766e]" : "bg-[#0d9488] opacity-40"}`}
+                activeStyle={{ opacity: 0.7 }}
                 onPress={() => (csvChart() && csvJournal() ? importCsv().catch(() => null) : null)}
               >
                 <Text class="text-[13px] font-medium text-white">Bring them in</Text>
@@ -157,15 +164,15 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
             </Text>
           </View>
           <View class={`flex-row gap-3 px-3.5 py-2 border-b ${C.line}`}>
-            <Text class={`flex-1 text-[10.5px] uppercase tracking-wider ${C.dim}`}>Their account</Text>
-            <Text class={`w-[44px] text-right text-[10.5px] uppercase tracking-wider ${C.dim}`}>Sure</Text>
-            <Text class={`w-[230px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Kind in Books</Text>
-            <Text class={`w-[170px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Feeds</Text>
-            <Text class={`w-[96px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Status</Text>
+            <Text class={`flex-1 text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Their account</Text>
+            <Text class={`w-[44px] text-right text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Sure</Text>
+            <Text class={`w-[160px] md:w-[230px] text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Kind in Books</Text>
+            <Text class={`hidden md:block w-[170px] text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Feeds</Text>
+            <Text class={`w-[96px] text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Status</Text>
           </View>
           <Each of={d()?.matches || []} key={rowKey}>
             {(m: Any) => (
-              <View class={`flex-row items-start gap-3 px-3.5 py-2 border-b transition-colors ${C.line} hover:bg-[#f8fafc] dark:hover:bg-[#1c1c1f]`}>
+              <View class={`flex-row items-start gap-3 px-3.5 py-2 border-b flex-wrap transition-colors ${C.line} hover:bg-[#f8fafc] dark:hover:bg-[#1c1c1f]`}>
                 <View class="flex-1">
                   <Text class={`text-[13px] font-semibold ${C.ink} truncate`}>
                     {m().imported_name || m().name}
@@ -175,10 +182,10 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
                   </Text>
                 </View>
                 <Text class={`w-[44px] text-right text-[12.5px] font-mono ${C.mute}`}>{m().confidence === null ? "—" : `${String(m().confidence)}%`}</Text>
-                <View class="w-[230px]">
+                <View class="w-[160px] md:w-[230px]">
                   <Pick value={m().kind} options={(d()?.kinds || {})[m().side] || []} onPick={(k: Any) => act("books_app_account_match", { account: m().ticket, kind: k.ticket }).catch(() => null)} />
                 </View>
-                <Text class={`w-[170px] text-[12px] ${C.mute} line-clamp-2`}>
+                <Text class={`hidden md:block w-[170px] text-[12px] ${C.mute} line-clamp-2`}>
                   {m().feeds}
                 </Text>
                 <View class="w-[96px] gap-1">
@@ -197,6 +204,7 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
             <Text class={`flex-1 text-[12px] ${d()?.held ? C.amber : C.green}`}>{d()?.held ? "Boxes that could read unmatched lines are held." : "Ready: every account has a kind."}</Text>
             <View
               class={`h-[38px] px-4 rounded-lg items-center justify-center transition-colors ${d()?.counts.to_confirm ? "bg-[#0d9488] hover:bg-[#0f766e]" : "bg-[#0d9488] opacity-40"}`}
+              activeStyle={{ opacity: 0.7 }}
               onPress={() => (d()?.counts.to_confirm ? act("books_app_accounts_confirm", { min: 50 }).then((r: Any) => toast(`${String(r.confirmed)} confirmed`)).catch(() => null) : null)}
             >
               <Text class="text-[13px] font-medium text-white">Confirm all suggested</Text>
@@ -212,7 +220,7 @@ function ImportPage(p: { go: (page: string, filter?: string) => void }) {
           </View>
           <Each of={d()?.openings || []} key={rowKey}>
             {(o: Any) => (
-              <View class={`flex-row items-center gap-3 py-1.5 border-b transition-colors ${C.line} hover:bg-[#f8fafc] dark:hover:bg-[#1c1c1f]`}>
+              <View class={`flex-row items-center gap-3 py-1.5 border-b flex-wrap transition-colors ${C.line} hover:bg-[#f8fafc] dark:hover:bg-[#1c1c1f]`}>
                 <Text class={`w-[200px] text-[13px] ${C.ink}`}>{o().label}</Text>
                 <Text class={`w-[130px] text-[12.5px] ${C.mute}`}>{o().range_label}</Text>
                 <Text class={`w-[120px] text-right text-[12.5px] font-mono ${C.ink}`}>{o().amount_shown}</Text>

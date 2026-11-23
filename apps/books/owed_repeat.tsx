@@ -20,7 +20,7 @@ function RepeatsDue(p: { rows: Any[] }) {
         </Text>
         <Each of={p.rows || []} key={(r: Any) => r.owed}>
           {(r: Any) => (
-            <View class={`flex-row items-center gap-3 px-3 py-2 border-b ${C.line} flex-wrap`}>
+            <View class={`flex-row items-center gap-3 px-3 py-2 border-b ${C.line} flex-wrap transition-colors hover:bg-[#f8fafc] dark:hover:bg-[#1c1c1f]`}>
               <Text class={`flex-1 text-[12.5px] ${C.ink} truncate`}>
                 {r().who || ""}
               </Text>

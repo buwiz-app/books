@@ -90,12 +90,12 @@ function RepChange(p: { cur: Any; prev: Any }) {
 function RepPill(p: { label: string; on: boolean; onPress: () => void }) {
   return (
     <View
-      class={`px-3 py-1 rounded-md text-center border transition-all ${p.on ? "bg-white/20 border-white/20" : "border-transparent hover:bg-white/10"}`}
+      class={`group px-3 py-1 rounded-md text-center border transition-all ${p.on ? "bg-white/20 border-white/20" : "border-transparent hover:bg-white/10"}`}
       onPress={p.onPress}
       activeStyle={{ opacity: 0.8 }}
       hoverStyle={{ backgroundColor: p.on ? undefined : "rgba(255,255,255,0.1)" }}
     >
-      <Text class={`text-[12px] font-medium ${p.on ? "text-white" : "text-white/50"}`}>{p.label}</Text>
+      <Text class={`text-[12px] font-medium ${p.on ? "text-white" : "text-white/50 group-hover:text-white"}`}>{p.label}</Text>
     </View>
   );
 }
@@ -118,13 +118,13 @@ function RepBandBtn(p: { label: string; onPress: () => void; disabled?: boolean 
 function RepCard(p: { title: string; sub: string; children?: Any }) {
   return (
     <View class={`rounded-xl ${C.panel} shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]`}>
-      <View class="px-5 pt-5 pb-3 border-b border-[#f3f4f6] dark:border-white/8">
+      <View class="px-3 sm:px-6 pt-5 pb-3 border-b border-[#f3f4f6] dark:border-white/8">
         <Text class="text-lg font-bold text-[#111827] dark:text-white">{p.title}</Text>
         <If when={Boolean(p.sub)}>
           <Text class="text-[13px] text-[#6b7280] dark:text-white/50 mt-1">{p.sub}</Text>
         </If>
       </View>
-      <View class="px-5 pb-5">{p.children}</View>
+      <View class="px-3 sm:px-6 pb-5">{p.children}</View>
     </View>
   );
 }
@@ -443,7 +443,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
             <Each of={REPORT_TABS}>
               {(t: Any) => (
                 <View
-                  class={`px-4 py-1 rounded-full transition-all ${repKind() === t()[0] ? "bg-white/20" : "hover:bg-white/10"}`}
+                  class={`group px-4 py-1 rounded-full transition-all ${repKind() === t()[0] ? "bg-white/20 shadow-sm" : "hover:bg-white/10"}`}
                   onPress={() => {
                     repKind.set(t()[0]);
                     repCompare.set("none");
@@ -451,7 +451,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
                   activeStyle={{ opacity: 0.8 }}
                   hoverStyle={{ backgroundColor: repKind() === t()[0] ? undefined : "rgba(255,255,255,0.1)" }}
                 >
-                  <Text class={`text-[13px] font-medium whitespace-nowrap ${repKind() === t()[0] ? "text-white" : "text-white/50"}`}>{t()[1]}</Text>
+                  <Text class={`text-[13px] font-medium whitespace-nowrap ${repKind() === t()[0] ? "text-white" : "text-white/50 group-hover:text-white"}`}>{t()[1]}</Text>
                 </View>
               )}
             </Each>
@@ -461,30 +461,30 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
           <View class="flex-row items-center gap-2">
             <View class="flex-row items-center bg-white/10 rounded-lg shrink-0">
               <View
-                class="w-8 h-8 items-center justify-center rounded-l-lg transition-colors"
-                onPress={() => repPeriod.set(d()?.period.prev || "")}
+                class={`group w-8 h-8 items-center justify-center rounded-l-lg transition-colors ${d()?.period.prev ? "" : "opacity-40"}`}
+                onPress={() => d()?.period.prev && repPeriod.set(d().period.prev)}
                 activeStyle={{ opacity: 0.7 }}
-                hoverStyle={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+                hoverStyle={{ backgroundColor: d()?.period.prev ? "rgba(255,255,255,0.1)" : undefined }}
               >
-                <Text class="text-[15px] font-bold text-white/70">‹</Text>
+                <Avatar src={ICONS.chevronLeft} class="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
               </View>
               <Text class="px-2 text-xs font-medium text-white/70">
                 {["bs", "tb", "ag"].includes(repKind()) && d()?.period?.key ? repAsOf(d().period.key, repPeriodKind()) : d()?.period.label || ""}
               </Text>
               <View
-                class="w-8 h-8 items-center justify-center rounded-r-lg transition-colors"
-                onPress={() => repPeriod.set(d()?.period.next || "")}
+                class={`group w-8 h-8 items-center justify-center rounded-r-lg transition-colors ${d()?.period.next ? "" : "opacity-40"}`}
+                onPress={() => d()?.period.next && repPeriod.set(d().period.next)}
                 activeStyle={{ opacity: 0.7 }}
-                hoverStyle={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+                hoverStyle={{ backgroundColor: d()?.period.next ? "rgba(255,255,255,0.1)" : undefined }}
               >
-                <Text class="text-[15px] font-bold text-white/70">›</Text>
+                <Avatar src={ICONS.chevronRight} class="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
               </View>
             </View>
             <View class="flex-row items-center bg-white/10 rounded-lg shrink-0">
               <Each of={[["month", "Month"], ["quarter", "Quarter"], ["year", "Year"]]}>
                 {(o: Any) => (
                   <View
-                    class={`px-3 h-8 items-center justify-center transition-colors ${repPeriodKind() === o()[0] ? "bg-white/20 rounded-lg" : ""}`}
+                    class={`group px-3 h-8 items-center justify-center transition-colors ${repPeriodKind() === o()[0] ? "bg-white/20 rounded-lg" : ""}`}
                     onPress={() => {
                       repPeriodKind.set(o()[0]);
                       repPeriod.set("");
@@ -492,7 +492,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
                     activeStyle={{ opacity: 0.8 }}
                     hoverStyle={{ backgroundColor: repPeriodKind() === o()[0] ? undefined : "rgba(255,255,255,0.1)" }}
                   >
-                    <Text class={`text-[12px] font-medium ${repPeriodKind() === o()[0] ? "text-white" : "text-white/50"}`}>{o()[1]}</Text>
+                    <Text class={`text-[12px] font-medium ${repPeriodKind() === o()[0] ? "text-white" : "text-white/50 group-hover:text-white"}`}>{o()[1]}</Text>
                   </View>
                 )}
               </Each>

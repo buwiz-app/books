@@ -38,8 +38,9 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
   };
   const Opt = (q: { id: string; title: string; sub: string }) => (
     <View
-      class={`flex-1 rounded-[10px] border p-3 gap-1 ${C.bg} ${C.line}`}
+      class={`flex-1 rounded-[10px] border p-3 gap-1 transition-colors ${C.bg} ${C.line} ${d()?.book.basis === q.id ? "" : "hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]"}`}
       style={picked(d()?.book.basis === q.id)}
+      activeStyle={{ opacity: 0.7 }}
       onPress={() => (d()?.book.basis === q.id ? null : save({ basis: q.id }))}
     >
       <Text class={`text-[13.5px] font-bold ${C.ink}`}>{q.title}</Text>
@@ -55,7 +56,7 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
           <Panel class="w-full flex-row flex-wrap md:w-[180px] md:flex-col md:flex-nowrap p-1.5 gap-0.5">
             <Each of={SET_TABS}>
               {(t: Any) => (
-                <View class={`rounded-[7px] px-2.5 py-1.5 ${setTab() === t()[0] ? C.raise : "hover:bg-[#f1f5f9] dark:hover:bg-slate-800"}`} onPress={() => {
+                <View class={`rounded-[7px] px-2.5 py-1.5 transition-colors ${setTab() === t()[0] ? C.raise : "hover:bg-[#f1f5f9] dark:hover:bg-slate-800"}`} onPress={() => {
                     err.set("");
                     setTab.set(t()[0]);
                   }}>
@@ -96,8 +97,9 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
                       {(k: Any) => (
                         <View
                           accessibilityLabel={`Accent ${ACCENTS[k()].name}`}
-                          class={`flex-row items-center gap-1.5 rounded-full border px-2.5 py-1 ${C.bg} ${C.line}`}
+                          class={`flex-row items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors ${C.bg} ${C.line} ${accent() === k() ? "" : "hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]"}`}
                           style={picked(accent() === k())}
+                          activeStyle={{ opacity: 0.7 }}
                           onPress={() => (accent() === k() ? null : save({ accent: k() }))}
                         >
                           <View class="w-3 h-3 rounded-full" style={{ backgroundColor: ACCENTS[k()].solid }} />

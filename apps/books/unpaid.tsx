@@ -76,10 +76,10 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
       <If when={Boolean(d())}>
         <Panel>
           <View class={`hidden md:flex flex-row gap-3 px-3 py-2 border-b ${C.line} bg-[#f8fafc] dark:bg-[#0f172a]`}>
-            <Text class={`flex-1 text-[10.5px] uppercase tracking-wider ${C.dim}`}>{unpaidSide() === "collect" ? "Customer" : "Vendor"}</Text>
-            <Text class={`w-[150px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Document</Text>
-            <Text class={`w-[64px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Due</Text>
-            <Text class={`w-[110px] text-right text-[10.5px] uppercase tracking-wider ${C.dim}`}>Balance</Text>
+            <Text class={`flex-1 text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>{unpaidSide() === "collect" ? "Customer" : "Vendor"}</Text>
+            <Text class={`w-[150px] text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Document</Text>
+            <Text class={`w-[64px] text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Due</Text>
+            <Text class={`w-[110px] text-right text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Balance</Text>
             <View class="w-[100px]" />
           </View>
           <If when={(d()?.rows || []).length === 0}>
