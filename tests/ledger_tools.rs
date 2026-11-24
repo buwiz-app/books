@@ -1398,3 +1398,122 @@ fn ledger_list_groups_accounts_and_rows_carry_account_debit_credit() {
             || row2["credit_shown"].as_str().is_some_and(|s| !s.is_empty())
     );
 }
+
+#[test]
+fn nested_coa_subtrees_roll_up_with_double_entry_polarity_and_period_filter() {
+    let dir = TempDir::new("nested-coa-subtrees");
+    let mut bot = Bot::new(&dir);
+    let book = app_data(
+        &mut bot,
+        "books_app_book_create",
+        json!({ "client_request_id": "nested-coa-book-01", "label": "Nested COA Shop" }),
+    )["book"]
+        .as_str()
+        .unwrap()
+        .to_string();
+
+    // Create two sub-accounts under 41000 (Sales Revenue): one normal revenue child
+    // and one contra child (Refunds & Discounts). Double-entry polarity nets them
+    // automatically on 41000's subtree_balance without any manual +/- sign.
+    app_data(
+        &mut bot,
+        "books_app_account_create",
+        json!({
+            "client_request_id": "nested-child-sales",
+            "book": book,
+            "number": "41010",
+            "name": "Synthetic Government Sales",
+            "kind": "sales_revenue",
+            "parent": "41000"
+        }),
+    );
+    app_data(
+        &mut bot,
+        "books_app_account_create",
+        json!({
+            "client_request_id": "nested-child-contra",
+            "book": book,
+            "number": "41090",
+            "name": "Synthetic Sales Discounts",
+            "kind": "refunds_and_discounts",
+            "parent": "41000"
+        }),
+    );
+
+    // Post Q3 revenue on 41010 (credit 500.00), Q3 contra discount on 41090 (debit 75.00),
+    // and Q4 revenue on 41000 directly (credit 200.00).
+    app_data(
+        &mut bot,
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "nested-q3-sale",
+            "book": book,
+            "form": "journal",
+            "date": "2026-08-15",
+            "lines": [
+                { "account": "11000", "debit": "500.00", "credit": "0.00" },
+                { "account": "41010", "debit": "0.00", "credit": "500.00" }
+            ]
+        }),
+    );
+    app_data(
+        &mut bot,
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "nested-q3-discount",
+            "book": book,
+            "form": "journal",
+            "date": "2026-08-20",
+            "lines": [
+                { "account": "41090", "debit": "75.00", "credit": "0.00" },
+                { "account": "11000", "debit": "0.00", "credit": "75.00" }
+            ]
+        }),
+    );
+    app_data(
+        &mut bot,
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "nested-q4-sale",
+            "book": book,
+            "form": "journal",
+            "date": "2026-10-05",
+            "lines": [
+                { "account": "11000", "debit": "200.00", "credit": "0.00" },
+                { "account": "41000", "debit": "0.00", "credit": "200.00" }
+            ]
+        }),
+    );
+
+    // Q3 filter: 41000 own = 0.00, 41010 = 500.00, 41090 = -75.00 -> 41000 subtree = 425.00
+    let q3 = app_data(
+        &mut bot,
+        "books_accounts_list",
+        json!({ "book": book, "group": "Revenue", "from": "2026-07-01", "to": "2026-09-30" }),
+    );
+    let q3_rows = q3["rows"].as_array().unwrap();
+    fn find<'a>(rows: &'a [Value], num: &str) -> &'a Value {
+        rows.iter().find(|r| r["number"] == num).unwrap()
+    }
+    let parent_q3 = find(q3_rows, "41000");
+    assert_eq!(parent_q3["child_count"], 2);
+    assert_eq!(parent_q3["balance"], "0.00");
+    assert_eq!(parent_q3["subtree_balance"], "425.00");
+    assert_eq!(parent_q3["debit_normal"], false);
+
+    let child_q3 = find(q3_rows, "41010");
+    assert_eq!(child_q3["parent_number"], "41000");
+    assert_eq!(child_q3["balance"], "500.00");
+    assert_eq!(child_q3["subtree_balance"], "500.00");
+
+    // Full range includes Q4 200.00 on 41000 -> subtree = 625.00
+    let all = app_data(
+        &mut bot,
+        "books_accounts_list",
+        json!({ "book": book, "group": "Revenue", "from": "2026-01-01", "to": "2026-12-31" }),
+    );
+    let all_rows = all["rows"].as_array().unwrap();
+    let parent_all = find(all_rows, "41000");
+    assert_eq!(parent_all["balance"], "200.00");
+    assert_eq!(parent_all["subtree_balance"], "625.00");
+}

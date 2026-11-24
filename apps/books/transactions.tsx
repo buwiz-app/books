@@ -140,7 +140,7 @@ const TX_ICONS = {
 };
 const MONTH_KEYS = MONTH_NAMES;
 
-/** Add `n` months to a YYYY-MM key. */
+// Add `n` months to a YYYY-MM key.
 function monthAdd(key: string, n: number): string {
   const y = Number(key.slice(0, 4));
   const m = Number(key.slice(5, 7)) - 1 + n;
@@ -148,7 +148,7 @@ function monthAdd(key: string, n: number): string {
   const mm = ((m % 12) + 12) % 12;
   return `${yy}-${String(mm + 1).padStart(2, "0")}`;
 }
-/** Compare two two-place decimal texts without floating point: -1 | 0 | 1. */
+// Compare two two-place decimal texts without floating point: -1 | 0 | 1.
 function cmpDec(a: string, b: string): number {
   const na = a.replace(/,/g, "").trim();
   const nb = b.replace(/,/g, "").trim();
@@ -172,7 +172,7 @@ function cmpDec(a: string, b: string): number {
   return sa < 0 ? -cmp : cmp;
 }
 
-/** The fields the tool's `matches()` haystack covers, for client chip terms. */
+// The fields the tool's `matches()` haystack covers, for client chip terms.
 function txHay(r: Any): string {
   return [r.payee, r.title, r.sub, r.category, r.no, r.date_short, r.date, r.amount_shown, r.amount]
     .filter(Boolean)
@@ -180,7 +180,7 @@ function txHay(r: Any): string {
     .toLowerCase();
 }
 
-/** Rows after search + the client-side filters (type, status, amount, party) + extra query chips. */
+// Rows after search + the client-side filters (type, status, amount, party) + extra query chips.
 function txFiltered(rowsIn?: Any[]): Any[] {
   const types = txTypes();
   const statuses = txStatuses();
@@ -293,7 +293,7 @@ function txClearFilters() {
   txQueryChips.set([]);
   txSearch.set("");
 }
-/** Enter in the search input commits the query as a chip (LedgerSearchBar). */
+// Enter in the search input commits the query as a chip (LedgerSearchBar).
 function txCommitQuery() {
   const q = txSearch().trim();
   if (q) txQueryChips.set([...txQueryChips(), q]);
@@ -303,7 +303,7 @@ function txDropQuery(q: string) {
   txQueryChips.set(txQueryChips().filter((x) => x !== q));
 }
 
-/** Group icon-box colours per account type (AccountGroupedList's TYPE_COLORS). */
+// Group icon-box colours per account type (AccountGroupedList's TYPE_COLORS).
 const TX_TYPE_COLORS: Record<string, [string, string]> = {
   asset: ["#dcfce7", "#16a34a"],
   liability: ["#fef3c7", "#d97706"],
@@ -321,7 +321,7 @@ const STATUS_BAR: Record<string, string> = {
   voided: "#ef4444",
 };
 
-/** Party initials + stable color (LedgerRow's getPartyInitials / stringToColor). */
+// Party initials + stable color (LedgerRow's getPartyInitials / stringToColor).
 const TX_PARTY_COLORS = [
   "#ef4444", "#f97316", "#f59e0b", "#84cc16", "#22c55e", "#14b8a6",
   "#06b6d4", "#3b82f6", "#6366f1", "#a855f7", "#ec4899", "#f43f5e",
@@ -337,7 +337,7 @@ function txPartyAvatar(name: string): [string, string] {
   return [initials, TX_PARTY_COLORS[Math.abs(hash) % TX_PARTY_COLORS.length]];
 }
 
-/** Date cell: "Oct 29" + "2026" under it (LedgerRow's formatDate). */
+// Date cell: "Oct 29" + "2026" under it (LedgerRow's formatDate).
 function txDayParts(iso: string): [string, string] {
   const d = String(iso || "");
   const day = String(Number(d.slice(8, 10) || 0));
@@ -345,7 +345,7 @@ function txDayParts(iso: string): [string, string] {
   return [`${mon} ${day}`, d.slice(0, 4)];
 }
 
-/** The checkbox shared by grid rows, cards and group headers. */
+// The checkbox shared by grid rows, cards and group headers.
 function TxCheck(p: { checked: boolean }) {
   return (
     <View
@@ -362,7 +362,7 @@ function TxCheck(p: { checked: boolean }) {
   );
 }
 
-/** One ledger row (LedgerRow.tsx grid mode): bar|date|party|src|category|dept|loc|debit|credit|balance|› */
+// One ledger row (LedgerRow.tsx grid mode): bar|date|party|src|category|dept|loc|debit|credit|balance|›
 function TxRow(p: {
   r: Any;
   balance?: boolean;
@@ -467,7 +467,7 @@ function TxRow(p: {
   );
 }
 
-/** Card-mode row below md (LedgerRow's card: avatar, title, sub, chips, Dr/Cr + Bal). */
+// Card-mode row below md (LedgerRow's card: avatar, title, sub, chips, Dr/Cr + Bal).
 function TxCard(p: { r: Any; edit?: boolean; checked?: boolean; onCheck?: () => void; onOpen: () => void }) {
   const r = () => p.r as Any;
   const [initials, color] = txPartyAvatar(String(r().payee || r().title || "?"));
@@ -527,7 +527,7 @@ function TxCard(p: { r: Any; edit?: boolean; checked?: boolean; onCheck?: () => 
   );
 }
 
-/** One account group in the All-accounts view (AccountGroupedList's header). */
+// One account group in the All-accounts view (AccountGroupedList's header).
 function TxGroup(p: {
   g: Any;
   expanded: boolean;
@@ -605,7 +605,7 @@ function TxGroup(p: {
   );
 }
 
-/** Column labels over the grid (flat list header or a group's own header). */
+// Column labels over the grid (flat list header or a group's own header).
 function TxCols(p: { edit?: boolean; balance?: boolean }) {
   const colHead = (label: string, cls: string) => (
     <Text class={`${cls} px-2 text-[10px] font-semibold text-slate-500 dark:text-[#a1a5b0] uppercase tracking-wider`}>{label}</Text>
@@ -634,7 +634,7 @@ function TxCols(p: { edit?: boolean; balance?: boolean }) {
   );
 }
 
-/* ── TxSide: wires TxSidebar (transactions_side.tsx) to TransactionsPage ─── */
+// ── TxSide: wires TxSidebar (transactions_side.tsx) to TransactionsPage ───
 function TxSide() {
   const accts = () => (((txAccounts() as Any)?.rows as Any[]) || []).filter((a) => !a.off);
   return (
@@ -660,9 +660,9 @@ function TxSide() {
     />
   );
 }
-/* ── end TxSide ─────────────────────────────────────────────────────────── */
+// ── end TxSide ───────────────────────────────────────────────────────────
 
-/** LedgerFilters' collapsible section: chevron + icon + title + count badge. */
+// LedgerFilters' collapsible section: chevron + icon + title + count badge.
 function TxFilterSection(p: { title: string; icon: string; count: number; children: Any }) {
   const open = () => Boolean(txSecOpen()[p.title]);
   return (
@@ -687,7 +687,7 @@ function TxFilterSection(p: { title: string; icon: string; count: number; childr
   );
 }
 
-/** LedgerFilters' checkbox row: optional icon/color dot + label + 18px teal check. */
+// LedgerFilters' checkbox row: optional icon/color dot + label + 18px teal check.
 function TxCheckRow(p: { label: string; on: boolean; icon?: string; color?: string; onPress: () => void }) {
   return (
     <View class="flex-row items-center gap-2.5 py-1.5 px-1 -mx-1 rounded-md cursor-pointer group" onPress={p.onPress}>
@@ -703,7 +703,7 @@ function TxCheckRow(p: { label: string; on: boolean; icon?: string; color?: stri
   );
 }
 
-/** The small search input each checkbox-list section carries (LedgerFilters). */
+// The small search input each checkbox-list section carries (LedgerFilters).
 function TxListSearch(p: { value: string; onChange: (v: string) => void; placeholder: string }) {
   return (
     <View class="relative mb-2">
@@ -720,7 +720,7 @@ function TxListSearch(p: { value: string; onChange: (v: string) => void; placeho
   );
 }
 
-/** Searchable checkbox list (SearchableCheckboxList): search + filtered rows. */
+// Searchable checkbox list (SearchableCheckboxList): search + filtered rows.
 function TxCheckList(p: {
   options: string[];
   picked: string[];
@@ -757,7 +757,7 @@ function TxCheckList(p: {
   );
 }
 
-/** A filter/query chip in the search bar (LedgerSearchBar's tag chips). */
+// A filter/query chip in the search bar (LedgerSearchBar's tag chips).
 function TxChip(p: { label: string; clear: () => void }) {
   return (
     <View class="flex-row items-center gap-1 px-2 py-0.5 rounded-full bg-[#e6f7f5] dark:bg-teal-950/60 border border-[#b2e0db] dark:border-teal-800 shrink-0">

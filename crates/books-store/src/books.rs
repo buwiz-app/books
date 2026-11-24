@@ -51,6 +51,8 @@ pub struct Account {
     pub active: bool,
     /// `preset`, `user` or `import`.
     pub source: String,
+    /// Optional parent account in the nested chart of accounts.
+    pub parent_id: Option<i64>,
 }
 
 impl Account {
@@ -93,8 +95,7 @@ fn book_row(r: &Row<'_>) -> rusqlite::Result<Book> {
     })
 }
 
-const ACCOUNT_COLUMNS: &str =
-    "account_id, book_id, number, name, type, kind, kind_confirmed, active, source";
+const ACCOUNT_COLUMNS: &str = "account_id, book_id, number, name, type, kind, kind_confirmed, active, source, parent_account_id";
 
 fn account_row(r: &Row<'_>) -> rusqlite::Result<Account> {
     let ty: String = r.get(4)?;
@@ -109,6 +110,7 @@ fn account_row(r: &Row<'_>) -> rusqlite::Result<Account> {
         kind_confirmed: r.get::<_, i64>(6)? == 1,
         active: r.get::<_, i64>(7)? == 1,
         source: r.get(8)?,
+        parent_id: r.get(9)?,
     })
 }
 

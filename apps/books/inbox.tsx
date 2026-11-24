@@ -14,7 +14,7 @@ const inboxFilter = signal("all");
 const inboxMonth = signal("");
 const inboxOpen = signal("");
 
-/** Where a waiting entry came from, as the row's first pill. */
+// Where a waiting entry came from, as the row's first pill.
 function inboxSource(r: Any): [string, string] {
   if (r.proposed_by === "routine") return ["bir", "Routine"];
   if (r.proposed_by) return ["in", "Assistant"];

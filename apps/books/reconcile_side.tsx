@@ -3,7 +3,7 @@
 // 4-tab right sidebar (Summary, Flag, Comments, Activity) — the old web app's
 // reconciliations_.$reconciliationId.tsx centre and ReconciliationSidebar.
 
-/** The old app's 12-colour initials palette (LedgerTransactionsList / transactions). */
+// The old app's 12-colour initials palette (LedgerTransactionsList / transactions).
 const REC_PALETTE = [
   "#ef4444",
   "#f97316",
@@ -19,7 +19,7 @@ const REC_PALETTE = [
   "#f43f5e",
 ];
 
-/** Stable initials + colour from a party/description, like the old avatar hash. */
+// Stable initials + colour from a party/description, like the old avatar hash.
 function recAvatar(name: string): { initials: string; color: string } {
   const n = String(name || "?").trim() || "?";
   const initials =
@@ -42,7 +42,7 @@ function RecAvatar(p: Any) {
   );
 }
 
-/** Row tint: the old app's emerald matched / orange unsettled hover families. */
+// Row tint: the old app's emerald matched / orange unsettled hover families.
 function recRowTint(match: string, hovered: boolean, selected: boolean): string {
   if (selected) return "bg-[#eff6ff] dark:bg-blue-950/60 border-[#dbeafe] dark:border-blue-900/40";
   if (match === "m")
@@ -85,7 +85,7 @@ const viewBtn = (on?: () => void) => (
   </View>
 );
 
-/** One row of either centre list — statement line or journal entry (l=true). */
+// One row of either centre list — statement line or journal entry (l=true).
 function RecRow(p: Any) {
   const m = () => String(p.r.match || (p.r.matched ? "m" : "x"));
   const hi = () => p.hovered || Boolean(p.linked);
@@ -194,7 +194,7 @@ function RecRow(p: Any) {
   );
 }
 
-/** Sticky "N changes pending" bar above the lists, while edit-mode ops queue. */
+// Sticky "N changes pending" bar above the lists, while edit-mode ops queue.
 function RecEditBar(p: Any) {
   return (
     <View class={`${FR} px-4 py-2 ${BL} bg-[#eff6ff] dark:bg-blue-950/40`}>
@@ -216,7 +216,7 @@ function RecEditBar(p: Any) {
   );
 }
 
-/** The cyan banner while a ledger entry waits for its statement line. */
+// The cyan banner while a ledger entry waits for its statement line.
 function RecReconBanner(p: Any) {
   return (
     <View class="flex-row items-center gap-2 px-4 py-2 border-b border-cyan-200 dark:border-cyan-800/50 bg-cyan-50 dark:bg-cyan-950/40">
@@ -229,7 +229,7 @@ function RecReconBanner(p: Any) {
   );
 }
 
-/** "N matched" / "N unsettled" counter pills that also set the status filter. */
+// "N matched" / "N unsettled" counter pills that also set the status filter.
 function RecCounter(p: Any) {
   const bg = p.tone === "m" ? "bg-[#e6f4ea] dark:bg-emerald-500/10" : "bg-[#fef7e0] dark:bg-amber-500/10";
   const ink = p.tone === "m" ? "text-[#1e8e3e] dark:text-emerald-400" : "text-[#f9ab00] dark:text-amber-400";
@@ -264,7 +264,7 @@ const sideEmpty = (glyph: string, title: string, sub: string, bg = "bg-gray-100 
   </View>
 );
 
-/** The 4-tab right sidebar (Summary / Flag / Comments / Activity). */
+// The 4-tab right sidebar (Summary / Flag / Comments / Activity).
 function RecSide(p: Any) {
   const tab = signal("summary");
   const comment = signal("");
@@ -416,7 +416,7 @@ function RecSide(p: Any) {
   );
 }
 
-/** The advanced-filter popover behind the funnel (status, type, amount, party). */
+// The advanced-filter popover behind the funnel (status, type, amount, party).
 function RecFilterPop(p: Any) {
   const item = (v: string, label: string, cur: string, onPick: (v: string) => void) => (
     <View

@@ -65,7 +65,7 @@ function Quick(p: { title: string; sub: string; onPress: () => void }) {
   );
 }
 
-/** Home's way to a page: a tile under its group. */
+// Home's way to a page: a tile under its group.
 function NavTile(p: { title: string; sub: string; onPress: () => void }) {
   return (
     <View

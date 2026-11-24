@@ -4,7 +4,7 @@
 // same lines opens for the user to correct and post. Only a click here
 // amends. The reason goes to Books and is never shown back.
 
-/** "Amend" in the drawer of a posted entry: a reason and an optional date. */
+// "Amend" in the drawer of a posted entry: a reason and an optional date.
 function AmendButton(p: { entry: string; busy: boolean }) {
   const open = signal(false);
   const reason = signal("");
@@ -53,7 +53,7 @@ function AmendButton(p: { entry: string; busy: boolean }) {
   );
 }
 
-/** "Amends entry N" / "Amended by entry N" chips; a press opens that entry. */
+// "Amends entry N" / "Amended by entry N" chips; a press opens that entry.
 function AmendLinks(p: { e: Any }) {
   const chip = (key: string) => (
     <If when={Boolean(p.e?.links?.[key])}>

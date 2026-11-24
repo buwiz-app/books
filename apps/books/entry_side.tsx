@@ -5,29 +5,29 @@
 // shows what the person sends from this tab — the assistant's reply lives in
 // the Bot chat; the assistant only drafts, nothing posts itself.
 
-/** A document this page staged for the entry being drafted. */
+// A document this page staged for the entry being drafted.
 const entryStaged = signal<Any[]>([]);
 const entryStagedBusy = signal(false);
 const entrySide = signal("attachments");
 const entrySideSheet = signal(false);
 const sideComposer = signal("");
 const sidePromptError = signal("");
-/** What the person sent from the chat tab; role "note" rows are delivery notes. */
+// What the person sent from the chat tab; role "note" rows are delivery notes.
 const sideChat = signal<Any[]>([]);
-/** The feed's scroll view; scrollToEnd keeps the newest message in view. */
+// The feed's scroll view; scrollToEnd keeps the newest message in view.
 let sideFeedRef: Any;
-/** Files picked into the composer, not yet sent. */
+// Files picked into the composer, not yet sent.
 const sideFiles = signal<Any[]>([]);
-/** The models() catalogue once asked; null while loading or unsupported. */
+// The models() catalogue once asked; null while loading or unsupported.
 const sideModels = signal<Any | null>(null);
 const sideModelsAsked = signal(false);
-/** The composer's model popover and its search text. */
+// The composer's model popover and its search text.
 const sidePicker = signal(false);
 const sidePickerQ = signal("");
-/** The picked model id ("" = the Bot's default) and effort value. */
+// The picked model id ("" = the Bot's default) and effort value.
 const sideModel = signal("");
 const sideEffort = signal("");
-/** The in-flight chat handle while a reply streams. */
+// The in-flight chat handle while a reply streams.
 const sideStream = signal<Any | null>(null);
 let sideStoreAsked = false;
 
@@ -150,7 +150,7 @@ function sideNow(): string {
   }
 }
 
-/** Pick a PDF or image and add it to Books documents; returns the doc, or null. */
+// Pick a PDF or image and add it to Books documents; returns the doc, or null.
 async function sidePickUpload(): Promise<Any | null> {
   if (!buwiz.pickFile) {
     toast("This Buwiz Bot cannot pick files.");
@@ -201,7 +201,7 @@ async function sidePickUpload(): Promise<Any | null> {
   }
 }
 
-/** Drop-zone upload: straight into this entry's staged documents. */
+// Drop-zone upload: straight into this entry's staged documents.
 async function sideUpload() {
   const doc = await sidePickUpload();
   if (doc) {
@@ -210,7 +210,7 @@ async function sideUpload() {
   }
 }
 
-/** Composer paperclip: stage the file on the message and count it on the entry too. */
+// Composer paperclip: stage the file on the message and count it on the entry too.
 async function sidePickForChat() {
   const doc = await sidePickUpload();
   if (doc) {
@@ -225,7 +225,7 @@ function sidePreview() {
   buwiz.open({ app: "evidence" }).catch((e: Any) => toast(errText(e)));
 }
 
-/** The old app's attachments panel: drop zone, staged documents, library browse. */
+// The old app's attachments panel: drop zone, staged documents, library browse.
 function SideAttachments() {
   return (
     <View class="p-3 gap-3">
@@ -286,7 +286,7 @@ function SideAttachments() {
   );
 }
 
-/** What to ask the assistant in the chat: it saves a draft, which lands in the Inbox. */
+// What to ask the assistant in the chat: it saves a draft, which lands in the Inbox.
 const SIDE_ASK: [string, string][] = [
   ["💸 Pay expense", "Draft a money-out entry in Books: I paid [who] [amount] for [what] from [bank or cash]."],
   ["💰 Receive payment", "Draft a money-in entry in Books: [who] paid me [amount] for [what] into [bank or cash]."],
@@ -296,7 +296,7 @@ const SIDE_ASK: [string, string][] = [
   ["⚡ Utility", "Draft a money-out entry in Books: paid the [electric or water] bill of [amount] from [bank]."],
 ];
 
-/** A file on a sent message: an image thumbnail or the old panel's file card. */
+// A file on a sent message: an image thumbnail or the old panel's file card.
 function SideChatFile(p: { d: Any }) {
   const d = p.d;
   if (d.thumb) {
@@ -326,13 +326,13 @@ function SideChatFile(p: { d: Any }) {
 
 // ————— model picker + real chat (the bridge's buwiz.models / buwiz.chat) —————
 
-/** The bridge chat API; absent on older Bots, where the copy path stays. */
+// The bridge chat API; absent on older Bots, where the copy path stays.
 const sideApi = () => typeof buwiz.models === "function" && typeof buwiz.chat === "function";
 
 function sideModelInfo(id: string) {
   return id ? (sideModels()?.models || []).find((m: Any) => m.id === id) || null : null;
 }
-/** The ModelInfo the pill shows: the pick, else the Bot's default, else the first. */
+// The ModelInfo the pill shows: the pick, else the Bot's default, else the first.
 function sideShownModel() {
   const r = sideModels();
   return sideModelInfo(sideModel()) || sideModelInfo(String(r?.default || "")) || (r?.models || [])[0] || null;
@@ -344,35 +344,35 @@ function sideModelLogo(m: Any): string {
   if (/swe-\d/.test(String(m?.id || "").toLowerCase())) return SIDE_LOGOS_MORE.cognition;
   return "";
 }
-/** The effort in effect for the picked model: the choice, else its default rung. */
+// The effort in effect for the picked model: the choice, else its default rung.
 function sideEffortNow() {
   const m = sideModelInfo(sideModel()) || sideShownModel();
   if (sideEffort()) return sideEffort();
   return String(m?.default_effort || "");
 }
-/** The effort row's label for the picked model; "" when it has no efforts. */
+// The effort row's label for the picked model; "" when it has no efforts.
 function sideEffortLabel() {
   const m = sideModelInfo(sideModel()) || sideShownModel();
   return (m?.efforts || []).find((e: Any) => e.value === sideEffortNow())?.label || "";
 }
-/** The model's last rung (Ultra / Max) — violet in the Bot picker. */
+// The model's last rung (Ultra / Max) — violet in the Bot picker.
 const sideTopEffort = () => {
   const m = sideModelInfo(sideModel()) || sideShownModel();
   const es = m?.efforts || [];
   return es.length > 1 && es[es.length - 1]?.value === sideEffortNow();
 };
-/** What the picked model accepts; defaults to text-only until models() lands. */
+// What the picked model accepts; defaults to text-only until models() lands.
 const sideModelInputs = () => sideShownModel()?.inputs || ["text"];
 const sideFileKind = (mime: string) => (mime === "application/pdf" ? "pdf" : mime.startsWith("image/") ? "image" : "other");
 
-/** The live catalogue answered with nothing: the pill hides and sends copy to the Bot chat. */
+// The live catalogue answered with nothing: the pill hides and sends copy to the Bot chat.
 const sideCatalogEmpty = () => {
   const r = sideModels();
   return Boolean(r) && (r?.models || []).length === 0;
 };
 
-/** Loads the catalogue (an empty or failed answer is asked again on the next
- *  mount), plus the stored chat.model / chat.effort choice. */
+// Loads the catalogue (an empty or failed answer is asked again on the next
+// mount), plus the stored chat.model / chat.effort choice.
 function sideLoadModels() {
   if (sideModelsAsked() && (sideModels()?.models || []).length > 0) return;
   sideModelsAsked.set(true);
@@ -399,7 +399,7 @@ function sidePickModel(id: string, effort: string) {
   }
 }
 
-/** The visible exchange as bridge messages: ≤64, user/assistant text, files only on user rows. */
+// The visible exchange as bridge messages: ≤64, user/assistant text, files only on user rows.
 function sideHistory() {
   return sideChat()
     .filter((m: Any) => (m.role === "you" || m.role === "assistant") && (m.text || (m.role === "you" && m.chatFiles?.length)))
@@ -411,7 +411,7 @@ function sideHistory() {
     });
 }
 
-/** One assistant turn: called from a person's press (the consent grant needs it). */
+// One assistant turn: called from a person's press (the consent grant needs it).
 function sideChatTurn() {
   const shown = sideShownModel();
   const req: Any = { model: sideModel() || String(sideModels()?.default || shown?.id || ""), messages: sideHistory() };
@@ -454,9 +454,9 @@ function sideChatTurn() {
     });
 }
 
-/** A press copies the prompt to the Bot chat; the files stay staged on the
- *  entry and in Documents (attaching to a chat is the library's own grant).
- *  The assistant's reply shows in the Bot chat and its draft in the Inbox. */
+// A press copies the prompt to the Bot chat; the files stay staged on the
+// entry and in Documents (attaching to a chat is the library's own grant).
+// The assistant's reply shows in the Bot chat and its draft in the Inbox.
 async function sideSendCopy() {
   const text = sideComposer().trim();
   const files = sideFiles();
@@ -495,7 +495,7 @@ async function sideSendCopy() {
   sideFeedRef?.scrollToEnd?.({ animated: true });
 }
 
-/** Person pressed send: a real exchange when the bridge speaks chat, else the copy path. */
+// Person pressed send: a real exchange when the bridge speaks chat, else the copy path.
 async function sideSend() {
   const text = sideComposer().trim();
   const files = sideFiles();
@@ -518,13 +518,13 @@ async function sideSend() {
   sideChatTurn();
 }
 
-/** Re-ask after a stop or failure: drop the interrupted answer so the history ends on the person's turn. */
+// Re-ask after a stop or failure: drop the interrupted answer so the history ends on the person's turn.
 function sideRetry(mid: Any) {
   sideChat.set(sideChat().filter((m: Any) => m.id !== mid));
   sideChatTurn();
 }
 
-/** Markdown-lite: a reply's text into blocks (paragraph, bullets, numbered, code). */
+// Markdown-lite: a reply's text into blocks (paragraph, bullets, numbered, code).
 function sideMdBlocks(text: string) {
   const blocks: Any[] = [];
   let fence = false;
@@ -555,7 +555,7 @@ function sideMdBlocks(text: string) {
   flush();
   return blocks;
 }
-/** One line split at **bold** and `code` spans into {t,b,c} segments. */
+// One line split at **bold** and `code` spans into {t,b,c} segments.
 function sideMdSegs(line: string) {
   const out: Any[] = [];
   let rest = line;
@@ -571,7 +571,7 @@ function sideMdSegs(line: string) {
   }
   return out;
 }
-/** One inline line of an assistant reply. */
+// One inline line of an assistant reply.
 function SideMdLine(p: { line: string }) {
   return (
     <View class="flex-row flex-wrap">
@@ -587,7 +587,7 @@ function SideMdLine(p: { line: string }) {
     </View>
   );
 }
-/** An assistant bubble's content: paragraphs, lists and code blocks. */
+// An assistant bubble's content: paragraphs, lists and code blocks.
 function SideMd(p: { text: string }) {
   return (
     <View class="gap-1.5">
@@ -630,8 +630,8 @@ function SideMd(p: { text: string }) {
   );
 }
 
-/** The model popover: search, the Default row, subscriptions, then API groups,
- *  and the picked model's efforts — the Bot's modelpicker in our kit style. */
+// The model popover: search, the Default row, subscriptions, then API groups,
+// and the picked model's efforts — the Bot's modelpicker in our kit style.
 function SideModelCard() {
   // Signal reads stay inside the JSX expression containers so each is a live
   // binding (kit.tsx: a value hoisted out of the JSX freezes at mount).
@@ -763,7 +763,7 @@ function SideModelCard() {
   );
 }
 
-/** The old app's AI chat panel: the feed, quick prompts, and the composer. */
+// The old app's AI chat panel: the feed, quick prompts, and the composer.
 function SideAssistant() {
   const msgs = sideChat;
   const canSend = () => Boolean(sideComposer().trim()) || sideFiles().length > 0;
@@ -964,7 +964,7 @@ function SideAssistant() {
   );
 }
 
-/** The old app's activity tab: the clock icon, the log, one live row per change. */
+// The old app's activity tab: the clock icon, the log, one live row per change.
 function SideActivity() {
   return (
     <View class="p-3 gap-3">
@@ -988,7 +988,7 @@ function SideActivity() {
   );
 }
 
-/** The new-entry right column itself: the rail and the open panel. */
+// The new-entry right column itself: the rail and the open panel.
 function EntrySide() {
   const side = entrySide;
   return (

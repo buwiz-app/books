@@ -16,18 +16,18 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-/** "2026-10-29" → "October 29, 2026", for display only: the stored value
- *  stays ISO (the old web app's formatDisplay, without a locale API). */
+// "2026-10-29" → "October 29, 2026", for display only: the stored value
+// stays ISO (the old web app's formatDisplay, without a locale API).
 const longDate = (iso: string) => {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
   if (!m) return iso;
   return `${MONTH_NAMES[Number(m[2]) - 1] || m[2]} ${String(Number(m[3]))}, ${m[1]}`;
 };
 
-/** Books Design System: unified surface, border, ink, and semantic tokens.
- *  Dark mode uses a neutral obsidian ramp (#0d0d10 → #111216 → #141519 → #1c1d22 → #22232a)
- *  that harmonizes cleanly with Buwiz Bot's native chrome; light mode pairs crisp porcelain
- *  surfaces (#f6f7f9 → #f1f3f6 → #ffffff → #f4f5f7). Never mix slate/navy dark shades. */
+// Books Design System: unified surface, border, ink, and semantic tokens.
+// Dark mode uses a neutral obsidian ramp (#0d0d10 → #111216 → #141519 → #1c1d22 → #22232a)
+// that harmonizes cleanly with Buwiz Bot's native chrome; light mode pairs crisp porcelain
+// surfaces (#f6f7f9 → #f1f3f6 → #ffffff → #f4f5f7). Never mix slate/navy dark shades.
 const C = {
   bg: "bg-[#f6f7f9] dark:bg-[#0d0d10]",
   rail: "bg-[#f1f3f6] dark:bg-[#111216]",
@@ -53,7 +53,7 @@ const C = {
   emeraldBar: "bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#12452b] dark:to-[#18663e]",
 };
 
-/** Typography scale: single source of truth for headings, section labels, body, and captions. */
+// Typography scale: single source of truth for headings, section labels, body, and captions.
 const TYPO = {
   hero: `text-[20px] font-bold tracking-tight ${C.ink}`,
   pageTitle: "text-[15px] font-semibold",
@@ -65,9 +65,9 @@ const TYPO = {
   micro: `text-[11px] ${C.dim}`,
 };
 
-/** Old-app icons as data-URI Avatars: the path verbatim, drawn `white` and
- *  recoloured by `tint-*` (same pattern as entry_side.tsx's sideSvg).
- *  `xmlns` is left out on purpose: the privacy gate rejects URL literals. */
+// Old-app icons as data-URI Avatars: the path verbatim, drawn `white` and
+// recoloured by `tint-*` (same pattern as entry_side.tsx's sideSvg).
+// `xmlns` is left out on purpose: the privacy gate rejects URL literals.
 const svgIcon = (inner: string, width: number) =>
   `data:image/svg+xml,${encodeURIComponent(
     `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`,
@@ -129,7 +129,7 @@ const ICONS: Record<string, string> = {
 // Weekday labels by day number (0 = Sunday): the owner's "M T W Th F S Su".
 const WEEKDAYS = ["Su", "M", "T", "W", "Th", "F", "S"];
 
-/** The entry type's old-app tab icon (TABS in transactions/shared/constants.tsx). */
+// The entry type's old-app tab icon (TABS in transactions/shared/constants.tsx).
 const modeIcon = (mode: string) =>
   mode === "money_in" ? ICONS.payIn : mode === "money_out" ? ICONS.payOut : mode === "transfer" ? ICONS.transfer : ICONS.journal;
 
@@ -163,10 +163,10 @@ const BOOKS_TOKENS = {
   font: { sans: '"Inter", system-ui, -apple-system, sans-serif', mono: '"JetBrains Mono", "Fira Code", monospace' },
 };
 
-/** Pill tones (`st`). */
-/** The accent: the page header, the main button and the picked state. A book picks one in
- *  Settings; the host tells an app light from dark and nothing else, so each solid is a tone
- *  that carries white text on both. Green is for money in and "posted", whatever the accent. */
+// Pill tones (`st`).
+// The accent: the page header, the main button and the picked state. A book picks one in
+// Settings; the host tells an app light from dark and nothing else, so each solid is a tone
+// that carries white text on both. Green is for money in and "posted", whatever the accent.
 const ACCENTS: Record<string, { name: string; solid: string; scale: string[] }> = {
   green: { name: "Green", solid: "#22c55e", scale: ["#f0fdf4", "#dcfce7", "#bbf7d0", "#86efac", "#4ade80", "#22c55e", "#16a34a", "#15803d", "#166534", "#14532d"] },
   teal: { name: "Teal", solid: "#0d9488", scale: ["#f0fdfa", "#ccfbf1", "#99f6e4", "#5eead4", "#2dd4bf", "#14b8a6", "#0d9488", "#0f766e", "#115e59", "#134e4a"] },
@@ -181,9 +181,9 @@ const accShade = (step: number) => {
   return current.scale[step] || current.solid;
 };
 const acc = () => accShade(5);
-/** Text on the accent. */
+// Text on the accent.
 const ON_ACC = "text-white";
-/** The border of a picked card or option. */
+// The border of a picked card or option.
 const picked = (on: boolean) => (on ? { borderColor: acc() } : undefined);
 
 const PILL: Record<string, string> = {
@@ -204,17 +204,17 @@ const TAG: Record<string, string> = {
 const BAR: Record<string, string> = { pos: C.greenBg, neg: C.redBg, blue: C.blueBg, "": C.greenBg };
 const AMT: Record<string, string> = { pos: C.green, neg: C.ink, "": C.ink };
 
-/** A row's key is its content: a row whose data changes is drawn again. */
+// A row's key is its content: a row whose data changes is drawn again.
 const rowKey = (row: Any) => JSON.stringify(row);
 
 const errText = (e: Any) => (e && e.message ? String(e.message) : String(e));
 
-/** A client_request_id: unique per call, never a subject. */
+// A client_request_id: unique per call, never a subject.
 let seq = 0;
 const OPEN_TAG = String(Date.now()).slice(-8);
 const rid = () => `bk-${OPEN_TAG}-${(seq += 1)}`;
 
-/** Bumped after every write, so pages read again. */
+// Bumped after every write, so pages read again.
 const ver = signal(0);
 const bump = () => ver.set(ver() + 1);
 
@@ -226,7 +226,7 @@ function toast(text: string) {
   toastTimer = setTimeout(() => toastText.set(""), 2600);
 }
 
-/** A Books write: a fresh client_request_id, then every page reads again. */
+// A Books write: a fresh client_request_id, then every page reads again.
 async function act(tool: string, args: Record<string, Any>): Promise<Any> {
   try {
     const r = await buwiz.call(tool, { client_request_id: rid(), ...args });
@@ -238,7 +238,7 @@ async function act(tool: string, args: Record<string, Any>): Promise<Any> {
   }
 }
 
-/** Typed money to two-place text with no float: "60,000" -> "60000.00". */
+// Typed money to two-place text with no float: "60,000" -> "60000.00".
 function moneyText(typed: string): string | null {
   const s = String(typed || "").replace(/[₱,\s]/g, "").replace(/^PHP/i, "");
   if (!/^\d+(\.\d{1,2})?$/.test(s)) return null;
@@ -247,7 +247,7 @@ function moneyText(typed: string): string | null {
   const text = `${whole}.${(c + "00").slice(0, 2)}`;
   return text === "0.00" ? null : text;
 }
-/** "60000.00" -> "60,000.00", by string only. */
+// "60000.00" -> "60,000.00", by string only.
 function grouped(text: string): string {
   const [w, c] = text.split(".");
   return `${w.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}.${c}`;
@@ -284,7 +284,7 @@ function Pill(p: { tone: string; label: string }) {
   );
 }
 
-/** `said`: for a chip whose label is someone's data. See `Pick`'s `optionSaid`. */
+// `said`: for a chip whose label is someone's data. See `Pick`'s `optionSaid`.
 function Chip(p: { label: string; count?: Any; on: boolean; onPress: () => void; said?: string }) {
   return (
     <View
@@ -324,15 +324,15 @@ function Panel(p: { children?: Any; pad?: boolean; class?: string }) {
   return <View class={`rounded-xl border ${C.panel} ${C.line} ${p.pad ? "p-3.5" : ""} ${p.class || ""}`}>{p.children}</View>;
 }
 
-/** The owner-approved right-panel rule (2026-11-21): on lg+ the side panel
- *  is a quarter of the window, clamped to 340–520px; below lg it is a
- *  full-screen sheet (no floating drawer, no backdrop gap, no list strip)
- *  with the old drawer's ‹ Back row (CategoryManagerLayout.tsx:356). The
- *  sheet anchors to the page's relative root, so mount this where the
- *  column belongs and the overlay still covers the whole page. `body` is a
- *  function so each mode mounts its own copy; `card` wraps the sheet copy
- *  in the rounded panel chrome; `fill` drops the outer scroll so a body
- *  with its own Scroll (Entry's tabs) fills the height. */
+// The owner-approved right-panel rule (2026-11-21): on lg+ the side panel
+// is a quarter of the window, clamped to 340–520px; below lg it is a
+// full-screen sheet (no floating drawer, no backdrop gap, no list strip)
+// with the old drawer's ‹ Back row (CategoryManagerLayout.tsx:356). The
+// sheet anchors to the page's relative root, so mount this where the
+// column belongs and the overlay still covers the whole page. `body` is a
+// function so each mode mounts its own copy; `card` wraps the sheet copy
+// in the rounded panel chrome; `fill` drops the outer scroll so a body
+// with its own Scroll (Entry's tabs) fills the height.
 function SidePanel(p: {
   open: () => boolean;
   onBack: () => void;
@@ -377,8 +377,8 @@ function SidePanel(p: {
   );
 }
 
-/** The below-lg circular trigger for the hidden side panel (owner rule):
- *  a teal FAB at the bottom right, only while the sheet is closed. */
+// The below-lg circular trigger for the hidden side panel (owner rule):
+// a teal FAB at the bottom right, only while the sheet is closed.
 function PanelFab(p: { onPress: () => void; label: string; icon: string; badge?: () => number }) {
   const count = () => (p.badge ? p.badge() : 0);
   return (
@@ -398,10 +398,10 @@ function PanelFab(p: { onPress: () => void; label: string; icon: string; badge?:
   );
 }
 
-/** Set by the Books window: back to Home. Cards leave it unset, so they show no arrow. */
+// Set by the Books window: back to Home. Cards leave it unset, so they show no arrow.
 let goBack: (() => void) | null = null;
 
-/** The page header: a green band with the way back, the title, and buttons on the right. */
+// The page header: a green band with the way back, the title, and buttons on the right.
 function Head(p: { title: string; sub?: string; children?: Any; home?: boolean }) {
   return (
     <View
@@ -428,7 +428,7 @@ function Head(p: { title: string; sub?: string; children?: Any; home?: boolean }
   );
 }
 
-/** One bar of a KPI panel: label, a percent track, the amount. */
+// One bar of a KPI panel: label, a percent track, the amount.
 function Bar(p: { label: string; pct: Any; shown: string; tone: string }) {
   return (
     <View class="flex-row items-center gap-2">
@@ -447,7 +447,7 @@ function Dot(p: { color: string }) {
   return <View class="w-2 h-2 rounded-[2px]" style={{ backgroundColor: p.color || "#888888" }} />;
 }
 
-/** A label above a value or a control (the sheet's fields). */
+// A label above a value or a control (the sheet's fields).
 function Field(p: { label: string; children?: Any; grow?: boolean; plain?: boolean }) {
   return (
     <View class={`gap-1 ${p.grow ? "flex-1" : ""}`}>
@@ -471,13 +471,13 @@ function TextBox(p: { value: string; onChange: (v: string) => void; placeholder?
   );
 }
 
-/** A picker: the current choice; a press opens the list under it.
- *
- *  `optionSaid`: for a list of people, or of words a person typed. Each option then has these fixed words as its
- *  accessibility label and its text as its accessibility value. A button whose label differs from its text reaches
- *  the Bot's assistant unnamed (app/src/agent_hub/filter.rs), so the names stay out of what it reads, and it can't
- *  press those options; a screen reader still says the name. Lists of accounts and categories leave it out: the
- *  assistant picks those to fill a draft. */
+// A picker: the current choice; a press opens the list under it.
+//
+// `optionSaid`: for a list of people, or of words a person typed. Each option then has these fixed words as its
+// accessibility label and its text as its accessibility value. A button whose label differs from its text reaches
+// the Bot's assistant unnamed (app/src/agent_hub/filter.rs), so the names stay out of what it reads, and it can't
+// press those options; a screen reader still says the name. Lists of accounts and categories leave it out: the
+// assistant picks those to fill a draft.
 function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; placeholder?: string; label?: string; optionSaid?: string }) {
   const open = signal(false);
   const current = computed(() => (p.options || []).find((o: Any) => o.ticket === p.value));
@@ -536,9 +536,9 @@ function BooksCombo(p: {
   placeholder?: string;
   label?: string;
   group?: string;
-  /** "chip": the reference's rounded, bordered field with a leading icon
-   *  (tag for category, user for party, building for department, pin for
-   *  location) and a trailing chevron, instead of a bare filter input. */
+  // "chip": the reference's rounded, bordered field with a leading icon
+  // (tag for category, user for party, building for department, pin for
+  // location) and a trailing chevron, instead of a bare filter input.
   trigger?: "chip";
   icon?: string;
 }) {
@@ -709,13 +709,13 @@ function BooksCombo(p: {
   );
 }
 
-/** The date picker, 1:1 with the old app's ui/DayPicker.tsx. nsh Calendar's
- *  itemClass lands on every item (arrows, toggles, weekday labels, days), so
- *  the styling lives in renderItem per CalendarEntry.kind; `group` +
- *  `group-selected:`/`group-data-today:` carry the states (the item keeps its
- *  states as data attrs; the drawing is made once). The header's two toggles
- *  press into month/year views the old app lacks; the year toggle is hidden
- *  and the month toggle carries the "Month Year" title, pressed or not. */
+// The date picker, 1:1 with the old app's ui/DayPicker.tsx. nsh Calendar's
+// itemClass lands on every item (arrows, toggles, weekday labels, days), so
+// the styling lives in renderItem per CalendarEntry.kind; `group` +
+// `group-selected:`/`group-data-today:` carry the states (the item keeps its
+// states as data attrs; the drawing is made once). The header's two toggles
+// press into month/year views the old app lacks; the year toggle is hidden
+// and the month toggle carries the "Month Year" title, pressed or not.
 function BooksDate(p: { value: string; onChange: (value: string) => void; today?: string; variant?: "header" | "form" }) {
   const open = signal(false);
   const header = p.variant === "header";
@@ -816,7 +816,7 @@ function BooksDate(p: { value: string; onChange: (value: string) => void; today?
   );
 }
 
-/** Loading, error and retry for a page's resource. */
+// Loading, error and retry for a page's resource.
 function Loading(p: { res: Any }) {
   return (
     <View class="gap-2">

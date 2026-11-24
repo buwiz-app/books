@@ -55,18 +55,18 @@ const SNAP_SOFT: Record<string, string> = { m: "bg-emerald-500/10", s: "bg-amber
 const SNAP_DIM: Record<string, string> = { m: "bg-emerald-500/5", s: "bg-amber-500/5", x: "bg-amber-500/5" };
 const SNAP_SCROLL_H = 600;
 
-/** The rows the pane can draw: those with a page and a box. */
+// The rows the pane can draw: those with a page and a box.
 function snapPaged(rows: Any[]): Any[] {
   return (rows || []).filter((r: Any) => r.page && r.box);
 }
 
-/** Whether MatchView shows the pane: a snapshot ticket or a row to draw. */
+// Whether MatchView shows the pane: a snapshot ticket or a row to draw.
 function snapShown(s: Any): boolean {
   return Boolean(s?.snapshot) || snapPaged(s?.rows || []).length > 0;
 }
 
 const SNAP_W = 380;
-/** The pane's height with no image to measure: a letter page. */
+// The pane's height with no image to measure: a letter page.
 const SNAP_H = 492;
 const SNAP_NOTE: Record<string, string> = {
   pdf: "This PDF's pages could not be drawn here. Open it with See the page.",
@@ -80,7 +80,7 @@ const SNAP_ZOOM_MIN = 50;
 const SNAP_ZOOM_MAX = 400;
 const SNAP_ZOOM_STEP = 25;
 
-/** "12.3%" -> 123: a box edge back in the statement's 0-1000 units, int only. */
+// "12.3%" -> 123: a box edge back in the statement's 0-1000 units, int only.
 function snapMil(v: Any): number {
   const s = String(v ?? "0").replace("%", "");
   const dot = s.indexOf(".");
@@ -89,15 +89,15 @@ function snapMil(v: Any): number {
   return (parseInt(w, 10) || 0) * 10 + (parseInt(d, 10) || 0);
 }
 
-/** A row's box as { l, t, r, b } in 0-1000 units (integer math only). */
+// A row's box as { l, t, r, b } in 0-1000 units (integer math only).
 function snapBoxInt(box: Any): { l: number; t: number; r: number; b: number } {
   const l = snapMil(box?.left);
   const t = snapMil(box?.top);
   return { l, t, r: l + snapMil(box?.width), b: t + snapMil(box?.height) };
 }
 
-/** Ghost filter, the old app's: an unmatched ("x") box covered more than 30%
- * by any matched ("m") box on the same page is a duplicate and hidden. */
+// Ghost filter, the old app's: an unmatched ("x") box covered more than 30%
+// by any matched ("m") box on the same page is a duplicate and hidden.
 function snapGhostFree(rows: Any[]): Any[] {
   const matched = (rows || []).filter((r: Any) => r.match === "m");
   if (matched.length === 0) return rows || [];
@@ -115,7 +115,7 @@ function snapGhostFree(rows: Any[]): Any[] {
   });
 }
 
-/** The last page images read, so paging back or a write elsewhere does not read them again. */
+// The last page images read, so paging back or a write elsewhere does not read them again.
 const snapKept: { key: string; image: Any }[] = [];
 
 async function snapImage(key: string, account: string, month: string, page: number): Promise<Any> {
@@ -158,26 +158,26 @@ function SnapshotPane(p: {
   rows: Any[];
   evidence: boolean;
   kind: string;
-  /** The pages that have a picture the window can draw. */
+  // The pages that have a picture the window can draw.
   pictures: number[];
   doc: string;
-  /** Which pictures the pages have: it changes when any page's picture does. */
+  // Which pictures the pages have: it changes when any page's picture does.
   stamp: string;
   selected: number | null;
   onSelect: (no: number) => void;
-  /** The line the pointer is on, either side (its box draws lit). */
+  // The line the pointer is on, either side (its box draws lit).
   hovered: number | null;
-  /** A box's pointer entering (its line no) or leaving (null). */
+  // A box's pointer entering (its line no) or leaving (null).
   onHover: (no: number | null) => void;
-  /** Whole-field boxes (title, date) from the statement, labelled on hover. */
+  // Whole-field boxes (title, date) from the statement, labelled on hover.
   areas: Any[];
-  /** Receives { scrollToLine, cancel } for the right side's row hover. */
+  // Receives { scrollToLine, cancel } for the right side's row hover.
   bind: (api: Any) => void;
   page: number;
   onPage: (page: number) => void;
   account: string;
   month: string;
-  /* --- optional parity props (ReconciliationDocumentViewer 1:1) --- */
+  // --- optional parity props (ReconciliationDocumentViewer 1:1) ---
   reconcileMode?: boolean;
   onReconcileSelect?: (no: number) => void;
   onQuickMatch?: (no: number, ledgerId: string) => void;

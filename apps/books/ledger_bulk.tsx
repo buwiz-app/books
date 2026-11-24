@@ -10,7 +10,7 @@ const BULK_FILTERS = [
   ["all", "All"],
 ];
 
-/** The ticked entry tickets. */
+// The ticked entry tickets.
 const bulkSel = signal(new Set<string>());
 
 function bulkToggle(t: string) {
@@ -20,7 +20,7 @@ function bulkToggle(t: string) {
   bulkSel.set(s);
 }
 
-/** Last day of a month, for the CSV range: integer dates, no money. */
+// Last day of a month, for the CSV range: integer dates, no money.
 function bulkLastDay(key: string): string {
   const y = Number(key.slice(0, 4));
   const m = Number(key.slice(5, 7));
@@ -29,7 +29,7 @@ function bulkLastDay(key: string): string {
   return `${key}-${String(days)}`;
 }
 
-/** The tap target in front of a ledger row. */
+// The tap target in front of a ledger row.
 function BulkBox(p: { r: Any }) {
   return (
     <View class={`pl-3 py-2.5 border-b ${C.line}`} onPress={() => bulkToggle(p.r.ticket)} activeStyle={{ opacity: 0.6 }}>
@@ -38,7 +38,7 @@ function BulkBox(p: { r: Any }) {
   );
 }
 
-/** A ledger row with its tap target in front. */
+// A ledger row with its tap target in front.
 function BulkRow(p: { r: Any }) {
   const r = p.r;
   return (
@@ -64,7 +64,7 @@ function BulkRow(p: { r: Any }) {
   );
 }
 
-/** "N selected · Post · Discard · Category…", Select all and Export CSV. */
+// "N selected · Post · Discard · Category…", Select all and Export CSV.
 function BulkBar(p: { rows: Any[]; account: string; month: string; filter: string }) {
   const busy = signal(false);
   const picking = signal(false);
@@ -130,7 +130,7 @@ function BulkBar(p: { rows: Any[]; account: string; month: string; filter: strin
   );
 }
 
-/** A month of ledger entries to tick, with the bulk bar (Reports page). */
+// A month of ledger entries to tick, with the bulk bar (Reports page).
 function LedgerBulk() {
   const filter = signal("draft");
   const month = signal("");

@@ -5,7 +5,7 @@
 // subcategories, the month's ledger rows for transactions, and no
 // comments/people/sharing (the old app's tabs need data Books doesn't store).
 
-/** Ticket of the account the Category page shows. */
+// Ticket of the account the Category page shows.
 const catDetailTicket = signal("");
 
 function CategoryDetailPage(p: { go: (page: string, filter?: string) => void }) {

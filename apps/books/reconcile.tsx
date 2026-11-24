@@ -14,7 +14,7 @@ const recParty = signal("");
 const recFiltMenu = signal(false);
 let recFiltAnchor: ViewRef | undefined;
 
-/** "1,234.56" or "+42.18" -> centavos, string math only (integer centavos, no float). */
+// "1,234.56" or "+42.18" -> centavos, string math only (integer centavos, no float).
 function centsOf(text: string): bigint {
   const t = String(text ?? "0");
   const neg = /^[-−–]/.test(t.trim()) || /^\(.*\)$/.test(t.trim());
@@ -24,7 +24,7 @@ function centsOf(text: string): bigint {
   return neg ? -c : c;
 }
 
-/** Centavos -> "1,234.56", `+` ahead when pos and the sum is in. */
+// Centavos -> "1,234.56", `+` ahead when pos and the sum is in.
 function centsShown(c: bigint, pos = false): string {
   const neg = c < 0n;
   const a = neg ? -c : c;
@@ -32,10 +32,10 @@ function centsShown(c: bigint, pos = false): string {
   const f = (a % 100n).toString().padStart(2, "0");
   return (neg ? "-" : pos ? "+" : "") + w + "." + f;
 }
-/** The account a statement document was just kept for: its note stays up until the screen is left. */
+// The account a statement document was just kept for: its note stays up until the screen is left.
 const keptFor = signal("");
 
-/** Bytes as base64url, for a file part. */
+// Bytes as base64url, for a file part.
 function b64url(bytes: Any): string {
   const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
   let out = "";
@@ -49,8 +49,8 @@ function b64url(bytes: Any): string {
   return out;
 }
 
-/** A picked file to Books in parts (one call's arguments are at most 256 KiB);
- * returns the upload id an import names. */
+// A picked file to Books in parts (one call's arguments are at most 256 KiB);
+// returns the upload id an import names.
 async function sendFile(file: Any): Promise<string> {
   const bytes = await file.read();
   const size = 96000;
@@ -62,12 +62,12 @@ async function sendFile(file: Any): Promise<string> {
   return upload;
 }
 
-/** The statement documents Reconcile keeps as they are, by extension. */
+// The statement documents Reconcile keeps as they are, by extension.
 const STATEMENT_DOC: Record<string, string> = { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg" };
 
-/** A statement's PDF or picture is kept in Books documents as a bank
- * statement. Books never reads the page: the assistant does, and its lines
- * come back as a statement read for the user to accept. */
+// A statement's PDF or picture is kept in Books documents as a bank
+// statement. Books never reads the page: the assistant does, and its lines
+// come back as a statement read for the user to accept.
 async function keepStatementDocument(account: string, file: Any, mime: string) {
   const upload = await sendFile(file);
   await act("books_app_statement_import", { account, document_upload: upload, document_mime: mime });
@@ -99,8 +99,8 @@ function importStatement(account: string) {
 
 const REC_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** Old app cell states mapped to its labels: done→finalized, draft→in progress
- * (a started match), todo→not started (activity, nothing imported), none→no activity. */
+// Old app cell states mapped to its labels: done→finalized, draft→in progress
+// (a started match), todo→not started (activity, nothing imported), none→no activity.
 const REC_STATE: Record<string, { label: string; pill: string; dot: string; fill: string }> = {
   done: { label: "finalized", pill: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500", fill: "#10b981" },
   draft: { label: "in progress", pill: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400", dot: "bg-amber-500", fill: "#f59e0b" },
@@ -129,20 +129,20 @@ const recExpanded = signal<string[]>([]);
 const recSortMenu = signal(false);
 const recKebabMenu = signal(false);
 const recStartMenu = signal(false);
-/** The grid year; 0 until the default call names it. */
+// The grid year; 0 until the default call names it.
 const recYear = signal(0);
 let recSortAnchor: ViewRef | undefined;
 let recKebabAnchor: ViewRef | undefined;
 let recStartAnchor: ViewRef | undefined;
 
-/** The latest month a row's cells are done in ("2026-02" sorts before "2026-10"). */
+// The latest month a row's cells are done in ("2026-02" sorts before "2026-10").
 function recLastDone(r: Any): string {
   let last = "";
   for (const c of r.cells || []) if (c.state === "done" && String(c.month) > last) last = String(c.month);
   return last;
 }
 
-/** Old app's per-account stat: a row counts in a tile by the states its months hold. */
+// Old app's per-account stat: a row counts in a tile by the states its months hold.
 function recStats(rows: Any[]): Record<string, number> {
   const s: Record<string, number> = { none: 0, todo: 0, draft: 0, done: 0 };
   for (const r of rows) {
@@ -156,7 +156,7 @@ function recStats(rows: Any[]): Record<string, number> {
   return s;
 }
 
-/** Old app's tile filter: which rows a tile keeps. */
+// Old app's tile filter: which rows a tile keeps.
 function recKeep(r: Any, f: string): boolean {
   const states = (r.cells || []).map((c: Any) => String(c.state));
   if (f === "none") return states.every((st) => st === "none");
@@ -166,7 +166,7 @@ function recKeep(r: Any, f: string): boolean {
   return true;
 }
 
-/** Old app's chevron, the row's chevron + account glyph is text (no SVG icons). */
+// Old app's chevron, the row's chevron + account glyph is text (no SVG icons).
 function ReconcileGrid() {
   const data = resource(
     () => ({ v: ver(), y: recYear() }),
@@ -184,7 +184,7 @@ function ReconcileGrid() {
     () => buwiz.call("books_accounts_list", { group: "all" }),
   );
   const d = () => data() as Any;
-  /** Books account ticket → its COA group ("Assets" | "Liabilities" | …). */
+  // Books account ticket → its COA group ("Assets" | "Liabilities" | …).
   const groupOf = (ticket: string): string => {
     const a = (accts()?.rows || []).find((x: Any) => x.ticket === ticket);
     return String(a?.group || "Other");
@@ -405,7 +405,7 @@ function ReconcileGrid() {
   );
 }
 
-/** One group card ("Assets" / "Liabilities") with its expandable account rows. */
+// One group card ("Assets" / "Liabilities") with its expandable account rows.
 function ReconcileGroup(p: { name: string; entries: Any[]; onCell: (r: Any, c: Any) => void }) {
   return (
     <View class={`rounded-xl border overflow-hidden ${C.panel} ${C.line}`}>
@@ -423,7 +423,7 @@ function ReconcileGroup(p: { name: string; entries: Any[]; onCell: (r: Any, c: A
   );
 }
 
-/** An account row + its 12 month rows when expanded. */
+// An account row + its 12 month rows when expanded.
 function ReconcileAccount(p: { row: Any; onCell: (r: Any, c: Any) => void }) {
   const r = () => p.row;
   const open = () => recExpanded().includes(String(r().ticket));
@@ -537,7 +537,7 @@ const RUPH = `px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider ${C
 const RUPH2 = `flex-1 px-3 py-2.5 text-[11px] uppercase tracking-wider ${C.dim}`;
 
 
-/** One glass card of the green summary strip (old app's SummaryCard). */
+// One glass card of the green summary strip (old app's SummaryCard).
 function RecSumCard(p: { title: string; icon: string; highlight?: string; rows: [string, string][] }) {
   return (
     <View class="flex-1 min-w-[140px] rounded-xl px-4 py-3 gap-1.5" style={{ backgroundColor: "rgba(255,255,255,0.10)", borderWidth: 1, borderColor: "rgba(255,255,255,0.10)" }}>
@@ -565,7 +565,7 @@ function RecSumCard(p: { title: string; icon: string; highlight?: string; rows: 
   );
 }
 
-/** The funnel's filter popover: status, type, amount and party (the old app's advanced filter). */
+// The funnel's filter popover: status, type, amount and party (the old app's advanced filter).
 function RecFilterMenu() {
   return (
     <Overlay anchor={recFiltAnchor} placement="bottom" align="end" offset={2} margin={8} open={recFiltMenu()} onPressOutside={() => recFiltMenu.set(false)} onCancel={() => recFiltMenu.set(false)}>

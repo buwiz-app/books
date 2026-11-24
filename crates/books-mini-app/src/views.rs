@@ -431,7 +431,32 @@ pub fn month_arg(args: &Map<String, Value>) -> Result<Period, Refusal> {
     }
 }
 
-fn account_row(store: &Store, chart: &Chart, a: &Account, balance: i64) -> Result<Value, Refusal> {
+fn subtree_movement(
+    id: i64,
+    children: &std::collections::HashMap<i64, Vec<i64>>,
+    balances: &std::collections::HashMap<i64, i64>,
+    visited: &mut std::collections::HashSet<i64>,
+) -> i128 {
+    if !visited.insert(id) {
+        return 0;
+    }
+    let mut sum = i128::from(*balances.get(&id).unwrap_or(&0));
+    if let Some(kids) = children.get(&id) {
+        for &kid in kids {
+            sum += subtree_movement(kid, children, balances, visited);
+        }
+    }
+    sum
+}
+
+fn account_row(
+    store: &Store,
+    chart: &Chart,
+    a: &Account,
+    balance: i64,
+    subtree_balance: i64,
+    child_count: usize,
+) -> Result<Value, Refusal> {
     let off = chart.hidden(a);
     let (tag, tag_label) = match a.account_type.group() {
         "Assets" => ("as", "Asset"),
@@ -439,6 +464,11 @@ fn account_row(store: &Store, chart: &Chart, a: &Account, balance: i64) -> Resul
         "Equity" => ("eq", "Equity"),
         "Revenue" => ("re", "Revenue"),
         _ => ("ex", "Expense"),
+    };
+    let parent = a.parent_id.and_then(|pid| chart.by_id.get(&pid));
+    let parent_ticket = match parent {
+        Some(p) => Some(ticket(store, "account", p.id)?),
+        None => None,
     };
     Ok(json!({
         "ticket": ticket(store, "account", a.id)?,
@@ -449,32 +479,65 @@ fn account_row(store: &Store, chart: &Chart, a: &Account, balance: i64) -> Resul
         "tag": tag,
         "tag_label": tag_label,
         "kind": a.kind.as_str(),
+        "debit_normal": a.account_type.debit_normal(),
+        "parent_number": parent.map(|p| p.number.as_str()),
+        "parent_ticket": parent_ticket,
+        "child_count": child_count,
         "accrual_only": a.accrual_only(),
         "off": off,
         "cash": a.is_cash(),
         "balance": if off { Value::Null } else { json!(money::format(balance)) },
         "balance_shown": if off { "—".to_string() } else { money::display(balance) },
+        "subtree_balance": if off { Value::Null } else { json!(money::format(subtree_balance)) },
+        "subtree_balance_shown": if off { "—".to_string() } else { money::display(subtree_balance) },
     }))
 }
 
 const GROUPS: [&str; 5] = ["Assets", "Liabilities", "Equity", "Revenue", "Expenses"];
 
-/// The Accounts page: the chart with balances, filtered by group.
+/// The Accounts page: the chart with balances, filtered by group, with optional
+/// period range (`from`/`to`) and automatic double-entry subtree rollups.
 pub fn accounts(store: &Store, book: Book, args: &Map<String, Value>) -> Result<Value, Refusal> {
     let chart = Chart::load(store, book)?;
-    let balances = books::movements(store.conn(), chart.book.id, None, Some(Date::today()))?;
+    let from = match service::text(args, "from")
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        Some(s) => {
+            Some(Date::parse(s).ok_or_else(|| Refusal::invalid("`from` must be YYYY-MM-DD."))?)
+        }
+        None => None,
+    };
+    let to = match service::text(args, "to")
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        Some(s) => {
+            Some(Date::parse(s).ok_or_else(|| Refusal::invalid("`to` must be YYYY-MM-DD."))?)
+        }
+        None => Some(Date::today()),
+    };
+    let balances = books::movements(store.conn(), chart.book.id, from, to)?;
+    let mut children: std::collections::HashMap<i64, Vec<i64>> = std::collections::HashMap::new();
+    for a in &chart.list {
+        if let Some(pid) = a.parent_id {
+            children.entry(pid).or_default().push(a.id);
+        }
+    }
     let group = service::text(args, "group").unwrap_or("all");
     let mut rows = Vec::new();
     for a in &chart.list {
         if group != "all" && a.account_type.group() != group {
             continue;
         }
-        rows.push(account_row(
-            store,
-            &chart,
-            a,
-            a.natural(*balances.get(&a.id).unwrap_or(&0)),
-        )?);
+        let own = a.natural(*balances.get(&a.id).unwrap_or(&0));
+        let mut visited = std::collections::HashSet::new();
+        let raw_sub = subtree_movement(a.id, &children, &balances, &mut visited);
+        let sub_i64 = i64::try_from(raw_sub)
+            .map_err(|_| Refusal::new("overflow", "Subtree balance exceeds integer range."))?;
+        let subtree = a.natural(sub_i64);
+        let child_count = children.get(&a.id).map_or(0, Vec::len);
+        rows.push(account_row(store, &chart, a, own, subtree, child_count)?);
     }
     let groups: Vec<&str> = ["all"].into_iter().chain(GROUPS).collect();
     Ok(json!({

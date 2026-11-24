@@ -5,7 +5,7 @@
 
 const acMonth = signal("");
 
-/** The account drawer: opening, rows with a running balance, closing. */
+// The account drawer: opening, rows with a running balance, closing.
 function AccountDrawer(p: { ticket: string; onClose: () => void; go: (page: string, filter?: string) => void }) {
   const data = resource(
     () => ({ v: ver(), a: accountDrawer() || p.ticket, m: acMonth() }),

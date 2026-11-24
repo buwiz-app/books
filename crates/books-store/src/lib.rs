@@ -87,6 +87,7 @@ const MIGRATIONS: &[(i64, &str)] = &[
         26,
         include_str!("../migrations/0026_statement_activity_comments.sql"),
     ),
+    (27, include_str!("../migrations/0027_account_parent.sql")),
 ];
 
 pub const DATA_DIR_ENV: &str = "BOOKS_DATA_DIR";

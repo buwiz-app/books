@@ -14,7 +14,7 @@ const FIELD_NAMES: Record<string, string> = {
   lines: "Lines",
 };
 
-/** A whole-percent confidence as a word: High 90+, Check 70-89, Low below 70. */
+// A whole-percent confidence as a word: High 90+, Check 70-89, Low below 70.
 function confidenceWord(c: Any): string {
   if (c === null || c === undefined) return "";
   const n = c as number;

@@ -43,8 +43,8 @@ const MATCH_TONE: Record<string, [string, string]> = {
   unsure: ["rev", "Not matched"],
 };
 
-/** One dashed pick zone, like the reference's drop zone (Linux has no drag-drop:
- *  the click is the mechanism, so the text names picking). */
+// One dashed pick zone, like the reference's drop zone (Linux has no drag-drop:
+// the click is the mechanism, so the text names picking).
 function PickZone(p: { title: string; hint: string; file: Any; onPick: () => void; onClear: () => void }) {
   return (
     <View

@@ -45,22 +45,22 @@ const TX_SIDE_GROUPS = ["Assets", "Liabilities", "Equity", "Revenue", "Expenses"
 const txSideConf = (group: string) =>
   TX_SIDE_TYPES[group] || { bg: "#f1f5f9", text: "#64748b", label: group || "Accounts" };
 
-/** Tickets a node press cascades over (the old getAllDescendantIds). */
+// Tickets a node press cascades over (the old getAllDescendantIds).
 function txSideNodeIds(node: Any): string[] {
   if (node && node.accounts) return (node.accounts as Any[]).map((a) => String(a.ticket));
   return [String(node.ticket)];
 }
-/** Every checkable ticket (Select all). */
+// Every checkable ticket (Select all).
 function txSideAllIds(accounts: Any[]): string[] {
   return accounts.map((a) => String(a.ticket));
 }
-/** The old handleToggleAccount cascade: all ids checked -> remove, else add. */
+// The old handleToggleAccount cascade: all ids checked -> remove, else add.
 function txSideToggled(ids: string[], checked: string[]): string[] {
   const all = ids.every((id) => checked.includes(id));
   const out = checked.filter((id) => !ids.includes(id));
   return all ? out : [...out, ...ids];
 }
-/** Tri-state of a node against the checked set (the old getCheckState). */
+// Tri-state of a node against the checked set (the old getCheckState).
 function txSideCheckState(node: Any, checked: string[]): "none" | "some" | "all" {
   const ids = txSideNodeIds(node);
   const n = ids.filter((id) => checked.includes(id)).length;
@@ -68,7 +68,7 @@ function txSideCheckState(node: Any, checked: string[]): "none" | "some" | "all"
   return n === ids.length ? "all" : "some";
 }
 
-/** The old SidebarCheckbox: 18px box, #2a9d8f fill, white check or minus. */
+// The old SidebarCheckbox: 18px box, #2a9d8f fill, white check or minus.
 function TxSideCheck(p: { state: "none" | "some" | "all"; onPress: () => void }) {
   const on = () => p.state !== "none";
   return (
@@ -91,8 +91,8 @@ function TxSideCheck(p: { state: "none" | "some" | "all"; onPress: () => void })
   );
 }
 
-/** Right slot: hover/checked shows the checkbox, else the badge (the old
- *  transaction count; here balance_shown — same slot and style). */
+// Right slot: hover/checked shows the checkbox, else the badge (the old
+// transaction count; here balance_shown — same slot and style).
 function TxSideRight(p: {
   node: Any;
   badge: string;
@@ -121,8 +121,8 @@ function TxSideRight(p: {
   );
 }
 
-/** One row of the tree (the old AccountNode). `node` is a group object
- *  {group, accounts} or an account row; `depth` indents 8 + depth*14 px. */
+// One row of the tree (the old AccountNode). `node` is a group object
+// {group, accounts} or an account row; `depth` indents 8 + depth*14 px.
 function TxSideNode(p: {
   node: Any;
   depth: number;
@@ -223,7 +223,7 @@ function TxSideNode(p: {
   );
 }
 
-/** The COA sidebar (the old AccountSidebar): lookup + tree + tri-state checks. */
+// The COA sidebar (the old AccountSidebar): lookup + tree + tri-state checks.
 function TxSidebar(p: {
   accounts: Any[];
   selectedId: string;
@@ -235,7 +235,7 @@ function TxSidebar(p: {
   badge?: (a: Any) => string;
 }) {
   const search = signal("");
-  /** Groups -> member rows, lookup-filtered by name or account number. */
+  // Groups -> member rows, lookup-filtered by name or account number.
   const tree = () => {
     const q = search().trim().toLowerCase();
     const out: Any[] = [];

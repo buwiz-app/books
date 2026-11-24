@@ -15,10 +15,10 @@ const E_ACT_T = "group w-11 h-11 lg:w-8 lg:h-8 rounded items-center justify-cent
 // (crates/books-screens); `openLedger` opens it. The assistant drafts; only
 // a click here posts or voids.
 
-/** The open entry's ticket, for the drawer. */
+// The open entry's ticket, for the drawer.
 const drawerEntry = signal("");
 
-/** Open the ledger's native screen. Set only the props the caller has. */
+// Open the ledger's native screen. Set only the props the caller has.
 // The line's party and tag assignments, joined for display: "Ana Cruz · North".
 function lineAssignees(l: Any): string {
   return [l?.person?.name, l?.department?.name, l?.location?.name].filter(Boolean).join(" · ");
@@ -32,7 +32,7 @@ function openLedger(props: { account?: string; month?: string; filter?: string }
   buwiz.open({ app: "ledger", props: args }).catch((e: Any) => toast(errText(e)));
 }
 
-/** The entry drawer, over the right side of the window. */
+// The entry drawer, over the right side of the window.
 function EntryDrawer() {
   const data = resource(
     () => ({ v: ver(), e: drawerEntry() }),
@@ -184,12 +184,12 @@ function Kv(p: { k: string; v: Any }) {
   );
 }
 
-/**
- * What the assistant read off a document: the suggested value
- * beside the one the entry carries now, how sure the reading was, and the
- * evidence it came from. Read-only; `books_entry_get` sends `extraction` and
- * `evidence` to the app only.
- */
+//
+// What the assistant read off a document: the suggested value
+// beside the one the entry carries now, how sure the reading was, and the
+// evidence it came from. Read-only; `books_entry_get` sends `extraction` and
+// `evidence` to the app only.
+//
 function ExtractionPanel(p: { entry: Any }) {
   const x = () => (p.entry && p.entry.extraction) || null;
   const fields = () => (x() && x().fields) || [];
@@ -243,7 +243,7 @@ const MODES: [string, string][] = [
   ["transfer", "Transfer"],
 ];
 
-/** Same labels as the old app's shared TYPE_LABELS (constants.tsx). */
+// Same labels as the old app's shared TYPE_LABELS (constants.tsx).
 const TYPE_LABEL: Record<string, string> = {
   journal: "Journal Entry",
   money_in: "Pay In",
@@ -251,7 +251,7 @@ const TYPE_LABEL: Record<string, string> = {
   transfer: "Transfer",
 };
 
-/** The new-entry page: the type rail, the entry, and the assistant beside it. `mode` is the open mode. */
+// The new-entry page: the type rail, the entry, and the assistant beside it. `mode` is the open mode.
 function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => void }) {
   const opts = resource(
     () => ({ v: ver() }),
@@ -429,11 +429,11 @@ function EntryPage(p: { mode: Any; close: () => void; setMode: (m: string) => vo
       .catch((e: Any) => categoryCreateError.set(errText(e)))
       .finally(() => categoryCreating.set(false));
   };
-  /** One-click party create: the combobox's "Create …" row calls the tool and
-   *  selects the ticket it returns. The kind follows context: Money Out pays a
-   *  vendor, Money In collects from a customer; a line with a category takes
-   *  the party kind the old app's CategoryPartyCombobox derives from it
-   *  (revenue-ish accounts collect, everything else pays), else vendor. */
+  // One-click party create: the combobox's "Create …" row calls the tool and
+  // selects the ticket it returns. The kind follows context: Money Out pays a
+  // vendor, Money In collects from a customer; a line with a category takes
+  // the party kind the old app's CategoryPartyCombobox derives from it
+  // (revenue-ish accounts collect, everything else pays), else vendor.
   const partyKindFor = (accountTicket: string, fallback: string) => {
     const account =
       (o()?.all || []).find((a: Any) => String(a.ticket) === String(accountTicket)) ||

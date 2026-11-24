@@ -43,14 +43,14 @@ function go(id: string, filter?: string) {
 }
 goBack = () => go("today");
 
-/** Add an entry: the full page, in one of its four modes. */
+// Add an entry: the full page, in one of its four modes.
 function newEntry(mode: string) {
   drawerEntry.set("");
   sheetMode.set(mode);
   page.set("new");
 }
 
-/** First run: name the book and pick its basis. */
+// First run: name the book and pick its basis.
 function Setup() {
   const label = signal("");
   const basis = signal("cash");

@@ -202,7 +202,7 @@ const ACCT_ROOT_NAMES: Record<string, RegExp> = {
   other_expense: /other expense/i,
 };
 
-/** The account whose activity drawer is open (Accounts page). */
+// The account whose activity drawer is open (Accounts page).
 const accountDrawer = signal("");
 
 interface AcctNode {
@@ -268,14 +268,37 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
     return rows;
   };
 
-  /** The displayed tree: type roots → kind groups → accounts (see header). */
+  // The displayed tree: type roots → kind groups → accounts (see header).
   const tree = (): AcctNode[] => {
     const rows = filtered().slice().sort((x: Any, y: Any) => String(x.number).localeCompare(String(y.number)));
     const roots: AcctNode[] = [];
     const used = new Set<string>();
     const num = (a: Any) => parseInt(String(a.number || "0"), 10) || 0;
+    const byNum = new Map<string, Any>(rows.map((a: Any) => [String(a.number), a]));
+    const explicitKids = new Map<string, Any[]>();
+    const explicitChildTickets = new Set<string>();
+    for (const a of rows) {
+      const pn = String(a.parent_number || "");
+      if (pn && byNum.has(pn) && pn !== String(a.number)) {
+        const l = explicitKids.get(pn) || [];
+        l.push(a);
+        explicitKids.set(pn, l);
+        explicitChildTickets.add(String(a.ticket));
+      }
+    }
+    const seenExplicit = new Set<string>();
+    const attach = (n: AcctNode): AcctNode => {
+      for (const c of (explicitKids.get(String(n.a.number)) || []).slice().sort((x, y) => num(x) - num(y))) {
+        const ct = String(c.ticket);
+        if (seenExplicit.has(ct)) continue;
+        seenExplicit.add(ct);
+        n.kids.push(attach({ a: c, level: n.level + 1, kids: [], kind: "" }));
+      }
+      n.kids.sort((x, y) => num(x.a) - num(y.a));
+      return n;
+    };
     for (const [type, nameRe] of Object.entries(ACCT_ROOT_NAMES)) {
-      const ofType = rows.filter((a: Any) => String(a.type) === type);
+      const ofType = rows.filter((a: Any) => String(a.type) === type && !explicitChildTickets.has(String(a.ticket)));
       const root = ofType
         .filter((a: Any) => (a.kind === "unsure" || a.kind === "mixed") && nameRe.test(String(a.name)))
         .sort((x: Any, y: Any) => num(x) - num(y))[0];
@@ -286,40 +309,37 @@ function AccountsPage(p: { go: (page: string, filter?: string) => void }) {
       for (const a of ofType) {
         if (String(a.ticket) === String(root.ticket)) continue;
         const k = String(a.kind || "unsure");
-        if (k === "unsure" || k === "mixed") {
-          kids.push({ a, level: 1, kids: [], kind: "" });
-          continue;
-        }
-        if (!byKind.has(k)) byKind.set(k, []);
-        byKind.get(k)!.push(a);
+        if (k === "unsure" || k === "mixed") { kids.push(attach({ a, level: 1, kids: [], kind: "" })); continue; }
+        const l = byKind.get(k) || [];
+        l.push(a);
+        byKind.set(k, l);
       }
       for (const [k, members] of byKind) {
         members.sort((x: Any, y: Any) => num(x) - num(y));
-        if (members.length > 1) {
-          const [head, ...rest] = members;
-          kids.push({ a: head, level: 1, kids: rest.map((c) => ({ a: c, level: 2, kids: [], kind: "" })), kind: k });
-        } else {
-          kids.push({ a: members[0], level: 1, kids: [], kind: "" });
-        }
+        const [head, ...rest] = members;
+        kids.push(attach({ a: head, level: 1, kids: rest.map((c) => attach({ a: c, level: 2, kids: [], kind: "" })), kind: rest.length ? k : "" }));
       }
       kids.sort((x, y) => num(x.a) - num(y.a));
-      roots.push({ a: root, level: 0, kids, kind: "root" });
+      roots.push(attach({ a: root, level: 0, kids, kind: "root" }));
     }
-    // Types with no matching root: kind groups at level 0.
-    const orphans = rows.filter((a: Any) => !used.has(String(a.ticket)) && !roots.some((r) => r.kids.some((k) => k.a.ticket === a.ticket || k.kids.some((c) => c.a.ticket === a.ticket))));
+    const inTree = new Set<string>();
+    const markTree = (n: AcctNode) => { inTree.add(String(n.a.ticket)); n.kids.forEach(markTree); };
+    roots.forEach(markTree);
+    const orphans = rows.filter((a: Any) => !used.has(String(a.ticket)) && !inTree.has(String(a.ticket)) && !explicitChildTickets.has(String(a.ticket)));
     const orphanKinds = new Map<string, Any[]>();
     for (const a of orphans) {
       const k = String(a.kind || "unsure");
-      if (!orphanKinds.has(k)) orphanKinds.set(k, []);
-      orphanKinds.get(k)!.push(a);
+      const l = orphanKinds.get(k) || [];
+      l.push(a);
+      orphanKinds.set(k, l);
     }
     for (const [k, members] of orphanKinds) {
       members.sort((x: Any, y: Any) => num(x) - num(y));
       if (members.length > 1 && k !== "unsure" && k !== "mixed") {
         const [head, ...rest] = members;
-        roots.push({ a: head, level: 0, kids: rest.map((c) => ({ a: c, level: 1, kids: [], kind: "" })), kind: k });
+        roots.push(attach({ a: head, level: 0, kids: rest.map((c) => attach({ a: c, level: 1, kids: [], kind: "" })), kind: k }));
       } else {
-        for (const a of members) roots.push({ a, level: 0, kids: [], kind: "" });
+        for (const a of members) roots.push(attach({ a, level: 0, kids: [], kind: "" }));
       }
     }
     roots.sort((x, y) => num(x.a) - num(y.a));

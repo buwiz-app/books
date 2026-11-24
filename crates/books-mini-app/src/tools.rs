@@ -189,7 +189,9 @@ fn accounts_schema() -> Value {
         "type": "object",
         "properties": {
             "book": { "type": "string" },
-            "group": { "type": "string", "enum": ["all", "Assets", "Liabilities", "Equity", "Revenue", "Expenses"] }
+            "group": { "type": "string", "enum": ["all", "Assets", "Liabilities", "Equity", "Revenue", "Expenses"] },
+            "from": { "type": "string", "description": "Optional period start date (YYYY-MM-DD) for movement balances." },
+            "to": { "type": "string", "description": "Optional period end date (YYYY-MM-DD); defaults to today." }
         }
     })
 }
@@ -634,7 +636,8 @@ fn account_create_schema() -> Value {
             "number": { "type": "string" },
             "name": { "type": "string" },
             "kind": { "type": "string", "description": "A kind id of the catalogue, mixed or unsure." },
-            "type": { "type": "string" }
+            "type": { "type": "string" },
+            "parent": { "type": "string", "description": "Optional parent account ticket or number for nested COA rollups." }
         }
     })
 }

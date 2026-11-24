@@ -15,13 +15,13 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
     () => buwiz.call("books_owed_options", {}),
   );
   const d = () => data() as Any;
-  /** The document being marked paid, and from which account. */
+  // The document being marked paid, and from which account.
   const settling = signal("");
   const fromAccount = signal("");
-  /** Part of the balance (empty: all of it) and the day it moved (empty: today). */
+  // Part of the balance (empty: all of it) and the day it moved (empty: today).
   const settleAmount = signal("");
   const settleOn = signal("");
-  /** The document whose payment history is open. */
+  // The document whose payment history is open.
   const history = signal("");
   const settle = (ticket: string) => {
     if (!fromAccount()) {
@@ -153,7 +153,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
   );
 }
 
-/** One assistant proposal: the user corrects person, category and dates, then accepts or discards. */
+// One assistant proposal: the user corrects person, category and dates, then accepts or discards.
 function ProposalRow(p: { p: Any; side: string; opts: Any }) {
   const o = () => p.opts() as Any;
   const who = signal(p.p.person_suggestion?.ticket || "");
@@ -268,7 +268,7 @@ function OwedSheet(p: { side: string; opts: Any; close: () => void }) {
   );
 }
 
-/** A document's payments, oldest first; a payment voided in the Ledger stays listed with a Voided tag. */
+// A document's payments, oldest first; a payment voided in the Ledger stays listed with a Voided tag.
 function OwedHistory(p: { side: string; owed: string }) {
   const data = resource(
     () => ({ v: ver(), o: p.owed }),

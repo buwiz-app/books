@@ -215,7 +215,7 @@ function SettingsPage(p: { go: (page: string, filter?: string) => void }) {
   );
 }
 
-/** Buwiz sign-in (optional) and the link to one tax profile by ID. */
+// Buwiz sign-in (optional) and the link to one tax profile by ID.
 function CloudLink() {
   const code = signal(null as Any);
   const note = signal("");
