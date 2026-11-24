@@ -1719,3 +1719,47 @@ fn ledger_rows_carry_the_tags_on_their_lines() {
     assert_eq!(row(&plain)["matched"], false);
     assert_eq!(row(&plain)["source"], "manual");
 }
+
+#[test]
+fn a_sub_account_is_in_its_parents_group() {
+    let dir = TempDir::new("coa-parent-group");
+    let mut bot = Bot::new(&dir);
+    data(&bot.app(
+        "books_app_book_create",
+        json!({ "client_request_id": "book-parent-01", "label": "Parent Shop" }),
+    ));
+    // a revenue account under Cash would net into the asset's subtree
+    let across = bot.app(
+        "books_app_account_create",
+        json!({
+            "client_request_id": "parent-across-1", "number": "41010",
+            "name": "Synthetic Sales", "kind": "sales_revenue", "parent": "11000"
+        }),
+    );
+    assert_eq!(code(&across), "parent_group");
+    // and so would an explicit type that leaves the parent's group
+    let typed = bot.app(
+        "books_app_account_create",
+        json!({
+            "client_request_id": "parent-across-2", "number": "11015",
+            "name": "Synthetic Loan", "kind": "mixed", "type": "liability", "parent": "11000"
+        }),
+    );
+    assert_eq!(code(&typed), "parent_group");
+    let chart = app_data(&mut bot, "books_accounts_list", json!({}));
+    let rows = chart["rows"].as_array().unwrap();
+    assert!(
+        rows.iter()
+            .all(|a| a["number"] != "41010" && a["number"] != "11015")
+    );
+    // the same group is fine, and takes the parent's type when it names none
+    let within = app_data(
+        &mut bot,
+        "books_app_account_create",
+        json!({
+            "client_request_id": "parent-within-1", "number": "11016",
+            "name": "Synthetic Petty Cash", "kind": "mixed", "parent": "11000"
+        }),
+    );
+    assert!(within["account"].is_string(), "{within}");
+}

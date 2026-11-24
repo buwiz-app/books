@@ -633,6 +633,22 @@ pub fn account_create(conn: &Connection, args: &Map<String, Value>) -> Answer {
             "A cash book has no receivable or payable accounts.",
         ));
     }
+    // A parent's subtree balance nets its children by debit and credit, so
+    // a child from another group (a loan under Cash) would move it with no
+    // meaning. A contra account is in its parent's group and nets as meant.
+    if let Some(p) = &parent
+        && p.account_type.group() != ty.group()
+    {
+        return Err(Refusal::new(
+            "parent_group",
+            format!(
+                "A sub-account is in its parent's group: {} is under {}, and this account would be under {}.",
+                p.name,
+                p.account_type.group(),
+                ty.group()
+            ),
+        ));
+    }
     if books::account_by_number(conn, book.id, number)?.is_some() {
         return Err(Refusal::new("exists", "That account number is taken."));
     }

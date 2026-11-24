@@ -234,7 +234,7 @@ fn sa_link_refuses_a_taken_entry_and_a_taken_line() {
 }
 
 #[test]
-fn sa_remove_drops_an_open_statement_and_a_finished_one_stays() {
+fn sa_remove_drops_a_never_finished_statement_and_one_with_history_stays() {
     let dir = TempDir::new("sa-remove");
     let mut b = seeded(&dir);
     app(
@@ -282,17 +282,46 @@ fn sa_remove_drops_an_open_statement_and_a_finished_one_stays() {
         ),
         "already_finished"
     );
-    // reopen, then remove clears it all
+    // reopened, it still keeps its finish and reopen history with the
+    // reason: remove is refused, and nothing of the statement goes
     app(
         &mut b,
         "books_app_statement_finish",
         json!({ "client_request_id": "sa-reopen", "account": ACCT, "month": MONTH,
             "reopen": true, "reason": "Reviewing the match again" }),
     );
+    assert_eq!(
+        refused(
+            &mut b,
+            "books_app_statement_remove",
+            write_args("sa-remove-001"),
+        ),
+        "statement_history"
+    );
+    let view = get(&mut b, Origin::App);
+    assert_eq!(view["statement"]["status"], "open");
+    let feed = view["statement"]["activity"].as_array().unwrap();
+    for kind in ["finish", "reopen"] {
+        assert!(feed.iter().any(|e| e["event"] == kind), "{kind}: {feed:?}");
+    }
+    let events: i64 = b
+        .store()
+        .unwrap()
+        .conn()
+        .query_row("SELECT count(*) FROM statement_event", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(events, 2);
+}
+
+#[test]
+fn sa_remove_drops_a_statement_that_was_never_finished() {
+    let dir = TempDir::new("sa-remove-open");
+    let mut b = seeded(&dir);
+    comment(&mut b, "sa-comment-rm1", "A synthetic note");
     let out = app(
         &mut b,
         "books_app_statement_remove",
-        write_args("sa-remove-001"),
+        write_args("sa-remove-002"),
     );
     assert_eq!(out["status"], "removed");
     let view = get(&mut b, Origin::App);

@@ -737,6 +737,9 @@ function MatchView() {
   // importing replaces the statement's lines: not under edits waiting on them
   const importHere = () => (recOps().length ? toast("Apply or cancel the pending changes first.") : importStatement(recAccount()));
   const recRemoveAsk = signal(false);
+  // a statement finished before keeps its finish and reopen history: the
+  // tool refuses to remove it, so the button is not offered
+  const hasHistory = () => ((s()?.activity || []) as Any[]).some((a: Any) => a?.event === "finish" || a?.event === "reopen");
   const removeStatement = async () => {
     recRemoveAsk.set(false);
     if ((await call("books_app_statement_action", { action: "remove" })) !== null) {
@@ -949,7 +952,7 @@ function MatchView() {
                   }}
                   matchingNo={recMatchedFlash()}
                   onUpload={() => importHere()}
-                  onRemove={() => recRemoveAsk.set(true)}
+                  onRemove={hasHistory() ? undefined : () => recRemoveAsk.set(true)}
                 />
               </View>
             </If>

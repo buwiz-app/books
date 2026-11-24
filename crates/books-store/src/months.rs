@@ -812,17 +812,31 @@ pub fn unmatch_line(
     Ok(true)
 }
 
-/// Remove an unfinalized statement with its lines, page pictures, areas,
-/// feed and notes. The uploaded document stays in the evidence library.
+/// Remove a statement that was never finished, with its lines, page
+/// pictures, areas, feed and notes. The uploaded document stays in the
+/// evidence library. One that was finished, even if reopened since, keeps
+/// its finish and reopen history with their reasons: it is refused here,
+/// and a corrected statement is imported over it, which keeps that row.
 pub fn remove_statement(conn: &Connection, book: &Book, account_id: i64, key: &str) -> Result<i64> {
     let (s, _lines) = open_statement(conn, book, account_id, key)?;
+    let history: i64 = conn.query_row(
+        "SELECT (SELECT count(*) FROM statement_event WHERE statement_id = ?1)
+              + (SELECT count(*) FROM statement_activity WHERE statement_id = ?1 AND event IN ('finish', 'reopen'))",
+        params![s.id],
+        |r| r.get(0),
+    )?;
+    if history > 0 {
+        return Err(error(
+            "statement_history",
+            "This statement was finished before, and its history is kept. Import the corrected statement over it instead.",
+        ));
+    }
     for table in [
         "statement_line",
         "statement_page",
         "statement_area",
         "statement_activity",
         "statement_comment",
-        "statement_event",
     ] {
         conn.execute(
             &format!("DELETE FROM {table} WHERE statement_id = ?1"),
