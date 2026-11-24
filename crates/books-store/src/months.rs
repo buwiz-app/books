@@ -792,6 +792,18 @@ pub fn unmatch_line(
     if line.matched_entry_id.is_none() {
         return Ok(false);
     }
+    // With the stored match gone, a line still matches an entry of its own
+    // date and amount (one Add posted, say): clearing it would change
+    // nothing the person sees, so it is refused rather than logged as done.
+    let mut cleared = lines.clone();
+    cleared[i].matched_entry_id = None;
+    cleared[i].match_kind = None;
+    if matches!(matches(conn, book.id, &s, &cleared)?[i], Match::Exact(_)) {
+        return Err(error(
+            "exact_match",
+            "Books matches this line to an entry with the same date and amount. Change or void that entry to separate them.",
+        ));
+    }
     conn.execute(
         "UPDATE statement_line SET matched_entry_id = NULL, match_kind = NULL WHERE line_id = ?1",
         params![line.id],

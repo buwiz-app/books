@@ -543,3 +543,38 @@ fn sa_the_ledger_rows_say_what_is_matched_and_what_the_bank_added() {
             .all(|r| ["manual", "bank", "document"].contains(&r["source"].as_str().unwrap()))
     );
 }
+
+#[test]
+fn sa_unmatch_refuses_a_line_books_would_match_again_by_itself() {
+    let dir = TempDir::new("sa-unmatch-exact");
+    let mut b = seeded(&dir);
+    // Add posts the entry on the line's own date for its own amount: with
+    // the stored match gone, Books matches the two again from those alone
+    let view = get(&mut b, Origin::App);
+    let missing = row_of(&view, "x").expect("a missing line");
+    app(
+        &mut b,
+        "books_app_statement_add_line",
+        json!({ "client_request_id": "sa-add-line-04", "account": ACCT, "month": MONTH, "line": missing["ticket"] }),
+    );
+    assert_eq!(
+        refused(
+            &mut b,
+            "books_app_statement_unmatch",
+            json!({ "client_request_id": "sa-unmatch-ex", "account": ACCT, "month": MONTH, "line": missing["no"] }),
+        ),
+        "exact_match"
+    );
+    // nothing changed, and the feed records no unmatch that did not happen
+    let view = get(&mut b, Origin::App);
+    let row = view["statement"]["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["no"] == missing["no"])
+        .unwrap();
+    assert_eq!(row["match"], "m");
+    assert_eq!(row["stored"], true);
+    let feed = view["statement"]["activity"].as_array().unwrap();
+    assert!(feed.iter().all(|e| e["event"] != "unmatch"), "{feed:?}");
+}
