@@ -171,7 +171,9 @@ fn ledger_schema() -> Value {
             "month": { "type": "string", "description": "YYYY-MM; this month when absent." },
             "account": { "type": "string", "description": "An account ticket or chart number; every account when absent." },
             "filter": { "type": "string", "enum": ["all", "review", "draft", "posted", "checks"] },
-            "search": { "type": "string", "description": "Narrows rows before the 200-row cap. Payee and memo match app calls only." }
+            "search": { "type": "string", "description": "Narrows the rows before they are paged. Payee and memo match app calls only." },
+            "terms": { "type": "array", "maxItems": 20, "items": { "type": "string" }, "description": "More search terms; a row has to match every one, and `search` too." },
+            "cursor": { "type": "string", "description": "`next_cursor` from the last answer, for the next page of up to 200 rows." }
         }
     })
 }
@@ -681,7 +683,7 @@ pub const TOOLS: &[Tool] = &[
         reach: Reach::Everyone,
         write: false,
         schema: ledger_schema,
-        description: "A month of ledger entries, for one account or all: date, status, category and amount, each with an entry ticket. The assistant sees no payees or memos.",
+        description: "A month of ledger entries, for one account or all: date, status, category and amount, each with an entry ticket. Up to 200 rows a call; `total` counts them all and `next_cursor` asks for the next page. The assistant sees no payees or memos.",
     },
     Tool {
         name: ENTRY_GET,

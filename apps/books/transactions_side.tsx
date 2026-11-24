@@ -110,12 +110,15 @@ function TxSideRight(p: {
         <TxSideCheck state={state()} onPress={toggle} />
       </If>
       <If when={state() === "none"}>
-        <View class="hidden group-hover:flex">
+        {/* Below lg this is the Accounts sheet, on hosts that may have no
+            hover: the box is always there, after the balance. From lg up it
+            takes the balance's place on hover. */}
+        <If when={Boolean(p.badge)}>
+          <Text class="lg:group-hover:hidden text-[10px] font-medium text-[#94a3b8] dark:text-[#6e727e] tabular-nums shrink-0">{p.badge}</Text>
+        </If>
+        <View class="flex lg:hidden lg:group-hover:flex">
           <TxSideCheck state="none" onPress={toggle} />
         </View>
-        <If when={Boolean(p.badge)}>
-          <Text class="group-hover:hidden text-[10px] font-medium text-[#94a3b8] dark:text-[#6e727e] tabular-nums shrink-0">{p.badge}</Text>
-        </If>
       </If>
     </>
   );

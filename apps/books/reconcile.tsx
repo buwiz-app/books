@@ -657,6 +657,9 @@ function MatchView() {
         ticket: e.ticket,
         line: line === null || line === undefined ? null : Number(line),
         matched: Boolean(e.matched ?? line !== null),
+        // a link a person made or the month kept; a match Books only sees
+        // from the date and amount has nothing stored to clear
+        stored: Boolean(e.stored ?? e.matched ?? line !== null),
         confidence: e.match_confidence,
         date_short: String(e.date_short ?? e.date ?? ""),
         year: String(e.date ?? d()?.month?.key ?? "").slice(0, 4),
@@ -682,8 +685,9 @@ function MatchView() {
       if (recType() === "in" && !e.credit) return false;
       if (recType() === "out" && e.credit) return false;
       const c = centsOf(e.amount);
-      if (recAmtMin() && c < centsOf(recAmtMin())) return false;
-      if (recAmtMax() && c > centsOf(recAmtMax())) return false;
+      const mag = c < 0n ? -c : c; // a withdrawal's size, as in the statement list
+      if (recAmtMin() && mag < centsOf(recAmtMin())) return false;
+      if (recAmtMax() && mag > centsOf(recAmtMax())) return false;
       const p = recParty().trim().toLowerCase();
       if (p && ![e.name, e.party, e.desc].some((t) => String(t || "").toLowerCase().includes(p))) return false;
       if (q() && ![e.name, e.desc, e.num].some((t) => String(t || "").toLowerCase().includes(q()))) return false;
@@ -691,26 +695,55 @@ function MatchView() {
     });
   const filtActive = () => recStat() !== "all" || recType() !== "all" || Boolean(recAmtMin() || recAmtMax() || recParty() || q());
   // queue-based edits: the bar applies them through the statement tools
-  const queueOp = (op: Any) => recOps.set([...recOps(), op]);
+  // A queued edit names its line by row number, and a statement imported
+  // again renumbers its lines. So an edit also keeps what the row was when
+  // it was queued, and Apply drops one whose row is no longer that line.
+  const rowMark = (r: Any) => [r?.ticket, r?.date_short, r?.amount_shown, r?.description].map((x) => String(x ?? "")).join("\u001f");
+  const rowAt = (no: Any) => rowsAll().find((x: Any) => Number(x.no) === Number(no));
+  const queueOp = (op: Any) => {
+    const row = rowAt(op.line);
+    if (!row) return;
+    if (recOps().some((o: Any) => o.kind === op.kind && Number(o.line) === Number(op.line) && o.entry === op.entry)) return;
+    recOps.set([...recOps(), { ...op, mark: rowMark(row) }]);
+  };
   const applyOps = async () => {
     const ops = recOps();
-    if (!ops.length || recApplying()) return;
+    if (!ops.length || recApplying() || !s()) return;
     recApplying.set(true);
-    let failed = 0;
-    for (const op of ops) {
+    // checked against the lines on screen now, before any write reloads them
+    const live = ops.filter((op: Any) => rowMark(rowAt(op.line)) === op.mark);
+    const stale = ops.length - live.length;
+    const failed: Any[] = [];
+    let linked: Any = null;
+    for (const op of live) {
       const args: Any = { action: op.kind, line: op.line };
       if (op.kind === "link") args.entry = op.entry;
-      if ((await call("books_app_statement_action", args)) === null) failed++;
+      const r: Any = await call("books_app_statement_action", args);
+      // refused, or an unmatch that found no stored match to clear
+      if (r === null || (op.kind === "unmatch" && r?.unmatched === false)) failed.push(op);
+      else if (op.kind === "link" && !linked) linked = op;
     }
     recApplying.set(false);
-    recOps.set(failed ? ops.slice(ops.length - failed) : []);
-    if (failed) toast(`${failed} change${failed === 1 ? "" : "s"} could not be applied`);
-    const linked = ops.find((op: Any) => op.kind === "link");
-    if (linked && !failed) {
+    // the edits that did not go through stay queued, in the order they were made
+    recOps.set(failed);
+    if (stale) toast(`${stale} change${stale === 1 ? " was" : "s were"} dropped: the statement's lines changed since.`);
+    else if (failed.length) toast(`${failed.length} change${failed.length === 1 ? "" : "s"} could not be applied`);
+    if (linked) {
       recMatchedFlash.set(Number(linked.line));
       setTimeout(() => recMatchedFlash.set(null), 1300);
     }
     ver.set(ver() + 1);
+  };
+  // importing replaces the statement's lines: not under edits waiting on them
+  const importHere = () => (recOps().length ? toast("Apply or cancel the pending changes first.") : importStatement(recAccount()));
+  const recRemoveAsk = signal(false);
+  const removeStatement = async () => {
+    recRemoveAsk.set(false);
+    if ((await call("books_app_statement_action", { action: "remove" })) !== null) {
+      recOps.set([]);
+      reconTarget.set("");
+      selectedLine.set(null);
+    }
   };
   const reconEntry = () => ledgerAll().find((e: Any) => e.id === reconTarget());
   // a statement-line pick during Reconcile mode queues the link instead
@@ -814,7 +847,7 @@ function MatchView() {
           </View>
         </If>
         <If when={s()?.status !== "finished"}>
-          <View class={`${hdrBtnCls} bg-gray-100 dark:bg-white/5`} hoverStyle={HS3} activeStyle={AS} onPress={() => importStatement(recAccount())}>
+          <View class={`${hdrBtnCls} bg-gray-100 dark:bg-white/5`} hoverStyle={HS3} activeStyle={AS} onPress={() => importHere()}>
             <Text class={`${RT12M}`}>Import statement</Text>
           </View>
         </If>
@@ -831,6 +864,16 @@ function MatchView() {
         </If>
       </View>
       <Loading res={data} />
+      <If when={recRemoveAsk()}>
+        <Panel pad>
+          <Text class={`${RT13S}`}>Remove this statement?</Text>
+          <Text class={`${RT125M}`}>Its lines, matches, notes and activity log are deleted and cannot be brought back. The uploaded document stays in Books documents.</Text>
+          <View class="flex-row justify-end gap-2">
+            <Btn label="Cancel" onPress={() => recRemoveAsk.set(false)} />
+            <Btn label="Remove statement" tone="vi" onPress={() => removeStatement()} />
+          </View>
+        </Panel>
+      </If>
       <If when={Boolean(d()?.draft)}>
         <DraftBanner account={recAccount()} month={recMonth()} draft={d()?.draft} />
       </If>
@@ -895,20 +938,18 @@ function MatchView() {
                     const r = rowsAll().find((x: Any) => Number(x.no) === no);
                     if (r) pickStmt(r);
                   }}
-                  onQuickMatch={(no: number, ledgerId: string) => queueOp({ kind: "link", line: no, entry: ledgerId })}
-                  matchFor={(row: Any) => {
-                    const e = ledgerAll().find((x: Any) => x.line === Number(row?.no));
-                    return e ? { id: e.id, label: e.name } : null;
-                  }}
+                  onQuickMatch={(no: number) => call("books_app_statement_action", { action: "accept", line: no })}
+                  matchFor={(row: Any) =>
+                    // the line's own suggestion: the entry Link Transaction accepts
+                    row?.match === "s" && row?.books?.ticket ? { id: String(row.books.ticket), label: String(row.books.title || "Suggested match") } : null
+                  }
                   onCreateFromLine={(no: number) => {
                     const r = rowsAll().find((x: Any) => Number(x.no) === no);
                     if (r?.ticket) call("books_app_statement_action", { action: "add_line", line: r.ticket });
                   }}
                   matchingNo={recMatchedFlash()}
-                  onUpload={() => importStatement(recAccount())}
-                  onRemove={() => {
-                    call("books_app_statement_action", { action: "remove" });
-                  }}
+                  onUpload={() => importHere()}
+                  onRemove={() => recRemoveAsk.set(true)}
                 />
               </View>
             </If>
@@ -941,7 +982,7 @@ function MatchView() {
                     class="w-8 h-6 rounded-sm items-center justify-center"
                     hoverStyle={HS2}
                     activeStyle={AS}
-                    onPress={() => importStatement(recAccount())}
+                    onPress={() => importHere()}
                   >
                     <Text class={`text-[14px] font-bold ${C.dim}`}>+</Text>
                   </View>

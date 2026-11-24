@@ -147,12 +147,14 @@ function RecRow(p: Any) {
         </Text>
       </View>
       <View class={`w-[40px] ${R_ICN}`}>
-        <If when={m() === "m" && !p.editMode}>
+        {/* Unmatch clears a stored match. One Books only sees from the date
+            and amount has none, so it keeps its tick in Edit mode too. */}
+        <If when={m() === "m" && (!p.editMode || p.r.stored === false)}>
           <View class={rowPill("bg-emerald-500/15")}>
             <Text class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">✓</Text>
           </View>
         </If>
-        <If when={m() === "m" && p.editMode && !p.finalized}>{unmatchBtn(p.onUnmatch)}</If>
+        <If when={m() === "m" && p.editMode && !p.finalized && p.r.stored !== false}>{unmatchBtn(p.onUnmatch)}</If>
         <If when={m() === "s" && !p.editMode}>
           <View class={rowPill("bg-amber-500/10")}>
             <Text class={`text-[11px] font-bold ${C.amber}`}>≈</Text>

@@ -567,6 +567,25 @@ pub fn document(store: &Store, book: Book, args: &Map<String, Value>) -> Result<
                 ));
             }
             body.push_str("</div>");
+            // a line the read placed on this page without a box has no
+            // overlay to light: it is listed under the picture instead
+            let unboxed: Vec<&StatementLine> = on_page
+                .iter()
+                .filter(|(_, b)| b.is_none())
+                .map(|(l, _)| *l)
+                .collect();
+            if !unboxed.is_empty() {
+                body.push_str("<p class=\"sub\">Also on this page:</p><ol>");
+                for l in unboxed {
+                    let hl = if lit(l) { " class=\"hl\"" } else { "" };
+                    body.push_str(&format!(
+                        "<li{hl}>{} · {}</li>",
+                        shown(l),
+                        escape(&l.line.description)
+                    ));
+                }
+                body.push_str("</ol>");
+            }
         }
         "application/pdf" => {
             body.push_str(&format!(

@@ -107,8 +107,12 @@ const ACCOUNTS = [
   { ticket: "tkt_sup1", number: "5010", name: "Supplies", label: "5010 Supplies", group: "Expense categories", type: "expense", kind: "expense" },
 ];
 const PEOPLE = [
-  { ticket: "tkt_ven1", name: "Vera Vendor" },
-  { ticket: "tkt_cus1", name: "Cory Customer" },
+  { ticket: "tkt_ven1", name: "Vera Vendor", kind: "vendors" },
+  { ticket: "tkt_cus1", name: "Cory Customer", kind: "customers" },
+];
+const TAGS = [
+  { ticket: "tkt_tag1", name: "North", kind: "department" },
+  { ticket: "tkt_tag2", name: "Riverside", kind: "location" },
 ];
 const OPTIONS = {
   book: { ticket: "tkt_book1", name: "Test book", accent: "green", basis: "cash" },
@@ -125,12 +129,18 @@ const hay = (r) =>
     .join(" ");
 const byTicket = (t) => [...ROWS, ...DEEP_ROWS].find((r) => r.ticket === t);
 
+// The tool's contract: `search` and every one of `terms` must match; a page
+// of `rows`, `total`, `next_cursor`; a group names its rows by their place
+// in `rows`. `LEDGER_PAGE` stands in for the tool's 200 so a test can page.
+let LEDGER_PAGE = 200;
 function ledger(args = {}) {
-  const q = String(args.search || "").trim().toLowerCase();
-  let rows = q ? [...ROWS, ...DEEP_ROWS] : [...ROWS];
+  const terms = [args.search, ...(args.terms || [])].map((t) => String(t || "").trim().toLowerCase()).filter(Boolean);
+  let rows = terms.length || LEDGER_PAGE < 200 ? [...ROWS, ...DEEP_ROWS] : [...ROWS];
   if (args.filter === "draft") rows = rows.filter((r) => r.status === "draft" && !r.needs_review);
   if (args.filter === "review") rows = rows.filter((r) => r.needs_review);
-  if (q) rows = rows.filter((r) => hay(r).includes(q));
+  rows = rows.filter((r) => terms.every((t) => hay(r).includes(t)));
+  const at = Number(args.cursor || 0);
+  const page = rows.slice(at, at + LEDGER_PAGE);
   return {
     book: { ticket: "tkt_book1" },
     month: {
@@ -143,12 +153,14 @@ function ledger(args = {}) {
     filter: args.filter || "all",
     counts: { all: rows.length, review: 1, draft: 1, posted: 2, checks: 0 },
     running_balance: false,
-    rows: rows.slice(0, 200),
+    total: rows.length,
+    next_cursor: at + page.length < rows.length ? String(at + page.length) : null,
+    rows: page,
     groups: rows.length
       ? [{
           ticket: "tkt_cash1", number: "1010", name: "Cash on hand", type: "asset",
           count: rows.length, debit_shown: "440.00", credit_shown: "2,700.00", balance_shown: "−2,260.00",
-          rows: rows.slice(0, 200),
+          rows: page.map((_, i) => ({ row: i, debit_shown: "", credit_shown: "", balance_shown: null })),
         }]
       : [],
   };
@@ -182,9 +194,11 @@ function makeBridge(props, calls) {
         case "books_entry_options":
           return Promise.resolve(OPTIONS);
         case "books_people_list":
-          return Promise.resolve({ rows: PEOPLE });
+          // one kind a call, vendors when none is named (records::people_list)
+          return Promise.resolve({ rows: PEOPLE.filter((x) => x.kind === (args.kind || "vendors")) });
         case "books_tags_list":
-          return Promise.resolve({ rows: [] });
+          // one kind a call, `kind` beside `rows` (records::tags_list)
+          return Promise.resolve({ kind: args.kind || "department", rows: TAGS.filter((x) => x.kind === (args.kind || "department")).map((x) => ({ ticket: x.ticket, name: x.name })) });
         case "books_entry_draft":
           return Promise.resolve({ entry: args.entry || "tkt_new1", no: "0009", status: "draft" });
         case "books_app_post_entry":
@@ -197,6 +211,9 @@ function makeBridge(props, calls) {
           return Promise.resolve(ENTRY);
         case "books_app_void_entry": {
           const r = byTicket(args.entry);
+          if (r && r.locked) {
+            return Promise.reject({ code: "statement_finished", message: "This entry is matched to the bank in a finished month." });
+          }
           if (!r || r.status !== "posted" || r.form === "reversal") {
             return Promise.reject({ code: "wrong_status", message: "It cannot be voided." });
           }
@@ -301,8 +318,9 @@ test("type chip filters the list", async () => {
   await s.until(() => s.hasText("Supplies"), "rows");
   s.press("Filters");
   s.press("Pay In");
-  ok(!s.hasText("Bob"), "money-out row still shown after picking Pay In");
-  ok(s.hasText("Cory"), "money-in row missing after picking Pay In");
+  // the row's own text: the Party picker lists the payees too
+  ok(!s.hasText("Supplies · Bob"), "money-out row still shown after picking Pay In");
+  ok(s.hasText("Deposit · Cory"), "money-in row missing after picking Pay In");
   s.unmount();
 });
 
@@ -399,6 +417,129 @@ test("inbox search keeps a row the ledger matched by date", async () => {
   typePrefix(s, "Search inbox", "2026-10-09");
   await s.until(() => s.hasText("Old draft · Eli"), "a date search to keep the matched row");
   s.unmount();
+});
+
+test("import journal entries opens the import page", async () => {
+  const s = await fresh({ page: "transactions" });
+  await s.until(() => s.hasText("Supplies"), "rows");
+  pressA11y(s, "More add options");
+  s.press("Import Journal Entries…");
+  await s.until(() => !s.hasText("Ledger"), "the ledger to give way");
+  ok(s.nodes().some((n) => n.host === "Text"), "Import Journal Entries opened a blank page");
+  s.unmount();
+});
+
+test("search terms all go to the tool, whatever order they were typed in", async () => {
+  for (const order of [["posted", "Dana"], ["Dana", "posted"]]) {
+    const s = await fresh({ page: "transactions" });
+    await s.until(() => s.hasText("Supplies"), "rows");
+    for (const term of order) {
+      typePrefix(s, "Search ", term);
+      inputByPrefix(s, "Search ").props.onSubmit();
+    }
+    await s.until(() => s.hasText("Rent · Dana") && !s.hasText("Supplies · Bob"), `the ${order.join(" + ")} search`);
+    const last = calls.filter((c) => c.tool === "books_ledger_list").pop();
+    ok([...last.args.terms].sort().join() === "Dana,posted", `terms sent: ${JSON.stringify(last.args.terms)}`);
+    s.unmount();
+  }
+});
+
+test("matched, source and tag filters read the tool's own row fields", async () => {
+  const supplies = ROWS.find((r) => r.title.startsWith("Supplies"));
+  Object.assign(supplies, { matched: true, source: "bank", departments: ["North"], locations: ["Riverside"] });
+  try {
+    const s = await fresh({ page: "transactions" });
+    await s.until(() => s.hasText("Supplies · Bob"), "rows");
+    s.press("Filters");
+    for (const [section, option] of [["Matched Status", "Matched"], ["Source", "Bank"], ["Department", "North"], ["Location", "Riverside"]]) {
+      s.press(section);
+      await s.until(() => s.hasText(option), `the ${section} options`);
+      s.press(option);
+      await s.until(() => !s.hasText("Deposit · Cory"), `${option} to narrow the list`);
+      ok(s.hasText("Supplies · Bob"), `${option} dropped the row that has it`);
+      s.press("Clear all");
+      await s.until(() => s.hasText("Deposit · Cory"), "the filters to clear");
+    }
+    s.unmount();
+  } finally {
+    for (const k of ["matched", "source", "departments", "locations"]) delete supplies[k];
+  }
+});
+
+test("the party picker lists every kind, and its search box hides no checked party", async () => {
+  const s = await fresh({ page: "transactions" });
+  await s.until(() => s.hasText("Supplies · Bob"), "rows");
+  s.press("Filters");
+  await s.until(() => s.hasText("Cory Customer") && s.hasText("Vera Vendor"), "vendors and customers in the picker");
+  s.press("Bob"); // a payee on a row, not in People
+  await s.until(() => !s.hasText("Deposit · Cory"), "the party filter to apply");
+  typePrefix(s, "Search parties", "Cory");
+  ok(s.hasText("Supplies · Bob"), "typing in the picker's search hid a checked party's rows");
+  s.unmount();
+});
+
+test("a refused void keeps the rest of the selection", async () => {
+  const cory = ROWS.find((r) => r.title.startsWith("Deposit"));
+  cory.locked = true;
+  try {
+    const s = await fresh({ page: "transactions" });
+    await s.until(() => s.hasText("Supplies"), "rows");
+    s.press("Edit");
+    s.pressContaining("Deposit", 0); // refused: matched in a finished month
+    s.pressContaining("Supplies", 0);
+    await s.until(() => s.hasText("2 selected"), "two rows selected");
+    s.press("Void 2 posted");
+    s.press("Void");
+    await s.until(() => !s.hasText("Void transactions"), "the confirm to close");
+    const voids = calls.filter((c) => c.tool === "books_app_void_entry").map((c) => c.args.entry);
+    ok(voids.length >= 1, "no void was sent");
+    const sent = new Set(voids);
+    const refusedFirst = voids[0] === cory.ticket;
+    // whatever was not voided is still picked
+    ok(s.hasText(refusedFirst ? "2 selected" : "1 selected"), `selection after a refused void (sent ${[...sent].join()})`);
+    s.unmount();
+  } finally {
+    delete cory.locked;
+  }
+});
+
+test("discard refuses more drafts than one batch takes, before asking", async () => {
+  const extra = Array.from({ length: 51 }, (_, i) => ({
+    ticket: `tkt_bulk${i}`, no: String(100 + i), date: "2026-10-05", date_short: "Oct 5",
+    status: "draft", pill: "in", status_label: "Draft", form: "money_out",
+    category: "Supplies", category_color: "#2f6fd6", amount: "1.00", amount_shown: "−1.00",
+    tone: "neg", title: `Bulk draft ${i}`, sub: "", payee: "", checks: [],
+  }));
+  ROWS.push(...extra);
+  try {
+    const s = await fresh({ page: "transactions" });
+    await s.until(() => s.hasText("Bulk draft 0"), "rows");
+    s.press("Edit");
+    s.nodes().find((n) => typeof n.props.onPress === "function" && n.props.class && String(n.props.class).includes("md:w-auto")).props.onPress();
+    await s.until(() => s.hasText("Discard 52 drafts"), "the group to be selected");
+    s.press("Discard 52 drafts");
+    ok(!s.hasText("Discard drafts"), "the confirm opened for more than a batch takes");
+    ok(!calls.some((c) => c.tool === "books_app_batch"), "an over-limit batch was sent");
+    s.unmount();
+  } finally {
+    ROWS.splice(ROWS.length - extra.length, extra.length);
+  }
+});
+
+test("load more pages the grouped ledger", async () => {
+  LEDGER_PAGE = 4;
+  try {
+    const s = await fresh({ page: "transactions" });
+    await s.until(() => s.hasText("Supplies"), "rows");
+    ok(!s.hasText("Dana"), "a later page's row shown before Load more");
+    ok(s.hasText("Loaded 4 of 6"), "missing the loaded count");
+    s.press("Load more");
+    await s.until(() => s.hasText("Dana") && s.hasText("Loaded 6 of 6"), "the next page in the group");
+    ok(!s.hasText("Load more"), "Load more offered past the last page");
+    s.unmount();
+  } finally {
+    LEDGER_PAGE = 200;
+  }
 });
 
 test("submit saves as draft with no dropdown and starts the next draft fresh", async () => {

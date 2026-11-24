@@ -840,3 +840,67 @@ fn a_pdf_that_cannot_be_drawn_is_still_kept_and_has_no_picture() {
         0
     );
 }
+
+#[test]
+fn a_drawn_pdf_page_lists_the_lines_it_has_no_box_for() {
+    let (_dir, mut b) = setup("sp-pdf-unboxed");
+    let file = pdf(&["Synthetic page one", "Synthetic page two"]);
+    let doc = document(&mut b, 1, &file, "application/pdf");
+    // page 2 has one line with a box and one the read placed without one
+    let draft = call(
+        &mut b,
+        "books_statement_draft_lines",
+        Origin::App,
+        json!({
+            "client_request_id": "sp-unboxed-draft", "account": "11010", "month": "2026-09", "closing": "14250.25",
+            "evidence": doc,
+            "lines": [
+                { "date": "2026-09-03", "description": "Coffee shop", "amount": "-1250.50", "page": 2, "bbox": [10, 100, 990, 140] },
+                { "date": "2026-09-20", "description": "Client deposit", "amount": "15500.75", "page": 2 },
+            ],
+        }),
+    );
+    assert_eq!(draft["isError"], false, "{draft}");
+    let out = call(
+        &mut b,
+        "books_app_statement_accept",
+        Origin::App,
+        json!({ "client_request_id": "sp-unboxed-accept", "account": "11010", "month": "2026-09", "draft": draft["structuredContent"]["draft"] }),
+    );
+    assert_eq!(out["isError"], false, "{out}");
+    let st = statement(&mut b, Origin::App);
+    let deposit = st["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["box"].is_null())
+        .expect("the line without a box")
+        .clone();
+    assert_eq!(deposit["page"], 2);
+    let page = |b: &mut Books, line: &Value| {
+        let out = call(
+            b,
+            "books_app_reconcile_document",
+            Origin::App,
+            json!({ "account": "11010", "month": "2026-09", "kind": "page", "page": 2, "line": line }),
+        );
+        assert_eq!(out["isError"], false, "{out}");
+        out["content"][0]["resource"]["text"]
+            .as_str()
+            .unwrap()
+            .to_string()
+    };
+    // the picked line has no overlay to light, so it is listed and lit there
+    let text = page(&mut b, &deposit["no"]);
+    assert!(text.contains("<img"), "the drawn page");
+    assert!(text.contains("class=\"box\""), "the boxed line's overlay");
+    let listed = text
+        .split("<li")
+        .find(|li| li.contains("Client deposit"))
+        .expect("the unboxed line is listed");
+    assert!(listed.starts_with(" class=\"hl\""), "{listed}");
+    assert!(
+        !text.contains("Coffee shop</li>"),
+        "a boxed line is not listed twice"
+    );
+}

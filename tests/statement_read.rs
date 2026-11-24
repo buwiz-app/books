@@ -490,6 +490,28 @@ fn h_document_upload_and_pending_accept_keep_boxes_and_areas() {
             .is_some_and(|p| !p.is_empty()),
         "a statement page picture to draw under the boxes: {st}"
     );
+    // an area's label is the page's own words: the accepted statement keeps
+    // them from the assistant, as the pending read did
+    assert!(
+        get(&mut b, Origin::Agent)["statement"]
+            .get("areas")
+            .is_none()
+    );
+    // a CSV for the same month replaces the document: its boxed areas go
+    // with its pages
+    ok(
+        &mut b,
+        Origin::App,
+        "books_app_statement_import",
+        json!({ "client_request_id": "r1-doc-csv", "account": BANK, "closing": "100.00",
+                "csv_text": format!("Date,Description,Debit,Credit,Balance\n{MONTH}-05,SERVICE CHARGE,150.00,,\n") }),
+    );
+    assert_eq!(count(&mut b, "SELECT count(*) FROM statement_area"), 0);
+    let after = get(&mut b, Origin::App);
+    assert_eq!(
+        after["statement"]["areas"].as_array().map(Vec::len),
+        Some(0)
+    );
 }
 
 #[test]

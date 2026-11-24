@@ -497,6 +497,10 @@ pub fn view_extra(
             row["low"] = json!(low(e.confidence));
         }
     }
-    st["areas"] = areas_json(&drafts::areas(c, s.id)?);
+    // an area's label is the page's own words (a holder's name, a branch):
+    // to the app only, as a pending read's areas are
+    if origin == Origin::App {
+        st["areas"] = areas_json(&drafts::areas(c, s.id)?);
+    }
     Ok(())
 }

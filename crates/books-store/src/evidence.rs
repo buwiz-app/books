@@ -161,6 +161,16 @@ pub fn linked_count(conn: &Connection, id: i64) -> Result<i64> {
     )?)
 }
 
+/// The entries of a book with a document linked to them.
+pub fn linked_entries(conn: &Connection, book_id: i64) -> Result<std::collections::HashSet<i64>> {
+    let mut stmt = conn.prepare(
+        "SELECT DISTINCT k.entry_id FROM evidence_link k JOIN evidence e ON e.id = k.evidence_id
+         WHERE e.book_id = ?1 AND k.entry_id IS NOT NULL",
+    )?;
+    let rows = stmt.query_map([book_id], |r| r.get::<_, i64>(0))?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
+
 /// Keep a document's pages as pictures (PNG), in place of any kept before.
 pub fn keep_pages(conn: &Connection, evidence: i64, pages: &[(i64, Vec<u8>)]) -> Result<()> {
     conn.execute(

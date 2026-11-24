@@ -227,6 +227,9 @@ pub fn statement_view(
             "date_short": l.line.date.short(),
             "amount_shown": signed(l.line.amount),
             "match": kind,
+            // a match a person made or the month kept, not one Books sees
+            // from the date and amount alone: only that one can be unmatched
+            "stored": l.matched_entry_id.is_some(),
             "books": books_side,
         });
         if origin == crate::service::Origin::App {
@@ -281,9 +284,26 @@ pub fn statement_view(
     // the ledger list beside the lines: every posted or voided entry that
     // moved the account in the statement's month, with its match back
     let conn = store.conn();
+    // an entry Books matches by date and amount alone has no stored link
+    // yet: it is matched here as it is in the lines above
+    let seen: std::collections::HashMap<i64, (i64, usize)> = lines
+        .iter()
+        .zip(&found)
+        .enumerate()
+        .filter_map(|(i, (l, m))| match m {
+            Match::Exact(e) => Some((*e, (l.id, i + 1))),
+            _ => None,
+        })
+        .collect();
     let mut ledger_rows = Vec::new();
     for le in months::ledger_entries(conn, book.id, account.id, s.id, &month)? {
-        let linked = match le.matched_line_id {
+        let stored = le.matched_line_id.is_some();
+        let computed = seen.get(&le.entry_id).filter(|_| !stored);
+        let line_id = le.matched_line_id.or(computed.map(|c| c.0));
+        let line_no = le
+            .matched_line_no
+            .or(computed.and_then(|c| i64::try_from(c.1).ok()));
+        let linked = match line_id {
             Some(id) => json!(ticket(store, "sline", id)?),
             None => Value::Null,
         };
@@ -305,10 +325,11 @@ pub fn statement_view(
             "amount_shown": signed(le.moved),
             "debit_shown": if le.debit > 0 { money::display(le.debit) } else { String::new() },
             "credit_shown": if le.credit > 0 { money::display(le.credit) } else { String::new() },
-            "matched": le.matched_line_id.is_some(),
+            "matched": line_id.is_some(),
+            "stored": stored,
             "linked_line_ticket": linked,
-            "linked_line_no": le.matched_line_no,
-            "match_kind": le.match_kind,
+            "linked_line_no": line_no,
+            "match_kind": le.match_kind.or(computed.map(|_| "exact".to_string())),
             "match_confidence": le.match_confidence,
             "flags": [],
         });
@@ -329,19 +350,24 @@ pub fn statement_view(
         ledger_rows.push(row);
     }
     out["statement"]["ledger_entries"] = json!(ledger_rows);
-    // the Activity Log: the feed rows, with the finish/reopen events an
-    // older store kept separately, in time order
-    let mut feed: Vec<Value> = months::activities(conn, s.id)?
+    // the Activity Log: the feed rows, each its own event, in time order.
+    // A finish or reopen writes the feed and `statement_event` both; one
+    // from before the feed is in `statement_event` alone. So of each kind
+    // the oldest events the feed does not account for join it, no others.
+    let acts = months::activities(conn, s.id)?;
+    let mut feed: Vec<Value> = acts
         .iter()
         .map(|a| json!({ "event": a.event, "detail": a.detail, "at": a.at }))
         .collect();
-    feed.extend(
-        books_store::statement_lock::events(conn, s.id)?
-            .iter()
-            .map(|(event, at)| json!({ "event": event, "detail": Value::Null, "at": at })),
-    );
+    let kept = books_store::statement_lock::events(conn, s.id)?;
+    for kind in ["finish", "reopen"] {
+        let in_feed = acts.iter().filter(|a| a.event == kind).count();
+        let of_kind: Vec<&(String, String)> = kept.iter().filter(|(e, _)| e == kind).collect();
+        for (event, at) in of_kind.iter().take(of_kind.len().saturating_sub(in_feed)) {
+            feed.push(json!({ "event": event, "detail": Value::Null, "at": at }));
+        }
+    }
     feed.sort_by(|a, b| a["at"].as_str().cmp(&b["at"].as_str()));
-    feed.dedup();
     out["statement"]["activity"] = json!(feed);
     if origin == crate::service::Origin::App {
         let mut notes = Vec::new();
@@ -606,7 +632,12 @@ pub fn statement_link(conn: &Connection, args: &Map<String, Value>) -> Answer {
             "There is no statement for that account and month.",
         )
     })?;
-    let no = lines.iter().position(|l| l.id == line).unwrap_or(0) + 1;
+    // a ticket for a line of another statement names no row here
+    let no = lines
+        .iter()
+        .position(|l| l.id == line)
+        .ok_or_else(|| Refusal::new("not_found", "That line is not on this statement."))?
+        + 1;
     let entry = writes::entry_in(conn, &book, service::required(args, "entry")?)?.id;
     let chosen = books_store::match_history::accept_line(
         conn,

@@ -279,15 +279,31 @@ function SnapshotPane(p: {
   const popRow = () => (p.rows || []).find((r: Any) => r.no === popNo());
   const popLeft = (r: Any) => `${(snapMil(r?.box?.left) + snapMil(r?.box?.width)) / 10}%`;
   const popTop = (r: Any) => `${snapMil(r?.box?.top) / 10}%`;
+  // The popover sits beside its box, so the pointer leaves the box on its way
+  // there: it closes a moment after, unless the pointer has reached it.
+  let popTimer: Any = null;
+  const popKeep = () => {
+    if (popTimer) clearTimeout(popTimer);
+    popTimer = null;
+  };
+  const popCloseSoon = () => {
+    popKeep();
+    popTimer = setTimeout(() => {
+      popTimer = null;
+      popNo.set(null);
+    }, 250);
+  };
   const hoverBox = (no: number | null) => {
     p.onHover(no);
     if (no === null) {
-      popNo.set(null);
+      popCloseSoon();
       return;
     }
+    popKeep();
     const r = (p.rows || []).find((x: Any) => x.no === no);
-    if (r?.match === "x" && !p.reconcileMode && (p.onQuickMatch || p.onCreateFromLine)) popNo.set(no);
-    else popNo.set(null);
+    // a missing line offers Create Transaction, a suggested one its Link
+    const offers = !p.reconcileMode && ((r?.match === "x" && Boolean(p.onCreateFromLine)) || (r?.match === "s" && Boolean(p.onQuickMatch) && Boolean(p.matchFor?.(r))));
+    popNo.set(offers ? no : null);
   };
   const boxCls = (r: Any) => {
     const match = String(r().match || "x");
@@ -442,11 +458,8 @@ function SnapshotPane(p: {
                 <View
                   class="absolute z-20 ml-2 w-[210px] rounded-lg border shadow-xl p-3 gap-2 bg-white dark:bg-[#141519]"
                   style={{ left: popLeft(popRow()), top: popTop(popRow()), borderColor: p.matchFor?.(popRow()) ? "#67e8f966" : "#fcd34d66" }}
-                  onMouseEnter={() => popNo.set(popNo())}
-                  onMouseLeave={() => {
-                    popNo.set(null);
-                    hoverBox(null);
-                  }}
+                  onMouseEnter={() => popKeep()}
+                  onMouseLeave={() => hoverBox(null)}
                 >
                   <View class="flex-row items-center gap-1.5">
                     <View class={`w-5 h-5 rounded-full items-center justify-center ${p.matchFor?.(popRow()) ? "bg-cyan-500/15" : "bg-amber-500/15"}`}>

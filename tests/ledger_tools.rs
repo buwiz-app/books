@@ -1517,3 +1517,205 @@ fn nested_coa_subtrees_roll_up_with_double_entry_polarity_and_period_filter() {
     assert_eq!(parent_all["balance"], "200.00");
     assert_eq!(parent_all["subtree_balance"], "625.00");
 }
+
+/// What the host counts against its 1 MiB result limit: every text content
+/// plus the structuredContent JSON.
+fn host_bytes(result: &Value) -> usize {
+    let text: usize = result["content"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|c| c["text"].as_str())
+        .map(str::len)
+        .sum();
+    text + result["structuredContent"].to_string().len()
+}
+
+#[test]
+fn ledger_list_pages_and_its_group_figures_cover_every_entry_but_no_draft() {
+    // A busy month of split entries: more than one page of four-account
+    // journals with long memos. Each entry is sent once, the answer fits the
+    // host's limit, a cursor reaches the rest, and a group's figures cover
+    // every matching entry but count no money for a draft.
+    const N: usize = 205;
+    let dir = TempDir::new("ledger-paging");
+    let mut bot = Bot::new(&dir);
+    data(&bot.app(
+        "books_app_book_create",
+        json!({ "client_request_id": "book-paging-01", "label": "Paging Shop" }),
+    ));
+    let chart = app_data(&mut bot, "books_accounts_list", json!({}));
+    let expenses: Vec<String> = chart["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|a| a["tag"] == "ex" && a["off"] == false)
+        .take(3)
+        .map(|a| a["number"].as_str().unwrap().to_string())
+        .collect();
+    assert_eq!(expenses.len(), 3, "{chart}");
+    let memo = format!("MEMO-SYNTH-{}", "split entry ".repeat(16));
+    let journal = |crid: String| {
+        json!({
+            "client_request_id": crid, "form": "journal", "date": "2026-10-12", "memo": memo,
+            "lines": [
+                { "account": expenses[0], "debit": "1.00" },
+                { "account": expenses[1], "debit": "1.00" },
+                { "account": expenses[2], "debit": "1.00" },
+                { "account": "11000", "credit": "3.00" }
+            ]
+        })
+    };
+    for i in 0..N {
+        data(&bot.app(
+            "books_app_post_entry",
+            journal(format!("post-paging-{i:04}")),
+        ));
+    }
+    let first = bot.app("books_ledger_list", json!({ "month": "2026-10" }));
+    assert!(
+        host_bytes(&first) <= 1024 * 1024,
+        "the all-accounts ledger is {} bytes",
+        host_bytes(&first)
+    );
+    let first = data(&first).clone();
+    assert_eq!(first["total"], N);
+    assert_eq!(first["next_cursor"], "200");
+    let rows = first["rows"].as_array().unwrap();
+    assert_eq!(rows.len(), 200);
+    let bank = |list: &Value| {
+        list["groups"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|g| g["number"] == "11000")
+            .unwrap()
+            .clone()
+    };
+    // the figures cover all 205 entries, not this page's 200
+    let group = bank(&first);
+    assert_eq!(group["count"], N);
+    assert_eq!(group["credit_shown"], "615.00");
+    // a group names its rows by their place in `rows`: no row is sent twice
+    let refs = group["rows"].as_array().unwrap();
+    assert_eq!(refs.len(), 200);
+    assert!(
+        refs.iter().all(|r| r.get("ticket").is_none()),
+        "{}",
+        refs[0]
+    );
+    assert_eq!(refs[0]["row"], 0);
+    assert_eq!(refs[0]["credit_shown"], "3.00");
+    assert_eq!(refs[0]["debit_shown"], "");
+    assert_eq!(first["groups"].as_array().unwrap().len(), 4);
+
+    // the cursor reaches the rest, with the same figures
+    let second = app_data(
+        &mut bot,
+        "books_ledger_list",
+        json!({ "month": "2026-10", "cursor": "200" }),
+    );
+    assert_eq!(second["rows"].as_array().unwrap().len(), N - 200);
+    assert!(second["next_cursor"].is_null());
+    assert_eq!(bank(&second)["count"], N);
+    assert_eq!(bank(&second)["credit_shown"], "615.00");
+    assert_eq!(bank(&second)["rows"].as_array().unwrap().len(), N - 200);
+    assert_eq!(
+        code(&bot.app(
+            "books_ledger_list",
+            json!({ "month": "2026-10", "cursor": "soon" })
+        )),
+        "invalid_args"
+    );
+    // one account picked: the same paging
+    let one = app_data(
+        &mut bot,
+        "books_ledger_list",
+        json!({ "month": "2026-10", "account": "11000" }),
+    );
+    assert_eq!(one["total"], N);
+    assert_eq!(one["next_cursor"], "200");
+
+    // a draft is listed and counted, and moves no figure until it is posted
+    let draft = app_data(
+        &mut bot,
+        "books_entry_draft",
+        journal("draft-paging-0001".to_string()),
+    );
+    assert_eq!(draft["status"], "draft");
+    let with_draft = app_data(&mut bot, "books_ledger_list", json!({ "month": "2026-10" }));
+    assert_eq!(with_draft["total"], N + 1);
+    let group = bank(&with_draft);
+    assert_eq!(group["count"], N + 1);
+    assert_eq!(group["credit_shown"], "615.00");
+    assert_eq!(group["balance_shown"], "\u{2212}615.00");
+
+    // every term has to match, in any order
+    for terms in [json!(["draft", "journal"]), json!(["journal", "draft"])] {
+        let found = app_data(
+            &mut bot,
+            "books_ledger_list",
+            json!({ "month": "2026-10", "terms": terms }),
+        );
+        assert_eq!(found["total"], 1, "{terms}");
+        assert_eq!(found["rows"][0]["ticket"], draft["entry"]);
+    }
+}
+
+#[test]
+fn ledger_rows_carry_the_tags_on_their_lines() {
+    let dir = TempDir::new("ledger-row-tags");
+    let mut bot = Bot::new(&dir);
+    data(&bot.app(
+        "books_app_book_create",
+        json!({ "client_request_id": "book-rowtags-1", "label": "Tag Shop" }),
+    ));
+    let mut tag = |crid: &str, kind: &str, name: &str| {
+        app_data(
+            &mut bot,
+            "books_app_tag_create",
+            json!({ "client_request_id": crid, "kind": kind, "name": name }),
+        )["tag"]
+            .as_str()
+            .unwrap()
+            .to_string()
+    };
+    let store = tag("rowtags-dept-1", "department", "Synthetic Store");
+    let office = tag("rowtags-dept-2", "department", "Synthetic Office");
+    let cebu = tag("rowtags-loc-01", "location", "Synthetic Cebu");
+    // a split entry carries more than one department
+    let split = app_data(
+        &mut bot,
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "rowtags-post-1", "form": "money_out", "date": "2026-10-18",
+            "amount": "100.00", "account": "11000",
+            "allocations": [
+                { "category": "67200", "amount": "60.00", "department": store, "location": cebu },
+                { "category": "67200", "amount": "40.00", "department": office }
+            ]
+        }),
+    )["entry"]
+        .clone();
+    let plain = app_data(
+        &mut bot,
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "rowtags-post-2", "form": "money_out", "date": "2026-10-19",
+            "amount": "5.00", "account": "11000", "category": "67200"
+        }),
+    )["entry"]
+        .clone();
+    let list = app_data(&mut bot, "books_ledger_list", json!({ "month": "2026-10" }));
+    let rows = list["rows"].as_array().unwrap();
+    let row = |t: &Value| rows.iter().find(|r| &r["ticket"] == t).unwrap();
+    assert_eq!(
+        row(&split)["departments"],
+        json!(["Synthetic Store", "Synthetic Office"])
+    );
+    assert_eq!(row(&split)["locations"], json!(["Synthetic Cebu"]));
+    assert_eq!(row(&plain)["departments"], json!([]));
+    assert_eq!(row(&plain)["locations"], json!([]));
+    assert_eq!(row(&plain)["matched"], false);
+    assert_eq!(row(&plain)["source"], "manual");
+}

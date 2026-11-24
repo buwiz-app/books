@@ -230,6 +230,11 @@ pub fn import(
             "DELETE FROM statement_page WHERE statement_id = ?1",
             params![id],
         )?;
+        // the boxed areas belong to the replaced document's pages
+        conn.execute(
+            "DELETE FROM statement_area WHERE statement_id = ?1",
+            params![id],
+        )?;
         // the row stays so its finish/reopen history keeps pointing at it
         conn.execute(
             "UPDATE statement SET closing = ?2, source_name = ?3, imported_at = ?4, evidence_id = NULL WHERE statement_id = ?1",
@@ -389,6 +394,25 @@ pub fn matches(
     Ok(books_core::match_assist::rank(
         &plain, &kept, &cands, &payees, &hints,
     ))
+}
+
+/// The entries of a book a statement line is matched to by a stored match
+/// (accepted, added, or kept when the month was finished), each with
+/// whether the bank line itself added the entry.
+pub fn matched_entries(
+    conn: &Connection,
+    book_id: i64,
+) -> Result<std::collections::HashMap<i64, bool>> {
+    let mut stmt = conn.prepare(
+        "SELECT l.matched_entry_id, max(coalesce(l.match_kind, '') = 'added')
+         FROM statement_line l JOIN statement s ON s.statement_id = l.statement_id
+         WHERE s.book_id = ?1 AND l.matched_entry_id IS NOT NULL
+         GROUP BY l.matched_entry_id",
+    )?;
+    let rows = stmt.query_map(params![book_id], |r| {
+        Ok((r.get::<_, i64>(0)?, r.get::<_, bool>(1)?))
+    })?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
 }
 
 pub(crate) fn set_match(conn: &Connection, line_id: i64, entry_id: i64, kind: &str) -> Result<()> {
@@ -746,8 +770,10 @@ pub fn comment_add(
         "INSERT INTO statement_comment (statement_id, body, at) VALUES (?1, ?2, ?3)",
         params![s.id, body, now_iso()],
     )?;
+    // the comment's own id: the feed row below is an insert too
+    let id = conn.last_insert_rowid();
     log_activity(conn, s.id, "comment", None)?;
-    Ok(conn.last_insert_rowid())
+    Ok(id)
 }
 
 /// Unmatch a matched line, back to unsettled. True when a match was

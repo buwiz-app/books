@@ -29,55 +29,75 @@ const txTypes = signal<string[]>([]);
 const txStatuses = signal<string[]>([]);
 const txSources = signal<string[]>([]);
 const txMatched = signal<string>(""); // "" | "matched" | "unmatched"
-const txDeptText = signal("");
-const txLocText = signal("");
+const txDeptText = signal(""); // the Department picker's own search box
+const txLocText = signal(""); // the Location picker's own search box
 const txAmountMin = signal("");
 const txAmountMax = signal("");
-const txPartyText = signal("");
-// LedgerFilters multi-selects (names, the hay is text anyway)
+const txPartyText = signal(""); // the Party picker's own search box
+// LedgerFilters multi-selects, by name (a tag's name is unique in its kind)
 const txParties = signal<string[]>([]);
 const txDepts = signal<string[]>([]);
 const txLocs = signal<string[]>([]);
 const txSecOpen = signal<Record<string, boolean>>({ Party: true, Amount: true, "Transaction Type": true });
 
-// The server `search` arg: the text being typed, else the first query chip
-// (the rest of the chips AND client-side in txFiltered).
-const txServerSearch = () => txSearch().trim() || txQueryChips()[0] || "";
+// The server's `terms`: every committed chip plus the text being typed. The
+// tool matches each one before it pages, so chip order changes nothing.
+const TX_TERMS_MAX = 20; // the tool's own limit
+const txTerms = () => [...new Set([...txQueryChips(), txSearch().trim()].filter(Boolean))].slice(0, TX_TERMS_MAX);
+const txListArgs = () => ({
+  ...(txMonth() ? { month: txMonth() } : {}),
+  ...(txAccount() ? { account: txAccount() } : {}),
+  ...(txTerms().length ? { terms: txTerms() } : {}),
+  filter: txFilter(),
+});
 
 const txData = resource(
-  () => ({ v: ver(), m: txMonth(), a: txAccount(), f: txFilter(), s: txServerSearch(), q: txQueryChips().length }),
-  (k: Any) =>
-    buwiz.call("books_ledger_list", {
-      ...(k.m ? { month: k.m } : {}),
-      ...(k.a ? { account: k.a } : {}),
-      ...(k.s ? { search: k.s } : {}),
-      filter: k.f,
-    }),
+  () => ({ v: ver(), m: txMonth(), a: txAccount(), f: txFilter(), t: txTerms().join("\u001f") }),
+  () => buwiz.call("books_ledger_list", txListArgs()),
 );
 
-// Paging: the tool answers 200 rows + next_cursor; "Load more" appends pages.
+// Paging: the tool answers up to 200 rows, `total` and `next_cursor`; "Load
+// more" appends pages. A group names its rows by their place in the page's
+// `rows`, so each page's group rows are resolved when the page arrives.
 const txCursor = signal(""); // next_cursor of the last page fetched
 const txMoreRows = signal<Any[]>([]);
+const txMoreGroups = signal<Record<string, Any[]>>({}); // account ticket -> rows of later pages
 const txMoreFor = signal(""); // the page key the extra rows belong to
 const txLoadingMore = signal(false);
-const txPageKey = () => [ver(), txMonth(), txAccount(), txFilter(), txServerSearch(), txQueryChips().join("\u001f")].join("|");
+const txPageKey = () => [ver(), txMonth(), txAccount(), txFilter(), txTerms().join("\u001f")].join("|");
 const txRowsAll = () => (txMoreFor() === txPageKey() ? [...txRows(), ...txMoreRows()] : txRows());
 const txNextCursor = () => (txMoreFor() === txPageKey() ? txCursor() : String(txD()?.next_cursor || ""));
+const txTotal = () => Number(txD()?.total || 0);
+// A group's rows on one page: the page's row plus this account's own
+// debit, credit and balance after it.
+const txResolve = (g: Any, pageRows: Any[]): Any[] =>
+  (((g?.rows as Any[]) || []) as Any[])
+    .map((ref) => {
+      const row = pageRows[Number(ref?.row)];
+      return row ? { ...row, debit_shown: ref.debit_shown, credit_shown: ref.credit_shown, balance_shown: ref.balance_shown } : null;
+    })
+    .filter(Boolean);
 const txLoadMore = async () => {
   const cursor = txNextCursor();
   if (!cursor || txLoadingMore()) return;
+  const key = txPageKey();
   txLoadingMore.set(true);
   try {
-    const res: Any = await buwiz.call("books_ledger_list", {
-      ...(txMonth() ? { month: txMonth() } : {}),
-      ...(txAccount() ? { account: txAccount() } : {}),
-      filter: txFilter(),
-      ...(txServerSearch() ? { search: txServerSearch() } : {}),
-      cursor,
-    });
-    txMoreRows.set([...(txMoreFor() === txPageKey() ? txMoreRows() : []), ...(((res?.rows as Any[]) || []) as Any[])]);
+    const res: Any = await buwiz.call("books_ledger_list", { ...txListArgs(), cursor });
+    if (key !== txPageKey()) return; // the month, account or search moved on
+    const pageRows = ((res?.rows as Any[]) || []) as Any[];
+    const had = txMoreFor() === key;
+    const groups: Record<string, Any[]> = had ? { ...txMoreGroups() } : {};
+    for (const g of ((res?.groups as Any[]) || []) as Any[]) {
+      const add = txResolve(g, pageRows);
+      if (add.length) groups[String(g.ticket)] = [...(groups[String(g.ticket)] || []), ...add];
+    }
+    txMoreRows.set([...(had ? txMoreRows() : []), ...pageRows]);
+    txMoreGroups.set(groups);
     txCursor.set(String(res?.next_cursor || ""));
-    txMoreFor.set(txPageKey());
+    txMoreFor.set(key);
+  } catch (e: Any) {
+    toast(errText(e));
   } finally {
     txLoadingMore.set(false);
   }
@@ -86,21 +106,30 @@ const txAccounts = resource(
   () => ({ v: ver() }),
   () => buwiz.call("books_accounts_list", {}),
 );
+// The People tool lists one kind a call (vendors when none is named), and
+// the Tags tool one of department or location: ask for each.
+const TX_PARTY_KINDS = ["vendors", "customers", "employees", "owners", "lenders", "government"];
 const txPeople = resource(
   () => ({ v: ver() }),
-  () => buwiz.call("books_people_list", {}),
+  () => Promise.all(TX_PARTY_KINDS.map((kind) => buwiz.call("books_people_list", { kind }))),
 );
 const txTags = resource(
   () => ({ v: ver() }),
-  () => buwiz.call("books_tags_list", {}),
+  () =>
+    Promise.all([buwiz.call("books_tags_list", { kind: "department" }), buwiz.call("books_tags_list", { kind: "location" })]).then((all: Any[]) => ({
+      department: all[0],
+      location: all[1],
+    })),
 );
-const txPartyOpts = () => (((txPeople() as Any)?.rows || (txPeople() as Any)?.parties || []) as Any[]).map((r) => String(r.name || "")).filter(Boolean).sort();
-const txTagOpts = (kind: string) =>
-  (((txTags() as Any)?.rows || (txTags() as Any)?.tags || []) as Any[])
-    .filter((r) => !kind || String(r.kind || r.group || "") === kind)
-    .map((r) => String(r.name || ""))
-    .filter(Boolean)
-    .sort();
+const txNames = (rows: Any[]): string[] => [...new Set(rows.map((r) => String(r?.name || "").trim()).filter(Boolean))].sort((x, y) => x.localeCompare(y));
+// Every person kind, plus the payees on the rows in view (a payee typed on
+// an entry need not be in People).
+const txPartyOpts = () =>
+  txNames([
+    ...(((txPeople() as Any[]) || []) as Any[]).flatMap((res) => ((res?.rows as Any[]) || []) as Any[]),
+    ...txRowsAll().map((r) => ({ name: r.payee })),
+  ]);
+const txTagOpts = (kind: "department" | "location") => txNames((((txTags() as Any)?.[kind]?.rows as Any[]) || []) as Any[]);
 
 const txD = () => txData() as Any;
 const txRows = () => ((txD()?.rows as Any[]) || []) as Any[];
@@ -111,10 +140,12 @@ const txVisibleGroups = () => {
   return checked.length ? all.filter((g) => checked.includes(String(g.ticket))) : all;
 };
 
-// Grouped view: each group in the ledger payload already carries its rows
-// for the month (views::ledger embeds them), so the app draws the whole
-// grouped ledger from one call.
-const txGroupRows = (g: Any): Any[] => ((g?.rows as Any[]) || []) as Any[];
+// Grouped view: a group's rows on the first page, then on each page loaded
+// after it. Its header figures cover every matching entry, loaded or not.
+const txGroupRows = (g: Any): Any[] => [
+  ...txResolve(g, txRows()),
+  ...(txMoreFor() === txPageKey() ? txMoreGroups()[String(g?.ticket)] || [] : []),
+];
 
 
 // Kit ICONS has no search/x/funnel/grid yet (kit.tsx is agent B's); same svgIcon helper.
@@ -172,30 +203,22 @@ function cmpDec(a: string, b: string): number {
   return sa < 0 ? -cmp : cmp;
 }
 
-// The fields the tool's `matches()` haystack covers, for client chip terms.
-function txHay(r: Any): string {
-  return [r.payee, r.title, r.sub, r.category, r.no, r.date_short, r.date, r.amount_shown, r.amount]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-}
+const txLower = (list: Any): string[] => (Array.isArray(list) ? list : []).map((x: Any) => String(x || "").toLowerCase());
 
-// Rows after search + the client-side filters (type, status, amount, party) + extra query chips.
+// Rows after the client-side filters (type, status, source, matched, tags,
+// amount, party). The search terms are the tool's: it matches them before it
+// pages. A picker's search box only narrows that picker's own options.
 function txFiltered(rowsIn?: Any[]): Any[] {
   const types = txTypes();
   const statuses = txStatuses();
   const sources = txSources();
   const matched = txMatched();
-  const dept = txDeptText().trim().toLowerCase();
-  const loc = txLocText().trim().toLowerCase();
+  const depts = txLower(txDepts());
+  const locs = txLower(txLocs());
+  const parties = txLower(txParties());
   // Compare unsigned amounts on digits only ("+40.00" and "1,200" both read).
   const min = txAmountMin().replace(/[^0-9.]/g, "");
   const max = txAmountMax().replace(/[^0-9.]/g, "");
-  const party = txPartyText().trim().toLowerCase();
-  // Query chips still needing a client-side match: all of them while the input
-  // has text (the server filters on the text instead), else chips past the
-  // first (the server filtered on chip[0]).
-  const terms = txSearch().trim() ? txQueryChips() : txQueryChips().slice(1);
   return (rowsIn || txRowsAll()).filter((r) => {
     if (types.length && !types.includes(String(r.form || ""))) return false;
     if (statuses.length) {
@@ -203,26 +226,16 @@ function txFiltered(rowsIn?: Any[]): Any[] {
       const st = String(r.status || "");
       if (!statuses.some((s) => (s === "review" ? rev : st === s))) return false;
     }
-    if (sources.length) {
-      const src = String(r.source || (r.evidence ? "document" : "manual")).toLowerCase();
-      if (!sources.includes(src)) return false;
-    }
-    if (matched) {
-      const isM = Boolean(r.matched || r.reconciled);
-      if (matched === "matched" && !isM) return false;
-      if (matched === "unmatched" && isM) return false;
-    }
-    if (dept && !String(r.department || "").toLowerCase().includes(dept)) return false;
-    if (loc && !String(r.location || "").toLowerCase().includes(loc)) return false;
-    if (txDepts().length && !txDepts().some((x) => String(r.department || "").toLowerCase() === x.toLowerCase())) return false;
-    if (txLocs().length && !txLocs().some((x) => String(r.location || "").toLowerCase() === x.toLowerCase())) return false;
+    if (sources.length && !sources.includes(String(r.source || "manual"))) return false;
+    if (matched === "matched" && !r.matched) return false;
+    if (matched === "unmatched" && r.matched) return false;
+    // a split entry can carry several tags: any of the picked ones counts
+    if (depts.length && !txLower(r.departments).some((x) => depts.includes(x))) return false;
+    if (locs.length && !txLower(r.locations).some((x) => locs.includes(x))) return false;
     const amt = String(r.amount_shown || r.amount || "0").replace(/[^0-9.]/g, "");
     if (min && cmpDec(amt, min) < 0) return false;
     if (max && cmpDec(amt, max) > 0) return false;
-    const hay = (terms.length || party || txParties().length) && txHay(r);
-    if (party && !hay.includes(party)) return false;
-    if (txParties().length && !txParties().some((x) => hay && hay.includes(x.toLowerCase()))) return false;
-    for (const t of terms) if (!hay.includes(t.toLowerCase())) return false;
+    if (parties.length && !parties.includes(String(r.payee || "").trim().toLowerCase())) return false;
     return true;
   });
 }
@@ -244,10 +257,17 @@ const TX_SOURCE_OPTS: [string, string][] = [
   ["bank", "Bank"],
   ["document", "Document"],
 ];
+// The Src badge: where the entry came from (the tool's `source`).
+const TX_SOURCE_BADGE: Record<string, [string, string]> = {
+  manual: ["M", "#64748b"],
+  bank: ["B", "#0f766e"],
+  document: ["D", "#6366f1"],
+};
 const TX_MATCHED_OPTS: [string, string][] = [
   ["matched", "Matched"],
   ["unmatched", "Unmatched"],
 ];
+const TX_BATCH_MAX = 50; // books_app_batch's own limit on one call
 const TX_FORMS: Record<string, string> = {
   money_in: "Pay In",
   money_out: "Pay Out",
@@ -265,11 +285,8 @@ function txHasFilters(): boolean {
       txStatuses().length ||
       txSources().length ||
       txMatched() ||
-      txDeptText().trim() ||
-      txLocText().trim() ||
       txAmountMin().trim() ||
       txAmountMax().trim() ||
-      txPartyText().trim() ||
       txParties().length ||
       txDepts().length ||
       txLocs().length ||
@@ -296,7 +313,10 @@ function txClearFilters() {
 // Enter in the search input commits the query as a chip (LedgerSearchBar).
 function txCommitQuery() {
   const q = txSearch().trim();
-  if (q) txQueryChips.set([...txQueryChips(), q]);
+  if (q && !txQueryChips().includes(q)) {
+    if (txQueryChips().length >= TX_TERMS_MAX) return toast(`Search takes up to ${TX_TERMS_MAX} terms.`);
+    txQueryChips.set([...txQueryChips(), q]);
+  }
   txSearch.set("");
 }
 function txDropQuery(q: string) {
@@ -383,6 +403,16 @@ function TxRow(p: {
   const catColor = String(r().category_color || "#94a3b8");
   const debit = String(r().debit_shown || "");
   const credit = String(r().credit_shown || "");
+  const [srcLetter, srcColor] = TX_SOURCE_BADGE[String(r().source || "manual")] || TX_SOURCE_BADGE.manual;
+  const tags = (list: Any) => (Array.isArray(list) ? list : []).map(String).filter(Boolean).join(", ");
+  const dept = tags(r().departments);
+  const loc = tags(r().locations);
+  const tagCell = (text: string) =>
+    text ? (
+      <Text class="text-[11px] text-[#475569] dark:text-[#a1a5b0] truncate">{text}</Text>
+    ) : (
+      <Text class="text-[11px] text-[#cbd5e1] dark:text-[#6e727e] italic">None</Text>
+    );
   return (
     <View
       class={`group flex-row items-stretch cursor-pointer border-b transition-colors ${
@@ -418,8 +448,8 @@ function TxRow(p: {
         </View>
       </View>
       <View class="w-10 py-2.5 items-center justify-center shrink-0">
-        <View class="w-5 h-5 rounded-full items-center justify-center" style={{ backgroundColor: "#64748b" }}>
-          <Text class="text-[8px] font-bold text-white">M</Text>
+        <View class="w-5 h-5 rounded-full items-center justify-center" style={{ backgroundColor: srcColor }}>
+          <Text class="text-[8px] font-bold text-white">{srcLetter}</Text>
         </View>
       </View>
       <View class="w-[160px] py-2.5 px-2 shrink-0 min-w-0 hidden md:block">
@@ -433,12 +463,8 @@ function TxRow(p: {
           <Text class="text-[11px] text-[#cbd5e1] dark:text-[#6e727e] italic">—</Text>
         </If>
       </View>
-      <View class="w-[130px] py-2.5 px-2 shrink-0 hidden xl:block">
-        <Text class="text-[11px] text-[#cbd5e1] dark:text-[#6e727e] italic">None</Text>
-      </View>
-      <View class="w-[130px] py-2.5 px-2 shrink-0 hidden xl:block">
-        <Text class="text-[11px] text-[#cbd5e1] dark:text-[#6e727e] italic">None</Text>
-      </View>
+      <View class="w-[130px] py-2.5 px-2 shrink-0 min-w-0 hidden xl:block">{tagCell(dept)}</View>
+      <View class="w-[130px] py-2.5 px-2 shrink-0 min-w-0 hidden xl:block">{tagCell(loc)}</View>
       <View class="w-[100px] py-2.5 px-2 items-end justify-center shrink-0">
         <If when={Boolean(debit)}>
           <Text class="text-[13px] font-semibold tabular-nums text-[#1e293b] dark:text-[#f4f5f7]">{debit}</Text>
@@ -508,10 +534,11 @@ function TxCard(p: { r: Any; edit?: boolean; checked?: boolean; onCheck?: () => 
           </View>
         </View>
         <View class="shrink-0 items-end gap-0.5">
-          <If when={Boolean(debit || credit)}>
-            <Text class={`tabular-nums text-[15px] font-semibold ${debit ? "text-[#1e293b] dark:text-[#f4f5f7]" : "text-[#16a34a] dark:text-emerald-400"}`}>
-              {debit ? `Dr ${debit}` : `Cr ${credit}`}
-            </Text>
+          <If when={Boolean(debit)}>
+            <Text class="tabular-nums text-[15px] font-semibold text-[#1e293b] dark:text-[#f4f5f7]">{`Dr ${debit}`}</Text>
+          </If>
+          <If when={Boolean(credit)}>
+            <Text class="tabular-nums text-[15px] font-semibold text-[#16a34a] dark:text-emerald-400">{`Cr ${credit}`}</Text>
           </If>
           <If when={!debit && !credit}>
             <Text class={`tabular-nums text-[15px] font-semibold ${String(r().tone) === "neg" ? "text-[#1e293b] dark:text-[#f4f5f7]" : "text-[#16a34a] dark:text-emerald-400"}`}>
@@ -800,38 +827,47 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
   // drafts go through one atomic books_app_batch "discard".
   const voidables = () => selRows().filter((r) => r.status === "posted" && r.form !== "reversal" && !r.reversal);
   const drafts = () => selRows().filter((r) => r.status === "draft");
+  // books_app_batch takes 1 to 50 entries and checks that before it changes any
+  const askDiscard = () =>
+    drafts().length > TX_BATCH_MAX
+      ? toast(`Discard takes up to ${TX_BATCH_MAX} drafts at a time. You picked ${drafts().length}: clear some and try again.`)
+      : txConfirm.set("discard");
+  // Only the tickets a write went through for leave the selection: a
+  // refused void, and every one after it, stays picked for the next try.
   const actBatch = async (mode: "void" | "discard") => {
+    const done: string[] = [];
     txBusy.set(true);
     try {
       if (mode === "discard") {
         const tickets = drafts().map((r) => String(r.ticket));
-        if (tickets.length) await act("books_app_batch", { action: "discard", entries: tickets });
+        if (tickets.length > TX_BATCH_MAX) {
+          toast(`Discard takes up to ${TX_BATCH_MAX} drafts at a time. Pick fewer and try again.`);
+          return;
+        }
+        if (tickets.length) {
+          // one atomic call: all of them go, or none
+          await act("books_app_batch", { action: "discard", entries: tickets });
+          done.push(...tickets);
+        }
         toast("Discarded.");
       } else {
         const list = voidables();
-        let done = 0;
         for (const r of list) {
           try {
             await act("books_app_void_entry", { entry: String(r.ticket) });
-            done++;
+            done.push(String(r.ticket));
           } catch (e: Any) {
-            toast(done ? `Voided ${done} of ${list.length}; the rest failed: ${errText(e)}` : errText(e));
+            if (done.length) toast(`Voided ${done.length} of ${list.length}. The rest are still selected: ${errText(e)}`);
             break;
           }
         }
-        if (done === list.length) toast("Voided.");
+        if (done.length === list.length) toast("Voided.");
       }
-      const acted = new Set(
-        mode === "discard"
-          ? drafts().map((r) => String(r.ticket))
-          : voidables().map((r) => String(r.ticket)),
-      );
-      txPicked.set(txPicked().filter((t) => !acted.has(t)));
-      txConfirm.set("");
-      bump();
     } catch (e: Any) {
-      toast(errText(e));
+      // act() already said why
     } finally {
+      if (done.length) txPicked.set(txPicked().filter((t) => !done.includes(t)));
+      txConfirm.set("");
       txBusy.set(false);
     }
   };
@@ -842,14 +878,11 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
     for (const s of txStatuses()) out.push({ label: (TX_STATUS_OPTS.find(([k]) => k === s) || ["", s])[1], clear: () => txToggleIn(txStatuses, s) });
     for (const sr of txSources()) out.push({ label: (TX_SOURCE_OPTS.find(([k]) => k === sr) || ["", sr])[1], clear: () => txToggleIn(txSources, sr) });
     if (txMatched()) out.push({ label: txMatched() === "matched" ? "Matched" : "Unmatched", clear: () => txMatched.set("") });
-    if (txDeptText().trim()) out.push({ label: `Dept: ${txDeptText().trim()}`, clear: () => txDeptText.set("") });
-    if (txLocText().trim()) out.push({ label: `Location: ${txLocText().trim()}`, clear: () => txLocText.set("") });
     if (txAmountMin().trim() || txAmountMax().trim())
       out.push({
         label: `${txAmountMin().trim() ? `\u2265 ${txAmountMin().trim()}` : ""}${txAmountMin().trim() && txAmountMax().trim() ? " – " : ""}${txAmountMax().trim() ? (txAmountMin().trim() ? "" : "\u2264 ") + txAmountMax().trim() : ""}` || `${txAmountMin().trim()} – ${txAmountMax().trim()}`,
         clear: () => { txAmountMin.set(""); txAmountMax.set(""); },
       });
-    if (txPartyText().trim()) out.push({ label: `Party: ${txPartyText().trim()}`, clear: () => txPartyText.set("") });
     for (const n of txParties()) out.push({ label: `Party: ${n}`, clear: () => txParties.set(txParties().filter((x) => x !== n)) });
     for (const n of txDepts()) out.push({ label: `Dept: ${n}`, clear: () => txDepts.set(txDepts().filter((x) => x !== n)) });
     for (const n of txLocs()) out.push({ label: `Location: ${n}`, clear: () => txLocs.set(txLocs().filter((x) => x !== n)) });
@@ -1023,7 +1056,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                   </View>
                   <View
                     class="w-full flex-row items-center gap-2 px-3 py-2 cursor-pointer transition-colors hover:bg-[#f9fafb] dark:hover:bg-[#22232a] rounded-b-lg"
-                    onPress={() => { txSplitOpen.set(false); p.go("oldbooks"); }}
+                    onPress={() => { txSplitOpen.set(false); p.go("import"); }}
                   >
                     <Avatar src={TX_ICONS.doc} class="w-3.5 h-3.5 shrink-0" imageClass="tint-[#94a3b8] dark:tint-[#6e727e]" fallbackDelay={Infinity} accessibilityLabel="" />
                     <Text class="text-xs text-[#374151] dark:text-[#a1a5b0]">Import Journal Entries…</Text>
@@ -1042,7 +1075,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 <Avatar src={TX_ICONS.search} class="w-3.5 h-3.5 shrink-0" imageClass="tint-[#94a3b8] dark:tint-[#6e727e]" fallbackDelay={Infinity} accessibilityLabel="" />
                 <Input
                   value={txSearch()}
-                  placeholder={`Search ${txRows().length || Number(txD()?.total || 0)} transactions…`}
+                  placeholder={`Search ${txTotal() || txRows().length} transactions…`}
                   onChange={(e: Any) => txSearch.set(typeof e === "string" ? e : e.value)}
                   onSubmit={() => txCommitQuery()}
                   class="flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] text-[#1e293b] dark:text-[#f4f5f7] placeholder:text-[#94a3b8] focus:ring-0"
@@ -1103,7 +1136,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
               </View>
               <Scroll class="max-h-[420px]">
                 <View>
-                  <TxFilterSection title="Party" icon={TX_ICONS.fParty} count={txParties().length + (txPartyText().trim() ? 1 : 0)}>
+                  <TxFilterSection title="Party" icon={TX_ICONS.fParty} count={txParties().length}>
                     <TxCheckList
                       options={txPartyOpts()}
                       picked={txParties()}
@@ -1161,7 +1194,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                       ))}
                     </View>
                   </TxFilterSection>
-                  <TxFilterSection title="Department" icon={TX_ICONS.fDept} count={txDepts().length + (txDeptText().trim() ? 1 : 0)}>
+                  <TxFilterSection title="Department" icon={TX_ICONS.fDept} count={txDepts().length}>
                     <TxCheckList
                       options={txTagOpts("department")}
                       picked={txDepts()}
@@ -1172,7 +1205,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                       empty="No departments found"
                     />
                   </TxFilterSection>
-                  <TxFilterSection title="Location" icon={TX_ICONS.fLoc} count={txLocs().length + (txLocText().trim() ? 1 : 0)}>
+                  <TxFilterSection title="Location" icon={TX_ICONS.fLoc} count={txLocs().length}>
                     <TxCheckList
                       options={txTagOpts("location")}
                       picked={txLocs()}
@@ -1310,13 +1343,16 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                   />
                 ))}
               </View>
-              {/* "Showing N of M" + Load more while the tool has another page */}
+            </If>
+            {/* "Loaded N of M" + Load more while the tool has another page:
+                in both views, and when the filters hide every loaded row */}
+            <If when={Boolean(txData()) && (Boolean(txNextCursor()) || txTotal() > 0)}>
               <View class="flex-row items-center justify-between px-3 py-2">
                 <Text class="text-[11px] text-slate-500 dark:text-[#a1a5b0]">
-                  {`Showing ${rows().length} of ${Number(txD()?.total || rows().length)}`}
+                  {`Loaded ${txRowsAll().length} of ${txTotal() || txRowsAll().length}`}
                 </Text>
                 <If when={Boolean(txNextCursor())}>
-                  <View class="cursor-pointer" onPress={txLoadMore}>
+                  <View class="cursor-pointer" onPress={() => txLoadMore()}>
                     <Text class="text-[12px] font-medium text-[#0f766e] dark:text-teal-300 hover:underline">
                       {txLoadingMore() ? "Loading…" : "Load more"}
                     </Text>
@@ -1349,7 +1385,7 @@ function TransactionsPage(p: { go: (id: string) => void; sheet: (mode: string) =
                 <Btn label={`Void ${voidables().length} posted`} tone="vi" disabled={txBusy()} onPress={() => txConfirm.set("void")} />
               </If>
               <If when={drafts().length > 0}>
-                <Btn label={`Discard ${drafts().length} drafts`} disabled={txBusy()} onPress={() => txConfirm.set("discard")} />
+                <Btn label={`Discard ${drafts().length} drafts`} disabled={txBusy()} onPress={() => askDiscard()} />
               </If>
               <Btn label="Clear" onPress={() => txPicked.set([])} />
             </View>
