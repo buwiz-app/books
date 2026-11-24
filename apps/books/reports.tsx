@@ -73,7 +73,7 @@ function RepChange(p: { cur: Any; prev: Any }) {
   const diff = cur - prev;
   const up = diff > 0n;
   const down = diff < 0n;
-  const color = up ? "text-[#16a34a]" : down ? "text-[#dc2626]" : "text-[#6b7280]";
+  const color = up ? C.green : down ? C.red : C.dim;
   const arrow = up ? "▲ " : down ? "▼ " : "";
   const abs = diff < 0n ? -diff : diff;
   const pct = prev !== 0n ? (abs * 1000n) / (prev < 0n ? -prev : prev) : null;
@@ -90,12 +90,12 @@ function RepChange(p: { cur: Any; prev: Any }) {
 function RepPill(p: { label: string; on: boolean; onPress: () => void }) {
   return (
     <View
-      class={`px-3 py-1 rounded-md text-center border transition-all ${p.on ? "bg-white/20 border-white/20" : "border-transparent hover:bg-white/10"}`}
+      class={`group px-3 py-1 rounded-md text-center border transition-all ${p.on ? "bg-white/20 border-white/20" : "border-transparent hover:bg-white/10"}`}
       onPress={p.onPress}
       activeStyle={{ opacity: 0.8 }}
       hoverStyle={{ backgroundColor: p.on ? undefined : "rgba(255,255,255,0.1)" }}
     >
-      <Text class={`text-[12px] font-medium ${p.on ? "text-white" : "text-white/50"}`}>{p.label}</Text>
+      <Text class={`text-[12px] font-medium ${p.on ? "text-white" : "text-white/50 group-hover:text-white"}`}>{p.label}</Text>
     </View>
   );
 }
@@ -114,27 +114,32 @@ function RepBandBtn(p: { label: string; onPress: () => void; disabled?: boolean 
   );
 }
 
-// A report card: the white rounded card the old app wraps each report in.
-function RepCard(p: { title: string; sub: string; children?: Any }) {
+// A report card: the white rounded card the old app wraps each report in. The
+// optional `right` slot holds the tag picker on P&L and cash flow, next to the
+// title — the opaque picker sits on the card, not the green toolbar.
+function RepCard(p: { title: string; sub: string; right?: Any; children?: Any }) {
   return (
-    <View class={`rounded-xl ${C.panel} shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]`}>
-      <View class="px-5 pt-5 pb-3 border-b border-[#f3f4f6] dark:border-white/8">
-        <Text class="text-lg font-bold text-[#111827] dark:text-white">{p.title}</Text>
-        <If when={Boolean(p.sub)}>
-          <Text class="text-[13px] text-[#6b7280] dark:text-white/50 mt-1">{p.sub}</Text>
-        </If>
+    <View class={`${C.panel} border ${C.line} rounded-xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.08)]`}>
+      <View class={`px-4 sm:px-6 pt-5 pb-3.5 border-b ${C.lineSoft} flex-row items-start justify-between gap-3`}>
+        <View class="flex-1">
+          <Text class={`text-lg font-bold ${C.ink}`}>{p.title}</Text>
+          <If when={Boolean(p.sub)}>
+            <Text class={`text-[13px] ${C.mute} mt-1`}>{p.sub}</Text>
+          </If>
+        </View>
+        {p.right || null}
       </View>
-      <View class="px-5 pb-5">{p.children}</View>
+      <View class="px-4 sm:px-6 pb-5">{p.children}</View>
     </View>
   );
 }
 
 // A report table's header row: the thin muted labels over a heavy rule.
-function RepHead(p: { cells: { label: string; right?: boolean; wide?: boolean }[] }) {
+function RepHead(p: { cells: { label: string; right?: boolean; wide?: boolean; width?: string }[] }) {
   return (
-    <View class="flex-row border-b-2 border-[#e5e7eb] dark:border-white/10">
+    <View class={`flex-row border-b-2 ${C.line}`}>
       {p.cells.map((c: Any) => (
-        <Text class={`${c.wide ? "flex-1" : "w-[150px]"} py-2 px-3 ${c.right ? "text-right" : "text-left"} text-xs font-semibold text-[#6b7280] dark:text-white/40`}>{c.label}</Text>
+        <Text class={`${c.width ? c.width : c.wide ? "flex-1" : "w-[150px]"} py-2 px-3 ${c.right ? "text-right" : "text-left"} text-xs font-semibold ${C.dim}`}>{c.label}</Text>
       ))}
     </View>
   );
@@ -142,7 +147,7 @@ function RepHead(p: { cells: { label: string; right?: boolean; wide?: boolean }[
 
 // A section title inside the table ("Revenue", "Assets", ...).
 function RepSectionTitle(p: { label: string }) {
-  return <Text class="pt-3.5 px-3 pb-1.5 font-bold text-xs uppercase tracking-wider text-[#6b7280] dark:text-white/40">{p.label}</Text>;
+  return <Text class={`pt-3.5 px-3 pb-1.5 font-bold text-xs uppercase tracking-wider ${C.dim}`}>{p.label}</Text>;
 }
 
 function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
@@ -197,18 +202,24 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
     else toast("Print preview is not available in this Buwiz Bot.");
   };
 
+  const openInTransactions = (account: string, month: string) => {
+    if (!account) return;
+    if (typeof txAccount !== "undefined") txAccount.set(account);
+    if (typeof txMonth !== "undefined") txMonth.set(month || "");
+    if (typeof txFilter !== "undefined") txFilter.set("all");
+    p.go("transactions");
+  };
+
   // One statement line: name left, current (and prior + change) right. A row
-  // with a ticket opens the Ledger on a press.
-  const row = (r: Any, withNumber: boolean, signed: boolean) => {
-    const open = () => {
-      if (!r.ticket) return;
-      openLedger({ account: r.ticket, month: r.month || "" });
-    };
+  // with a ticket opens Transactions filtered to that account and period;
+  // expense rows indent like the old app's P&L.
+  const row = (r: Any, withNumber: boolean, signed: boolean, indent: boolean) => {
+    const open = () => openInTransactions(r.ticket || "", r.month || "");
     const neg = repCents(r.shown) < 0n;
     return (
-      <View class="flex-row items-center border-b border-[#f3f4f6] dark:border-white/5" onPress={open} activeStyle={{ opacity: r.ticket ? 0.75 : 1 }}>
-        <View class="flex-1 flex-row items-center py-2 px-3 gap-2">
-          <Text class="text-[13px] text-[#374151] dark:text-white/70 truncate">
+      <View class={`flex-row items-center border-b ${C.lineSoft} ${r.ticket ? C.hoverBg : ""}`} onPress={open} activeStyle={{ opacity: r.ticket ? 0.75 : 1 }}>
+        <View class={`flex-1 flex-row items-center py-2 px-3 gap-2 ${indent ? "pl-8" : ""}`}>
+          <Text class={`text-[13px] ${C.mute} truncate`}>
             {withNumber && r.number ? `${r.number}  ` : ""}
             {r.name}
           </Text>
@@ -216,7 +227,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
             <Pill tone="rev" label={r.review || ""} />
           </If>
         </View>
-        <Text class={`w-[150px] py-2 px-3 text-right text-[13px] font-medium tabular-nums ${neg && signed ? "text-[#dc2626] dark:text-red-400" : "text-[#111827] dark:text-white"}`}>{r.shown || ""}</Text>
+        <Text class={`w-[150px] py-2 px-3 text-right text-[13px] font-medium tabular-nums ${neg && signed ? C.red : C.ink}`}>{r.shown || ""}</Text>
         <If when={two()}>
           {(() => {
             // a row absent in the prior period carries no prev_shown at all;
@@ -224,7 +235,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
             const had = r.prev_shown != null && r.prev_shown !== "";
             return (
               <>
-                <Text class="w-[150px] py-2 px-3 text-right text-[13px] tabular-nums text-[#6b7280] dark:text-white/50">{had ? r.prev_shown : "—"}</Text>
+                <Text class={`w-[150px] py-2 px-3 text-right text-[13px] tabular-nums ${C.dim}`}>{had ? r.prev_shown : "—"}</Text>
                 <View class="w-[150px] py-2 px-3 items-end">
                   <RepChange cur={r.shown} prev={had ? r.prev_shown : ""} />
                 </View>
@@ -239,11 +250,11 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
   // A section's total row: semibold like the old SectionRow, or the heavier
   // band the balance sheet uses.
   const totalRow = (t: Any, bold: boolean) => (
-    <View class={`flex-row items-center ${bold ? "bg-[#f8fafc] dark:bg-white/[0.03]" : ""}`}>
-      <Text class={`flex-1 py-2.5 px-3 ${bold ? "font-bold text-sm" : "font-semibold text-[13px]"} text-[#111827] dark:text-white`}>{t?.label || ""}</Text>
-      <Text class={`w-[150px] py-2.5 px-3 text-right ${bold ? "font-bold" : "font-semibold"} text-[13px] tabular-nums text-[#111827] dark:text-white`}>{t?.shown || ""}</Text>
+    <View class={`flex-row items-center ${bold ? C.subtle : ""}`}>
+      <Text class={`flex-1 py-2.5 px-3 ${bold ? "font-bold text-sm" : "font-semibold text-[13px]"} ${C.ink}`}>{t?.label || ""}</Text>
+      <Text class={`w-[150px] py-2.5 px-3 text-right ${bold ? "font-bold" : "font-semibold"} text-[13px] tabular-nums ${C.ink}`}>{t?.shown || ""}</Text>
       <If when={two()}>
-        <Text class="w-[150px] py-2.5 px-3 text-right text-[13px] tabular-nums text-[#6b7280] dark:text-white/50">{t?.prev_shown || "—"}</Text>
+        <Text class={`w-[150px] py-2.5 px-3 text-right text-[13px] tabular-nums ${C.dim}`}>{t?.prev_shown || "—"}</Text>
         <View class="w-[150px] py-2.5 px-3 items-end">
           <RepChange cur={t?.shown} prev={t?.prev_shown} />
         </View>
@@ -259,11 +270,11 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
     if (repKind() === "pl") return totalRow(n, true);
     const neg = repCents(n.shown) < 0n;
     return (
-      <View class="flex-row items-center border-t-2 border-[#1a7fc4]">
-        <Text class="flex-1 p-3 font-bold text-sm text-[#1a7fc4]">{n.label || ""}</Text>
-        <Text class={`w-[150px] p-3 text-right font-bold text-sm tabular-nums ${neg ? "text-[#dc2626] dark:text-red-400" : "text-[#1a7fc4]"}`}>{n.shown || ""}</Text>
+      <View class="flex-row items-center border-t-2 border-[#2563eb] dark:border-[#60a5fa]">
+        <Text class={`flex-1 p-3 font-bold text-sm ${C.blue}`}>{n.label || ""}</Text>
+        <Text class={`w-[150px] p-3 text-right font-bold text-sm tabular-nums ${neg ? C.red : C.blue}`}>{n.shown || ""}</Text>
         <If when={two()}>
-          <Text class="w-[150px] p-3 text-right text-[13px] tabular-nums text-[#6b7280] dark:text-white/50">{n.prev_shown || "—"}</Text>
+          <Text class={`w-[150px] p-3 text-right text-[13px] tabular-nums ${C.dim}`}>{n.prev_shown || "—"}</Text>
           <View class="w-[150px] p-3" />
         </If>
       </View>
@@ -274,8 +285,9 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
     const kind = repKind();
     if (kind === "tb")
       return [
-        { label: "Acct #", wide: true },
+        { label: "Acct #", width: "w-[100px]" },
         { label: "Account Name", wide: true },
+        { label: "Type", width: "w-[140px]" },
         { label: "Debit", right: true },
         { label: "Credit", right: true },
       ];
@@ -306,8 +318,16 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
     return base ? `${base} • ${d()?.basis_label || ""}` : "";
   };
 
+  // The tag filter sits on the card's header row, not the green toolbar.
+  const tagPick = () =>
+    canTag() ? (
+      <View class="w-[180px] shrink-0">
+        <Pick optionSaid="Choose this tag" value={repTag()} options={(tags() as Any) || []} onPick={(o: Any) => repTag.set(o.ticket)} placeholder="All tags" />
+      </View>
+    ) : null;
+
   // pl + bs: titled sections of account rows; cf: one untitled list; each ends
-  // in its closing row.
+  // in its closing row. P&L expense sections indent their rows like the old app.
   const statementTable = () => (
     <View class="mt-3">
       <RepHead cells={headCells()} />
@@ -317,7 +337,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
             <If when={Boolean(s().title)}>
               <RepSectionTitle label={s().title} />
             </If>
-            <Each of={s().rows}>{(r: Any) => row(r(), repKind() === "bs" || repKind() === "tb", repKind() === "cf")}</Each>
+            <Each of={s().rows}>{(r: Any) => row(r(), repKind() === "bs" || repKind() === "tb", repKind() === "cf", repKind() === "pl" && /expense/i.test(s().title || ""))}</Each>
             <If when={Boolean(s().total)}>
               {totalRow(s().total, repKind() === "bs")}
             </If>
@@ -338,24 +358,24 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
         {(s: Any) => (
           <Each of={s().rows}>
             {(r: Any) => (
-              <View class="flex-row items-center border-b border-[#f3f4f6] dark:border-white/5" onPress={() => r().ticket && openLedger({ account: r().ticket, month: r().month || "" })} activeStyle={{ opacity: r().ticket ? 0.75 : 1 }}>
-                <Text class="flex-1 py-2 px-3 text-xs text-[#9ca3af] dark:text-white/30 tabular-nums">{r().number || "—"}</Text>
-                <Text class="flex-1 py-2 px-3 text-[13px] text-[#374151] dark:text-white/70 truncate">{r().name}</Text>
-                <Text class={`w-[150px] py-2 px-3 text-right text-[13px] font-medium tabular-nums ${r().debit_shown ? "text-[#111827] dark:text-white" : "text-[#d1d5db] dark:text-white/20"}`}>{r().debit_shown || "—"}</Text>
-                <Text class={`w-[150px] py-2 px-3 text-right text-[13px] font-medium tabular-nums ${r().credit_shown ? "text-[#111827] dark:text-white" : "text-[#d1d5db] dark:text-white/20"}`}>{r().credit_shown || "—"}</Text>
+              <View class={`flex-row items-center border-b ${C.lineSoft} ${r().ticket ? C.hoverBg : ""}`} onPress={() => openInTransactions(r().ticket || "", r().month || "")} activeStyle={{ opacity: r().ticket ? 0.75 : 1 }}>
+                <Text class={`w-[100px] py-2 px-3 text-xs ${C.dim} tabular-nums`}>{r().number || "—"}</Text>
+                <Text class={`flex-1 py-2 px-3 text-[13px] ${C.mute} truncate`}>{r().name}</Text>
+                <Text class={`w-[140px] py-2 px-3 text-xs ${C.dim} capitalize`}>{String(r().type || "—").replace(/_/g, " ")}</Text>
+                <Text class={`w-[150px] py-2 px-3 text-right text-[13px] font-medium tabular-nums ${r().debit_shown ? C.ink : C.dim}`}>{r().debit_shown || "—"}</Text>
+                <Text class={`w-[150px] py-2 px-3 text-right text-[13px] font-medium tabular-nums ${r().credit_shown ? C.ink : C.dim}`}>{r().credit_shown || "—"}</Text>
               </View>
             )}
           </Each>
         )}
       </Each>
-      <View class="flex-row items-center border-t-2 border-[#e5e7eb] dark:border-white/10 bg-[#f8fafc] dark:bg-white/[0.03]">
-        <View class="flex-1" />
-        <Text class="flex-1 p-3 font-bold text-sm text-[#111827] dark:text-white">Total</Text>
-        <Text class="w-[150px] p-3 text-right font-bold text-sm tabular-nums text-[#111827] dark:text-white">{d()?.net?.debit_shown || ""}</Text>
-        <Text class="w-[150px] p-3 text-right font-bold text-sm tabular-nums text-[#111827] dark:text-white">{d()?.net?.credit_shown || ""}</Text>
+      <View class={`flex-row items-center border-t-2 ${C.line} ${C.subtle}`}>
+        <Text class={`flex-1 p-3 font-bold text-sm ${C.ink}`}>Total</Text>
+        <Text class={`w-[150px] p-3 text-right font-bold text-sm tabular-nums ${C.ink}`}>{d()?.net?.debit_shown || ""}</Text>
+        <Text class={`w-[150px] p-3 text-right font-bold text-sm tabular-nums ${C.ink}`}>{d()?.net?.credit_shown || ""}</Text>
       </View>
-      <View class={`mt-3 py-2 px-3 rounded-md text-xs font-medium flex-row items-center gap-1.5 ${d()?.balanced ? "bg-[#f0fdf4] dark:bg-emerald-900/20 text-[#16a34a] dark:text-emerald-400" : "bg-[#fef2f2] dark:bg-red-900/20 text-[#dc2626] dark:text-red-400"}`}>
-        <Text class={`text-xs font-medium ${d()?.balanced ? "text-[#16a34a] dark:text-emerald-400" : "text-[#dc2626] dark:text-red-400"}`}>
+      <View class={`mt-3 py-2 px-3 rounded-md text-xs font-medium flex-row items-center gap-1.5 ${d()?.balanced ? "bg-[#f0fdf4] dark:bg-emerald-500/10" : "bg-[#fef2f2] dark:bg-red-500/10"}`}>
+        <Text class={`text-xs font-medium ${d()?.balanced ? C.green : C.red}`}>
           {d()?.balanced ? "✓ Trial balance is in balance" : `⚠ Out of balance by ${repMoney(repCents(d()?.net?.debit_shown) - repCents(d()?.net?.credit_shown)).replace("−", "")}`}
         </Text>
       </View>
@@ -372,38 +392,38 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
     const grand = rows.reduce((a: bigint, r: Any) => a + rowTotal(r), 0n);
     return (
       <View class="mt-3">
-        <View class="flex-row border-b-2 border-[#e5e7eb] dark:border-white/10">
-          <Text class="flex-1 py-2 px-3 text-left text-xs font-semibold text-[#6b7280] dark:text-white/40">{repSide() === "pay" ? "Vendor" : "Customer"}</Text>
+        <View class={`flex-row border-b-2 ${C.line}`}>
+          <Text class={`flex-1 py-2 px-3 text-left text-xs font-semibold ${C.dim}`}>{repSide() === "pay" ? "Vendor" : "Customer"}</Text>
           {bucketCols.map((c: Any) => (
-            <Text class="w-[110px] py-2 px-3 text-right text-xs font-semibold text-[#6b7280] dark:text-white/40">{c}</Text>
+            <Text class={`w-[110px] py-2 px-3 text-right text-xs font-semibold ${C.dim}`}>{c}</Text>
           ))}
-          <Text class="w-[130px] py-2 px-3 text-right text-xs font-semibold text-[#6b7280] dark:text-white/40">Total</Text>
+          <Text class={`w-[130px] py-2 px-3 text-right text-xs font-semibold ${C.dim}`}>Total</Text>
         </View>
         <If when={rows.length === 0}>
-          <Text class="p-6 text-center text-[13px] text-[#9ca3af] dark:text-white/30">{`No outstanding ${repSide() === "pay" ? "payables" : "receivables"}`}</Text>
+          <Text class={`p-6 text-center text-[13px] ${C.dim}`}>{`No outstanding ${repSide() === "pay" ? "payables" : "receivables"}`}</Text>
         </If>
         <Each of={rows}>
           {(r: Any) => (
-            <View class="flex-row border-b border-[#f3f4f6] dark:border-white/5">
-              <Text class="flex-1 py-2 px-3 text-[13px] font-medium text-[#374151] dark:text-white/70 truncate">{r().name}</Text>
+            <View class={`flex-row border-b ${C.lineSoft}`}>
+              <Text class={`flex-1 py-2 px-3 text-[13px] font-medium ${C.mute} truncate`}>{r().name}</Text>
               {bucketCols.map((_c: Any, j: number) => {
                 const v = cellCents(r(), j);
-                const cls = v > 0n ? (j >= 3 ? "text-[#dc2626] dark:text-red-400" : "text-[#111827] dark:text-white") : "text-[#d1d5db] dark:text-white/20";
+                const cls = v > 0n ? (j >= 3 ? C.red : C.ink) : C.dim;
                 return <Text class={`w-[110px] py-2 px-3 text-right text-[13px] tabular-nums ${cls}`}>{v > 0n ? repMoney(v) : "—"}</Text>;
               })}
-              <Text class="w-[130px] py-2 px-3 text-right text-[13px] font-semibold tabular-nums text-[#111827] dark:text-white">{repMoney(rowTotal(r()))}</Text>
+              <Text class={`w-[130px] py-2 px-3 text-right text-[13px] font-semibold tabular-nums ${C.ink}`}>{repMoney(rowTotal(r()))}</Text>
             </View>
           )}
         </Each>
         <If when={rows.length > 0}>
-          <View class="flex-row border-t-2 border-[#e5e7eb] dark:border-white/10 bg-[#f8fafc] dark:bg-white/[0.03]">
-            <Text class="flex-1 p-3 font-bold text-[13px] text-[#111827] dark:text-white">Total</Text>
+          <View class={`flex-row border-t-2 ${C.line} ${C.subtle}`}>
+            <Text class={`flex-1 p-3 font-bold text-[13px] ${C.ink}`}>Total</Text>
             {bucketCols.map((_c: Any, j: number) => {
               const v = colTotal(j);
-              const cls = v > 0n ? (j >= 3 ? "text-[#dc2626] dark:text-red-400" : "text-[#111827] dark:text-white") : "text-[#d1d5db] dark:text-white/20";
+              const cls = v > 0n ? (j >= 3 ? C.red : C.ink) : C.dim;
               return <Text class={`w-[110px] p-3 text-right font-bold text-[13px] tabular-nums ${cls}`}>{v > 0n ? repMoney(v) : "—"}</Text>;
             })}
-            <Text class="w-[130px] p-3 text-right font-bold text-sm tabular-nums text-[#1a7fc4]">{repMoney(grand)}</Text>
+            <Text class={`w-[130px] p-3 text-right font-bold text-sm tabular-nums ${C.blue}`}>{repMoney(grand)}</Text>
           </View>
         </If>
       </View>
@@ -415,10 +435,11 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
   );
 
   return (
-    <View class="gap-3.5">
-      <View class="rounded-xl" style={{ backgroundColor: acc() }}>
-        <View class="flex-col px-5 py-3 gap-3">
-          <View class="flex-row items-center gap-3 flex-wrap">
+    <View class={`flex-1 flex-col overflow-hidden ${C.bg}`}>
+      {/* header: back + title left, tab pill nav centre, exports right — inner row matches report max-width */}
+      <View class={`${C.emeraldBar} px-5 py-3 shrink-0`} style={{ backgroundColor: acc() }}>
+        <View class="w-full max-w-[1152px] mx-auto flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-3">
+          <View class="flex-row items-center gap-3">
             <View
               class="h-8 px-2 rounded-lg flex-row items-center justify-center transition-colors hover:bg-white/10 cursor-pointer"
               onPress={() => p.go("today")}
@@ -426,24 +447,14 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
             >
               <Text class="text-[13px] font-medium text-white/90">‹ Back</Text>
             </View>
-            <View class="flex-row items-end gap-[2px] shrink-0">
-              <View class="w-[3px] h-[14px] rounded-[1px] bg-white" />
-              <View class="w-[3px] h-[20px] rounded-[1px] bg-white" />
-              <View class="w-[3px] h-[9px] rounded-[1px] bg-white" />
-            </View>
+            <Avatar src={ICONS.barChart} class="w-[22px] h-[22px]" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
             <Text class="text-[15px] font-semibold text-white">Financials</Text>
-            <View class="flex-1" />
-            <RepBandBtn label="↓ Export CSV" onPress={exportCsv} />
-            {["pl", "bs", "cf"].includes(repKind()) ? <RepBandBtn label="↓ Excel" onPress={exportXlsx} disabled={xlsxSending()} /> : null}
-            {repPeriodKind() === "month" ? <RepBandBtn label="↓ Month pack" onPress={monthPack} /> : null}
           </View>
-          {/* the tabs take their own row and wrap, so all five stay reachable
-              on a phone-width window instead of running off the right edge */}
-          <View class="flex-row items-center flex-wrap gap-1 p-1 bg-white/10 rounded-full self-start">
+          <View class="flex-row items-center flex-wrap gap-0.5 p-1 bg-white/10 rounded-full self-start md:self-center">
             <Each of={REPORT_TABS}>
               {(t: Any) => (
                 <View
-                  class={`px-4 py-1 rounded-full transition-all ${repKind() === t()[0] ? "bg-white/20" : "hover:bg-white/10"}`}
+                  class={`group px-4 py-1 rounded-full transition-all ${repKind() === t()[0] ? "bg-white/20 shadow-sm" : "hover:bg-white/10"}`}
                   onPress={() => {
                     repKind.set(t()[0]);
                     repCompare.set("none");
@@ -451,40 +462,48 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
                   activeStyle={{ opacity: 0.8 }}
                   hoverStyle={{ backgroundColor: repKind() === t()[0] ? undefined : "rgba(255,255,255,0.1)" }}
                 >
-                  <Text class={`text-[13px] font-medium whitespace-nowrap ${repKind() === t()[0] ? "text-white" : "text-white/50"}`}>{t()[1]}</Text>
+                  <Text class={`text-[13px] font-medium whitespace-nowrap ${repKind() === t()[0] ? "text-white" : "text-white/60 group-hover:text-white"}`}>{t()[1]}</Text>
                 </View>
               )}
             </Each>
           </View>
+          <View class="flex-row items-center gap-2">
+            <RepBandBtn label="↓ Export CSV" onPress={exportCsv} />
+            {["pl", "bs", "cf"].includes(repKind()) ? <RepBandBtn label="↓ Excel" onPress={exportXlsx} disabled={xlsxSending()} /> : null}
+            {repPeriodKind() === "month" ? <RepBandBtn label="↓ Month pack" onPress={monthPack} /> : null}
+          </View>
         </View>
-        <View class="flex-row items-center justify-between gap-2 px-5 pb-3 flex-wrap">
+      </View>
+      {/* toolbar: period nav + month/quarter/year left, compare pills right — aligned to report max-width */}
+      <View class={`${C.emeraldBar} border-t border-white/10 px-5 py-2.5 shrink-0`} style={{ backgroundColor: acc() }}>
+        <View class="w-full max-w-[1152px] mx-auto flex-row flex-wrap items-center justify-between gap-2">
           <View class="flex-row items-center gap-2">
             <View class="flex-row items-center bg-white/10 rounded-lg shrink-0">
               <View
-                class="w-8 h-8 items-center justify-center rounded-l-lg transition-colors"
-                onPress={() => repPeriod.set(d()?.period.prev || "")}
+                class={`group w-8 h-8 items-center justify-center rounded-l-lg transition-colors ${d()?.period.prev ? "" : "opacity-40"}`}
+                onPress={() => d()?.period.prev && repPeriod.set(d().period.prev)}
                 activeStyle={{ opacity: 0.7 }}
-                hoverStyle={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+                hoverStyle={{ backgroundColor: d()?.period.prev ? "rgba(255,255,255,0.1)" : undefined }}
               >
-                <Text class="text-[15px] font-bold text-white/70">‹</Text>
+                <Avatar src={ICONS.chevronLeft} class="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
               </View>
               <Text class="px-2 text-xs font-medium text-white/70">
                 {["bs", "tb", "ag"].includes(repKind()) && d()?.period?.key ? repAsOf(d().period.key, repPeriodKind()) : d()?.period.label || ""}
               </Text>
               <View
-                class="w-8 h-8 items-center justify-center rounded-r-lg transition-colors"
-                onPress={() => repPeriod.set(d()?.period.next || "")}
+                class={`group w-8 h-8 items-center justify-center rounded-r-lg transition-colors ${d()?.period.next ? "" : "opacity-40"}`}
+                onPress={() => d()?.period.next && repPeriod.set(d().period.next)}
                 activeStyle={{ opacity: 0.7 }}
-                hoverStyle={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+                hoverStyle={{ backgroundColor: d()?.period.next ? "rgba(255,255,255,0.1)" : undefined }}
               >
-                <Text class="text-[15px] font-bold text-white/70">›</Text>
+                <Avatar src={ICONS.chevronRight} class="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" imageClass="tint-white" fallbackDelay={Infinity} accessibilityLabel="" />
               </View>
             </View>
             <View class="flex-row items-center bg-white/10 rounded-lg shrink-0">
               <Each of={[["month", "Month"], ["quarter", "Quarter"], ["year", "Year"]]}>
                 {(o: Any) => (
                   <View
-                    class={`px-3 h-8 items-center justify-center transition-colors ${repPeriodKind() === o()[0] ? "bg-white/20 rounded-lg" : ""}`}
+                    class={`group px-3 h-8 items-center justify-center transition-colors ${repPeriodKind() === o()[0] ? "bg-white/20 rounded-lg" : ""}`}
                     onPress={() => {
                       repPeriodKind.set(o()[0]);
                       repPeriod.set("");
@@ -492,7 +511,7 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
                     activeStyle={{ opacity: 0.8 }}
                     hoverStyle={{ backgroundColor: repPeriodKind() === o()[0] ? undefined : "rgba(255,255,255,0.1)" }}
                   >
-                    <Text class={`text-[12px] font-medium ${repPeriodKind() === o()[0] ? "text-white" : "text-white/50"}`}>{o()[1]}</Text>
+                    <Text class={`text-[12px] font-medium ${repPeriodKind() === o()[0] ? "text-white" : "text-white/50 group-hover:text-white"}`}>{o()[1]}</Text>
                   </View>
                 )}
               </Each>
@@ -507,49 +526,46 @@ function ReportsPage(p: { go: (page: string, filter?: string) => void }) {
               <RepPill label="Accounts Payable" on={repSide() === "pay"} onPress={() => repSide.set("pay")} />
               <RepPill label="Accounts Receivable" on={repSide() === "collect"} onPress={() => repSide.set("collect")} />
             </If>
-            <If when={canTag()}>
-              <View class="w-[180px]">
-                <Pick optionSaid="Choose this tag" value={repTag()} options={(tags() as Any) || []} onPick={(o: Any) => repTag.set(o.ticket)} placeholder="All tags" />
-              </View>
-            </If>
           </View>
         </View>
       </View>
-      <If when={Boolean(d()?.tag_note)}>
-        <Text class={`text-[12px] ${C.dim}`}>{d()?.tag_note || ""}</Text>
-      </If>
-      <Loading res={data} />
-      <If when={Boolean(d()) && repKind() === "ag" && d()?.cash_book}>
-        <RepCard title={d()?.title || ""} sub="">
-          <View class="gap-2 pt-1">
-            <Pill tone="in" label="Cash basis" />
-            <Text class={`text-[12px] ${C.dim}`}>{d()?.note || ""}</Text>
-            <Btn label="Open Unpaid" onPress={() => p.go("unpaid")} />
-          </View>
-        </RepCard>
-      </If>
-      <If when={Boolean(d()) && repKind() === "ag" && !d()?.cash_book}>
-        <RepCard title={cardTitle()} sub={cardSub()}>
-          {agTable()}
-        </RepCard>
-      </If>
-      <If when={Boolean(d()) && repKind() === "tb"}>
-        <RepCard title={cardTitle()} sub={cardSub()}>
-          {tbTable()}
-        </RepCard>
-      </If>
-      <If when={Boolean(d()) && ["pl", "bs", "cf"].includes(repKind())}>
-        <RepCard title={cardTitle()} sub={cardSub()}>
-          {statementTable()}
-          <If when={repKind() === "bs" && d()?.balanced === false}>
-            <View class="mt-3 py-2 px-3 bg-[#fef2f2] dark:bg-red-900/20 rounded-md flex-row">
-              <Text class="text-xs text-[#dc2626] dark:text-red-400 font-medium">{`⚠ Balance sheet is out of balance. ${d()?.check || ""}`}</Text>
-            </View>
+      <Scroll class="flex-1">
+        <View class="w-full max-w-[1152px] mx-auto px-4 sm:px-5 py-4 sm:py-6 gap-4">
+          <If when={Boolean(d()?.tag_note)}>
+            <Text class={`text-[12px] ${C.dim}`}>{d()?.tag_note || ""}</Text>
           </If>
-        </RepCard>
-      </If>
-      <Text class={`text-[12px] ${C.dim}`}>Click a line to see its transactions in the Ledger.</Text>
-      <LedgerBulk />
+          <Loading res={data} />
+          <If when={Boolean(d()) && repKind() === "ag" && d()?.cash_book}>
+            <RepCard title={d()?.title || ""} sub="">
+              <View class="gap-2 pt-1">
+                <Pill tone="in" label="Cash basis" />
+                <Text class={`text-[12px] ${C.dim}`}>{d()?.note || ""}</Text>
+                <Btn label="Open Unpaid" onPress={() => p.go("unpaid")} />
+              </View>
+            </RepCard>
+          </If>
+          <If when={Boolean(d()) && repKind() === "ag" && !d()?.cash_book}>
+            <RepCard title={cardTitle()} sub={cardSub()}>
+              {agTable()}
+            </RepCard>
+          </If>
+          <If when={Boolean(d()) && repKind() === "tb"}>
+            <RepCard title={cardTitle()} sub={cardSub()}>
+              {tbTable()}
+            </RepCard>
+          </If>
+          <If when={Boolean(d()) && ["pl", "bs", "cf"].includes(repKind())}>
+            <RepCard title={cardTitle()} sub={cardSub()} right={tagPick()}>
+              {statementTable()}
+              <If when={repKind() === "bs" && d()?.balanced === false}>
+                <View class="mt-3 py-2 px-3 bg-[#fef2f2] dark:bg-red-500/10 rounded-md flex-row">
+                  <Text class={`text-xs ${C.red} font-medium`}>{`⚠ Balance sheet is out of balance. ${d()?.check || ""}`}</Text>
+                </View>
+              </If>
+            </RepCard>
+          </If>
+        </View>
+      </Scroll>
     </View>
   );
 }

@@ -5,29 +5,29 @@
 // shows what the person sends from this tab — the assistant's reply lives in
 // the Bot chat; the assistant only drafts, nothing posts itself.
 
-/** A document this page staged for the entry being drafted. */
+// A document this page staged for the entry being drafted.
 const entryStaged = signal<Any[]>([]);
 const entryStagedBusy = signal(false);
 const entrySide = signal("attachments");
 const entrySideSheet = signal(false);
 const sideComposer = signal("");
 const sidePromptError = signal("");
-/** What the person sent from the chat tab; role "note" rows are delivery notes. */
+// What the person sent from the chat tab; role "note" rows are delivery notes.
 const sideChat = signal<Any[]>([]);
-/** The feed's scroll view; scrollToEnd keeps the newest message in view. */
+// The feed's scroll view; scrollToEnd keeps the newest message in view.
 let sideFeedRef: Any;
-/** Files picked into the composer, not yet sent. */
+// Files picked into the composer, not yet sent.
 const sideFiles = signal<Any[]>([]);
-/** The models() catalogue once asked; null while loading or unsupported. */
+// The models() catalogue once asked; null while loading or unsupported.
 const sideModels = signal<Any | null>(null);
 const sideModelsAsked = signal(false);
-/** The composer's model popover and its search text. */
+// The composer's model popover and its search text.
 const sidePicker = signal(false);
 const sidePickerQ = signal("");
-/** The picked model id ("" = the Bot's default) and effort value. */
+// The picked model id ("" = the Bot's default) and effort value.
 const sideModel = signal("");
 const sideEffort = signal("");
-/** The in-flight chat handle while a reply streams. */
+// The in-flight chat handle while a reply streams.
 const sideStream = signal<Any | null>(null);
 let sideStoreAsked = false;
 
@@ -62,7 +62,7 @@ const sideSvg = (inner: string, width: number, stroke = "white") =>
   )}`;
 const SIDE_PATHS: Record<string, string> = {
   attachments: '<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
-  ai: '<path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/>',
+  ai: '<path d="M12 3l2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2L12 3z"/>',
   activity: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
   upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
   file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
@@ -105,18 +105,18 @@ const logoUri = (vb: string, paths: string[], eo: boolean) =>
     `<svg viewBox="${vb}" fill="black">${paths.map((d) => `<path d="${d}"${eo ? ' fill-rule="evenodd"' : ""}/>`).join("")}</svg>`,
   )}`;
 const SIDE_LOGOS: Record<string, string> = {
-  anthropic: logoUri("0 0 24 24", ["M13.827 3.52h3.603L24 20h-3.603l-6.57-16.48zm-7.258 0h3.767L16.906 20h-3.674l-1.343-3.461H5.017l-1.344 3.46H0L6.57 3.522zm4.132 9.959L8.453 7.687 6.205 13.48H10.7z"], true),
-  openai: logoUri("0 0 24 24", ["M21.55 10.004a5.416 5.416 0 00-.478-4.501c-1.217-2.09-3.662-3.166-6.05-2.66A5.59 5.59 0 0010.831 1C8.39.995 6.224 2.546 5.473 4.838A5.553 5.553 0 001.76 7.496a5.487 5.487 0 00.691 6.5 5.416 5.416 0 00.477 4.502c1.217 2.09 3.662 3.165 6.05 2.66A5.586 5.586 0 0013.168 23c2.443.006 4.61-1.546 5.361-3.84a5.553 5.553 0 003.715-2.66 5.488 5.488 0 00-.693-6.497v.001zm-8.381 11.558a4.199 4.199 0 01-2.675-.954c.034-.018.093-.05.132-.074l4.44-2.53a.71.71 0 00.364-.623v-6.176l1.877 1.069c.02.01.033.029.036.05v5.115c-.003 2.274-1.87 4.118-4.174 4.123zM4.192 17.78a4.059 4.059 0 01-.498-2.763c.032.02.09.055.131.078l4.44 2.53c.225.13.504.13.73 0l5.42-3.088v2.138a.068.068 0 01-.027.057L9.9 19.288c-1.999 1.136-4.552.46-5.707-1.51h-.001zM3.023 8.216A4.15 4.15 0 015.198 6.41l-.002.151v5.06a.711.711 0 00.364.624l5.42 3.087-1.876 1.07a.067.067 0 01-.063.005l-4.489-2.559c-1.995-1.14-2.679-3.658-1.53-5.63h.001zm15.417 3.54l-5.42-3.088L14.896 7.6a.067.067 0 01.063-.006l4.489 2.557c1.998 1.14 2.683 3.662 1.529 5.633a4.163 4.163 0 01-2.174 1.807V12.38a.71.71 0 00-.363-.623zm1.867-2.773a6.04 6.04 0 00-.132-.078l-4.44-2.53a.731.731 0 00-.729 0l-5.42 3.088V7.325a.068.068 0 01.027-.057L14.1 4.713c2-1.137 4.555-.46 5.707 1.513.487.833.664 1.809.499 2.757h.001zm-11.741 3.81l-1.877-1.068a.065.065 0 01-.036-.051V6.559c.001-2.277 1.873-4.122 4.181-4.12.976 0 1.92.338 2.671.954-.034.018-.092.05-.131.073l-4.44 2.53a.71.71 0 00-.365.623l-.003 6.173v.002zm1.02-2.168L12 9.25l2.414 1.375v2.75L12 14.75l-2.415-1.375v-2.75z"], true),
-  xai: logoUri("0 0 24 24", ["M6.469 8.776L16.512 23h-4.464L2.005 8.776H6.47zm-.004 7.9l2.233 3.164L6.467 23H2l4.465-6.324zM22 2.582V23h-3.659V7.764L22 2.582zM22 1l-9.952 14.095-2.233-3.163L17.533 1H22z"], true),
-  google: logoUri("0 0 24 24", ["M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z"], true),
-  mistral: logoUri("0 0 24 24", ["M3.428 3.4h3.429v3.428h3.429v3.429h-.002 3.431V6.828h3.427V3.4h3.43v13.714H24v3.429H13.714v-3.428h-3.428v-3.429h-3.43v3.428h3.43v3.429H0v-3.429h3.428V3.4zm10.286 13.715h3.428v-3.429h-3.427v3.429z"], true),
-  meta: logoUri("0 0 24 24", ["M6.897 4c1.915 0 3.516.932 5.43 3.376l.282-.373c.19-.246.383-.484.58-.71l.313-.35C14.588 4.788 15.792 4 17.225 4c1.273 0 2.469.557 3.491 1.516l.218.213c1.73 1.765 2.917 4.71 3.053 8.026l.011.392.002.25c0 1.501-.28 2.759-.818 3.7l-.14.23-.108.153c-.301.42-.664.758-1.086 1.009l-.265.142-.087.04a3.493 3.493 0 01-.302.118 4.117 4.117 0 01-1.33.208c-.524 0-.996-.067-1.438-.215-.614-.204-1.163-.56-1.726-1.116l-.227-.235c-.753-.812-1.534-1.976-2.493-3.586l-1.43-2.41-.544-.895-1.766 3.13-.343.592C7.597 19.156 6.227 20 4.356 20c-1.21 0-2.205-.42-2.936-1.182l-.168-.184c-.484-.573-.837-1.311-1.043-2.189l-.067-.32a8.69 8.69 0 01-.136-1.288L0 14.468c.002-.745.06-1.49.174-2.23l.1-.573c.298-1.53.828-2.958 1.536-4.157l.209-.34c1.177-1.83 2.789-3.053 4.615-3.16L6.897 4zm-.033 2.615l-.201.01c-.83.083-1.606.673-2.252 1.577l-.138.199-.01.018c-.67 1.017-1.185 2.378-1.456 3.845l-.004.022a12.591 12.591 0 00-.207 2.254l.002.188c.004.18.017.36.04.54l.043.291c.092.503.257.908.486 1.208l.117.137c.303.323.698.492 1.17.492 1.1 0 1.796-.676 3.696-3.641l2.175-3.4.454-.701-.139-.198C9.11 7.3 8.084 6.616 6.864 6.616zm10.196-.552l-.176.007c-.635.048-1.223.359-1.82.933l-.196.198c-.439.462-.887 1.064-1.367 1.807l.266.398c.18.274.362.56.55.858l.293.475 1.396 2.335.695 1.114c.583.926 1.03 1.6 1.408 2.082l.213.262c.282.326.529.54.777.673l.102.05c.227.1.457.138.718.138.176.002.35-.023.518-.073.338-.104.61-.32.813-.637l.095-.163.077-.162c.194-.459.29-1.06.29-1.785l-.006-.449c-.08-2.871-.938-5.372-2.2-6.798l-.176-.189c-.67-.683-1.444-1.074-2.27-1.074z"], true),
+  anthropic: logoUri("0 0 24 24", ["M13.8 3.5h3.6L24 20h-3.6l-6.5-16.4zm-7.2 0h3.7L16.9 20h-3.6l-1.3-3.4H5.0l-1.3 3.4H0L6.5 3.5zm4.1 9.9L8.4 7.6 6.2 13.4H10.7z"], true),
+  openai: logoUri("0 0 24 24", ["M21.5 10.0a5.4 5.4 0 00-.4-4.5c-1.2-2.0-3.6-3.1-6.0-2.6A5.5 5.5 0 0010.8 1C8.3.9 6.2 2.5 5.4 4.8A5.5 5.5 0 001.7 7.4a5.4 5.4 0 00.6 6.5 5.4 5.4 0 00.4 4.5c1.2 2.0 3.6 3.1 6.0 2.6A5.5 5.5 0 0013.1 23c2.4.0 4.6-1.5 5.3-3.8a5.5 5.5 0 003.7-2.6 5.4 5.4 0 00-.6-6.4v.0zm-8.3 11.5a4.1 4.1 0 01-2.6-.9c.0-.0.0-.0.1-.0l4.4-2.5a.7.7 0 00.3-.6v-6.1l1.8 1.0c.0.0.0.0.0.0v5.1c-.0 2.2-1.8 4.1-4.1 4.1zM4.1 17.7a4.0 4.0 0 01-.4-2.7c.0.0.0.0.1.0l4.4 2.5c.2.1.5.1.7 0l5.4-3.0v2.1a.0.0 0 01-.0.0L9.9 19.2c-1.9 1.1-4.5.4-5.7-1.5h-.0zM3.0 8.2A4.1 4.1 0 015.1 6.4l-.0.1v5.0a.7.7 0 00.3.6l5.4 3.0-1.8 1.0a.0.0 0 01-.0.0l-4.4-2.5c-1.9-1.1-2.6-3.6-1.5-5.6h.0zm15.4 3.5l-5.4-3.0L14.8 7.6a.0.0 0 01.0-.0l4.4 2.5c1.9 1.1 2.6 3.6 1.5 5.6a4.1 4.1 0 01-2.1 1.8V12.3a.7.7 0 00-.3-.6zm1.8-2.7a6.0 6.0 0 00-.1-.0l-4.4-2.5a.7.7 0 00-.7 0l-5.4 3.0V7.3a.0.0 0 01.0-.0L14.1 4.7c2-1.1 4.5-.4 5.7 1.5.4.8.6 1.8.4 2.7h.0zm-11.7 3.8l-1.8-1.0a.0.0 0 01-.0-.0V6.5c.0-2.2 1.8-4.1 4.1-4.1.9 0 1.9.3 2.6.9-.0.0-.0.0-.1.0l-4.4 2.5a.7.7 0 00-.3.6l-.0 6.1v.0zm1.0-2.1L12 9.2l2.4 1.3v2.7L12 14.7l-2.4-1.3v-2.7z"], true),
+  xai: logoUri("0 0 24 24", ["M6.4 8.7L16.5 23h-4.4L2.0 8.7H6.4zm-.0 7.9l2.2 3.1L6.4 23H2l4.4-6.3zM22 2.5V23h-3.6V7.7L22 2.5zM22 1l-9.9 14.0-2.2-3.1L17.5 1H22z"], true),
+  google: logoUri("0 0 24 24", ["M20.6 10.8a14.1 14.1 0 01-4.4-3.0 14.1 14.1 0 01-3.6-6.4.5.5 0 00-.9 0 14.1 14.1 0 01-3.6 6.4 14.1 14.1 0 01-4.4 3.0c-.6.2-1.3.5-2.0.6a.5.5 0 000 .9c.6.1 1.3.3 2.0.6a14.1 14.1 0 014.4 3.0 14.1 14.1 0 013.6 6.4.5.5 0 00.9 0c.1-.6.3-1.3.6-2.0a14.1 14.1 0 013.0-4.4 14.1 14.1 0 016.4-3.6.5.5 0 000-.9 13.2 13.2 0 01-2.0-.6z"], true),
+  mistral: logoUri("0 0 24 24", ["M3.4 3.4h3.4v3.4h3.4v3.4h-.0 3.4V6.8h3.4V3.4h3.4v13.7H24v3.4H13.7v-3.4h-3.4v-3.4h-3.4v3.4h3.4v3.4H0v-3.4h3.4V3.4zm10.2 13.7h3.4v-3.4h-3.4v3.4z"], true),
+  meta: logoUri("0 0 24 24", ["M6.8 4c1.9 0 3.5.9 5.4 3.3l.2-.3c.1-.2.3-.4.5-.7l.3-.3C14.5 4.7 15.7 4 17.2 4c1.2 0 2.4.5 3.4 1.5l.2.2c1.7 1.7 2.9 4.7 3.0 8.0l.0.3.0.2c0 1.5-.2 2.7-.8 3.7l-.1.2-.1.1c-.3.4-.6.7-1.0 1.0l-.2.1-.0.0a3.4 3.4 0 01-.3.1 4.1 4.1 0 01-1.3.2c-.5 0-.9-.0-1.4-.2-.6-.2-1.1-.5-1.7-1.1l-.2-.2c-.7-.8-1.5-1.9-2.4-3.5l-1.4-2.4-.5-.8-1.7 3.1-.3.5C7.5 19.1 6.2 20 4.3 20c-1.2 0-2.2-.4-2.9-1.1l-.1-.1c-.4-.5-.8-1.3-1.0-2.1l-.0-.3a8.6 8.6 0 01-.1-1.2L0 14.4c.0-.7.0-1.4.1-2.2l.1-.5c.2-1.5.8-2.9 1.5-4.1l.2-.3c1.1-1.8 2.7-3.0 4.6-3.1L6.8 4zm-.0 2.6l-.2.0c-.8.0-1.6.6-2.2 1.5l-.1.1-.0.0c-.6 1.0-1.1 2.3-1.4 3.8l-.0.0a12.5 12.5 0 00-.2 2.2l.0.1c.0.1.0.3.0.5l.0.2c.0.5.2.9.4 1.2l.1.1c.3.3.6.4 1.1.4 1.1 0 1.7-.6 3.6-3.6l2.1-3.4.4-.7-.1-.1C9.1 7.3 8.0 6.6 6.8 6.6zm10.1-.5l-.1.0c-.6.0-1.2.3-1.8.9l-.1.1c-.4.4-.8 1.0-1.3 1.8l.2.3c.1.2.3.5.5.8l.2.4 1.3 2.3.6 1.1c.5.9 1.0 1.6 1.4 2.0l.2.2c.2.3.5.5.7.6l.1.0c.2.1.4.1.7.1.1.0.3-.0.5-.0.3-.1.6-.3.8-.6l.0-.1.0-.1c.1-.4.2-1.0.2-1.7l-.0-.4c-.0-2.8-.9-5.3-2.2-6.7l-.1-.1c-.6-.6-1.4-1.0-2.2-1.0z"], true),
 };
 // qwen/deepseek/cognition ship lazily — the same logos, only heavier paths.
 const SIDE_LOGOS_MORE: Record<string, string> = {
-  qwen: logoUri("0 0 24 24", ["M12.604 1.34c.393.69.784 1.382 1.174 2.075a.18.18 0 00.157.091h5.552c.174 0 .322.11.446.327l1.454 2.57c.19.337.24.478.024.837-.26.43-.513.864-.76 1.3l-.367.658c-.106.196-.223.28-.04.512l2.652 4.637c.172.301.111.494-.043.77-.437.785-.882 1.564-1.335 2.34-.159.272-.352.375-.68.37-.777-.016-1.552-.01-2.327.016a.099.099 0 00-.081.05 575.097 575.097 0 01-2.705 4.74c-.169.293-.38.363-.725.364-.997.003-2.002.004-3.017.002a.537.537 0 01-.465-.271l-1.335-2.323a.09.09 0 00-.083-.049H4.982c-.285.03-.553-.001-.805-.092l-1.603-2.77a.543.543 0 01-.002-.54l1.207-2.12a.198.198 0 000-.197 550.951 550.951 0 01-1.875-3.272l-.79-1.395c-.16-.31-.173-.496.095-.965.465-.813.927-1.625 1.387-2.436.132-.234.304-.334.584-.335a338.3 338.3 0 012.589-.001.124.124 0 00.107-.063l2.806-4.895a.488.488 0 01.422-.246c.524-.001 1.053 0 1.583-.006L11.704 1c.341-.003.724.032.9.34zm-3.432.403a.06.06 0 00-.052.03L6.254 6.788a.157.157 0 01-.135.078H3.253c-.056 0-.07.025-.041.074l5.81 10.156c.025.042.013.062-.034.063l-2.795.015a.218.218 0 00-.2.116l-1.32 2.31c-.044.078-.021.118.068.118l5.716.008c.046 0 .08.02.104.061l1.403 2.454c.046.081.092.082.139 0l5.006-8.76.783-1.382a.055.055 0 01.096 0l1.424 2.53a.122.122 0 00.107.062l2.763-.02a.04.04 0 00.035-.02.041.041 0 000-.04l-2.9-5.086a.108.108 0 010-.113l.293-.507 1.12-1.977c.024-.041.012-.062-.035-.062H9.2c-.059 0-.073-.026-.043-.077l1.434-2.505a.107.107 0 000-.114L9.225 1.774a.06.06 0 00-.053-.031zm6.29 8.02c.046 0 .058.02.034.06l-.832 1.465-2.613 4.585a.056.056 0 01-.05.029.058.058 0 01-.05-.029L8.498 9.841c-.02-.034-.01-.052.028-.054l.216-.012 6.722-.012z"], true),
-  deepseek: logoUri("0 0 24 24", ["M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"], true),
-  cognition: logoUri("0 0 24 24", ["M11.99 2l8.66 5v10l-8.66 5-8.66-5V7z"], false),
+  qwen: logoUri("0 0 24 24", ["M12.6 1.3c.3.6.7 1.3 1.1 2.0a.1.1 0 00.1.0h5.5c.1 0 .3.1.4.3l1.4 2.5c.1.3.2.4.0.8-.2.4-.5.8-.7 1.3l-.3.6c-.1.1-.2.2-.0.5l2.6 4.6c.1.3.1.4-.0.7-.4.7-.8 1.5-1.3 2.3-.1.2-.3.3-.6.3-.7-.0-1.5-.0-2.3.0a.0.0 0 00-.0.0 575.0 575.0 0 01-2.7 4.7c-.1.2-.3.3-.7.3-.9.0-2.0.0-3.0.0a.5.5 0 01-.4-.2l-1.3-2.3a.0.0 0 00-.0-.0H4.9c-.2.0-.5-.0-.8-.0l-1.6-2.7a.5.5 0 01-.0-.5l1.2-2.1a.1.1 0 000-.1 550.9 550.9 0 01-1.8-3.2l-.7-1.3c-.1-.3-.1-.4.0-.9.4-.8.9-1.6 1.3-2.4.1-.2.3-.3.5-.3a338.3 338.3 0 012.5-.0.1.1 0 00.1-.0l2.8-4.8a.4.4 0 01.4-.2c.5-.0 1.0 0 1.5-.0L11.7 1c.3-.0.7.0.9.3zm-3.4.4a.0.0 0 00-.0.0L6.2 6.7a.1.1 0 01-.1.0H3.2c-.0 0-.0.0-.0.0l5.8 10.1c.0.0.0.0-.0.0l-2.7.0a.2.2 0 00-.2.1l-1.3 2.3c-.0.0-.0.1.0.1l5.7.0c.0 0 .0.0.1.0l1.4 2.4c.0.0.0.0.1 0l5.0-8.7.7-1.3a.0.0 0 01.0 0l1.4 2.5a.1.1 0 00.1.0l2.7-.0a.0.0 0 00.0-.0.0.0 0 000-.0l-2.9-5.0a.1.1 0 010-.1l.2-.5 1.1-1.9c.0-.0.0-.0-.0-.0H9.2c-.0 0-.0-.0-.0-.0l1.4-2.5a.1.1 0 000-.1L9.2 1.7a.0.0 0 00-.0-.0zm6.2 8.0c.0 0 .0.0.0.0l-.8 1.4-2.6 4.5a.0.0 0 01-.0.0.0.0 0 01-.0-.0L8.4 9.8c-.0-.0-.0-.0.0-.0l.2-.0 6.7-.0z"], true),
+  deepseek: logoUri("0 0 24 24", ["M23.7 4.4c-.2-.1-.3.1-.5.2-.0.0-.0.0-.1.1-.3.3-.8.6-1.3.6-.8-.0-1.5.2-2.1.8-.1-.7-.5-1.2-1.2-1.5-.3-.1-.7-.3-.9-.6-.1-.2-.2-.5-.3-.7-.0-.1-.1-.3-.2-.3-.2-.0-.2.1-.3.2-.3.5-.4 1.2-.4 1.8.0 1.4.6 2.5 1.8 3.3.1.0.1.1.1.3-.0.2-.1.5-.2.8-.0.1-.1.2-.3.1a5.5 5.5 0 01-1.7-1.1c-.8-.8-1.6-1.7-2.5-2.4a11.3 11.3 0 00-.6-.4c-.9-.9.1-1.7.3-1.8.2-.0.0-.4-.7-.4-.8.0-1.6.2-2.6.6a3.0 3.0 0 01-.4.1 9.5 9.5 0 00-2.8-.1c-1.8.2-3.3 1.1-4.4 2.6C.0 8.6-.2 10.6.1 12.8c.4 2.2 1.5 4.1 3.3 5.6 1.8 1.5 3.9 2.2 6.4 2.1 1.4-.0 3.1-.2 4.9-1.8.4.2.9.3 1.7.3.6.0 1.2-.0 1.7-.1.7-.1.6-.8.4-.9-2.1-1.0-1.6-.5-2.1-.9 1.0-1.2 2.7-2.6 3.3-7.0.0-.3.0-.5 0-.8-.0-.1.0-.2.2-.2a4.1 4.1 0 001.5-.4c1.3-.7 1.9-2.0 2.0-3.5.0-.2-.0-.4-.2-.5zM11.5 18c-2.0-1.6-3.1-2.1-3.5-2.1-.3.0-.3.4-.2.7.0.2.2.4.3.7.1.1.1.4-.1.6-.6.4-1.8-.1-1.8-.1-1.3-.8-2.5-1.8-3.3-3.3-.7-1.3-1.2-2.8-1.2-4.4-.0-.3.0-.5.4-.5a4.6 4.6 0 011.5-.0c2.1.3 3.9 1.2 5.4 2.7.8.8 1.5 1.8 2.2 2.8.7 1.0 1.4 2.0 2.4 2.9.3.2.6.5.8.6-.8.0-2.1.1-3.0-.6zm1-6.4a.3.3 0 01.4-.2.3.3 0 01.2.2.3.3 0 01-.3.3.3.3 0 01-.3-.3zm3.1 1.5c-.2.0-.3.1-.5.1a1.2 1.2 0 01-.7-.2c-.2-.2-.4-.3-.5-.7a1.7 1.7 0 01.0-.5c.0-.3-.0-.5-.2-.7-.1-.1-.4-.1-.6-.1a.5.5 0 01-.2-.0c-.1-.0-.2-.1-.1-.3.0-.0.1-.1.1-.2.3-.2.7-.1 1.1.0.3.1.6.4 1.0.7.3.4.4.5.6.9.1.2.3.5.4.8.0.1-.0.3-.2.4z"], true),
+  cognition: logoUri("0 0 24 24", ["M11.9 2l8.6 5v10l-8.6 5-8.6-5V7z"], false),
 };
 
 function sideB64(bytes: Any, urlSafe = true): string {
@@ -150,7 +150,7 @@ function sideNow(): string {
   }
 }
 
-/** Pick a PDF or image and add it to Books documents; returns the doc, or null. */
+// Pick a PDF or image and add it to Books documents; returns the doc, or null.
 async function sidePickUpload(): Promise<Any | null> {
   if (!buwiz.pickFile) {
     toast("This Buwiz Bot cannot pick files.");
@@ -201,7 +201,7 @@ async function sidePickUpload(): Promise<Any | null> {
   }
 }
 
-/** Drop-zone upload: straight into this entry's staged documents. */
+// Drop-zone upload: straight into this entry's staged documents.
 async function sideUpload() {
   const doc = await sidePickUpload();
   if (doc) {
@@ -210,7 +210,7 @@ async function sideUpload() {
   }
 }
 
-/** Composer paperclip: stage the file on the message and count it on the entry too. */
+// Composer paperclip: stage the file on the message and count it on the entry too.
 async function sidePickForChat() {
   const doc = await sidePickUpload();
   if (doc) {
@@ -225,34 +225,34 @@ function sidePreview() {
   buwiz.open({ app: "evidence" }).catch((e: Any) => toast(errText(e)));
 }
 
-/** The old app's attachments panel: drop zone, staged documents, library browse. */
+// The old app's attachments panel: drop zone, staged documents, library browse.
 function SideAttachments() {
   return (
     <View class="p-3 gap-3">
       <View
-        class="flex-col items-center justify-center gap-2 px-4 py-6 rounded-xl border-2 border-dashed border-[#cbd5e1] cursor-pointer transition-all dark:border-slate-600 hover:border-[#2a9d8f] dark:hover:border-[#2a9d8f] hover:bg-[#f8fafb] dark:hover:bg-slate-800/50"
+        class="flex-col items-center justify-center gap-2 px-4 py-6 rounded-xl border-2 border-dashed border-[#cbd5e1] cursor-pointer transition-all dark:border-[#27282f] hover:border-[#2a9d8f] dark:hover:border-[#2a9d8f] hover:bg-[#f8fafb] dark:hover:bg-[#22232a]"
         accessibilityLabel="Browse for an attachment"
         onPress={() => sideUpload()}
         activeStyle={{ opacity: 0.75 }}
       >
-        <View class="w-10 h-10 rounded-full flex items-center justify-center bg-[#f1f5f9] dark:bg-slate-800">
+        <View class="w-10 h-10 rounded-full flex items-center justify-center bg-[#f1f5f9] dark:bg-[#141519]">
           <Avatar src={SIDE_GLYPHS.upload} accessibilityLabel="" class="w-5 h-5" fallbackDelay={Infinity} />
         </View>
         <View class="items-center">
           <Text class="text-[12px] font-medium text-[#2a9d8f]">{entryStagedBusy() ? "Uploading…" : "Browse"}</Text>
-          <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">Images or PDF — max 50MB</Text>
+          <Text class="text-[9px] text-[#94a3b8] dark:text-[#6e727e]">Images or PDF — max 50MB</Text>
         </View>
       </View>
       <If when={entryStaged().length > 0}>
         <Each of={entryStaged()} key={rowKey}>
           {(d: Any, i: Any) => (
-            <View class="group flex-row items-center gap-2.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 hover:border-[#2a9d8f]/40 dark:hover:border-[#2a9d8f]/40 transition-colors">
+            <View class="group flex-row items-center gap-2.5 px-3 py-2 rounded-lg bg-white dark:bg-[#141519] border border-[#e2e8f0] dark:border-[#27282f] hover:border-[#2a9d8f]/40 dark:hover:border-[#2a9d8f]/40 transition-colors">
               <View class="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 items-center justify-center shrink-0">
                 <Avatar src={String(d().mime).startsWith("image/") ? SIDE_GLYPHS.image : SIDE_GLYPHS.file} accessibilityLabel="" class="w-4 h-4" fallbackDelay={Infinity} />
               </View>
               <View class="flex-1 min-w-0 gap-0.5">
-                <Text class="text-[10px] font-medium text-[#1e293b] dark:text-white truncate">{d().filename}</Text>
-                <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">{sideBytesShown(d().size)}</Text>
+                <Text class="text-[10px] font-medium text-[#1e293b] dark:text-[#f4f5f7] truncate">{d().filename}</Text>
+                <Text class="text-[9px] text-[#94a3b8] dark:text-[#6e727e]">{sideBytesShown(d().size)}</Text>
               </View>
               <View
                 class="w-7 h-7 rounded-md items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer shrink-0 opacity-60 group-hover:opacity-100"
@@ -267,26 +267,26 @@ function SideAttachments() {
         </Each>
       </If>
       <View
-        class="flex-row items-center justify-center gap-1.5 px-3 py-2 rounded-lg group border border-[#e2e8f0] dark:border-white/10 hover:bg-[#f8fafc] dark:hover:bg-white/5 transition-colors cursor-pointer"
+        class="flex-row items-center justify-center gap-1.5 px-3 py-2 rounded-lg group border border-[#e2e8f0] dark:border-[#27282f] hover:bg-[#f8fafc] dark:hover:bg-[#22232a] transition-colors cursor-pointer"
         accessibilityLabel="Browse existing documents"
         onPress={() => buwiz.open({ app: "evidence" }).catch(() => null)}
         activeStyle={{ opacity: 0.7 }}
       >
         <Avatar src={SIDE_GLYPHS.folder} accessibilityLabel="" class="w-4 h-4" fallbackDelay={Infinity} />
-        <Text class="text-xs font-medium text-[#64748b] dark:text-white/50 group-hover:text-[#1e293b] dark:group-hover:text-white">Browse existing documents</Text>
+        <Text class="text-xs font-medium text-[#64748b] dark:text-[#f4f5f7]/50 group-hover:text-[#1e293b] dark:group-hover:text-[#f4f5f7]">Browse existing documents</Text>
       </View>
       <If when={entryStaged().length === 0}>
         <View class="flex-1 flex-col items-center justify-center py-8 opacity-60 gap-0">
           <Avatar src={SIDE_GLYPHS.fileBig} accessibilityLabel="" class="w-7 h-7 mb-2" fallbackDelay={Infinity} />
-          <Text class="text-[10px] font-medium text-[#94a3b8] dark:text-slate-500">No attachments yet</Text>
-          <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500 mt-0.5">Drop receipts, invoices, or documents</Text>
+          <Text class="text-[10px] font-medium text-[#94a3b8] dark:text-[#6e727e]">No attachments yet</Text>
+          <Text class="text-[9px] text-[#94a3b8] dark:text-[#6e727e] mt-0.5">Drop receipts, invoices, or documents</Text>
         </View>
       </If>
     </View>
   );
 }
 
-/** What to ask the assistant in the chat: it saves a draft, which lands in the Inbox. */
+// What to ask the assistant in the chat: it saves a draft, which lands in the Inbox.
 const SIDE_ASK: [string, string][] = [
   ["💸 Pay expense", "Draft a money-out entry in Books: I paid [who] [amount] for [what] from [bank or cash]."],
   ["💰 Receive payment", "Draft a money-in entry in Books: [who] paid me [amount] for [what] into [bank or cash]."],
@@ -296,7 +296,7 @@ const SIDE_ASK: [string, string][] = [
   ["⚡ Utility", "Draft a money-out entry in Books: paid the [electric or water] bill of [amount] from [bank]."],
 ];
 
-/** A file on a sent message: an image thumbnail or the old panel's file card. */
+// A file on a sent message: an image thumbnail or the old panel's file card.
 function SideChatFile(p: { d: Any }) {
   const d = p.d;
   if (d.thumb) {
@@ -308,7 +308,7 @@ function SideChatFile(p: { d: Any }) {
   }
   return (
     <View
-      class="flex-row items-center gap-2 max-w-[85%] px-2.5 py-2 rounded-lg bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 hover:border-[#2a9d8f]/40 dark:hover:border-[#2a9d8f]/40 transition-colors cursor-pointer"
+      class="flex-row items-center gap-2 max-w-[85%] px-2.5 py-2 rounded-lg bg-white dark:bg-[#141519] border border-[#e2e8f0] dark:border-[#27282f] hover:border-[#2a9d8f]/40 dark:hover:border-[#2a9d8f]/40 transition-colors cursor-pointer"
       accessibilityLabel={`Preview ${d.filename}`}
       onPress={() => sidePreview()}
       activeStyle={{ opacity: 0.8 }}
@@ -317,8 +317,8 @@ function SideChatFile(p: { d: Any }) {
         <Avatar src={SIDE_GLYPHS.file} accessibilityLabel="" class="w-4 h-4" fallbackDelay={Infinity} />
       </View>
       <View class="flex-1 min-w-0 gap-0.5">
-        <Text class="text-[10px] font-medium text-[#1e293b] dark:text-white truncate">{d.filename}</Text>
-        <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">{`${SIDE_MIME[d.mime] || "File"} · ${sideBytesShown(d.size)}`}</Text>
+        <Text class="text-[10px] font-medium text-[#1e293b] dark:text-[#f4f5f7] truncate">{d.filename}</Text>
+        <Text class="text-[9px] text-[#94a3b8] dark:text-[#6e727e]">{`${SIDE_MIME[d.mime] || "File"} · ${sideBytesShown(d.size)}`}</Text>
       </View>
     </View>
   );
@@ -326,13 +326,13 @@ function SideChatFile(p: { d: Any }) {
 
 // ————— model picker + real chat (the bridge's buwiz.models / buwiz.chat) —————
 
-/** The bridge chat API; absent on older Bots, where the copy path stays. */
+// The bridge chat API; absent on older Bots, where the copy path stays.
 const sideApi = () => typeof buwiz.models === "function" && typeof buwiz.chat === "function";
 
 function sideModelInfo(id: string) {
   return id ? (sideModels()?.models || []).find((m: Any) => m.id === id) || null : null;
 }
-/** The ModelInfo the pill shows: the pick, else the Bot's default, else the first. */
+// The ModelInfo the pill shows: the pick, else the Bot's default, else the first.
 function sideShownModel() {
   const r = sideModels();
   return sideModelInfo(sideModel()) || sideModelInfo(String(r?.default || "")) || (r?.models || [])[0] || null;
@@ -344,35 +344,35 @@ function sideModelLogo(m: Any): string {
   if (/swe-\d/.test(String(m?.id || "").toLowerCase())) return SIDE_LOGOS_MORE.cognition;
   return "";
 }
-/** The effort in effect for the picked model: the choice, else its default rung. */
+// The effort in effect for the picked model: the choice, else its default rung.
 function sideEffortNow() {
   const m = sideModelInfo(sideModel()) || sideShownModel();
   if (sideEffort()) return sideEffort();
   return String(m?.default_effort || "");
 }
-/** The effort row's label for the picked model; "" when it has no efforts. */
+// The effort row's label for the picked model; "" when it has no efforts.
 function sideEffortLabel() {
   const m = sideModelInfo(sideModel()) || sideShownModel();
   return (m?.efforts || []).find((e: Any) => e.value === sideEffortNow())?.label || "";
 }
-/** The model's last rung (Ultra / Max) — violet in the Bot picker. */
+// The model's last rung (Ultra / Max) — violet in the Bot picker.
 const sideTopEffort = () => {
   const m = sideModelInfo(sideModel()) || sideShownModel();
   const es = m?.efforts || [];
   return es.length > 1 && es[es.length - 1]?.value === sideEffortNow();
 };
-/** What the picked model accepts; defaults to text-only until models() lands. */
+// What the picked model accepts; defaults to text-only until models() lands.
 const sideModelInputs = () => sideShownModel()?.inputs || ["text"];
 const sideFileKind = (mime: string) => (mime === "application/pdf" ? "pdf" : mime.startsWith("image/") ? "image" : "other");
 
-/** The live catalogue answered with nothing: the pill hides and sends copy to the Bot chat. */
+// The live catalogue answered with nothing: the pill hides and sends copy to the Bot chat.
 const sideCatalogEmpty = () => {
   const r = sideModels();
   return Boolean(r) && (r?.models || []).length === 0;
 };
 
-/** Loads the catalogue (an empty or failed answer is asked again on the next
- *  mount), plus the stored chat.model / chat.effort choice. */
+// Loads the catalogue (an empty or failed answer is asked again on the next
+// mount), plus the stored chat.model / chat.effort choice.
 function sideLoadModels() {
   if (sideModelsAsked() && (sideModels()?.models || []).length > 0) return;
   sideModelsAsked.set(true);
@@ -399,7 +399,7 @@ function sidePickModel(id: string, effort: string) {
   }
 }
 
-/** The visible exchange as bridge messages: ≤64, user/assistant text, files only on user rows. */
+// The visible exchange as bridge messages: ≤64, user/assistant text, files only on user rows.
 function sideHistory() {
   return sideChat()
     .filter((m: Any) => (m.role === "you" || m.role === "assistant") && (m.text || (m.role === "you" && m.chatFiles?.length)))
@@ -411,7 +411,7 @@ function sideHistory() {
     });
 }
 
-/** One assistant turn: called from a person's press (the consent grant needs it). */
+// One assistant turn: called from a person's press (the consent grant needs it).
 function sideChatTurn() {
   const shown = sideShownModel();
   const req: Any = { model: sideModel() || String(sideModels()?.default || shown?.id || ""), messages: sideHistory() };
@@ -454,9 +454,9 @@ function sideChatTurn() {
     });
 }
 
-/** A press copies the prompt to the Bot chat; the files stay staged on the
- *  entry and in Documents (attaching to a chat is the library's own grant).
- *  The assistant's reply shows in the Bot chat and its draft in the Inbox. */
+// A press copies the prompt to the Bot chat; the files stay staged on the
+// entry and in Documents (attaching to a chat is the library's own grant).
+// The assistant's reply shows in the Bot chat and its draft in the Inbox.
 async function sideSendCopy() {
   const text = sideComposer().trim();
   const files = sideFiles();
@@ -495,7 +495,7 @@ async function sideSendCopy() {
   sideFeedRef?.scrollToEnd?.({ animated: true });
 }
 
-/** Person pressed send: a real exchange when the bridge speaks chat, else the copy path. */
+// Person pressed send: a real exchange when the bridge speaks chat, else the copy path.
 async function sideSend() {
   const text = sideComposer().trim();
   const files = sideFiles();
@@ -518,13 +518,13 @@ async function sideSend() {
   sideChatTurn();
 }
 
-/** Re-ask after a stop or failure: drop the interrupted answer so the history ends on the person's turn. */
+// Re-ask after a stop or failure: drop the interrupted answer so the history ends on the person's turn.
 function sideRetry(mid: Any) {
   sideChat.set(sideChat().filter((m: Any) => m.id !== mid));
   sideChatTurn();
 }
 
-/** Markdown-lite: a reply's text into blocks (paragraph, bullets, numbered, code). */
+// Markdown-lite: a reply's text into blocks (paragraph, bullets, numbered, code).
 function sideMdBlocks(text: string) {
   const blocks: Any[] = [];
   let fence = false;
@@ -555,7 +555,7 @@ function sideMdBlocks(text: string) {
   flush();
   return blocks;
 }
-/** One line split at **bold** and `code` spans into {t,b,c} segments. */
+// One line split at **bold** and `code` spans into {t,b,c} segments.
 function sideMdSegs(line: string) {
   const out: Any[] = [];
   let rest = line;
@@ -571,14 +571,14 @@ function sideMdSegs(line: string) {
   }
   return out;
 }
-/** One inline line of an assistant reply. */
+// One inline line of an assistant reply.
 function SideMdLine(p: { line: string }) {
   return (
     <View class="flex-row flex-wrap">
       <Each of={sideMdSegs(p.line)}>
         {(s: Any) => (
           <Text
-            class={`text-[12px] leading-relaxed ${s().b ? "font-semibold text-[#0f172a] dark:text-white" : s().c ? "font-mono text-[11px] bg-[#f1f5f9] dark:bg-slate-700 px-1 rounded" : "text-[#1e293b] dark:text-slate-200"}`}
+            class={`text-[12px] leading-relaxed ${s().b ? "font-semibold text-[#0f172a] dark:text-[#f4f5f7]" : s().c ? "font-mono text-[11px] bg-[#f1f5f9] dark:bg-[#1c1d22] px-1 rounded" : "text-[#1e293b] dark:text-[#f4f5f7]"}`}
           >
             {s().t}
           </Text>
@@ -587,15 +587,15 @@ function SideMdLine(p: { line: string }) {
     </View>
   );
 }
-/** An assistant bubble's content: paragraphs, lists and code blocks. */
+// An assistant bubble's content: paragraphs, lists and code blocks.
 function SideMd(p: { text: string }) {
   return (
     <View class="gap-1.5">
       <Each of={sideMdBlocks(p.text)}>
         {(b: Any, i: Any) =>
           b().type === "code" ? (
-            <View class="rounded-lg bg-[#f1f5f9] dark:bg-slate-700/60 px-2.5 py-2">
-              <Text class="font-mono text-[11px] text-[#1e293b] dark:text-slate-200">{b().text}</Text>
+            <View class="rounded-lg bg-[#f1f5f9] dark:bg-[#1c1d22] px-2.5 py-2">
+              <Text class="font-mono text-[11px] text-[#1e293b] dark:text-[#f4f5f7]">{b().text}</Text>
             </View>
           ) : b().type === "ul" ? (
             <View class="gap-0.5">
@@ -630,8 +630,8 @@ function SideMd(p: { text: string }) {
   );
 }
 
-/** The model popover: search, the Default row, subscriptions, then API groups,
- *  and the picked model's efforts — the Bot's modelpicker in our kit style. */
+// The model popover: search, the Default row, subscriptions, then API groups,
+// and the picked model's efforts — the Bot's modelpicker in our kit style.
 function SideModelCard() {
   // Signal reads stay inside the JSX expression containers so each is a live
   // binding (kit.tsx: a value hoisted out of the JSX freezes at mount).
@@ -660,15 +660,15 @@ function SideModelCard() {
     const on = () => sideModel() === String(m.id);
     return (
       <View
-        class={`flex-row items-center gap-2.5 h-8 px-2.5 rounded-lg cursor-pointer ${on() ? "bg-[#1e86fc]/10" : "hover:bg-black/[0.04] dark:hover:bg-white/5"}`}
+        class={`flex-row items-center gap-2.5 h-8 px-2.5 rounded-lg cursor-pointer ${on() ? "bg-[#1e86fc]/10" : "hover:bg-black/[0.04] dark:hover:bg-[#22232a]"}`}
         accessibilityLabel={String(m.name)}
         onPress={() => sidePickModel(String(m.id), String(m.default_effort || ""))}
         activeStyle={{ opacity: 0.7 }}
       >
         <If when={Boolean(sideModelLogo(m))}>
-          <Avatar src={sideModelLogo(m)} accessibilityLabel="" class="w-4 h-4" imageClass={on() ? "tint-[#1e86fc]" : "tint-[#64748b] dark:tint-slate-300"} fallbackDelay={Infinity} />
+          <Avatar src={sideModelLogo(m)} accessibilityLabel="" class="w-4 h-4" imageClass={on() ? "tint-[#1e86fc]" : "tint-[#64748b] dark:tint-[#a1a5b0]"} fallbackDelay={Infinity} />
         </If>
-        <Text class={`flex-1 truncate text-[12px] ${on() ? "text-[#1e86fc] font-medium" : "text-[#1e293b] dark:text-slate-200"}`}>{m.name}</Text>
+        <Text class={`flex-1 truncate text-[12px] ${on() ? "text-[#1e86fc] font-medium" : "text-[#1e293b] dark:text-[#f4f5f7]"}`}>{m.name}</Text>
         <If when={on()}>
           <Avatar src={SIDE_GLYPHS.check} accessibilityLabel="" class="w-3.5 h-3.5" fallbackDelay={Infinity} />
         </If>
@@ -678,8 +678,11 @@ function SideModelCard() {
   return (
     <View class="fixed inset-0 z-50">
       <View class="absolute inset-0 bg-black/20" onPress={() => sidePicker.set(false)} />
-      <View class="absolute left-3 right-3 bottom-[148px] rounded-xl bg-white dark:bg-slate-900 border border-[#e2e8f0] dark:border-slate-700 shadow-xl overflow-hidden">
-        <View class="flex-row items-center gap-1.5 h-8 mx-2 mt-2 px-2 rounded-lg bg-[#f1f5f9] dark:bg-slate-800">
+      {/* Anchored under the model chip the way models.rs centers the popover on the
+          trigger (left = trigger_center - w/2, clamped to 8px): 214 puts its left
+          edge at exactly 8px in a 490px window and under the trigger cluster wide. */}
+      <View class="absolute right-[214px] bottom-[148px] w-[268px] max-w-[calc(100%-16px)] rounded-xl bg-white dark:bg-[#1c1d22] border border-[#e2e8f0] dark:border-[#27282f] shadow-[0_10px_24px_-6px_rgba(0,0,0,0.45)] overflow-hidden">
+        <View class="flex-row items-center gap-1.5 h-8 mx-2 mt-2 px-2 rounded-lg bg-[#f1f5f9] dark:bg-[#141519]">
           <Avatar src={SIDE_GLYPHS.search} accessibilityLabel="" class="w-3.5 h-3.5" fallbackDelay={Infinity} />
           <Input
             ref={(e: Any) => {
@@ -691,13 +694,13 @@ function SideModelCard() {
             value={sidePickerQ()}
             placeholder="Search models…"
             onChange={(e: Any) => sidePickerQ.set(typeof e === "string" ? e : e.value)}
-            class="flex-1 text-[12px] bg-transparent border-none outline-none placeholder:text-[#8e8e93] text-[#0f172a] dark:text-slate-100 focus:outline-none focus:ring-0"
+            class="flex-1 text-[12px] bg-transparent border-none outline-none placeholder:text-[#8e8e93] text-[#0f172a] dark:text-[#f4f5f7] focus:outline-none focus:ring-0"
           />
         </View>
         <Scroll class="max-h-64 p-1.5">
           <If when={!q() && Boolean(sideModels()?.default)}>
             <View
-              class={`px-2.5 py-1.5 rounded-lg cursor-pointer ${sideModel() === "" ? "bg-[#1e86fc]/10" : "hover:bg-black/[0.04] dark:hover:bg-white/5"}`}
+              class={`px-2.5 py-1.5 rounded-lg cursor-pointer ${sideModel() === "" ? "bg-[#1e86fc]/10" : "hover:bg-black/[0.04] dark:hover:bg-[#22232a]"}`}
               accessibilityLabel="Default model"
               onPress={() => {
                 sidePickModel("", "");
@@ -706,38 +709,38 @@ function SideModelCard() {
               activeStyle={{ opacity: 0.7 }}
             >
               <View class="flex-row items-center">
-                <Text class={`flex-1 text-[12px] font-medium ${sideModel() === "" ? "text-[#1e86fc]" : "text-[#1e293b] dark:text-slate-200"}`}>Default</Text>
+                <Text class={`flex-1 text-[12px] font-medium ${sideModel() === "" ? "text-[#1e86fc]" : "text-[#1e293b] dark:text-[#f4f5f7]"}`}>Default</Text>
                 <If when={sideModel() === ""}>
                   <Avatar src={SIDE_GLYPHS.check} accessibilityLabel="" class="w-3.5 h-3.5" fallbackDelay={Infinity} />
                 </If>
               </View>
-              <Text class="text-[10px] text-[#94a3b8] dark:text-slate-500">{`Recommended · ${sideModelInfo(String(sideModels()?.default || ""))?.name || "the Bot's default"}`}</Text>
+              <Text class="text-[10px] text-[#94a3b8] dark:text-[#6e727e]">{`Recommended · ${sideModelInfo(String(sideModels()?.default || ""))?.name || "the Bot's default"}`}</Text>
             </View>
           </If>
           <Each of={subs()}>{(m: Any) => row(m())}</Each>
           <Each of={groups()}>
             {(g: Any) => (
               <View>
-                <View class="h-px mx-1.5 my-1 bg-[#e2e8f0] dark:bg-slate-700" />
-                <Text class="px-2.5 pt-0.5 pb-1 text-[10px] text-[#94a3b8] dark:text-slate-500">{g()[0]}</Text>
+                <View class="h-px mx-1.5 my-1 bg-[#e2e8f0] dark:bg-[#1c1d22]" />
+                <Text class="px-2.5 pt-0.5 pb-1 text-[10px] text-[#94a3b8] dark:text-[#6e727e]">{g()[0]}</Text>
                 <Each of={g()[1]}>{(m: Any) => row(m())}</Each>
               </View>
             )}
           </Each>
           <If when={list().length === 0}>
-            <Text class="p-2 text-[11px] text-[#94a3b8] dark:text-slate-500">{sideModels() ? "No models match" : "Loading models…"}</Text>
+            <Text class="p-2 text-[11px] text-[#94a3b8] dark:text-[#6e727e]">{sideModels() ? "No models match" : "Loading models…"}</Text>
           </If>
         </Scroll>
         <If when={efforts().length > 0}>
-          <View class="border-t border-[#e2e8f0] dark:border-slate-700 p-1.5">
-            <Text class="px-2.5 pb-1 text-[10px] text-[#94a3b8] dark:text-slate-500">Effort</Text>
+          <View class="border-t border-[#e2e8f0] dark:border-[#27282f] p-1.5">
+            <Text class="px-2.5 pb-1 text-[10px] text-[#94a3b8] dark:text-[#6e727e]">Effort</Text>
             <Each of={efforts()}>
               {(e: Any, i: Any) => {
                 const top = efforts().length > 1 && i() === efforts().length - 1;
                 const on = () => sideEffort() === e().value;
                 return (
                   <View
-                    class={`flex-row items-center h-8 px-2.5 rounded-lg cursor-pointer ${on() ? "bg-[#1e86fc]/10" : "hover:bg-black/[0.04] dark:hover:bg-white/5"}`}
+                    class={`flex-row items-center h-8 px-2.5 rounded-lg cursor-pointer ${on() ? "bg-[#1e86fc]/10" : "hover:bg-black/[0.04] dark:hover:bg-[#22232a]"}`}
                     accessibilityLabel={`Effort ${e().label}`}
                     onPress={() => {
                       sidePickModel(sideModel(), String(e().value));
@@ -745,7 +748,7 @@ function SideModelCard() {
                     }}
                     activeStyle={{ opacity: 0.7 }}
                   >
-                    <Text class={`flex-1 text-[12px] ${on() ? (top ? "text-[#a78bfa]" : "text-[#1e86fc]") : "text-[#1e293b] dark:text-slate-200"}`}>{e().label}</Text>
+                    <Text class={`flex-1 text-[12px] ${on() ? (top ? "text-[#a78bfa]" : "text-[#1e86fc]") : "text-[#1e293b] dark:text-[#f4f5f7]"}`}>{e().label}</Text>
                     <If when={on()}>
                       <Avatar src={SIDE_GLYPHS.check} accessibilityLabel="" class="w-3.5 h-3.5" fallbackDelay={Infinity} />
                     </If>
@@ -760,7 +763,7 @@ function SideModelCard() {
   );
 }
 
-/** The old app's AI chat panel: the feed, quick prompts, and the composer. */
+// The old app's AI chat panel: the feed, quick prompts, and the composer.
 function SideAssistant() {
   const msgs = sideChat;
   const canSend = () => Boolean(sideComposer().trim()) || sideFiles().length > 0;
@@ -776,8 +779,8 @@ function SideAssistant() {
         <If when={msgs().length === 0}>
           <View class="flex-1 flex-col items-center justify-center py-10 gap-2">
             <Avatar src={SIDE_GLYPHS.sparkle} accessibilityLabel="" class="w-8 h-8" fallbackDelay={Infinity} />
-            <Text class="text-[12px] font-medium text-[#64748b] dark:text-slate-400">Ask the assistant</Text>
-            <Text class="text-[10px] text-[#94a3b8] dark:text-slate-500 text-center px-3">Describe a transaction, or attach a receipt or bill. The assistant drafts it; you post it.</Text>
+            <Text class="text-[12px] font-medium text-[#64748b] dark:text-[#a1a5b0]">Ask the assistant</Text>
+            <Text class="text-[10px] text-[#94a3b8] dark:text-[#6e727e] text-center px-3">Describe a transaction, or attach a receipt or bill. The assistant drafts it; you post it.</Text>
           </View>
         </If>
         <Each of={msgs()} key={rowKey}>
@@ -790,36 +793,36 @@ function SideAssistant() {
                   </View>
                 </If>
                 <If when={!m().error}>
-                  <Text class="text-[10px] text-[#94a3b8] dark:text-slate-500 text-center">{m().text}</Text>
+                  <Text class="text-[10px] text-[#94a3b8] dark:text-[#6e727e] text-center">{m().text}</Text>
                 </If>
               </View>
             ) : m().role === "assistant" ? (
               <View class="items-start gap-1 py-1">
                 <If when={Boolean(m().streaming) && !m().text}>
-                  <View class="flex-row items-center gap-1 px-3 py-2 rounded-2xl rounded-bl-md bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700">
+                  <View class="flex-row items-center gap-1 px-3 py-2 rounded-2xl rounded-bl-md bg-white dark:bg-[#141519] border border-[#e2e8f0] dark:border-[#27282f]">
                     <Each of={[0, 1, 2]}>{(d: Any) => <View class="w-1.5 h-1.5 rounded-full bg-[#94a3b8]" />}</Each>
                   </View>
                 </If>
                 <If when={Boolean(m().text)}>
-                  <View class="max-w-[92%] bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 rounded-2xl rounded-bl-md px-3 py-2">
+                  <View class="max-w-[92%] bg-white dark:bg-[#141519] border border-[#e2e8f0] dark:border-[#27282f] rounded-2xl rounded-bl-md px-3 py-2">
                     <SideMd text={m().text} />
                   </View>
                 </If>
                 <If when={Boolean(m().stopped)}>
                   <View class="flex-row items-center gap-2">
-                    <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">Stopped</Text>
+                    <Text class="text-[9px] text-[#94a3b8] dark:text-[#6e727e]">Stopped</Text>
                     <View
-                      class="px-2 py-0.5 rounded-md bg-[#f1f5f9] dark:bg-slate-700 cursor-pointer"
+                      class="px-2 py-0.5 rounded-md bg-[#f1f5f9] dark:bg-[#1c1d22] cursor-pointer"
                       accessibilityLabel="Retry"
                       onPress={() => sideRetry(m().id)}
                       activeStyle={{ opacity: 0.7 }}
                     >
-                      <Text class="text-[10px] font-medium text-[#64748b] dark:text-slate-300">Retry</Text>
+                      <Text class="text-[10px] font-medium text-[#64748b] dark:text-[#a1a5b0]">Retry</Text>
                     </View>
                   </View>
                 </If>
                 <If when={Boolean(m().at) && !m().stopped}>
-                  <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">{m().streaming ? "…" : m().at}</Text>
+                  <Text class="text-[9px] text-[#94a3b8] dark:text-[#6e727e]">{m().streaming ? "…" : m().at}</Text>
                 </If>
               </View>
             ) : m().role === "error" ? (
@@ -847,7 +850,7 @@ function SideAssistant() {
                   </View>
                 </If>
                 <If when={Boolean(m().at)}>
-                  <Text class="text-[9px] text-[#94a3b8] dark:text-slate-500">{m().at}</Text>
+                  <Text class="text-[9px] text-[#94a3b8] dark:text-[#6e727e]">{m().at}</Text>
                 </If>
               </View>
             )
@@ -858,26 +861,26 @@ function SideAssistant() {
         <Each of={SIDE_ASK}>
           {(q: Any) => (
             <View
-              class="px-2 py-1 rounded-full bg-[#f1f5f9] dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 hover:bg-[#e2e8f0] dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              class="px-2 py-1 rounded-full bg-[#f1f5f9] dark:bg-[#141519] border border-[#e2e8f0] dark:border-[#27282f] hover:bg-[#e2e8f0] dark:hover:bg-[#22232a] transition-colors cursor-pointer"
               onPress={() => { sideComposer.set(q()[1]); sidePromptError.set(""); }}
               activeStyle={{ opacity: 0.7 }}
             >
-              <Text class="text-[10px] font-medium text-[#475569] dark:text-slate-400">{q()[0]}</Text>
+              <Text class="text-[10px] font-medium text-[#475569] dark:text-[#a1a5b0]">{q()[0]}</Text>
             </View>
           )}
         </Each>
       </View>
-      <View class="p-3 border-t border-[#e2e8f0] dark:border-slate-700">
+      <View class="p-3 border-t border-[#e2e8f0] dark:border-[#27282f]">
         <If when={sideApi() && sideCatalogEmpty()}>
-          <Text class="text-xs text-[#94a3b8] dark:text-slate-500 pb-2">No AI models available. Connect one in Buwiz Bot settings.</Text>
+          <Text class="text-xs text-[#94a3b8] dark:text-[#6e727e] pb-2">No AI models available. Connect one in Buwiz Bot settings.</Text>
         </If>
-        <View class="rounded-xl border border-[#e2e8f0] dark:border-slate-600 bg-[#f8f9fb] dark:bg-slate-800 px-3 py-2 gap-2 focus-within:border-[#2a9d8f] focus-within:ring-1 focus-within:ring-[#2a9d8f] transition-colors">
+        <View class="rounded-xl border border-[#e2e8f0] dark:border-[#27282f] bg-[#f8f9fb] dark:bg-[#141519] px-3 py-2 gap-2 focus-within:border-[#2a9d8f] focus-within:ring-1 focus-within:ring-[#2a9d8f] transition-colors">
           <If when={sideFiles().length > 0}>
             <View class="flex-row gap-1.5 flex-wrap">
               <Each of={sideFiles()} key={rowKey}>
                 {(f: Any, i: Any) => (
-                  <View class="flex-row items-center gap-1 px-2 py-1 rounded-md bg-white dark:bg-slate-700 border border-[#e2e8f0] dark:border-slate-600">
-                    <Text class="text-[9px] font-medium text-[#475569] dark:text-slate-300 max-w-24 truncate">{f().filename}</Text>
+                  <View class="flex-row items-center gap-1 px-2 py-1 rounded-md bg-white dark:bg-[#1c1d22] border border-[#e2e8f0] dark:border-[#27282f]">
+                    <Text class="text-[9px] font-medium text-[#475569] dark:text-[#a1a5b0] max-w-24 truncate">{f().filename}</Text>
                     <View
                       class="w-3.5 h-3.5 rounded items-center justify-center cursor-pointer"
                       accessibilityLabel="Remove file"
@@ -899,12 +902,12 @@ function SideAssistant() {
             submitBehavior="submit"
             onSubmit={() => sideSend()}
             onChange={(e: Any) => { sideComposer.set(typeof e === "string" ? e : e.value); sidePromptError.set(""); }}
-            class="w-full min-h-6 max-h-28 text-[13px] bg-transparent border-none outline-none placeholder:text-[#8e8e93] text-[#0f172a] dark:text-slate-100 focus:outline-none focus:ring-0"
+            class="w-full min-h-6 max-h-28 text-[13px] bg-transparent border-none outline-none placeholder:text-[#8e8e93] text-[#0f172a] dark:text-[#f4f5f7] focus:outline-none focus:ring-0"
           />
           <View class="flex-row items-center justify-between">
             <View class="flex-row items-center gap-1">
               <View
-                class={`w-7 h-7 rounded-lg items-center justify-center transition-colors ${filesOk() ? "hover:bg-[#f1f5f9] dark:hover:bg-slate-700 cursor-pointer" : "opacity-40"}`}
+                class={`w-7 h-7 rounded-lg items-center justify-center transition-colors ${filesOk() ? "hover:bg-[#f1f5f9] dark:hover:bg-[#22232a] cursor-pointer" : "opacity-40"}`}
                 accessibilityLabel={filesOk() ? "Attach a receipt or bill" : "This model takes text only"}
                 onPress={() => filesOk() && sidePickForChat()}
                 activeStyle={{ opacity: 0.7 }}
@@ -913,7 +916,7 @@ function SideAssistant() {
               </View>
               <If when={sideApi() && !sideCatalogEmpty()}>
                 <View
-                  class="flex-row items-center gap-1 h-7 pl-1.5 pr-2 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  class="flex-row items-center gap-1 h-7 pl-1.5 pr-2 rounded-full bg-black/[0.04] dark:bg-[#1c1d22] hover:bg-black/[0.08] dark:hover:bg-[#22232a] transition-colors cursor-pointer"
                   accessibilityLabel="Select model"
                   onPress={() => {
                     sideLoadModels();
@@ -922,9 +925,9 @@ function SideAssistant() {
                   activeStyle={{ opacity: 0.7 }}
                 >
                   <If when={Boolean(sideModelLogo(sideShownModel()))}>
-                    <Avatar src={sideModelLogo(sideShownModel())} accessibilityLabel="" class="w-3.5 h-3.5" imageClass="tint-[#334155] dark:tint-slate-300" fallbackDelay={Infinity} />
+                    <Avatar src={sideModelLogo(sideShownModel())} accessibilityLabel="" class="w-3.5 h-3.5" imageClass="tint-[#334155] dark:tint-[#a1a5b0]" fallbackDelay={Infinity} />
                   </If>
-                  <Text class="text-[11px] text-[#334155] dark:text-slate-300">{sideShownModel()?.name || "Default"}</Text>
+                  <Text class="text-[11px] text-[#334155] dark:text-[#a1a5b0]">{sideShownModel()?.name || "Default"}</Text>
                   <If when={Boolean(sideEffortLabel())}>
                     <Text class={`text-[11px] ${sideTopEffort() ? "text-[#a78bfa]" : "text-[#1e86fc]"}`}>{sideEffortLabel()}</Text>
                   </If>
@@ -961,7 +964,7 @@ function SideAssistant() {
   );
 }
 
-/** The old app's activity tab: the clock icon, the log, one live row per change. */
+// The old app's activity tab: the clock icon, the log, one live row per change.
 function SideActivity() {
   return (
     <View class="p-3 gap-3">
@@ -976,7 +979,7 @@ function SideActivity() {
         <View class="gap-0.5">
           <Text class={`text-[12px] ${C.ink}`}>
             <Text class="font-medium">User</Text>
-            <Text class="text-[#94a3b8] dark:text-slate-500"> Just now</Text>
+            <Text class="text-[#94a3b8] dark:text-[#6e727e]"> Just now</Text>
           </Text>
           <Text class={`text-[11px] ${C.mute}`}>Creating transaction.</Text>
         </View>
@@ -985,12 +988,12 @@ function SideActivity() {
   );
 }
 
-/** The new-entry right column itself: the rail and the open panel. */
+// The new-entry right column itself: the rail and the open panel.
 function EntrySide() {
   const side = entrySide;
   return (
-    <View class="w-full shrink-0 rounded-[24px] border border-[#e2e8f0] dark:border-slate-600 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex-col h-full bg-white dark:bg-slate-800">
-      <View class={`flex-row justify-evenly px-4 py-3 gap-2 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#145a30] dark:to-[#1e8c4c]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
+    <View class="w-full shrink-0 rounded-[24px] border border-[#e2e8f0] dark:border-[#27282f] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex-col h-full bg-white dark:bg-[#141519]">
+      <View class={`flex-row justify-evenly px-4 py-3 gap-2 ${accent() === "green" ? "bg-linear-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#12452b] dark:to-[#18663e]" : ""}`} style={accent() === "green" ? undefined : { backgroundColor: acc() }}>
         <Each of={["attachments", "ai", "activity"]}>
           {(t: Any) => (
             <View

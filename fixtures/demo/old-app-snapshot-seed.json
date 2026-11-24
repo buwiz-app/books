@@ -1225,68 +1225,11 @@
   {
    "tool": "books_app_upload_part",
    "args": {
-    "upload": "stmt-oid-0158",
-    "part": 0,
-    "parts": 1,
-    "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDEwNz4-CnN0cmVhbQpCVCAvRjEgMTAgVGYgNDAgNzIwIFRkIChCYW5rIFN0YXRlbWVudCAtIFZpc2EgQ3JlZGl0IENhcmQgNzc0NCAyMDI2LTAxLTAxIHRvIDIwMjYtMDItMTcucGRmI29pZC0wMTU3KSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwvVHlwZS9Gb250L1N1YnR5cGUvVHlwZTEvQmFzZUZvbnQvSGVsdmV0aWNhPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU0IDAwMDAwIG4gCjAwMDAwMDAxMDUgMDAwMDAgbiAKMDAwMDAwMDIxNyAwMDAwMCBuIAowMDAwMDAwMzczIDAwMDAwIG4gCnRyYWlsZXI8PC9TaXplIDYvUm9vdCAxIDAgUj4-CnN0YXJ0eHJlZgo0MzYKJSVFT0Y",
-    "client_request_id": "snap-0110-part"
-   }
-  },
-  {
-   "tool": "books_app_statement_import",
-   "args": {
-    "account": "22200",
-    "document_upload": "stmt-oid-0158",
-    "document_mime": "application/pdf",
-    "client_request_id": "snap-0111-import"
-   }
-  },
-  {
-   "tool": "books_app_upload_part",
-   "args": {
-    "upload": "stmt-oid-0120",
-    "part": 0,
-    "parts": 1,
-    "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDExMD4-CnN0cmVhbQpCVCAvRjEgMTAgVGYgNDAgNzIwIFRkIChCYW5rIFN0YXRlbWVudCAtIE1lcmN1cnkgQ3JlZGl0IENhcmQgMTIzNCAyMDI2LTAxLTAxIHRvIDIwMjYtMDEtMzEucGRmI29pZC0wMTE5KSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwvVHlwZS9Gb250L1N1YnR5cGUvVHlwZTEvQmFzZUZvbnQvSGVsdmV0aWNhPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU0IDAwMDAwIG4gCjAwMDAwMDAxMDUgMDAwMDAgbiAKMDAwMDAwMDIxNyAwMDAwMCBuIAowMDAwMDAwMzc2IDAwMDAwIG4gCnRyYWlsZXI8PC9TaXplIDYvUm9vdCAxIDAgUj4-CnN0YXJ0eHJlZgo0MzkKJSVFT0Y",
-    "client_request_id": "snap-0112-part"
-   }
-  },
-  {
-   "tool": "books_app_statement_import",
-   "args": {
-    "account": "22100",
-    "document_upload": "stmt-oid-0120",
-    "document_mime": "application/pdf",
-    "client_request_id": "snap-0113-import"
-   }
-  },
-  {
-   "tool": "books_app_upload_part",
-   "args": {
-    "upload": "stmt-oid-0129",
-    "part": 0,
-    "parts": 1,
-    "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDEwNz4-CnN0cmVhbQpCVCAvRjEgMTAgVGYgNDAgNzIwIFRkIChCYW5rIFN0YXRlbWVudCAtIE1lcmN1cnkgQ2hlY2tpbmcgMTIzMSAyMDI2LTAxLTAxIHRvIDIwMjYtMDMtMzEucGRmI29pZC0wMTI4KSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwvVHlwZS9Gb250L1N1YnR5cGUvVHlwZTEvQmFzZUZvbnQvSGVsdmV0aWNhPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU0IDAwMDAwIG4gCjAwMDAwMDAxMDUgMDAwMDAgbiAKMDAwMDAwMDIxNyAwMDAwMCBuIAowMDAwMDAwMzczIDAwMDAwIG4gCnRyYWlsZXI8PC9TaXplIDYvUm9vdCAxIDAgUj4-CnN0YXJ0eHJlZgo0MzYKJSVFT0Y",
-    "client_request_id": "snap-0114-part"
-   }
-  },
-  {
-   "tool": "books_app_statement_import",
-   "args": {
-    "account": "11200",
-    "document_upload": "stmt-oid-0129",
-    "document_mime": "application/pdf",
-    "client_request_id": "snap-0115-import"
-   }
-  },
-  {
-   "tool": "books_app_upload_part",
-   "args": {
     "upload": "stmt-oid-0127",
     "part": 0,
     "parts": 1,
     "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDEwNz4-CnN0cmVhbQpCVCAvRjEgMTAgVGYgNDAgNzIwIFRkIChCYW5rIFN0YXRlbWVudCAtIFZpc2EgQ3JlZGl0IENhcmQgNzc0NCAyMDI2LTAyLTAxIHRvIDIwMjYtMDItMjgucGRmI29pZC0wMTI2KSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwvVHlwZS9Gb250L1N1YnR5cGUvVHlwZTEvQmFzZUZvbnQvSGVsdmV0aWNhPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU0IDAwMDAwIG4gCjAwMDAwMDAxMDUgMDAwMDAgbiAKMDAwMDAwMDIxNyAwMDAwMCBuIAowMDAwMDAwMzczIDAwMDAwIG4gCnRyYWlsZXI8PC9TaXplIDYvUm9vdCAxIDAgUj4-CnN0YXJ0eHJlZgo0MzYKJSVFT0Y",
-    "client_request_id": "snap-0116-part"
+    "client_request_id": "snap-0110-part"
    }
   },
   {
@@ -1295,17 +1238,222 @@
     "account": "22200",
     "document_upload": "stmt-oid-0127",
     "document_mime": "application/pdf",
-    "client_request_id": "snap-0117-import"
+    "client_request_id": "snap-0111-import"
    }
   },
   {
-   "tool": "books_app_statement_import",
+   "tool": "books_app_upload_part",
+   "args": {
+    "upload": "stmt-oid-0129-2026-01",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFIgNSAwIFJdL0NvdW50IDI-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNyAwIFIvRjIgOCAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDI1NjA-PgpzdHJlYW0KQlQgL0YyIDE0IFRmIDU0LjAgNzUwLjAgVGQgKE1lcmN1cnkgQ2hlY2tpbmcgMTIzMSAtIE1vbnRobHkgU3RhdGVtZW50KSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDczMi4wIFRkIChTdGF0ZW1lbnQgUGVyaW9kOiBKYW4gMSAtIE1hciAzMSwgMjAyNikgVGogRVQKMC44NSBnIDU0LjAgNzE0LjAgNTA0LjAgMC44IHJlIGYgMCBnCkJUIC9GMiA5IFRmIDU0LjAgNjk4LjAgVGQgKERhdGUpIFRqIEVUCkJUIC9GMiA5IFRmIDE1MC4wIDY5OC4wIFRkIChEZXNjcmlwdGlvbikgVGogRVQKQlQgL0YyIDkgVGYgNTMxLjAgNjk4LjAgVGQgKEFtb3VudCkgVGogRVQKMC45IGcgNTQuMCA2ODguMCA1MDQuMCAwLjUgcmUgZiAwIGcKQlQgL0YxIDkgVGYgNTQuMCA2NjkuMCBUZCAoMjAyNi0wMS0wMikgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNjY5LjAgVGQgKEh1Z28gRm9yYmVzKSBUaiBFVApCVCAvRjEgOSBUZiA1MjAuNSA2NjkuMCBUZCAoNTAwMDAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNjUxLjAgVGQgKDIwMjYtMDEtMDUpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDY1MS4wIFRkIChTdGF0ZSBGYXJtIEluc3VyYW5jZSkgVGogRVQKQlQgL0YxIDkgVGYgNTI1LjUgNjUxLjAgVGQgKDYwMDAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNjMzLjAgVGQgKDIwMjYtMDEtMDUpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDYzMy4wIFRkIChTdGF0ZSBGYXJtIEluc3VyYW5jZSkgVGogRVQKQlQgL0YxIDkgVGYgNTIyLjUgNjMzLjAgVGQgKC02MDAwLjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDYxNS4wIFRkICgyMDI2LTAxLTEwKSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA2MTUuMCBUZCAoQWNtZSBDb3JwKSBUaiBFVApCVCAvRjEgOSBUZiA1MjAuNSA2MTUuMCBUZCAoMTI1MDAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNTk3LjAgVGQgKDIwMjYtMDEtMTUpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDU5Ny4wIFRkIChXZVdvcmspIFRqIEVUCkJUIC9GMSA5IFRmIDUyMi41IDU5Ny4wIFRkICgtMjIwMC4wMCkgVGogRVQKQlQgL0YxIDkgVGYgNTQuMCA1NzkuMCBUZCAoMjAyNi0wMS0xNSkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNTc5LjAgVGQgKEFEUCBQYXlyb2xsKSBUaiBFVApCVCAvRjEgOSBUZiA1MTcuNSA1NzkuMCBUZCAoLTEwNzAwLjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDU2MS4wIFRkICgyMDI2LTAxLTIyKSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA1NjEuMCBUZCAoVGVjaEZsb3cgU29sdXRpb25zKSBUaiBFVApCVCAvRjEgOSBUZiA1MjUuNSA1NjEuMCBUZCAoODAwMC4wMCkgVGogRVQKQlQgL0YxIDkgVGYgNTQuMCA1NDMuMCBUZCAoMjAyNi0wMS0yNSkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNTQzLjAgVGQgKFZlcml6b24gV2lyZWxlc3MpIFRqIEVUCkJUIC9GMSA5IFRmIDUyNy41IDU0My4wIFRkICgtMTg1LjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDUyNS4wIFRkICgyMDI2LTAxLTMxKSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA1MjUuMCBUZCAoTWVyY3VyeSBCYW5rKSBUaiBFVApCVCAvRjEgOSBUZiA1MzIuNSA1MjUuMCBUZCAoLTI1LjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDUwNy4wIFRkICgyMDI2LTAxLTMxKSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA1MDcuMCBUZCAoQURQIFBheXJvbGwpIFRqIEVUCkJUIC9GMSA5IFRmIDUxNy41IDUwNy4wIFRkICgtMTA3MDAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNDg5LjAgVGQgKDIwMjYtMDEtMzEpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDQ4OS4wIFRkIChNZXJjdXJ5IEJhbmspIFRqIEVUCkJUIC9GMSA5IFRmIDUzNS41IDQ4OS4wIFRkICgxMi41MCkgVGogRVQKQlQgL0YxIDkgVGYgNTQuMCA0NzEuMCBUZCAoMjAyNi0wMS0zMSkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNDcxLjAgVGQgKFN0YXRlIEZhcm0gSW5zdXJhbmNlKSBUaiBFVApCVCAvRjEgOSBUZiA1MjcuNSA0NzEuMCBUZCAoLTUwMC4wMCkgVGogRVQKQlQgL0YxIDkgVGYgNTQuMCA0NTMuMCBUZCAoMjAyNi0wMi0wMSkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNDUzLjAgVGQgKFdlV29yaykgVGogRVQKQlQgL0YxIDkgVGYgNTIyLjUgNDUzLjAgVGQgKC0yMjAwLjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDQzNS4wIFRkICgyMDI2LTAyLTAzKSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA0MzUuMCBUZCAoQWNtZSBDb3JwKSBUaiBFVApCVCAvRjEgOSBUZiA1MjAuNSA0MzUuMCBUZCAoMTUwMDAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNDE3LjAgVGQgKDIwMjYtMDItMDUpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDQxNy4wIFRkIChNZXJjdXJ5IENoZWNraW5nKSBUaiBFVApCVCAvRjEgOSBUZiA1MjIuNSA0MTcuMCBUZCAoLTEzMDAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgMzk5LjAgVGQgKDIwMjYtMDItMTIpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDM5OS4wIFRkIChHcmVlbmxlYWYgSW5kdXN0cmllcykgVGogRVQKQlQgL0YxIDkgVGYgNTI1LjUgMzk5LjAgVGQgKDU1MDAuMDApIFRqIEVUCgplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwvVHlwZS9QYWdlL1BhcmVudCAyIDAgUi9NZWRpYUJveFswIDAgNjEyIDc5Ml0vQ29udGVudHMgNiAwIFIvUmVzb3VyY2VzPDwvRm9udDw8L0YxIDcgMCBSL0YyIDggMCBSPj4-Pj4-CmVuZG9iago2IDAgb2JqCjw8L0xlbmd0aCAxMjU2Pj4Kc3RyZWFtCkJUIC9GMiA5IFRmIDU0LjAgNzQ4LjAgVGQgKERhdGUpIFRqIEVUCkJUIC9GMiA5IFRmIDE1MC4wIDc0OC4wIFRkIChEZXNjcmlwdGlvbikgVGogRVQKQlQgL0YyIDkgVGYgNTMxLjAgNzQ4LjAgVGQgKEFtb3VudCkgVGogRVQKMC45IGcgNTQuMCA3MzguMCA1MDQuMCAwLjUgcmUgZiAwIGcKQlQgL0YxIDkgVGYgNTQuMCA3MTcuMCBUZCAoMjAyNi0wMi0xNSkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNzE3LjAgVGQgKEFEUCBQYXlyb2xsKSBUaiBFVApCVCAvRjEgOSBUZiA1MTcuNSA3MTcuMCBUZCAoLTEwNzAwLjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDY5OS4wIFRkICgyMDI2LTAyLTE4KSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA2OTkuMCBUZCAoTWVyY3VyeSBDaGVja2luZykgVGogRVQKQlQgL0YxIDkgVGYgNTIyLjUgNjk5LjAgVGQgKC0xMjAwLjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDY4MS4wIFRkICgyMDI2LTAyLTIwKSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA2ODEuMCBUZCAoVmVyaXpvbiBXaXJlbGVzcykgVGogRVQKQlQgL0YxIDkgVGYgNTI3LjUgNjgxLjAgVGQgKC0xODUuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNjYzLjAgVGQgKDIwMjYtMDItMjgpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDY2My4wIFRkIChJUlMpIFRqIEVUCkJUIC9GMSA5IFRmIDUyMi41IDY2My4wIFRkICgtMzUwMC4wMCkgVGogRVQKQlQgL0YxIDkgVGYgNTQuMCA2NDUuMCBUZCAoMjAyNi0wMi0yOCkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNjQ1LjAgVGQgKFN0YXRlIEZhcm0gSW5zdXJhbmNlKSBUaiBFVApCVCAvRjEgOSBUZiA1MjcuNSA2NDUuMCBUZCAoLTUwMC4wMCkgVGogRVQKQlQgL0YxIDkgVGYgNTQuMCA2MjcuMCBUZCAoMjAyNi0wMi0yOCkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNjI3LjAgVGQgKE1lcmN1cnkgQmFuaykgVGogRVQKQlQgL0YxIDkgVGYgNTM1LjUgNjI3LjAgVGQgKDE1Ljc1KSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDYwOS4wIFRkICgyMDI2LTAyLTI4KSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA2MDkuMCBUZCAoTWVyY3VyeSBCYW5rKSBUaiBFVApCVCAvRjEgOSBUZiA1MzIuNSA2MDkuMCBUZCAoLTI1LjAwKSBUaiBFVAowLjg1IGcgNTQuMCA1OTguMCA1MDQuMCAwLjggcmUgZiAwIGcKQlQgL0YyIDEwIFRmIDU0LjAgNTg0LjAgVGQgKENsb3NpbmcgQmFsYW5jZSkgVGogRVQKQlQgL0YyIDEwIFRmIDUxNi4zIDU4NC4wIFRkICg0NzEwOC4yNSkgVGogRVQKCmVuZHN0cmVhbQplbmRvYmoKNyAwIG9iago8PC9UeXBlL0ZvbnQvU3VidHlwZS9UeXBlMS9CYXNlRm9udC9IZWx2ZXRpY2E-PgplbmRvYmoKOCAwIG9iago8PC9UeXBlL0ZvbnQvU3VidHlwZS9UeXBlMS9CYXNlRm9udC9IZWx2ZXRpY2EtQm9sZD4-CmVuZG9iagp4cmVmCjAgOQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1NCAwMDAwMCBuIAowMDAwMDAwMTExIDAwMDAwIG4gCjAwMDAwMDAyMzIgMDAwMDAgbiAKMDAwMDAwMjg0MiAwMDAwMCBuIAowMDAwMDAyOTYzIDAwMDAwIG4gCjAwMDAwMDQyNjkgMDAwMDAgbiAKMDAwMDAwNDMzMiAwMDAwMCBuIAp0cmFpbGVyPDwvU2l6ZSA5L1Jvb3QgMSAwIFI-PgpzdGFydHhyZWYKNDQwMAolJUVPRg",
+    "client_request_id": "snap-0112-part"
+   }
+  },
+  {
+   "tool": "books_statement_draft_lines",
    "args": {
     "account": "11200",
-    "csv_text": "Date,Description,Amount\r\n2026-01-02,Hugo Forbes,50000.00\r\n2026-01-05,State Farm Insurance,6000.00\r\n2026-01-05,State Farm Insurance,-6000.00\r\n2026-01-10,Acme Corp,12500.00\r\n2026-01-15,WeWork,-2200.00\r\n2026-01-15,ADP Payroll,-10700.00\r\n2026-01-22,TechFlow Solutions,8000.00\r\n2026-01-25,Verizon Wireless,-185.00\r\n2026-01-31,Mercury Bank,-25.00\r\n2026-01-31,ADP Payroll,-10700.00\r\n2026-01-31,Mercury Bank,12.50\r\n2026-01-31,State Farm Insurance,-500.00\r\n",
+    "month": "2026-01",
+    "lines": [
+     {
+      "date": "2026-01-02",
+      "description": "Hugo Forbes",
+      "amount": "50000.00",
+      "balance": "50000.00",
+      "page": 1,
+      "bbox": [
+       88,
+       141,
+       912,
+       162
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-01-05",
+      "description": "State Farm Insurance",
+      "amount": "6000.00",
+      "balance": "56000.00",
+      "page": 1,
+      "bbox": [
+       88,
+       164,
+       912,
+       184
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-01-05",
+      "description": "State Farm Insurance",
+      "amount": "-6000.00",
+      "balance": "50000.00",
+      "page": 1,
+      "bbox": [
+       88,
+       187,
+       912,
+       207
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-01-10",
+      "description": "Acme Corp",
+      "amount": "12500.00",
+      "balance": "62500.00",
+      "page": 1,
+      "bbox": [
+       88,
+       210,
+       912,
+       230
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-01-15",
+      "description": "WeWork",
+      "amount": "-2200.00",
+      "balance": "60300.00",
+      "page": 1,
+      "bbox": [
+       88,
+       232,
+       912,
+       253
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-01-15",
+      "description": "ADP Payroll",
+      "amount": "-10700.00",
+      "balance": "49600.00",
+      "page": 1,
+      "bbox": [
+       88,
+       255,
+       912,
+       275
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-01-22",
+      "description": "TechFlow Solutions",
+      "amount": "8000.00",
+      "balance": "57600.00",
+      "page": 1,
+      "bbox": [
+       88,
+       278,
+       912,
+       298
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-01-25",
+      "description": "Verizon Wireless",
+      "amount": "-185.00",
+      "balance": "57415.00",
+      "page": 1,
+      "bbox": [
+       88,
+       301,
+       912,
+       321
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-01-31",
+      "description": "Mercury Bank",
+      "amount": "-25.00",
+      "balance": "57390.00",
+      "page": 1,
+      "bbox": [
+       88,
+       323,
+       912,
+       343
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-01-31",
+      "description": "ADP Payroll",
+      "amount": "-10700.00",
+      "balance": "46690.00",
+      "page": 1,
+      "bbox": [
+       88,
+       346,
+       912,
+       366
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-01-31",
+      "description": "Mercury Bank",
+      "amount": "12.50",
+      "balance": "46702.50",
+      "page": 1,
+      "bbox": [
+       88,
+       369,
+       912,
+       389
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-01-31",
+      "description": "State Farm Insurance",
+      "amount": "-500.00",
+      "balance": "46202.50",
+      "page": 1,
+      "bbox": [
+       88,
+       391,
+       912,
+       412
+      ],
+      "confidence": 96
+     }
+    ],
     "closing": "46202.50",
-    "file_name": "11200-2026-01.csv",
-    "client_request_id": "snap-0118-import"
+    "document_upload": "stmt-oid-0129-2026-01",
+    "document_mime": "application/pdf",
+    "areas": [
+     {
+      "kind": "title",
+      "label": "Mercury Checking 1231 \u2014 Monthly Statement",
+      "page": 1,
+      "bbox": [
+       88,
+       33,
+       912,
+       63
+      ]
+     },
+     {
+      "kind": "date",
+      "label": "Statement Period: Jan 1 \u2013 Mar 31, 2026",
+      "page": 1,
+      "bbox": [
+       88,
+       66,
+       360,
+       86
+      ]
+     }
+    ],
+    "client_request_id": "snap-0113-lines"
    }
   },
   {
@@ -1313,17 +1461,209 @@
    "args": {
     "account": "11200",
     "month": "2026-01",
-    "client_request_id": "snap-0119-accept"
+    "draft": "pending",
+    "client_request_id": "snap-0114-accept"
    }
   },
   {
-   "tool": "books_app_statement_import",
+   "tool": "books_app_upload_part",
+   "args": {
+    "upload": "stmt-oid-0129-2026-02",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFIgNSAwIFJdL0NvdW50IDI-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNyAwIFIvRjIgOCAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDI1NjA-PgpzdHJlYW0KQlQgL0YyIDE0IFRmIDU0LjAgNzUwLjAgVGQgKE1lcmN1cnkgQ2hlY2tpbmcgMTIzMSAtIE1vbnRobHkgU3RhdGVtZW50KSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDczMi4wIFRkIChTdGF0ZW1lbnQgUGVyaW9kOiBKYW4gMSAtIE1hciAzMSwgMjAyNikgVGogRVQKMC44NSBnIDU0LjAgNzE0LjAgNTA0LjAgMC44IHJlIGYgMCBnCkJUIC9GMiA5IFRmIDU0LjAgNjk4LjAgVGQgKERhdGUpIFRqIEVUCkJUIC9GMiA5IFRmIDE1MC4wIDY5OC4wIFRkIChEZXNjcmlwdGlvbikgVGogRVQKQlQgL0YyIDkgVGYgNTMxLjAgNjk4LjAgVGQgKEFtb3VudCkgVGogRVQKMC45IGcgNTQuMCA2ODguMCA1MDQuMCAwLjUgcmUgZiAwIGcKQlQgL0YxIDkgVGYgNTQuMCA2NjkuMCBUZCAoMjAyNi0wMS0wMikgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNjY5LjAgVGQgKEh1Z28gRm9yYmVzKSBUaiBFVApCVCAvRjEgOSBUZiA1MjAuNSA2NjkuMCBUZCAoNTAwMDAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNjUxLjAgVGQgKDIwMjYtMDEtMDUpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDY1MS4wIFRkIChTdGF0ZSBGYXJtIEluc3VyYW5jZSkgVGogRVQKQlQgL0YxIDkgVGYgNTI1LjUgNjUxLjAgVGQgKDYwMDAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNjMzLjAgVGQgKDIwMjYtMDEtMDUpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDYzMy4wIFRkIChTdGF0ZSBGYXJtIEluc3VyYW5jZSkgVGogRVQKQlQgL0YxIDkgVGYgNTIyLjUgNjMzLjAgVGQgKC02MDAwLjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDYxNS4wIFRkICgyMDI2LTAxLTEwKSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA2MTUuMCBUZCAoQWNtZSBDb3JwKSBUaiBFVApCVCAvRjEgOSBUZiA1MjAuNSA2MTUuMCBUZCAoMTI1MDAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNTk3LjAgVGQgKDIwMjYtMDEtMTUpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDU5Ny4wIFRkIChXZVdvcmspIFRqIEVUCkJUIC9GMSA5IFRmIDUyMi41IDU5Ny4wIFRkICgtMjIwMC4wMCkgVGogRVQKQlQgL0YxIDkgVGYgNTQuMCA1NzkuMCBUZCAoMjAyNi0wMS0xNSkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNTc5LjAgVGQgKEFEUCBQYXlyb2xsKSBUaiBFVApCVCAvRjEgOSBUZiA1MTcuNSA1NzkuMCBUZCAoLTEwNzAwLjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDU2MS4wIFRkICgyMDI2LTAxLTIyKSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA1NjEuMCBUZCAoVGVjaEZsb3cgU29sdXRpb25zKSBUaiBFVApCVCAvRjEgOSBUZiA1MjUuNSA1NjEuMCBUZCAoODAwMC4wMCkgVGogRVQKQlQgL0YxIDkgVGYgNTQuMCA1NDMuMCBUZCAoMjAyNi0wMS0yNSkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNTQzLjAgVGQgKFZlcml6b24gV2lyZWxlc3MpIFRqIEVUCkJUIC9GMSA5IFRmIDUyNy41IDU0My4wIFRkICgtMTg1LjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDUyNS4wIFRkICgyMDI2LTAxLTMxKSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA1MjUuMCBUZCAoTWVyY3VyeSBCYW5rKSBUaiBFVApCVCAvRjEgOSBUZiA1MzIuNSA1MjUuMCBUZCAoLTI1LjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDUwNy4wIFRkICgyMDI2LTAxLTMxKSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA1MDcuMCBUZCAoQURQIFBheXJvbGwpIFRqIEVUCkJUIC9GMSA5IFRmIDUxNy41IDUwNy4wIFRkICgtMTA3MDAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNDg5LjAgVGQgKDIwMjYtMDEtMzEpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDQ4OS4wIFRkIChNZXJjdXJ5IEJhbmspIFRqIEVUCkJUIC9GMSA5IFRmIDUzNS41IDQ4OS4wIFRkICgxMi41MCkgVGogRVQKQlQgL0YxIDkgVGYgNTQuMCA0NzEuMCBUZCAoMjAyNi0wMS0zMSkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNDcxLjAgVGQgKFN0YXRlIEZhcm0gSW5zdXJhbmNlKSBUaiBFVApCVCAvRjEgOSBUZiA1MjcuNSA0NzEuMCBUZCAoLTUwMC4wMCkgVGogRVQKQlQgL0YxIDkgVGYgNTQuMCA0NTMuMCBUZCAoMjAyNi0wMi0wMSkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNDUzLjAgVGQgKFdlV29yaykgVGogRVQKQlQgL0YxIDkgVGYgNTIyLjUgNDUzLjAgVGQgKC0yMjAwLjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDQzNS4wIFRkICgyMDI2LTAyLTAzKSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA0MzUuMCBUZCAoQWNtZSBDb3JwKSBUaiBFVApCVCAvRjEgOSBUZiA1MjAuNSA0MzUuMCBUZCAoMTUwMDAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNDE3LjAgVGQgKDIwMjYtMDItMDUpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDQxNy4wIFRkIChNZXJjdXJ5IENoZWNraW5nKSBUaiBFVApCVCAvRjEgOSBUZiA1MjIuNSA0MTcuMCBUZCAoLTEzMDAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgMzk5LjAgVGQgKDIwMjYtMDItMTIpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDM5OS4wIFRkIChHcmVlbmxlYWYgSW5kdXN0cmllcykgVGogRVQKQlQgL0YxIDkgVGYgNTI1LjUgMzk5LjAgVGQgKDU1MDAuMDApIFRqIEVUCgplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwvVHlwZS9QYWdlL1BhcmVudCAyIDAgUi9NZWRpYUJveFswIDAgNjEyIDc5Ml0vQ29udGVudHMgNiAwIFIvUmVzb3VyY2VzPDwvRm9udDw8L0YxIDcgMCBSL0YyIDggMCBSPj4-Pj4-CmVuZG9iago2IDAgb2JqCjw8L0xlbmd0aCAxMjU2Pj4Kc3RyZWFtCkJUIC9GMiA5IFRmIDU0LjAgNzQ4LjAgVGQgKERhdGUpIFRqIEVUCkJUIC9GMiA5IFRmIDE1MC4wIDc0OC4wIFRkIChEZXNjcmlwdGlvbikgVGogRVQKQlQgL0YyIDkgVGYgNTMxLjAgNzQ4LjAgVGQgKEFtb3VudCkgVGogRVQKMC45IGcgNTQuMCA3MzguMCA1MDQuMCAwLjUgcmUgZiAwIGcKQlQgL0YxIDkgVGYgNTQuMCA3MTcuMCBUZCAoMjAyNi0wMi0xNSkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNzE3LjAgVGQgKEFEUCBQYXlyb2xsKSBUaiBFVApCVCAvRjEgOSBUZiA1MTcuNSA3MTcuMCBUZCAoLTEwNzAwLjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDY5OS4wIFRkICgyMDI2LTAyLTE4KSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA2OTkuMCBUZCAoTWVyY3VyeSBDaGVja2luZykgVGogRVQKQlQgL0YxIDkgVGYgNTIyLjUgNjk5LjAgVGQgKC0xMjAwLjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDY4MS4wIFRkICgyMDI2LTAyLTIwKSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA2ODEuMCBUZCAoVmVyaXpvbiBXaXJlbGVzcykgVGogRVQKQlQgL0YxIDkgVGYgNTI3LjUgNjgxLjAgVGQgKC0xODUuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNjYzLjAgVGQgKDIwMjYtMDItMjgpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDY2My4wIFRkIChJUlMpIFRqIEVUCkJUIC9GMSA5IFRmIDUyMi41IDY2My4wIFRkICgtMzUwMC4wMCkgVGogRVQKQlQgL0YxIDkgVGYgNTQuMCA2NDUuMCBUZCAoMjAyNi0wMi0yOCkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNjQ1LjAgVGQgKFN0YXRlIEZhcm0gSW5zdXJhbmNlKSBUaiBFVApCVCAvRjEgOSBUZiA1MjcuNSA2NDUuMCBUZCAoLTUwMC4wMCkgVGogRVQKQlQgL0YxIDkgVGYgNTQuMCA2MjcuMCBUZCAoMjAyNi0wMi0yOCkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNjI3LjAgVGQgKE1lcmN1cnkgQmFuaykgVGogRVQKQlQgL0YxIDkgVGYgNTM1LjUgNjI3LjAgVGQgKDE1Ljc1KSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDYwOS4wIFRkICgyMDI2LTAyLTI4KSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA2MDkuMCBUZCAoTWVyY3VyeSBCYW5rKSBUaiBFVApCVCAvRjEgOSBUZiA1MzIuNSA2MDkuMCBUZCAoLTI1LjAwKSBUaiBFVAowLjg1IGcgNTQuMCA1OTguMCA1MDQuMCAwLjggcmUgZiAwIGcKQlQgL0YyIDEwIFRmIDU0LjAgNTg0LjAgVGQgKENsb3NpbmcgQmFsYW5jZSkgVGogRVQKQlQgL0YyIDEwIFRmIDUxNi4zIDU4NC4wIFRkICg0NzEwOC4yNSkgVGogRVQKCmVuZHN0cmVhbQplbmRvYmoKNyAwIG9iago8PC9UeXBlL0ZvbnQvU3VidHlwZS9UeXBlMS9CYXNlRm9udC9IZWx2ZXRpY2E-PgplbmRvYmoKOCAwIG9iago8PC9UeXBlL0ZvbnQvU3VidHlwZS9UeXBlMS9CYXNlRm9udC9IZWx2ZXRpY2EtQm9sZD4-CmVuZG9iagp4cmVmCjAgOQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1NCAwMDAwMCBuIAowMDAwMDAwMTExIDAwMDAwIG4gCjAwMDAwMDAyMzIgMDAwMDAgbiAKMDAwMDAwMjg0MiAwMDAwMCBuIAowMDAwMDAyOTYzIDAwMDAwIG4gCjAwMDAwMDQyNjkgMDAwMDAgbiAKMDAwMDAwNDMzMiAwMDAwMCBuIAp0cmFpbGVyPDwvU2l6ZSA5L1Jvb3QgMSAwIFI-PgpzdGFydHhyZWYKNDQwMAolJUVPRg",
+    "client_request_id": "snap-0115-part"
+   }
+  },
+  {
+   "tool": "books_statement_draft_lines",
    "args": {
     "account": "11200",
-    "csv_text": "Date,Description,Amount\r\n2026-02-01,WeWork,-2200.00\r\n2026-02-03,Acme Corp,15000.00\r\n2026-02-05,Mercury Checking,-1300.00\r\n2026-02-12,Greenleaf Industries,5500.00\r\n2026-02-15,ADP Payroll,-10700.00\r\n2026-02-18,Mercury Checking,-1200.00\r\n2026-02-20,Verizon Wireless,-185.00\r\n2026-02-28,IRS,-3500.00\r\n2026-02-28,State Farm Insurance,-500.00\r\n2026-02-28,Mercury Bank,15.75\r\n2026-02-28,Mercury Bank,-25.00\r\n",
+    "month": "2026-02",
+    "lines": [
+     {
+      "date": "2026-02-01",
+      "description": "WeWork",
+      "amount": "-2200.00",
+      "balance": "44002.50",
+      "page": 1,
+      "bbox": [
+       88,
+       414,
+       912,
+       434
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-02-03",
+      "description": "Acme Corp",
+      "amount": "15000.00",
+      "balance": "59002.50",
+      "page": 1,
+      "bbox": [
+       88,
+       437,
+       912,
+       457
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-02-05",
+      "description": "Mercury Checking",
+      "amount": "-1300.00",
+      "balance": "57702.50",
+      "page": 1,
+      "bbox": [
+       88,
+       460,
+       912,
+       480
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-02-12",
+      "description": "Greenleaf Industries",
+      "amount": "5500.00",
+      "balance": "63202.50",
+      "page": 1,
+      "bbox": [
+       88,
+       482,
+       912,
+       503
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-02-15",
+      "description": "ADP Payroll",
+      "amount": "-10700.00",
+      "balance": "52502.50",
+      "page": 2,
+      "bbox": [
+       88,
+       81,
+       912,
+       101
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-02-18",
+      "description": "Mercury Checking",
+      "amount": "-1200.00",
+      "balance": "51302.50",
+      "page": 2,
+      "bbox": [
+       88,
+       104,
+       912,
+       124
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-02-20",
+      "description": "Verizon Wireless",
+      "amount": "-185.00",
+      "balance": "51117.50",
+      "page": 2,
+      "bbox": [
+       88,
+       126,
+       912,
+       146
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-02-28",
+      "description": "IRS",
+      "amount": "-3500.00",
+      "balance": "47617.50",
+      "page": 2,
+      "bbox": [
+       88,
+       149,
+       912,
+       169
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-02-28",
+      "description": "State Farm Insurance",
+      "amount": "-500.00",
+      "balance": "47117.50",
+      "page": 2,
+      "bbox": [
+       88,
+       172,
+       912,
+       192
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-02-28",
+      "description": "Mercury Bank",
+      "amount": "15.75",
+      "balance": "47133.25",
+      "page": 2,
+      "bbox": [
+       88,
+       194,
+       912,
+       215
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-02-28",
+      "description": "Mercury Bank",
+      "amount": "-25.00",
+      "balance": "47108.25",
+      "page": 2,
+      "bbox": [
+       88,
+       217,
+       912,
+       237
+      ],
+      "confidence": 96
+     }
+    ],
     "closing": "47108.25",
-    "file_name": "11200-2026-02.csv",
-    "client_request_id": "snap-0120-import"
+    "document_upload": "stmt-oid-0129-2026-02",
+    "document_mime": "application/pdf",
+    "areas": [
+     {
+      "kind": "title",
+      "label": "Mercury Checking 1231 \u2014 Monthly Statement",
+      "page": 1,
+      "bbox": [
+       88,
+       33,
+       912,
+       63
+      ]
+     },
+     {
+      "kind": "date",
+      "label": "Statement Period: Jan 1 \u2013 Mar 31, 2026",
+      "page": 1,
+      "bbox": [
+       88,
+       66,
+       360,
+       86
+      ]
+     }
+    ],
+    "client_request_id": "snap-0116-lines"
    }
   },
   {
@@ -1331,17 +1671,83 @@
    "args": {
     "account": "11200",
     "month": "2026-02",
-    "client_request_id": "snap-0121-accept"
+    "draft": "pending",
+    "client_request_id": "snap-0117-accept"
    }
   },
   {
-   "tool": "books_app_statement_import",
+   "tool": "books_app_upload_part",
+   "args": {
+    "upload": "stmt-oid-0120-2026-01",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFIvRjIgNiAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDc2NT4-CnN0cmVhbQpCVCAvRjIgMTQgVGYgNTQuMCA3NTAuMCBUZCAoTWVyY3VyeSBDcmVkaXQgQ2FyZCAxMjM0IC0gTW9udGhseSBTdGF0ZW1lbnQpIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNzMyLjAgVGQgKFN0YXRlbWVudCBQZXJpb2Q6IEphbiAxIC0gSmFuIDMxLCAyMDI2KSBUaiBFVAowLjg1IGcgNTQuMCA3MTQuMCA1MDQuMCAwLjggcmUgZiAwIGcKQlQgL0YyIDkgVGYgNTQuMCA2OTguMCBUZCAoRGF0ZSkgVGogRVQKQlQgL0YyIDkgVGYgMTUwLjAgNjk4LjAgVGQgKERlc2NyaXB0aW9uKSBUaiBFVApCVCAvRjIgOSBUZiA1MzEuMCA2OTguMCBUZCAoQW1vdW50KSBUaiBFVAowLjkgZyA1NC4wIDY4OC4wIDUwNC4wIDAuNSByZSBmIDAgZwpCVCAvRjEgOSBUZiA1NC4wIDY2OS4wIFRkICgyMDI2LTAxLTA4KSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA2NjkuMCBUZCAoT2ZmaWNlIERlcG90KSBUaiBFVApCVCAvRjEgOSBUZiA1MjcuNSA2NjkuMCBUZCAoLTg1MC4wMCkgVGogRVQKQlQgL0YxIDkgVGYgNTQuMCA2NTEuMCBUZCAoMjAyNi0wMS0yMCkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNjUxLjAgVGQgKEFtYXpvbiBXZWIgU2VydmljZXMpIFRqIEVUCkJUIC9GMSA5IFRmIDUyNy41IDY1MS4wIFRkICgtNDUwLjAwKSBUaiBFVAowLjg1IGcgNTQuMCA2NDAuMCA1MDQuMCAwLjggcmUgZiAwIGcKQlQgL0YyIDEwIFRmIDU0LjAgNjI2LjAgVGQgKENsb3NpbmcgQmFsYW5jZSkgVGogRVQKQlQgL0YyIDEwIFRmIDUyMS45IDYyNi4wIFRkICgxMzAwLjAwKSBUaiBFVAoKZW5kc3RyZWFtCmVuZG9iago1IDAgb2JqCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1R5cGUxL0Jhc2VGb250L0hlbHZldGljYT4-CmVuZG9iago2IDAgb2JqCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1R5cGUxL0Jhc2VGb250L0hlbHZldGljYS1Cb2xkPj4KZW5kb2JqCnhyZWYKMCA3CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU0IDAwMDAwIG4gCjAwMDAwMDAxMDUgMDAwMDAgbiAKMDAwMDAwMDIyNiAwMDAwMCBuIAowMDAwMDAxMDQwIDAwMDAwIG4gCjAwMDAwMDExMDMgMDAwMDAgbiAKdHJhaWxlcjw8L1NpemUgNy9Sb290IDEgMCBSPj4Kc3RhcnR4cmVmCjExNzEKJSVFT0Y",
+    "client_request_id": "snap-0118-part"
+   }
+  },
+  {
+   "tool": "books_statement_draft_lines",
    "args": {
     "account": "22100",
-    "csv_text": "Date,Description,Amount\r\n2026-01-08,Office Depot,-850.00\r\n2026-01-20,Amazon Web Services,-450.00\r\n",
-    "closing": "-1300.00",
-    "file_name": "22100-2026-01.csv",
-    "client_request_id": "snap-0122-import"
+    "month": "2026-01",
+    "lines": [
+     {
+      "date": "2026-01-08",
+      "description": "Office Depot",
+      "amount": "-850.00",
+      "balance": "-850.00",
+      "page": 1,
+      "bbox": [
+       88,
+       141,
+       912,
+       162
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-01-20",
+      "description": "Amazon Web Services",
+      "amount": "-450.00",
+      "balance": "-1300.00",
+      "page": 1,
+      "bbox": [
+       88,
+       164,
+       912,
+       184
+      ],
+      "confidence": 96
+     }
+    ],
+    "closing": "1300.00",
+    "document_upload": "stmt-oid-0120-2026-01",
+    "document_mime": "application/pdf",
+    "areas": [
+     {
+      "kind": "title",
+      "label": "Mercury Credit Card 1234 \u2014 Monthly Statement",
+      "page": 1,
+      "bbox": [
+       88,
+       33,
+       912,
+       63
+      ]
+     },
+     {
+      "kind": "date",
+      "label": "Statement Period: Jan 1 \u2013 Jan 31, 2026",
+      "page": 1,
+      "bbox": [
+       88,
+       66,
+       360,
+       86
+      ]
+     }
+    ],
+    "client_request_id": "snap-0119-lines"
    }
   },
   {
@@ -1349,35 +1755,209 @@
    "args": {
     "account": "22100",
     "month": "2026-01",
+    "draft": "pending",
+    "client_request_id": "snap-0120-accept"
+   }
+  },
+  {
+   "tool": "books_app_upload_part",
+   "args": {
+    "upload": "stmt-oid-0158-2026-01",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFIvRjIgNiAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDE0NDU-PgpzdHJlYW0KQlQgL0YyIDE0IFRmIDU0LjAgNzUwLjAgVGQgKFZpc2EgQ3JlZGl0IENhcmQgNzc0NCAtIE1vbnRobHkgU3RhdGVtZW50KSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDczMi4wIFRkIChTdGF0ZW1lbnQgUGVyaW9kOiBKYW4gMSAtIEZlYiAxNywgMjAyNikgVGogRVQKMC44NSBnIDU0LjAgNzE0LjAgNTA0LjAgMC44IHJlIGYgMCBnCkJUIC9GMiA5IFRmIDU0LjAgNjk4LjAgVGQgKERhdGUpIFRqIEVUCkJUIC9GMiA5IFRmIDE1MC4wIDY5OC4wIFRkIChEZXNjcmlwdGlvbikgVGogRVQKQlQgL0YyIDkgVGYgNTMxLjAgNjk4LjAgVGQgKEFtb3VudCkgVGogRVQKMC45IGcgNTQuMCA2ODguMCA1MDQuMCAwLjUgcmUgZiAwIGcKQlQgL0YxIDkgVGYgNTQuMCA2NjkuMCBUZCAoMjAyNi0wMS0wOCkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNjY5LjAgVGQgKE9mZmljZSBEZXBvdCkgVGogRVQKQlQgL0YxIDkgVGYgNTI3LjUgNjY5LjAgVGQgKC04NTAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNjUxLjAgVGQgKDIwMjYtMDEtMjApIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDY1MS4wIFRkIChBbWF6b24gV2ViIFNlcnZpY2VzKSBUaiBFVApCVCAvRjEgOSBUZiA1MjcuNSA2NTEuMCBUZCAoLTQ1MC4wMCkgVGogRVQKQlQgL0YxIDkgVGYgNTQuMCA2MzMuMCBUZCAoMjAyNi0wMi0wNSkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNjMzLjAgVGQgKFBheSBkb3duIENDIGJhbGFuY2UpIFRqIEVUCkJUIC9GMSA5IFRmIDUyNS41IDYzMy4wIFRkICgxMzAwLjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDYxNS4wIFRkICgyMDI2LTAyLTEwKSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA2MTUuMCBUZCAoQW1hem9uIFdlYiBTZXJ2aWNlcykgVGogRVQKQlQgL0YxIDkgVGYgNTI3LjUgNjE1LjAgVGQgKC01MjAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNTk3LjAgVGQgKDIwMjYtMDItMTMpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDU5Ny4wIFRkIChVYmVyKSBUaiBFVApCVCAvRjEgOSBUZiA1MzIuNSA1OTcuMCBUZCAoLTU3LjgzKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDU3OS4wIFRkICgyMDI2LTAyLTE0KSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA1NzkuMCBUZCAoVmlzYSAqKioqNzc0NCkgVGogRVQKQlQgL0YxIDkgVGYgNTI3LjUgNTc5LjAgVGQgKC0zMjAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNTYxLjAgVGQgKDIwMjYtMDItMTQpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDU2MS4wIFRkIChBY21lIENvcnApIFRqIEVUCkJUIC9GMSA5IFRmIDUyNy41IDU2MS4wIFRkICgtMTc1LjQwKSBUaiBFVAowLjg1IGcgNTQuMCA1NTAuMCA1MDQuMCAwLjggcmUgZiAwIGcKQlQgL0YyIDEwIFRmIDU0LjAgNTM2LjAgVGQgKENsb3NpbmcgQmFsYW5jZSkgVGogRVQKQlQgL0YyIDEwIFRmIDUyMS45IDUzNi4wIFRkICgxMDczLjIzKSBUaiBFVAoKZW5kc3RyZWFtCmVuZG9iago1IDAgb2JqCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1R5cGUxL0Jhc2VGb250L0hlbHZldGljYT4-CmVuZG9iago2IDAgb2JqCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1R5cGUxL0Jhc2VGb250L0hlbHZldGljYS1Cb2xkPj4KZW5kb2JqCnhyZWYKMCA3CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU0IDAwMDAwIG4gCjAwMDAwMDAxMDUgMDAwMDAgbiAKMDAwMDAwMDIyNiAwMDAwMCBuIAowMDAwMDAxNzIxIDAwMDAwIG4gCjAwMDAwMDE3ODQgMDAwMDAgbiAKdHJhaWxlcjw8L1NpemUgNy9Sb290IDEgMCBSPj4Kc3RhcnR4cmVmCjE4NTIKJSVFT0Y",
+    "client_request_id": "snap-0121-part"
+   }
+  },
+  {
+   "tool": "books_statement_draft_lines",
+   "args": {
+    "account": "22200",
+    "month": "2026-01",
+    "lines": [
+     {
+      "date": "2026-01-08",
+      "description": "Office Depot",
+      "amount": "-850.00",
+      "balance": "-850.00",
+      "page": 1,
+      "bbox": [
+       88,
+       141,
+       912,
+       162
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-01-20",
+      "description": "Amazon Web Services",
+      "amount": "-450.00",
+      "balance": "-1300.00",
+      "page": 1,
+      "bbox": [
+       88,
+       164,
+       912,
+       184
+      ],
+      "confidence": 96
+     }
+    ],
+    "closing": "1300.00",
+    "document_upload": "stmt-oid-0158-2026-01",
+    "document_mime": "application/pdf",
+    "areas": [
+     {
+      "kind": "title",
+      "label": "Visa Credit Card 7744 \u2014 Monthly Statement",
+      "page": 1,
+      "bbox": [
+       88,
+       33,
+       912,
+       63
+      ]
+     },
+     {
+      "kind": "date",
+      "label": "Statement Period: Jan 1 \u2013 Feb 17, 2026",
+      "page": 1,
+      "bbox": [
+       88,
+       66,
+       360,
+       86
+      ]
+     }
+    ],
+    "client_request_id": "snap-0122-lines"
+   }
+  },
+  {
+   "tool": "books_app_statement_accept",
+   "args": {
+    "account": "22200",
+    "month": "2026-01",
+    "draft": "pending",
     "client_request_id": "snap-0123-accept"
    }
   },
   {
-   "tool": "books_app_statement_import",
+   "tool": "books_app_upload_part",
    "args": {
-    "account": "22200",
-    "csv_text": "Date,Description,Amount\r\n2026-01-08,Office Depot,-850.00\r\n2026-01-20,Amazon Web Services,-450.00\r\n",
-    "closing": "-1300.00",
-    "file_name": "22200-2026-01.csv",
-    "client_request_id": "snap-0124-import"
+    "upload": "stmt-oid-0158-2026-02",
+    "part": 0,
+    "parts": 1,
+    "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFIvRjIgNiAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDE0NDU-PgpzdHJlYW0KQlQgL0YyIDE0IFRmIDU0LjAgNzUwLjAgVGQgKFZpc2EgQ3JlZGl0IENhcmQgNzc0NCAtIE1vbnRobHkgU3RhdGVtZW50KSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDczMi4wIFRkIChTdGF0ZW1lbnQgUGVyaW9kOiBKYW4gMSAtIEZlYiAxNywgMjAyNikgVGogRVQKMC44NSBnIDU0LjAgNzE0LjAgNTA0LjAgMC44IHJlIGYgMCBnCkJUIC9GMiA5IFRmIDU0LjAgNjk4LjAgVGQgKERhdGUpIFRqIEVUCkJUIC9GMiA5IFRmIDE1MC4wIDY5OC4wIFRkIChEZXNjcmlwdGlvbikgVGogRVQKQlQgL0YyIDkgVGYgNTMxLjAgNjk4LjAgVGQgKEFtb3VudCkgVGogRVQKMC45IGcgNTQuMCA2ODguMCA1MDQuMCAwLjUgcmUgZiAwIGcKQlQgL0YxIDkgVGYgNTQuMCA2NjkuMCBUZCAoMjAyNi0wMS0wOCkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNjY5LjAgVGQgKE9mZmljZSBEZXBvdCkgVGogRVQKQlQgL0YxIDkgVGYgNTI3LjUgNjY5LjAgVGQgKC04NTAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNjUxLjAgVGQgKDIwMjYtMDEtMjApIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDY1MS4wIFRkIChBbWF6b24gV2ViIFNlcnZpY2VzKSBUaiBFVApCVCAvRjEgOSBUZiA1MjcuNSA2NTEuMCBUZCAoLTQ1MC4wMCkgVGogRVQKQlQgL0YxIDkgVGYgNTQuMCA2MzMuMCBUZCAoMjAyNi0wMi0wNSkgVGogRVQKQlQgL0YxIDkgVGYgMTUwLjAgNjMzLjAgVGQgKFBheSBkb3duIENDIGJhbGFuY2UpIFRqIEVUCkJUIC9GMSA5IFRmIDUyNS41IDYzMy4wIFRkICgxMzAwLjAwKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDYxNS4wIFRkICgyMDI2LTAyLTEwKSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA2MTUuMCBUZCAoQW1hem9uIFdlYiBTZXJ2aWNlcykgVGogRVQKQlQgL0YxIDkgVGYgNTI3LjUgNjE1LjAgVGQgKC01MjAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNTk3LjAgVGQgKDIwMjYtMDItMTMpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDU5Ny4wIFRkIChVYmVyKSBUaiBFVApCVCAvRjEgOSBUZiA1MzIuNSA1OTcuMCBUZCAoLTU3LjgzKSBUaiBFVApCVCAvRjEgOSBUZiA1NC4wIDU3OS4wIFRkICgyMDI2LTAyLTE0KSBUaiBFVApCVCAvRjEgOSBUZiAxNTAuMCA1NzkuMCBUZCAoVmlzYSAqKioqNzc0NCkgVGogRVQKQlQgL0YxIDkgVGYgNTI3LjUgNTc5LjAgVGQgKC0zMjAuMDApIFRqIEVUCkJUIC9GMSA5IFRmIDU0LjAgNTYxLjAgVGQgKDIwMjYtMDItMTQpIFRqIEVUCkJUIC9GMSA5IFRmIDE1MC4wIDU2MS4wIFRkIChBY21lIENvcnApIFRqIEVUCkJUIC9GMSA5IFRmIDUyNy41IDU2MS4wIFRkICgtMTc1LjQwKSBUaiBFVAowLjg1IGcgNTQuMCA1NTAuMCA1MDQuMCAwLjggcmUgZiAwIGcKQlQgL0YyIDEwIFRmIDU0LjAgNTM2LjAgVGQgKENsb3NpbmcgQmFsYW5jZSkgVGogRVQKQlQgL0YyIDEwIFRmIDUyMS45IDUzNi4wIFRkICgxMDczLjIzKSBUaiBFVAoKZW5kc3RyZWFtCmVuZG9iago1IDAgb2JqCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1R5cGUxL0Jhc2VGb250L0hlbHZldGljYT4-CmVuZG9iago2IDAgb2JqCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1R5cGUxL0Jhc2VGb250L0hlbHZldGljYS1Cb2xkPj4KZW5kb2JqCnhyZWYKMCA3CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU0IDAwMDAwIG4gCjAwMDAwMDAxMDUgMDAwMDAgbiAKMDAwMDAwMDIyNiAwMDAwMCBuIAowMDAwMDAxNzIxIDAwMDAwIG4gCjAwMDAwMDE3ODQgMDAwMDAgbiAKdHJhaWxlcjw8L1NpemUgNy9Sb290IDEgMCBSPj4Kc3RhcnR4cmVmCjE4NTIKJSVFT0Y",
+    "client_request_id": "snap-0124-part"
    }
   },
   {
-   "tool": "books_app_statement_accept",
+   "tool": "books_statement_draft_lines",
    "args": {
     "account": "22200",
-    "month": "2026-01",
-    "client_request_id": "snap-0125-accept"
-   }
-  },
-  {
-   "tool": "books_app_statement_import",
-   "args": {
-    "account": "22200",
-    "csv_text": "Date,Description,Amount\r\n2026-02-05,Pay down CC balance,1300.00\r\n2026-02-10,Amazon Web Services,-520.00\r\n2026-02-13,Uber,-57.83\r\n2026-02-14,Visa ****7744,-320.00\r\n2026-02-14,Acme Corp,-175.40\r\n",
-    "closing": "-1073.23",
-    "file_name": "22200-2026-02.csv",
-    "client_request_id": "snap-0126-import"
+    "month": "2026-02",
+    "lines": [
+     {
+      "date": "2026-02-05",
+      "description": "Pay down CC balance",
+      "amount": "1300.00",
+      "balance": "0.00",
+      "page": 1,
+      "bbox": [
+       88,
+       187,
+       912,
+       207
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-02-10",
+      "description": "Amazon Web Services",
+      "amount": "-520.00",
+      "balance": "-520.00",
+      "page": 1,
+      "bbox": [
+       88,
+       210,
+       912,
+       230
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-02-13",
+      "description": "Uber",
+      "amount": "-57.83",
+      "balance": "-577.83",
+      "page": 1,
+      "bbox": [
+       88,
+       232,
+       912,
+       253
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-02-14",
+      "description": "Visa ****7744",
+      "amount": "-320.00",
+      "balance": "-897.83",
+      "page": 1,
+      "bbox": [
+       88,
+       255,
+       912,
+       275
+      ],
+      "confidence": 96
+     },
+     {
+      "date": "2026-02-14",
+      "description": "Acme Corp",
+      "amount": "-175.40",
+      "balance": "-1073.23",
+      "page": 1,
+      "bbox": [
+       88,
+       278,
+       912,
+       298
+      ],
+      "confidence": 96
+     }
+    ],
+    "closing": "1073.23",
+    "document_upload": "stmt-oid-0158-2026-02",
+    "document_mime": "application/pdf",
+    "areas": [
+     {
+      "kind": "title",
+      "label": "Visa Credit Card 7744 \u2014 Monthly Statement",
+      "page": 1,
+      "bbox": [
+       88,
+       33,
+       912,
+       63
+      ]
+     },
+     {
+      "kind": "date",
+      "label": "Statement Period: Jan 1 \u2013 Feb 17, 2026",
+      "page": 1,
+      "bbox": [
+       88,
+       66,
+       360,
+       86
+      ]
+     }
+    ],
+    "client_request_id": "snap-0125-lines"
    }
   },
   {
@@ -1385,7 +1965,8 @@
    "args": {
     "account": "22200",
     "month": "2026-02",
-    "client_request_id": "snap-0127-accept"
+    "draft": "pending",
+    "client_request_id": "snap-0126-accept"
    }
   },
   {
@@ -1396,7 +1977,7 @@
     "part": 0,
     "parts": 1,
     "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggiBvaWQtMDEyMQ",
-    "client_request_id": "snap-0128-attach"
+    "client_request_id": "snap-0127-attach"
    }
   },
   {
@@ -1407,7 +1988,7 @@
     "mime": "image/png",
     "kind": "receipt",
     "source": "user",
-    "client_request_id": "snap-0129-attach"
+    "client_request_id": "snap-0128-attach"
    }
   },
   {
@@ -1418,7 +1999,7 @@
     "part": 0,
     "parts": 1,
     "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggiBvaWQtMDEyMg",
-    "client_request_id": "snap-0130-attach"
+    "client_request_id": "snap-0129-attach"
    }
   },
   {
@@ -1429,7 +2010,7 @@
     "mime": "image/png",
     "kind": "receipt",
     "source": "user",
-    "client_request_id": "snap-0131-attach"
+    "client_request_id": "snap-0130-attach"
    }
   },
   {
@@ -1440,7 +2021,7 @@
     "part": 0,
     "parts": 1,
     "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggiBvaWQtMDEyMw",
-    "client_request_id": "snap-0132-attach"
+    "client_request_id": "snap-0131-attach"
    }
   },
   {
@@ -1451,7 +2032,7 @@
     "mime": "image/png",
     "kind": "receipt",
     "source": "user",
-    "client_request_id": "snap-0133-attach"
+    "client_request_id": "snap-0132-attach"
    }
   },
   {
@@ -1462,7 +2043,7 @@
     "part": 0,
     "parts": 1,
     "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggiBvaWQtMDEyNA",
-    "client_request_id": "snap-0134-attach"
+    "client_request_id": "snap-0133-attach"
    }
   },
   {
@@ -1473,7 +2054,7 @@
     "mime": "image/png",
     "kind": "receipt",
     "source": "user",
-    "client_request_id": "snap-0135-attach"
+    "client_request_id": "snap-0134-attach"
    }
   },
   {
@@ -1484,7 +2065,7 @@
     "part": 0,
     "parts": 1,
     "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDY1Pj4Kc3RyZWFtCkJUIC9GMSAxMCBUZiA0MCA3MjAgVGQgKEludm9pY2UtI0lOVi0xMDQ3LUFXUy5wZGYjb2lkLTAxNTMpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PC9UeXBlL0ZvbnQvU3VidHlwZS9UeXBlMS9CYXNlRm9udC9IZWx2ZXRpY2E-PgplbmRvYmoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNTQgMDAwMDAgbiAKMDAwMDAwMDEwNSAwMDAwMCBuIAowMDAwMDAwMjE3IDAwMDAwIG4gCjAwMDAwMDAzMzAgMDAwMDAgbiAKdHJhaWxlcjw8L1NpemUgNi9Sb290IDEgMCBSPj4Kc3RhcnR4cmVmCjM5MwolJUVPRg",
-    "client_request_id": "snap-0136-attach"
+    "client_request_id": "snap-0135-attach"
    }
   },
   {
@@ -1495,7 +2076,7 @@
     "mime": "application/pdf",
     "kind": "bill",
     "source": "user",
-    "client_request_id": "snap-0137-attach"
+    "client_request_id": "snap-0136-attach"
    }
   },
   {
@@ -1506,7 +2087,7 @@
     "part": 0,
     "parts": 1,
     "data_base64": "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI-PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE-PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9Db250ZW50cyA0IDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI-Pj4-Pj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDY1Pj4Kc3RyZWFtCkJUIC9GMSAxMCBUZiA0MCA3MjAgVGQgKEludm9pY2UtI0lOVi0xMDQ3LUFXUy5wZGYjb2lkLTAxNTUpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PC9UeXBlL0ZvbnQvU3VidHlwZS9UeXBlMS9CYXNlRm9udC9IZWx2ZXRpY2E-PgplbmRvYmoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNTQgMDAwMDAgbiAKMDAwMDAwMDEwNSAwMDAwMCBuIAowMDAwMDAwMjE3IDAwMDAwIG4gCjAwMDAwMDAzMzAgMDAwMDAgbiAKdHJhaWxlcjw8L1NpemUgNi9Sb290IDEgMCBSPj4Kc3RhcnR4cmVmCjM5MwolJUVPRg",
-    "client_request_id": "snap-0138-attach"
+    "client_request_id": "snap-0137-attach"
    }
   },
   {
@@ -1517,7 +2098,7 @@
     "mime": "application/pdf",
     "kind": "bill",
     "source": "user",
-    "client_request_id": "snap-0139-attach"
+    "client_request_id": "snap-0138-attach"
    }
   },
   {
@@ -1528,7 +2109,7 @@
     "part": 0,
     "parts": 1,
     "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggiBvaWQtMDE1Ng",
-    "client_request_id": "snap-0140-attach"
+    "client_request_id": "snap-0139-attach"
    }
   },
   {
@@ -1539,7 +2120,7 @@
     "mime": "image/png",
     "kind": "receipt",
     "source": "user",
-    "client_request_id": "snap-0141-attach"
+    "client_request_id": "snap-0140-attach"
    }
   }
  ]

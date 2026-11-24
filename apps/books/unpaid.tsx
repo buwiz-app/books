@@ -15,13 +15,13 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
     () => buwiz.call("books_owed_options", {}),
   );
   const d = () => data() as Any;
-  /** The document being marked paid, and from which account. */
+  // The document being marked paid, and from which account.
   const settling = signal("");
   const fromAccount = signal("");
-  /** Part of the balance (empty: all of it) and the day it moved (empty: today). */
+  // Part of the balance (empty: all of it) and the day it moved (empty: today).
   const settleAmount = signal("");
   const settleOn = signal("");
-  /** The document whose payment history is open. */
+  // The document whose payment history is open.
   const history = signal("");
   const settle = (ticket: string) => {
     if (!fromAccount()) {
@@ -75,11 +75,11 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
       </If>
       <If when={Boolean(d())}>
         <Panel>
-          <View class={`hidden md:flex flex-row gap-3 px-3 py-2 border-b ${C.line} bg-[#f8fafc] dark:bg-[#0f172a]`}>
-            <Text class={`flex-1 text-[10.5px] uppercase tracking-wider ${C.dim}`}>{unpaidSide() === "collect" ? "Customer" : "Vendor"}</Text>
-            <Text class={`w-[150px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Document</Text>
-            <Text class={`w-[64px] text-[10.5px] uppercase tracking-wider ${C.dim}`}>Due</Text>
-            <Text class={`w-[110px] text-right text-[10.5px] uppercase tracking-wider ${C.dim}`}>Balance</Text>
+          <View class={`hidden md:flex flex-row gap-3 px-3 py-2 border-b ${C.line} bg-[#f8fafc] dark:bg-[#0d0d10]`}>
+            <Text class={`flex-1 text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>{unpaidSide() === "collect" ? "Customer" : "Vendor"}</Text>
+            <Text class={`w-[150px] text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Document</Text>
+            <Text class={`w-[64px] text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Due</Text>
+            <Text class={`w-[110px] text-right text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Balance</Text>
             <View class="w-[100px]" />
           </View>
           <If when={(d()?.rows || []).length === 0}>
@@ -88,7 +88,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
           <Each of={d()?.rows || []} key={rowKey}>
             {(r: Any) => (
               <View class={`border-b ${C.line} last:border-b-0`}>
-                <View class="flex-row items-center gap-3 px-3 py-2.5 flex-wrap hover:bg-[#f8fafc] dark:hover:bg-slate-800/50 transition-colors">
+                <View class="flex-row items-center gap-3 px-3 py-2.5 flex-wrap hover:bg-[#f8fafc] dark:hover:bg-[#22232a] transition-colors">
                   <View
                     accessibilityLabel="Show payments"
                     accessibilityValue={{ text: r().who }}
@@ -153,7 +153,7 @@ function UnpaidPage(p: { go: (page: string, filter?: string) => void }) {
   );
 }
 
-/** One assistant proposal: the user corrects person, category and dates, then accepts or discards. */
+// One assistant proposal: the user corrects person, category and dates, then accepts or discards.
 function ProposalRow(p: { p: Any; side: string; opts: Any }) {
   const o = () => p.opts() as Any;
   const who = signal(p.p.person_suggestion?.ticket || "");
@@ -268,7 +268,7 @@ function OwedSheet(p: { side: string; opts: Any; close: () => void }) {
   );
 }
 
-/** A document's payments, oldest first; a payment voided in the Ledger stays listed with a Voided tag. */
+// A document's payments, oldest first; a payment voided in the Ledger stays listed with a Voided tag.
 function OwedHistory(p: { side: string; owed: string }) {
   const data = resource(
     () => ({ v: ver(), o: p.owed }),

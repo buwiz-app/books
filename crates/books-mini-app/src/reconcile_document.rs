@@ -484,26 +484,44 @@ pub fn document(store: &Store, book: Book, args: &Map<String, Value>) -> Result<
         .map_err(books_store::StoreError::from)?
         .filter(|e| e.0 == book.id)
         .ok_or_else(|| Refusal::new("no_snapshot", "This statement has no snapshot"))?;
-    let len = usize::try_from(len).unwrap_or(usize::MAX);
-    // the encoded bytes plus the page around them
-    let room = MAX_DOCUMENT.saturating_sub(STYLE.len() + 1024 + lines.len() * 512);
-    if html::base64_len(len) > room {
-        return Err(Refusal::new(
-            "too_large",
-            "The snapshot is too large to show here",
-        ));
-    }
-    let bytes: Vec<u8> = store
-        .conn()
-        .query_row(
-            "SELECT bytes FROM evidence WHERE id = ?1",
-            [evidence],
-            |r| r.get(0),
-        )
-        .optional()
-        .map_err(books_store::StoreError::from)?
-        .ok_or_else(|| Refusal::new("no_snapshot", "This statement has no snapshot"))?;
-    let data = format!("data:{mime};base64,{}", html::base64(&bytes));
+    let drawn = if mime == "application/pdf" {
+        drawn_page(store.conn(), s.id, page_no)?
+    } else {
+        None
+    };
+    let from_drawn = drawn.is_some();
+    let (render_mime, bytes) = if let Some(png) = drawn {
+        let room = MAX_DOCUMENT.saturating_sub(STYLE.len() + 1024 + lines.len() * 512);
+        if html::base64_len(png.len()) > room {
+            return Err(Refusal::new(
+                "too_large",
+                "The snapshot is too large to show here",
+            ));
+        }
+        ("image/png".to_string(), png)
+    } else {
+        let len = usize::try_from(len).unwrap_or(usize::MAX);
+        // the encoded bytes plus the page around them
+        let room = MAX_DOCUMENT.saturating_sub(STYLE.len() + 1024 + lines.len() * 512);
+        if html::base64_len(len) > room {
+            return Err(Refusal::new(
+                "too_large",
+                "The snapshot is too large to show here",
+            ));
+        }
+        let bytes: Vec<u8> = store
+            .conn()
+            .query_row(
+                "SELECT bytes FROM evidence WHERE id = ?1",
+                [evidence],
+                |r| r.get(0),
+            )
+            .optional()
+            .map_err(books_store::StoreError::from)?
+            .ok_or_else(|| Refusal::new("no_snapshot", "This statement has no snapshot"))?;
+        (mime, bytes)
+    };
+    let data = format!("data:{render_mime};base64,{}", html::base64(&bytes));
     let no = numbers(store.conn(), s.id)?;
     let lit = |l: &StatementLine| highlight.is_some() && highlight == no.get(&l.id).copied();
     let on_page: Vec<(&StatementLine, Option<Bbox>)> = lines
@@ -524,9 +542,9 @@ pub fn document(store: &Store, book: Book, args: &Map<String, Value>) -> Result<
         escape(&account.name),
         escape(&month.label())
     );
-    match mime.as_str() {
-        // a picture is one page: without its own, another page has none to show
-        "image/png" | "image/jpeg" if own.is_none() && page_no != 1 => {
+    match render_mime.as_str() {
+        // a single-page picture has no other pages unless drawn from a PDF
+        "image/png" | "image/jpeg" if !from_drawn && own.is_none() && page_no != 1 => {
             body.push_str("<p class=\"sub\">No picture was kept for this page. Its lines:</p><ol>");
             for (l, _) in &on_page {
                 let hl = if lit(l) { " class=\"hl\"" } else { "" };
@@ -549,6 +567,25 @@ pub fn document(store: &Store, book: Book, args: &Map<String, Value>) -> Result<
                 ));
             }
             body.push_str("</div>");
+            // a line the read placed on this page without a box has no
+            // overlay to light: it is listed under the picture instead
+            let unboxed: Vec<&StatementLine> = on_page
+                .iter()
+                .filter(|(_, b)| b.is_none())
+                .map(|(l, _)| *l)
+                .collect();
+            if !unboxed.is_empty() {
+                body.push_str("<p class=\"sub\">Also on this page:</p><ol>");
+                for l in unboxed {
+                    let hl = if lit(l) { " class=\"hl\"" } else { "" };
+                    body.push_str(&format!(
+                        "<li{hl}>{} · {}</li>",
+                        shown(l),
+                        escape(&l.line.description)
+                    ));
+                }
+                body.push_str("</ol>");
+            }
         }
         "application/pdf" => {
             body.push_str(&format!(

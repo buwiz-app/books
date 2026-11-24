@@ -14,14 +14,15 @@ export function DraftBanner(p: { account: string; month: string; draft: Any }) {
   const closingText = () => moneyText(closing());
   const blocked = () => rows().some((r: Any) => r.outside_month && !isOut(r.no)) || (!dr()?.has_closing && !closingText());
   const use = () =>
-    act("books_app_statement_accept", {
+    act("books_app_statement_action", {
+      action: "accept",
       account: p.account,
       month: p.month,
       draft: dr()?.ticket,
       exclude: excluded(),
       ...(closingText() ? { closing: closingText() } : {}),
     }).catch(() => null);
-  const later = () => act("books_app_statement_accept", { account: p.account, month: p.month, draft: dr()?.ticket, dismiss: true }).catch(() => null);
+  const later = () => act("books_app_statement_action", { action: "accept", account: p.account, month: p.month, draft: dr()?.ticket, dismiss: true }).catch(() => null);
   return (
     <Panel pad class="gap-2.5">
       <Text class={`text-[13px] font-semibold ${C.ink}`}>{`The assistant read ${String(dr()?.lines || 0)} lines from a statement · ${String(need())} need a look`}</Text>

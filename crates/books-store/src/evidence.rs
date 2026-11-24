@@ -161,6 +161,16 @@ pub fn linked_count(conn: &Connection, id: i64) -> Result<i64> {
     )?)
 }
 
+/// The entries of a book with a document linked to them.
+pub fn linked_entries(conn: &Connection, book_id: i64) -> Result<std::collections::HashSet<i64>> {
+    let mut stmt = conn.prepare(
+        "SELECT DISTINCT k.entry_id FROM evidence_link k JOIN evidence e ON e.id = k.evidence_id
+         WHERE e.book_id = ?1 AND k.entry_id IS NOT NULL",
+    )?;
+    let rows = stmt.query_map([book_id], |r| r.get::<_, i64>(0))?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
+
 /// Keep a document's pages as pictures (PNG), in place of any kept before.
 pub fn keep_pages(conn: &Connection, evidence: i64, pages: &[(i64, Vec<u8>)]) -> Result<()> {
     conn.execute(
@@ -250,7 +260,7 @@ mod tests {
                 )
                 .unwrap();
             store.conn().execute_batch("DROP INDEX audit_by_subject; DROP TABLE press_once; ALTER TABLE audit_event DROP COLUMN press_shown_hash; ALTER TABLE audit_event DROP COLUMN press_who; ALTER TABLE audit_event DROP COLUMN press_approved_by; ALTER TABLE audit_event DROP COLUMN press_at; ALTER TABLE audit_event DROP COLUMN press_once; ALTER TABLE audit_event DROP COLUMN press_args_hash;").unwrap();
-            store.conn().execute_batch("DROP INDEX line_by_person; DROP INDEX line_by_department; DROP INDEX line_by_location; ALTER TABLE line DROP COLUMN memo; ALTER TABLE line DROP COLUMN location_id; ALTER TABLE line DROP COLUMN department_id; ALTER TABLE line DROP COLUMN person_id; ALTER TABLE book DROP COLUMN accent; DROP TABLE entry_extraction_correction; DROP TABLE entry_extraction; DROP TABLE evidence_classification; DROP TABLE owed_proposal; DROP TABLE evidence_page; DROP TABLE evidence_link; DROP TABLE evidence; UPDATE meta SET value='6' WHERE key='schema_version';").unwrap();
+            store.conn().execute_batch("DROP INDEX account_by_parent; ALTER TABLE account DROP COLUMN parent_account_id; DROP INDEX line_by_person; DROP INDEX line_by_department; DROP INDEX line_by_location; ALTER TABLE line DROP COLUMN memo; ALTER TABLE line DROP COLUMN location_id; ALTER TABLE line DROP COLUMN department_id; ALTER TABLE line DROP COLUMN person_id; ALTER TABLE book DROP COLUMN accent; DROP TABLE entry_extraction_correction; DROP TABLE entry_extraction; DROP TABLE evidence_classification; DROP TABLE owed_proposal; DROP TABLE evidence_page; DROP TABLE evidence_link; DROP TABLE evidence; DROP TABLE statement_area; DROP TABLE statement_draft_area; DROP TABLE statement_activity; DROP TABLE statement_comment; UPDATE meta SET value='6' WHERE key='schema_version';").unwrap();
         }
         let store = Store::open(&paths).unwrap();
         assert_eq!(

@@ -100,6 +100,8 @@ pub fn reopen(
         "INSERT INTO statement_event (statement_id, event, reason, at) VALUES (?1, 'reopen', ?2, ?3)",
         params![id, reason, now],
     )?;
+    // the reason may be a memo: it stays in statement_event, never in the feed
+    crate::months::log_activity(conn, id, "reopen", None)?;
     Ok(())
 }
 

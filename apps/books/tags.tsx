@@ -107,7 +107,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
     <View class="flex-col gap-3">
       {/* Empty state */}
       <If when={sidePanel() === "empty"}>
-        <View class={`rounded-[16px] border overflow-hidden items-center justify-center py-12 px-8 bg-white dark:bg-slate-800 ${C.line}`}>
+        <View class={`rounded-[16px] border overflow-hidden items-center justify-center py-12 px-8 bg-white dark:bg-[#141519] ${C.line}`}>
           <View class="w-16 h-16 rounded-2xl items-center justify-center bg-[#e8f5f0] dark:bg-[#134e4a]/40 mb-4">
             {tagAvatar(tagKind(), "w-[30px] h-[30px]", "tint-[#2a9d8f] dark:tint-[#2dd4bf]")}
           </View>
@@ -118,7 +118,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
 
       {/* Detail card */}
       <If when={sidePanel() === "view"}>
-        <View class={`rounded-[16px] border overflow-hidden bg-white dark:bg-slate-800 ${C.line}`}>
+        <View class={`rounded-[16px] border overflow-hidden bg-white dark:bg-[#141519] ${C.line}`}>
           {/* Teal accent band */}
           <View class="bg-[#2a9d8f] items-center pt-5 pb-1">
             <View class="w-10 h-10 rounded-lg items-center justify-center bg-white/20">
@@ -138,7 +138,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
             </View>
           </View>
           {/* Activity box */}
-          <View class="mx-4 mb-4 rounded-xl bg-[#f5f7fb] dark:bg-slate-900 p-4">
+          <View class="mx-4 mb-4 rounded-xl bg-[#f5f7fb] dark:bg-[#0d0d10] p-4">
             <View class="flex-row items-center gap-2">
               {tagAvatar(tagKind(), "w-[13px] h-[13px]", "tint-[#2a9d8f] dark:tint-[#2dd4bf]")}
               <Text class={`text-[13px] font-semibold ${C.ink}`}>{selected()?.name || ""}</Text>
@@ -170,7 +170,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
 
       {/* New form card */}
       <If when={sidePanel() === "form"}>
-        <View class={`rounded-[16px] border overflow-hidden bg-white dark:bg-slate-800 ${C.line}`}>
+        <View class={`rounded-[16px] border overflow-hidden bg-white dark:bg-[#141519] ${C.line}`}>
           <View class="bg-[#2a9d8f] px-5 py-4 flex-row items-center gap-3">
             <Text class="text-[15px] font-bold text-white">+</Text>
             <Text class="text-[15px] font-semibold text-white">{L().newEntity}</Text>
@@ -182,7 +182,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
             </View>
             <View class={`flex-row items-center justify-end gap-3 pt-4 border-t ${C.line}`}>
               <View
-                class={`h-[38px] px-5 rounded-lg border items-center justify-center transition-colors ${C.line} hover:bg-[#f8fafc] dark:hover:bg-slate-700`}
+                class={`h-[38px] px-5 rounded-lg border items-center justify-center transition-colors ${C.line} hover:bg-[#f8fafc] dark:hover:bg-[#22232a]`}
                 onPress={closeSide}
                 activeStyle={{ opacity: 0.75 }}
               >
@@ -210,8 +210,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
           onPress={() => p.go("today")}
           activeStyle={{ opacity: 0.7 }}
         >
-          <Text class={`text-[14px] font-medium transition-colors ${C.ink} hover:text-[#0d9488] dark:hover:text-[#2dd4bf]`}>‹</Text>
-          <Text class={`hidden sm:inline text-[14px] font-medium transition-colors ${C.ink} hover:text-[#0d9488] dark:hover:text-[#2dd4bf]`}>Back to Dashboard</Text>
+          <Text class={`text-[14px] font-medium transition-colors ${C.ink} hover:text-[#0d9488] dark:hover:text-[#2dd4bf]`}>‹ Back</Text>
         </View>
         <View
           class="h-[38px] flex-row items-center gap-1.5 rounded-full bg-[#0d9488] px-4 shadow-sm transition-colors hover:bg-[#0f766e]"
@@ -239,14 +238,14 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
       {/* Two-Panel Layout */}
       <View class="flex-1 min-h-0 flex-row gap-6 px-3 pb-3 sm:px-6 sm:pb-6 overflow-hidden">
         {/* ── Left Card ── */}
-        <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>
+        <View class={`flex-1 min-h-0 rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-[#141519] ${C.line}`}>
           <View class="shrink-0 bg-[#2a9d8f] px-5 py-4 flex-row items-center gap-3">
             {tagAvatar(tagKind(), "w-[16px] h-[16px]", "tint-white", true)}
             <Text class="text-[16px] font-semibold text-white">{L().plural}</Text>
           </View>
 
           {/* Search bar — funnel, status chip, lookup, Clear */}
-          <View class={`shrink-0 flex-row items-center gap-2 px-4 py-2.5 border-b bg-white dark:bg-slate-800 ${C.line}`}>
+          <View class={`shrink-0 flex-row items-center gap-2 px-4 py-2.5 border-b bg-white dark:bg-[#141519] ${C.line}`}>
             <Text class={`text-[13px] ${C.dim}`}>⏷</Text>
             <View class="flex-row items-center gap-1 rounded-full border border-[#0d9488] bg-[#f0fdfa] px-2 py-0.5 dark:bg-[#134e4a]/30">
               <View class="w-1.5 h-1.5 rounded-full bg-[#0d9488]" />
@@ -273,7 +272,7 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
           </View>
 
           {/* Column headers */}
-          <View class={`flex-row gap-3 px-4 py-2 border-b bg-[#f8f9fb] dark:bg-slate-900 ${C.line}`}>
+          <View class={`flex-row gap-3 px-4 py-2 border-b bg-[#f8f9fb] dark:bg-[#0d0d10] ${C.line}`}>
             <Text class={`flex-1 text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>{L().columnHeader}</Text>
             <Text class={`w-[120px] text-right text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>{`Spent in ${d()?.month.name || ""}`}</Text>
             <Text class={`w-[80px] text-right text-[10px] font-semibold uppercase tracking-wider ${C.dim}`}>Uses</Text>
@@ -285,8 +284,8 @@ function TagsPage(p: { go: (page: string, filter?: string) => void }) {
               <Each of={rows()} key={rowKey}>
                 {(r: Any) => (
                   <View
-                    class={`flex-row items-center gap-2.5 px-4 py-3 border-b transition-colors border-b-[#f0f1f3] dark:border-slate-700 ${
-                      selected()?.ticket === r().ticket ? "bg-[#e8f4fe] dark:bg-slate-700" : "hover:bg-[#f8f9fb] dark:hover:bg-slate-800"
+                    class={`flex-row items-center gap-2.5 px-4 py-4 md:py-3 border-b transition-colors border-b-[#f0f1f3] dark:border-[#27282f] ${
+                      selected()?.ticket === r().ticket ? "bg-[#e8f4fe] dark:bg-[#1c1d22]" : "hover:bg-[#f8f9fb] dark:hover:bg-[#22232a]"
                     }`}
                     onPress={() => pick(r())}
                     activeStyle={{ opacity: 0.75 }}

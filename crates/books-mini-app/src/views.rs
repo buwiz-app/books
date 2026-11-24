@@ -431,7 +431,32 @@ pub fn month_arg(args: &Map<String, Value>) -> Result<Period, Refusal> {
     }
 }
 
-fn account_row(store: &Store, chart: &Chart, a: &Account, balance: i64) -> Result<Value, Refusal> {
+fn subtree_movement(
+    id: i64,
+    children: &std::collections::HashMap<i64, Vec<i64>>,
+    balances: &std::collections::HashMap<i64, i64>,
+    visited: &mut std::collections::HashSet<i64>,
+) -> i128 {
+    if !visited.insert(id) {
+        return 0;
+    }
+    let mut sum = i128::from(*balances.get(&id).unwrap_or(&0));
+    if let Some(kids) = children.get(&id) {
+        for &kid in kids {
+            sum += subtree_movement(kid, children, balances, visited);
+        }
+    }
+    sum
+}
+
+fn account_row(
+    store: &Store,
+    chart: &Chart,
+    a: &Account,
+    balance: i64,
+    subtree_balance: i64,
+    child_count: usize,
+) -> Result<Value, Refusal> {
     let off = chart.hidden(a);
     let (tag, tag_label) = match a.account_type.group() {
         "Assets" => ("as", "Asset"),
@@ -439,6 +464,11 @@ fn account_row(store: &Store, chart: &Chart, a: &Account, balance: i64) -> Resul
         "Equity" => ("eq", "Equity"),
         "Revenue" => ("re", "Revenue"),
         _ => ("ex", "Expense"),
+    };
+    let parent = a.parent_id.and_then(|pid| chart.by_id.get(&pid));
+    let parent_ticket = match parent {
+        Some(p) => Some(ticket(store, "account", p.id)?),
+        None => None,
     };
     Ok(json!({
         "ticket": ticket(store, "account", a.id)?,
@@ -449,32 +479,71 @@ fn account_row(store: &Store, chart: &Chart, a: &Account, balance: i64) -> Resul
         "tag": tag,
         "tag_label": tag_label,
         "kind": a.kind.as_str(),
+        "debit_normal": a.account_type.debit_normal(),
+        "parent_number": parent.map(|p| p.number.as_str()),
+        "parent_ticket": parent_ticket,
+        "child_count": child_count,
         "accrual_only": a.accrual_only(),
         "off": off,
         "cash": a.is_cash(),
         "balance": if off { Value::Null } else { json!(money::format(balance)) },
         "balance_shown": if off { "—".to_string() } else { money::display(balance) },
+        "subtree_balance": if off { Value::Null } else { json!(money::format(subtree_balance)) },
+        "subtree_balance_shown": if off { "—".to_string() } else { money::display(subtree_balance) },
     }))
 }
 
+/// The most rows one `books_ledger_list` call answers.
+const LEDGER_PAGE: usize = 200;
+
+/// The most search terms one `books_ledger_list` call takes.
+const LEDGER_TERMS: usize = 20;
+
 const GROUPS: [&str; 5] = ["Assets", "Liabilities", "Equity", "Revenue", "Expenses"];
 
-/// The Accounts page: the chart with balances, filtered by group.
+/// The Accounts page: the chart with balances, filtered by group, with optional
+/// period range (`from`/`to`) and automatic double-entry subtree rollups.
 pub fn accounts(store: &Store, book: Book, args: &Map<String, Value>) -> Result<Value, Refusal> {
     let chart = Chart::load(store, book)?;
-    let balances = books::movements(store.conn(), chart.book.id, None, Some(Date::today()))?;
+    let from = match service::text(args, "from")
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        Some(s) => {
+            Some(Date::parse(s).ok_or_else(|| Refusal::invalid("`from` must be YYYY-MM-DD."))?)
+        }
+        None => None,
+    };
+    let to = match service::text(args, "to")
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        Some(s) => {
+            Some(Date::parse(s).ok_or_else(|| Refusal::invalid("`to` must be YYYY-MM-DD."))?)
+        }
+        None => Some(Date::today()),
+    };
+    let balances = books::movements(store.conn(), chart.book.id, from, to)?;
+    let mut children: std::collections::HashMap<i64, Vec<i64>> = std::collections::HashMap::new();
+    for a in &chart.list {
+        if let Some(pid) = a.parent_id {
+            children.entry(pid).or_default().push(a.id);
+        }
+    }
     let group = service::text(args, "group").unwrap_or("all");
     let mut rows = Vec::new();
     for a in &chart.list {
         if group != "all" && a.account_type.group() != group {
             continue;
         }
-        rows.push(account_row(
-            store,
-            &chart,
-            a,
-            a.natural(*balances.get(&a.id).unwrap_or(&0)),
-        )?);
+        let own = a.natural(*balances.get(&a.id).unwrap_or(&0));
+        let mut visited = std::collections::HashSet::new();
+        let raw_sub = subtree_movement(a.id, &children, &balances, &mut visited);
+        let sub_i64 = i64::try_from(raw_sub)
+            .map_err(|_| Refusal::new("overflow", "Subtree balance exceeds integer range."))?;
+        let subtree = a.natural(sub_i64);
+        let child_count = children.get(&a.id).map_or(0, Vec::len);
+        rows.push(account_row(store, &chart, a, own, subtree, child_count)?);
     }
     let groups: Vec<&str> = ["all"].into_iter().chain(GROUPS).collect();
     Ok(json!({
@@ -566,14 +635,29 @@ pub fn ledger(
         _ => None,
     };
     let filter = service::text(args, "filter").unwrap_or("all");
-    // `search` narrows the page before the 200-row cap, so a match older
-    // than the cap is still found. Payee, memo and reference stay out of a
-    // non-app caller's matches — the tool shows it no payees or memos.
-    let search = service::text(args, "search")
-        .unwrap_or_default()
-        .to_lowercase();
+    // `search` and each of `terms` narrow the rows before they are paged,
+    // so a match on a later page is still found; a row has to match every
+    // one. Payee, memo and reference stay out of a non-app caller's
+    // matches — the tool shows it no payees or memos.
+    let mut terms: Vec<String> = Vec::new();
+    let typed = args
+        .get("terms")
+        .and_then(Value::as_array)
+        .map(|list| list.iter().filter_map(Value::as_str).collect::<Vec<_>>())
+        .unwrap_or_default();
+    for t in service::text(args, "search").into_iter().chain(typed) {
+        let t = t.trim().to_lowercase();
+        if !t.is_empty() && !terms.contains(&t) {
+            terms.push(t);
+        }
+    }
+    if terms.len() > LEDGER_TERMS {
+        return Err(Refusal::invalid(format!(
+            "The ledger takes at most {LEDGER_TERMS} search terms."
+        )));
+    }
     let hit = |s: &Summary| {
-        if search.is_empty() {
+        if terms.is_empty() {
             return true;
         }
         let mut fields = vec![
@@ -594,9 +678,14 @@ pub fn ledger(
             fields.push(s.entry.reference.clone().unwrap_or_default());
             fields.push(s.entry.memo.clone().unwrap_or_default());
         }
-        fields
+        let fields: Vec<String> = fields
             .iter()
-            .any(|f| !f.is_empty() && f.to_lowercase().contains(&search))
+            .filter(|f| !f.is_empty())
+            .map(|f| f.to_lowercase())
+            .collect();
+        terms
+            .iter()
+            .all(|t| fields.iter().any(|f| f.contains(t.as_str())))
     };
     let counts = json!({
         "all": list.len(),
@@ -616,32 +705,190 @@ pub fn ledger(
                 .sum(),
         )
     };
-    let rows = list
+    let offset = match service::text(args, "cursor") {
+        Some(c) if !c.is_empty() => c
+            .parse::<usize>()
+            .map_err(|_| Refusal::invalid("Invalid cursor."))?,
+        _ => 0,
+    };
+    // every entry the filter and the search leave, newest first; one call
+    // answers a page of them, and `next_cursor` asks for the page after it
+    let matching: Vec<&Summary> = list
         .iter()
         .filter(|s| is(s, filter))
         .filter(|s| hit(s))
-        .take(200)
-        .map(|s| {
-            let mut row = s.row(store, origin)?;
-            row["checks"] = json!(marks.get(&s.entry.id).cloned().unwrap_or_default());
-            if let Some(running) = &running {
-                row["balance_shown"] = json!(running.get(&s.entry.id).map(|b| money::display(*b)));
+        .collect();
+    let total = matching.len();
+    // what the app's own filters read on a row: a stored bank match, where
+    // the entry came from, and the tags on its lines
+    let links = books_store::months::matched_entries(store.conn(), chart.book.id)?;
+    let documented = books_store::evidence::linked_entries(store.conn(), chart.book.id)?;
+    let mut tag_names: HashMap<i64, String> = HashMap::new();
+    for s in matching.iter().skip(offset).take(LEDGER_PAGE) {
+        for id in s
+            .lines
+            .iter()
+            .flat_map(|l| [l.department_id, l.location_id])
+            .flatten()
+        {
+            if !tag_names.contains_key(&id)
+                && let Some(t) = people::tag(store.conn(), id)?
+            {
+                tag_names.insert(id, t.name);
             }
-            if let Some(a) = &selected {
-                let amount = account_amount(s, a);
-                row["account_amount"] = json!(money::format(amount));
-                row["account_amount_shown"] = json!(money::display(amount));
-                row["account_tone"] = json!(if amount > 0 {
-                    "pos"
-                } else if amount < 0 {
-                    "neg"
-                } else {
-                    ""
+        }
+    }
+    let side = |v: i64| {
+        if v > 0 {
+            money::display(v)
+        } else {
+            String::new()
+        }
+    };
+    let row_of = |s: &Summary| -> Result<Value, Refusal> {
+        let mut row = s.row(store, origin)?;
+        let id = s.entry.id;
+        row["checks"] = json!(marks.get(&id).cloned().unwrap_or_default());
+        row["matched"] = json!(links.contains_key(&id));
+        row["source"] = json!(if links.get(&id) == Some(&true) {
+            "bank"
+        } else if documented.contains(&id) {
+            "document"
+        } else {
+            "manual"
+        });
+        row["departments"] = json!(tag_list(
+            s.lines.iter().map(|l| l.department_id),
+            &tag_names
+        ));
+        row["locations"] = json!(tag_list(s.lines.iter().map(|l| l.location_id), &tag_names));
+        if let Some(a) = &selected {
+            // The Debit/Credit columns: this entry's lines on the picked
+            // account.
+            let (debit, credit) = s
+                .lines
+                .iter()
+                .filter(|l| l.account_id == a.id)
+                .fold((0i64, 0i64), |(d, c), l| (d + l.debit, c + l.credit));
+            row["debit_shown"] = json!(side(debit));
+            row["credit_shown"] = json!(side(credit));
+            let amount = account_amount(s, a);
+            row["account_amount"] = json!(money::format(amount));
+            row["account_amount_shown"] = json!(money::display(amount));
+            row["account_tone"] = json!(if amount > 0 {
+                "pos"
+            } else if amount < 0 {
+                "neg"
+            } else {
+                ""
+            });
+        }
+        if let Some(running) = &running {
+            row["balance_shown"] = json!(running.get(&id).map(|b| money::display(*b)));
+        }
+        Ok(row)
+    };
+    // All-accounts mode: the grouped view — every account the matching
+    // entries touch, with its count, its debit and credit, and the rows of
+    // this page that touch it (the old app's listTransactionsGrouped). The
+    // figures cover every matching entry, not this page alone, and only the
+    // posted and voided ones: a draft is listed and counted, and moves no
+    // money until a person posts it (invariant 4). An entry is sent once,
+    // in `rows`; a group names its rows by their place there, with the
+    // account's own debit, credit and balance after each.
+    struct Group<'a> {
+        account: &'a Account,
+        ticket: String,
+        debit: i64,
+        credit: i64,
+        net: i64,
+        count: usize,
+        run: Option<HashMap<i64, i64>>,
+    }
+    let mut totals: Vec<Group> = Vec::new();
+    if selected.is_none() {
+        let mut agg: HashMap<i64, (i128, i128, usize)> = HashMap::new();
+        for s in &matching {
+            let moves = matches!(s.entry.status, Status::Posted | Status::Voided);
+            let mut touched: Vec<i64> = Vec::new();
+            for l in &s.lines {
+                let e = agg.entry(l.account_id).or_insert((0, 0, 0));
+                if moves {
+                    e.0 += i128::from(l.debit);
+                    e.1 += i128::from(l.credit);
+                }
+                if !touched.contains(&l.account_id) {
+                    touched.push(l.account_id);
+                    e.2 += 1;
+                }
+            }
+        }
+        let mut order: Vec<&Account> = agg.keys().filter_map(|id| chart.by_id.get(id)).collect();
+        order.sort_by(|a, b| (&a.number, &a.name, a.id).cmp(&(&b.number, &b.name, b.id)));
+        let narrow = |v: i128| {
+            i64::try_from(v)
+                .map_err(|_| Refusal::new("overflow", "An account total exceeds integer range."))
+        };
+        for a in order {
+            let Some((debit, credit, count)) = agg.get(&a.id).copied() else {
+                continue;
+            };
+            totals.push(Group {
+                account: a,
+                ticket: ticket(store, "account", a.id)?,
+                debit: narrow(debit)?,
+                credit: narrow(credit)?,
+                net: narrow(debit - credit)?,
+                count,
+                run: crate::activity::balances_after(store, &chart, a, &month).ok(),
+            });
+        }
+    }
+    let page_of = |limit: usize| -> Result<(Vec<Value>, Vec<Value>, Value), Refusal> {
+        let page: Vec<&Summary> = matching.iter().copied().skip(offset).take(limit).collect();
+        let rows = page
+            .iter()
+            .map(|s| row_of(s))
+            .collect::<Result<Vec<_>, Refusal>>()?;
+        let mut groups = Vec::new();
+        for g in &totals {
+            let mut refs = Vec::new();
+            for (i, s) in page.iter().enumerate() {
+                let mut on = s.lines.iter().filter(|l| l.account_id == g.account.id);
+                let Some(first) = on.next() else {
+                    continue;
+                };
+                let (d, c) = on.fold((first.debit, first.credit), |(d, c), l| {
+                    (d + l.debit, c + l.credit)
                 });
+                refs.push(json!({
+                    "row": i,
+                    "debit_shown": side(d),
+                    "credit_shown": side(c),
+                    "balance_shown": g.run.as_ref().and_then(|r| r.get(&s.entry.id)).map(|b| money::display(*b)),
+                }));
             }
-            Ok(row)
-        })
-        .collect::<Result<Vec<_>, Refusal>>()?;
+            groups.push(json!({
+                "ticket": g.ticket,
+                "number": g.account.number,
+                "name": g.account.name,
+                "type": g.account.account_type.as_str(),
+                "group": g.account.account_type.group(),
+                "debit_shown": money::display(g.debit),
+                "credit_shown": money::display(g.credit),
+                "balance_shown": money::display(g.account.natural(g.net)),
+                "count": g.count,
+                "rows": refs,
+            }));
+        }
+        let next = offset + page.len();
+        let cursor = if next < total {
+            json!(next.to_string())
+        } else {
+            Value::Null
+        };
+        Ok((rows, groups, cursor))
+    };
     let header = match &selected {
         Some(a) => {
             let month_moves = books::movements(
@@ -667,8 +914,9 @@ pub fn ledger(
         }
     };
     let (s, e) = (month.start, month.end);
-    Ok(json!({
+    let mut out = json!({
         "book": book_json(store, &chart.book)?,
+        "today": Date::today().to_string(),
         "month": { "key": month.key, "label": month.label(), "range": format!("{} {} – {} {}", MONTHS[usize::from(s.month - 1)], s.day, MONTHS[usize::from(e.month - 1)], e.day), "prev": month.previous().key, "next": Period::of(month.end.add_days(1), PeriodKind::Month).key },
         "accounts": groups,
         "all_accounts": every,
@@ -676,8 +924,35 @@ pub fn ledger(
         "filter": filter,
         "counts": counts,
         "running_balance": running.is_some(),
-        "rows": rows,
-    }))
+        "total": total,
+    });
+    // long memos or wide journals: a shorter page, so the answer stays
+    // inside the host's limit on one result
+    let mut limit = LEDGER_PAGE;
+    loop {
+        let (rows, grouped, cursor) = page_of(limit)?;
+        out["groups"] = json!(grouped);
+        out["rows"] = json!(rows);
+        out["next_cursor"] = cursor;
+        if limit == 1 || crate::ledger_csv::result_bytes(&out) <= crate::ledger_csv::RESULT_MAX {
+            break;
+        }
+        limit /= 2;
+    }
+    Ok(out)
+}
+
+/// The names of the tags `ids` point at, each once, in line order.
+fn tag_list(ids: impl Iterator<Item = Option<i64>>, names: &HashMap<i64, String>) -> Vec<&str> {
+    let mut out: Vec<&str> = Vec::new();
+    for id in ids.flatten() {
+        if let Some(name) = names.get(&id)
+            && !out.contains(&name.as_str())
+        {
+            out.push(name);
+        }
+    }
+    out
 }
 
 /// One entry: the drawer.

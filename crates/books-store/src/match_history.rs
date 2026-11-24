@@ -153,6 +153,7 @@ pub fn accept_line(
         }
     };
     months::set_match(conn, line.id, chosen, "accepted")?;
+    months::log_activity(conn, s.id, "match", Some(&format!("line {line_no}")))?;
     Ok(chosen)
 }
 

@@ -16,39 +16,58 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-/** "2026-10-29" → "October 29, 2026", for display only: the stored value
- *  stays ISO (the old web app's formatDisplay, without a locale API). */
+// "2026-10-29" → "October 29, 2026", for display only: the stored value
+// stays ISO (the old web app's formatDisplay, without a locale API).
 const longDate = (iso: string) => {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
   if (!m) return iso;
   return `${MONTH_NAMES[Number(m[2]) - 1] || m[2]} ${String(Number(m[3]))}, ${m[1]}`;
 };
 
-/** Colors: a dark palette, with a light twin for each. */
+// Books Design System: unified surface, border, ink, and semantic tokens.
+// Dark mode uses a neutral obsidian ramp (#0d0d10 → #111216 → #141519 → #1c1d22 → #22232a)
+// that harmonizes cleanly with Buwiz Bot's native chrome; light mode pairs crisp porcelain
+// surfaces (#f6f7f9 → #f1f3f6 → #ffffff → #f4f5f7). Never mix slate/navy dark shades.
 const C = {
-  bg: "bg-white dark:bg-[#0a0a0b]",
-  rail: "bg-[#f1f5f9] dark:bg-[#141416]",
-  panel: "bg-white dark:bg-[#141416]",
-  raise: "bg-[#f1f5f9] dark:bg-[#1c1c1f]",
-  hover: "bg-[#f8fafc] dark:bg-[#1c1c1f]",
-  line: "border-[#e2e8f0] dark:border-[#2a2a2d]",
-  ink: "text-[#0f172a] dark:text-[#fafafa]",
-  mute: "text-[#475569] dark:text-[#a1a1aa]",
-  dim: "text-[#94a3b8] dark:text-[#71717a]",
-  green: "text-[#15803d] dark:text-[#22c55e]",
+  bg: "bg-[#f6f7f9] dark:bg-[#0d0d10]",
+  rail: "bg-[#f1f3f6] dark:bg-[#111216]",
+  panel: "bg-white dark:bg-[#141519]",
+  raise: "bg-[#f1f5f9] dark:bg-[#1c1d22]",
+  hover: "bg-[#f8f9fb] dark:bg-[#22232a]",
+  hoverBg: "hover:bg-[#f8f9fb] dark:hover:bg-[#22232a]",
+  subtle: "bg-[#f8f9fb] dark:bg-white/[0.03]",
+  line: "border-[#e5e7eb] dark:border-[#27282f]",
+  lineSoft: "border-[#f1f3f6] dark:border-[#1f2027]",
+  ink: "text-[#111318] dark:text-[#f4f5f7]",
+  mute: "text-[#4b5563] dark:text-[#a1a5b0]",
+  dim: "text-[#8b919d] dark:text-[#6e727e]",
+  green: "text-[#15803d] dark:text-[#34d399]",
   greenBg: "bg-[#16a34a] dark:bg-[#22c55e]",
-  red: "text-[#ef4444] dark:text-[#ff7d75]",
-  redBg: "bg-[#ef4444] dark:bg-[#ff7d75]",
-  amber: "text-[#f59e0b] dark:text-[#f3b64c]",
-  blue: "text-[#2f6fd6] dark:text-[#7fb2ff]",
-  blueBg: "bg-[#2f6fd6] dark:bg-[#7fb2ff]",
-  violet: "text-[#6a46c9] dark:text-[#b79bff]",
-  violetBg: "bg-[#6a46c9] dark:bg-[#b79bff]",
+  red: "text-[#dc2626] dark:text-[#f87171]",
+  redBg: "bg-[#ef4444] dark:bg-[#f87171]",
+  amber: "text-[#d97706] dark:text-[#fbbf24]",
+  blue: "text-[#2563eb] dark:text-[#60a5fa]",
+  blueBg: "bg-[#2563eb] dark:bg-[#60a5fa]",
+  violet: "text-[#6d28d9] dark:text-[#a78bfa]",
+  violetBg: "bg-[#6d28d9] dark:bg-[#a78bfa]",
+  emeraldBar: "bg-gradient-to-r from-[#1a6b3c] to-[#27ae60] dark:from-[#12452b] dark:to-[#18663e]",
 };
 
-/** Old-app icons as data-URI Avatars: the path verbatim, drawn `white` and
- *  recoloured by `tint-*` (same pattern as entry_side.tsx's sideSvg).
- *  `xmlns` is left out on purpose: the privacy gate rejects URL literals. */
+// Typography scale: single source of truth for headings, section labels, body, and captions.
+const TYPO = {
+  hero: `text-[20px] font-bold tracking-tight ${C.ink}`,
+  pageTitle: "text-[15px] font-semibold",
+  cardTitle: `text-[17px] font-bold tracking-tight ${C.ink}`,
+  section: `text-[11px] font-semibold uppercase tracking-wider ${C.dim}`,
+  body: `text-[13px] ${C.ink}`,
+  bodyMute: `text-[13px] ${C.mute}`,
+  caption: `text-[12px] ${C.mute}`,
+  micro: `text-[11px] ${C.dim}`,
+};
+
+// Old-app icons as data-URI Avatars: the path verbatim, drawn `white` and
+// recoloured by `tint-*` (same pattern as entry_side.tsx's sideSvg).
+// `xmlns` is left out on purpose: the privacy gate rejects URL literals.
 const svgIcon = (inner: string, width: number) =>
   `data:image/svg+xml,${encodeURIComponent(
     `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`,
@@ -65,26 +84,28 @@ const ICONS: Record<string, string> = {
   // ui/Combobox.tsx: the selected tick and the create/suggest `+`.
   check: svgIcon('<path d="M20 6L9 17l-5-5"/>', 2.5),
   plus: svgIcon('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>', 2.5),
+  copy: svgIcon('<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>', 2),
+  trash: svgIcon('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>', 2),
   // transactions/shared/constants.tsx: Award03, Consultant, Operations (accounts/icons.ts), LOCATION_ICON.
-  category: svgIcon('<path d="M7.869 15.46 7 22l4.588-2.753c.15-.09.225-.135.305-.152a.5.5 0 0 1 .214 0c.08.017.155.062.305.152L17 22l-.868-6.543m.294-11.208c.154.373.45.67.824.825l1.309.542a1.525 1.525 0 0 1 .825 1.992l-.542 1.308a1.52 1.52 0 0 0 0 1.168l.542 1.307a1.525 1.525 0 0 1-.826 1.993l-1.308.542c-.373.154-.67.45-.825.824l-.542 1.309a1.524 1.524 0 0 1-1.992.825l-1.308-.542a1.53 1.53 0 0 0-1.166 0l-1.31.542a1.524 1.524 0 0 1-1.99-.824l-.542-1.31a1.52 1.52 0 0 0-.824-.825l-1.31-.542a1.524 1.524 0 0 1-.825-1.991l.542-1.308a1.53 1.53 0 0 0 0-1.167l-.542-1.31a1.525 1.525 0 0 1 .826-1.992l1.307-.542c.374-.154.67-.45.825-.823l.543-1.309a1.524 1.524 0 0 1 1.991-.825l1.308.542c.374.154.794.154 1.167-.001l1.31-.54a1.525 1.525 0 0 1 1.99.825l.543 1.31z"/>', 1.5),
-  party: svgIcon('<path d="M16 3.468a4.5 4.5 0 0 1 0 8.064m2 5.234c1.512.684 2.873 1.799 4 3.234M2 20c1.946-2.477 4.59-4 7.5-4s5.554 1.523 7.5 4M14 7.5a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0"/>', 1.5),
-  department: svgIcon('<path d="M4 18v-.2c0-1.68 0-2.52.327-3.162a3 3 0 0 1 1.311-1.311C6.28 13 7.12 13 8.8 13h6.4c1.68 0 2.52 0 3.162.327a3 3 0 0 1 1.311 1.311C20 15.28 20 16.12 20 17.8v.2M4 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4m16 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m0 0V8M6 8h12c.932 0 1.398 0 1.765-.152a2 2 0 0 0 1.083-1.083C21 6.398 21 5.932 21 5s0-1.398-.152-1.765a2 2 0 0 0-1.083-1.083C19.398 2 18.932 2 18 2H6c-.932 0-1.398 0-1.765.152a2 2 0 0 0-1.083 1.083C3 3.602 3 4.068 3 5s0 1.398.152 1.765a2 2 0 0 0 1.083 1.083C4.602 8 5.068 8 6 8"/>', 1.5),
+  category: svgIcon('<path d="M7.8 15.4 7 22l4.5-2.7c.1-.0.2-.1.3-.1a.5.5 0 0 1 .2 0c.0.0.1.0.3.1L17 22l-.8-6.5m.2-11.2c.1.3.4.6.8.8l1.3.5a1.5 1.5 0 0 1 .8 1.9l-.5 1.3a1.5 1.5 0 0 0 0 1.1l.5 1.3a1.5 1.5 0 0 1-.8 1.9l-1.3.5c-.3.1-.6.4-.8.8l-.5 1.3a1.5 1.5 0 0 1-1.9.8l-1.3-.5a1.5 1.5 0 0 0-1.1 0l-1.3.5a1.5 1.5 0 0 1-1.9-.8l-.5-1.3a1.5 1.5 0 0 0-.8-.8l-1.3-.5a1.5 1.5 0 0 1-.8-1.9l.5-1.3a1.5 1.5 0 0 0 0-1.1l-.5-1.3a1.5 1.5 0 0 1 .8-1.9l1.3-.5c.3-.1.6-.4.8-.8l.5-1.3a1.5 1.5 0 0 1 1.9-.8l1.3.5c.3.1.7.1 1.1-.0l1.3-.5a1.5 1.5 0 0 1 1.9.8l.5 1.3z"/>', 1.5),
+  party: svgIcon('<path d="M16 3.4a4.5 4.5 0 0 1 0 8.0m2 5.2c1.5.6 2.8 1.7 4 3.2M2 20c1.9-2.4 4.5-4 7.5-4s5.5 1.5 7.5 4M14 7.5a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0"/>', 1.5),
+  department: svgIcon('<path d="M4 18v-.2c0-1.6 0-2.5.3-3.1a3 3 0 0 1 1.3-1.3C6.2 13 7.1 13 8.8 13h6.4c1.6 0 2.5 0 3.1.3a3 3 0 0 1 1.3 1.3C20 15.2 20 16.1 20 17.8v.2M4 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4m16 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m0 0V8M6 8h12c.9 0 1.3 0 1.7-.1a2 2 0 0 0 1.0-1.0C21 6.3 21 5.9 21 5s0-1.3-.1-1.7a2 2 0 0 0-1.0-1.0C19.3 2 18.9 2 18 2H6c-.9 0-1.3 0-1.7.1a2 2 0 0 0-1.0 1.0C3 3.6 3 4.0 3 5s0 1.3.1 1.7a2 2 0 0 0 1.0 1.0C4.6 8 5.0 8 6 8"/>', 1.5),
   location: svgIcon('<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>', 1.5),
   // PanelFab: the paperclip (Entry, from entry_side's SIDE_ICONS) and the
   // lucide panel-right (Accounts/Tags).
-  paperclip: svgIcon('<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>', 2),
+  paperclip: svgIcon('<path d="M21.4 11.0l-9.1 9.1a6 6 0 0 1-8.4-8.4l9.1-9.1a4 4 0 0 1 5.6 5.6l-9.2 9.1a2 2 0 0 1-2.8-2.8l8.4-8.4"/>', 2),
   panelRight: svgIcon('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/>', 2),
   // BooksCombo's group tiles: arrow-right-left, diamond, trending-up/down, landmark.
   swap: svgIcon('<path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/>', 2),
-  diamond: svgIcon('<path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z"/>', 2),
+  diamond: svgIcon('<path d="M2.7 10.3a2.4 2.4 0 0 0 0 3.4l7.5 7.5a2.4 2.4 0 0 0 3.4 0l7.5-7.5a2.4 2.4 0 0 0 0-3.4l-7.5-7.5a2.4 2.4 0 0 0-3.4 0Z"/>', 2),
   trendUp: svgIcon('<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>', 2),
   trendDown: svgIcon('<polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/>', 2),
   landmark: svgIcon('<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>', 2),
   // transactions/shared/constants.tsx TABS → accounts/icons.ts: the entry
   // type icons (Journal / CoinsHand / CoinsHand02 / ArrowSwitch).
-  journal: svgIcon('<path d="m10.333 20-.083-.125c-.579-.868-.868-1.302-1.25-1.617a3.3 3.3 0 0 0-1.149-.614c-.473-.144-.995-.144-2.039-.144H4.667c-.934 0-1.4 0-1.757-.182a1.67 1.67 0 0 1-.728-.728C2 16.234 2 15.767 2 14.833V7.667c0-.934 0-1.4.182-1.757.16-.314.414-.569.728-.728C3.267 5 3.733 5 4.667 5H5c1.867 0 2.8 0 3.513.363.628.32 1.137.83 1.457 1.457.363.713.363 1.646.363 3.513m0 9.667v-9.667m0 9.667.084-.125c.579-.868.868-1.302 1.25-1.617a3.3 3.3 0 0 1 1.148-.614c.474-.144.996-.144 2.04-.144H16c.933 0 1.4 0 1.757-.182.313-.16.568-.414.728-.728.182-.356.182-.157.182-1.09m-8.334-5.167c0-1.867 0-2.8.364-3.513.32-.627.83-1.137 1.456-1.457C12.866 5 13.8 5 15.667 5H16c.85 0 1.314 0 1.659.137l.016.007.04.017.14.065c.134.062.372.179.478.274M15.097 12.548c.019-.172.028-.258.054-.339a.8.8 0 0 1 .098-.202c.046-.07.107-.132.23-.254l5.503-5.503a1.179 1.179 0 0 1 1.666 1.667l-5.502 5.502c-.123.123-.184.184-.255.23a.8.8 0 0 1-.202.098c-.08.026-.167.035-.339.055l-1.41.156z"/>', 1.5),
-  payIn: svgIcon('<path d="M13.53 8.352a3.5 3.5 0 1 1 .941-4.704M6 20.088h2.61q.512 0 1.009.12l2.758.67c.598.147 1.222.16 1.826.043l3.05-.593a4.2 4.2 0 0 0 2.127-1.107l2.158-2.1a1.503 1.503 0 0 0 0-2.168 1.61 1.61 0 0 1-2.06-.143l-2.515 1.835c-.36.263-.799.405-1.25.405h-2.428 1.546c.871 0 1.577-.687 1.577-1.534v-.307c0-.703-.492-1.317-1.194-1.487l-2.385-.58A5 5 0 0 0 11.643 13c-.965 0-2.711.799-2.711.799L6 15.025M20 6.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0M2 14.6v5.8c0 .56 0 .84.109 1.054a1 1 0 0 0 .437.437C2.76 22 3.04 22 3.6 22h.8c.56 0 .84 0 1.054-.109a1 1 0 0 0 .437-.437C6 21.24 6 20.96 6 20.4v-5.8c0-.56 0-.84-.109-1.054a1 1 0 0 0-.437-.437C5.24 13 4.96 13 4.4 13h-.8c-.56 0-.84 0-1.054.109a1 1 0 0 0-.437.437C2 13.76 2 14.04 2 14.6"/>', 1.5),
-  payOut: svgIcon('<path d="M13.53 15.648a3.5 3.5 0 1 0 .941 4.704M6 3.912h2.61q.512 0 1.009-.12l2.758-.67a4.3 4.3 0 0 1 1.826-.043l3.05.593a4.2 4.2 0 0 1 2.127 1.107l2.158 2.1c.616.598.616 1.569 0 2.168a1.61 1.61 0 0 1-2.06.143l-2.515-1.835a2.1 2.1 0 0 0-1.25-.405h-2.428 1.546c.871 0 1.577.687 1.577 1.534v.307c0 .703-.492 1.317-1.194 1.487l-2.385.58a5 5 0 0 1-1.186.142c-.965 0-2.711-.799-2.711-.799L6 8.975M20 17.5a3.5 3.5 0 1 0-7 0 3.5 3.5 0 0 0 7 0M2 9.4V3.6c0-.56 0-.84.109-1.054a1 1 0 0 1 .437-.437C2.76 2 3.04 2 3.6 2h.8c.56 0 .84 0 1.054.109a1 1 0 0 1 .437.437C6 2.76 6 3.04 6 3.6v5.8c0 .56 0 .84-.109 1.054a1 1 0 0 1-.437.437C5.24 11 4.96 11 4.4 11h-.8c-.56 0-.84 0-1.054-.109a1 1 0 0 1-.437-.437C2 10.24 2 9.96 2 9.4"/>', 1.5),
+  journal: svgIcon('<path d="m10.3 20-.0-.1c-.5-.8-.8-1.3-1.2-1.6a3.3 3.3 0 0 0-1.1-.6c-.4-.1-.9-.1-2.0-.1H4.6c-.9 0-1.4 0-1.7-.1a1.6 1.6 0 0 1-.7-.7C2 16.2 2 15.7 2 14.8V7.6c0-.9 0-1.4.1-1.7.1-.3.4-.5.7-.7C3.2 5 3.7 5 4.6 5H5c1.8 0 2.8 0 3.5.3.6.3 1.1.8 1.4 1.4.3.7.3 1.6.3 3.5m0 9.6v-9.6m0 9.6.0-.1c.5-.8.8-1.3 1.2-1.6a3.3 3.3 0 0 1 1.1-.6c.4-.1.9-.1 2.0-.1H16c.9 0 1.4 0 1.7-.1.3-.1.5-.4.7-.7.1-.3.1-.1.1-1.0m-8.3-5.1c0-1.8 0-2.8.3-3.5.3-.6.8-1.1 1.4-1.4C12.8 5 13.8 5 15.6 5H16c.8 0 1.3 0 1.6.1l.0.0.0.0.1.0c.1.0.3.1.4.2M15.0 12.5c.0-.1.0-.2.0-.3a.8.8 0 0 1 .0-.2c.0-.0.1-.1.2-.2l5.5-5.5a1.1 1.1 0 0 1 1.6 1.6l-5.5 5.5c-.1.1-.1.1-.2.2a.8.8 0 0 1-.2.0c-.0.0-.1.0-.3.0l-1.4.1z"/>', 1.5),
+  payIn: svgIcon('<path d="M13.5 8.3a3.5 3.5 0 1 1 .9-4.7M6 20.0h2.6q.5 0 1.0.1l2.7.6c.5.1 1.2.1 1.8.0l3.0-.5a4.2 4.2 0 0 0 2.1-1.1l2.1-2.1a1.5 1.5 0 0 0 0-2.1 1.6 1.6 0 0 1-2.0-.1l-2.5 1.8c-.3.2-.7.4-1.2.4h-2.4 1.5c.8 0 1.5-.6 1.5-1.5v-.3c0-.7-.4-1.3-1.1-1.4l-2.3-.5A5 5 0 0 0 11.6 13c-.9 0-2.7.7-2.7.7L6 15.0M20 6.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0M2 14.6v5.8c0 .5 0 .8.1 1.0a1 1 0 0 0 .4.4C2.7 22 3.0 22 3.6 22h.8c.5 0 .8 0 1.0-.1a1 1 0 0 0 .4-.4C6 21.2 6 20.9 6 20.4v-5.8c0-.5 0-.8-.1-1.0a1 1 0 0 0-.4-.4C5.2 13 4.9 13 4.4 13h-.8c-.5 0-.8 0-1.0.1a1 1 0 0 0-.4.4C2 13.7 2 14.0 2 14.6"/>', 1.5),
+  payOut: svgIcon('<path d="M13.5 15.6a3.5 3.5 0 1 0 .9 4.7M6 3.9h2.6q.5 0 1.0-.1l2.7-.6a4.3 4.3 0 0 1 1.8-.0l3.0.5a4.2 4.2 0 0 1 2.1 1.1l2.1 2.1c.6.5.6 1.5 0 2.1a1.6 1.6 0 0 1-2.0.1l-2.5-1.8a2.1 2.1 0 0 0-1.2-.4h-2.4 1.5c.8 0 1.5.6 1.5 1.5v.3c0 .7-.4 1.3-1.1 1.4l-2.3.5a5 5 0 0 1-1.1.1c-.9 0-2.7-.7-2.7-.7L6 8.9M20 17.5a3.5 3.5 0 1 0-7 0 3.5 3.5 0 0 0 7 0M2 9.4V3.6c0-.5 0-.8.1-1.0a1 1 0 0 1 .4-.4C2.7 2 3.0 2 3.6 2h.8c.5 0 .8 0 1.0.1a1 1 0 0 1 .4.4C6 2.7 6 3.0 6 3.6v5.8c0 .5 0 .8-.1 1.0a1 1 0 0 1-.4.4C5.2 11 4.9 11 4.4 11h-.8c-.5 0-.8 0-1.0-.1a1 1 0 0 1-.4-.4C2 10.2 2 9.9 2 9.4"/>', 1.5),
   transfer: svgIcon('<path d="M20 17H4m0 0 4-4m-4 4 4 4M4 7h16m0 0-4-4m4 4-4 4"/>', 1.5),
   // TransferForm: the mobile down / desktop right arrows (stroke #94a3b8),
   // JournalForm's "Lines" list icon, and the totals bar's circle-x.
@@ -99,14 +120,16 @@ const ICONS: Record<string, string> = {
   bookOpen: svgIcon('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>', 2),
   // Departments/locations pages: DeptIcon (building) and the accent band's
   // table glyph; locations reuse the location pin.
-  building: svgIcon('<rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M16 6h.01M12 6h.01M8 10h.01M16 10h.01M12 10h.01M8 14h.01M16 14h.01M12 14h.01"/>', 1.5),
+  building: svgIcon('<rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.0M16 6h.0M12 6h.0M8 10h.0M16 10h.0M12 10h.0M8 14h.0M16 14h.0M12 14h.0"/>', 1.5),
   table: svgIcon('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>', 1.5),
+  // Financials header bar-chart icon (old web financials.tsx:349-362).
+  barChart: svgIcon('<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>', 2),
 };
 
 // Weekday labels by day number (0 = Sunday): the owner's "M T W Th F S Su".
 const WEEKDAYS = ["Su", "M", "T", "W", "Th", "F", "S"];
 
-/** The entry type's old-app tab icon (TABS in transactions/shared/constants.tsx). */
+// The entry type's old-app tab icon (TABS in transactions/shared/constants.tsx).
 const modeIcon = (mode: string) =>
   mode === "money_in" ? ICONS.payIn : mode === "money_out" ? ICONS.payOut : mode === "transfer" ? ICONS.transfer : ICONS.journal;
 
@@ -129,10 +152,10 @@ const BOOKS_TOKENS = {
       buttonNeon: "#00ffbe", buttonNeonDark: "#00d9a0",
     },
     dark: {
-      background: "#0a0a0b", surface: "#141416", surfaceElevated: "#1c1c1f",
-      border: "#2a2a2d", borderSubtle: "#1f1f22", textPrimary: "#fafafa",
-      textSecondary: "#a1a1aa", textMuted: "#71717a",
-      app: { backgroundStart: "#0f172a", backgroundEnd: "#1e293b", card: "#1e293b", textNavy: "#e2e8f0", textLight: "#94a3b8" },
+      background: "#0d0d10", surface: "#141519", surfaceElevated: "#1c1d22",
+      border: "#27282f", borderSubtle: "#1f2027", textPrimary: "#f4f5f7",
+      textSecondary: "#a1a5b0", textMuted: "#6e727e",
+      app: { backgroundStart: "#0d0d10", backgroundEnd: "#141519", card: "#141519", textNavy: "#f4f5f7", textLight: "#a1a5b0" },
     },
   },
   spacing: { xs: "0.25rem", sm: "0.5rem", md: "1rem", lg: "1.5rem", xl: "2rem", "2xl": "3rem" },
@@ -140,10 +163,10 @@ const BOOKS_TOKENS = {
   font: { sans: '"Inter", system-ui, -apple-system, sans-serif', mono: '"JetBrains Mono", "Fira Code", monospace' },
 };
 
-/** Pill tones (`st`). */
-/** The accent: the page header, the main button and the picked state. A book picks one in
- *  Settings; the host tells an app light from dark and nothing else, so each solid is a tone
- *  that carries white text on both. Green is for money in and "posted", whatever the accent. */
+// Pill tones (`st`).
+// The accent: the page header, the main button and the picked state. A book picks one in
+// Settings; the host tells an app light from dark and nothing else, so each solid is a tone
+// that carries white text on both. Green is for money in and "posted", whatever the accent.
 const ACCENTS: Record<string, { name: string; solid: string; scale: string[] }> = {
   green: { name: "Green", solid: "#22c55e", scale: ["#f0fdf4", "#dcfce7", "#bbf7d0", "#86efac", "#4ade80", "#22c55e", "#16a34a", "#15803d", "#166534", "#14532d"] },
   teal: { name: "Teal", solid: "#0d9488", scale: ["#f0fdfa", "#ccfbf1", "#99f6e4", "#5eead4", "#2dd4bf", "#14b8a6", "#0d9488", "#0f766e", "#115e59", "#134e4a"] },
@@ -158,9 +181,9 @@ const accShade = (step: number) => {
   return current.scale[step] || current.solid;
 };
 const acc = () => accShade(5);
-/** Text on the accent. */
+// Text on the accent.
 const ON_ACC = "text-white";
-/** The border of a picked card or option. */
+// The border of a picked card or option.
 const picked = (on: boolean) => (on ? { borderColor: acc() } : undefined);
 
 const PILL: Record<string, string> = {
@@ -181,17 +204,17 @@ const TAG: Record<string, string> = {
 const BAR: Record<string, string> = { pos: C.greenBg, neg: C.redBg, blue: C.blueBg, "": C.greenBg };
 const AMT: Record<string, string> = { pos: C.green, neg: C.ink, "": C.ink };
 
-/** A row's key is its content: a row whose data changes is drawn again. */
+// A row's key is its content: a row whose data changes is drawn again.
 const rowKey = (row: Any) => JSON.stringify(row);
 
 const errText = (e: Any) => (e && e.message ? String(e.message) : String(e));
 
-/** A client_request_id: unique per call, never a subject. */
+// A client_request_id: unique per call, never a subject.
 let seq = 0;
 const OPEN_TAG = String(Date.now()).slice(-8);
 const rid = () => `bk-${OPEN_TAG}-${(seq += 1)}`;
 
-/** Bumped after every write, so pages read again. */
+// Bumped after every write, so pages read again.
 const ver = signal(0);
 const bump = () => ver.set(ver() + 1);
 
@@ -203,7 +226,7 @@ function toast(text: string) {
   toastTimer = setTimeout(() => toastText.set(""), 2600);
 }
 
-/** A Books write: a fresh client_request_id, then every page reads again. */
+// A Books write: a fresh client_request_id, then every page reads again.
 async function act(tool: string, args: Record<string, Any>): Promise<Any> {
   try {
     const r = await buwiz.call(tool, { client_request_id: rid(), ...args });
@@ -215,7 +238,7 @@ async function act(tool: string, args: Record<string, Any>): Promise<Any> {
   }
 }
 
-/** Typed money to two-place text with no float: "60,000" -> "60000.00". */
+// Typed money to two-place text with no float: "60,000" -> "60000.00".
 function moneyText(typed: string): string | null {
   const s = String(typed || "").replace(/[₱,\s]/g, "").replace(/^PHP/i, "");
   if (!/^\d+(\.\d{1,2})?$/.test(s)) return null;
@@ -224,7 +247,7 @@ function moneyText(typed: string): string | null {
   const text = `${whole}.${(c + "00").slice(0, 2)}`;
   return text === "0.00" ? null : text;
 }
-/** "60000.00" -> "60,000.00", by string only. */
+// "60000.00" -> "60,000.00", by string only.
 function grouped(text: string): string {
   const [w, c] = text.split(".");
   return `${w.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}.${c}`;
@@ -233,7 +256,7 @@ function grouped(text: string): string {
 function Btn(p: { label: string; onPress: () => void; tone?: "go" | "vi" | "plain"; disabled?: boolean; small?: boolean }) {
   const tone =
     p.tone === "go"
-      ? `bg-[${acc()}] hover:bg-[${accShade(6)}] border-transparent`
+      ? `bg-[${accShade(6)}] hover:bg-[${accShade(7)}] dark:bg-[${accShade(7)}] dark:hover:bg-[${accShade(8)}] border-white/15`
       : p.tone === "vi"
         ? `${C.violetBg} border-[#6a46c9] dark:border-[#b79bff] hover:bg-[#5a35b3] dark:hover:bg-[#9d7ef2]`
         : `${C.raise} ${C.line} hover:bg-[#e2e8f0] dark:hover:bg-[#2a2a2d]`;
@@ -261,7 +284,7 @@ function Pill(p: { tone: string; label: string }) {
   );
 }
 
-/** `said`: for a chip whose label is someone's data. See `Pick`'s `optionSaid`. */
+// `said`: for a chip whose label is someone's data. See `Pick`'s `optionSaid`.
 function Chip(p: { label: string; count?: Any; on: boolean; onPress: () => void; said?: string }) {
   return (
     <View
@@ -284,7 +307,11 @@ function Seg(p: { options: [string, string][]; value: string; onPick: (v: string
     <View class={`flex-row rounded-[9px] border p-0.5 gap-0.5 self-start ${C.panel} ${C.line}`}>
       <Each of={p.options}>
         {(o: Any) => (
-          <View class={`rounded-[7px] px-2.5 py-1 transition-colors ${o()[0] === p.value ? C.raise : "hover:bg-[#e2e8f0] dark:hover:bg-[#26262a]"}`} onPress={() => p.onPick(o()[0])}>
+          <View
+            class={`rounded-[7px] px-2.5 py-1 transition-colors ${o()[0] === p.value ? C.raise : "hover:bg-[#e2e8f0] dark:hover:bg-[#26262a]"}`}
+            onPress={() => p.onPick(o()[0])}
+            activeStyle={{ opacity: 0.7 }}
+          >
             <Text class={`text-[12.5px] ${o()[0] === p.value ? `font-semibold ${C.ink}` : C.mute}`}>{o()[1]}</Text>
           </View>
         )}
@@ -297,15 +324,15 @@ function Panel(p: { children?: Any; pad?: boolean; class?: string }) {
   return <View class={`rounded-xl border ${C.panel} ${C.line} ${p.pad ? "p-3.5" : ""} ${p.class || ""}`}>{p.children}</View>;
 }
 
-/** The owner-approved right-panel rule (2026-11-21): on lg+ the side panel
- *  is a quarter of the window, clamped to 340–520px; below lg it is a
- *  full-screen sheet (no floating drawer, no backdrop gap, no list strip)
- *  with the old drawer's ‹ Back row (CategoryManagerLayout.tsx:356). The
- *  sheet anchors to the page's relative root, so mount this where the
- *  column belongs and the overlay still covers the whole page. `body` is a
- *  function so each mode mounts its own copy; `card` wraps the sheet copy
- *  in the rounded panel chrome; `fill` drops the outer scroll so a body
- *  with its own Scroll (Entry's tabs) fills the height. */
+// The owner-approved right-panel rule (2026-11-21): on lg+ the side panel
+// is a quarter of the window, clamped to 340–520px; below lg it is a
+// full-screen sheet (no floating drawer, no backdrop gap, no list strip)
+// with the old drawer's ‹ Back row (CategoryManagerLayout.tsx:356). The
+// sheet anchors to the page's relative root, so mount this where the
+// column belongs and the overlay still covers the whole page. `body` is a
+// function so each mode mounts its own copy; `card` wraps the sheet copy
+// in the rounded panel chrome; `fill` drops the outer scroll so a body
+// with its own Scroll (Entry's tabs) fills the height.
 function SidePanel(p: {
   open: () => boolean;
   onBack: () => void;
@@ -316,7 +343,7 @@ function SidePanel(p: {
 }) {
   const sheetBody = () =>
     p.card ? (
-      <View class={`rounded-[16px] border overflow-hidden flex-col bg-white dark:bg-slate-800 ${C.line}`}>{p.body()}</View>
+      <View class={`rounded-[16px] border overflow-hidden flex-col ${C.panel} ${C.line}`}>{p.body()}</View>
     ) : (
       p.body()
     );
@@ -324,7 +351,7 @@ function SidePanel(p: {
     <>
       <View class={`hidden lg:flex flex-col w-1/4 min-w-[340px] max-w-[520px] shrink-0 ${p.class || ""}`}>{p.body()}</View>
       <If when={p.open()}>
-        <View class="fixed inset-0 lg:hidden flex-col bg-[#e8f0f2] dark:bg-slate-900">
+        <View class={`fixed inset-0 lg:hidden flex-col ${C.bg}`}>
           <View class="shrink-0 flex-row items-center px-2 py-1">
             <View
               accessibilityLabel="Back"
@@ -350,8 +377,8 @@ function SidePanel(p: {
   );
 }
 
-/** The below-lg circular trigger for the hidden side panel (owner rule):
- *  a teal FAB at the bottom right, only while the sheet is closed. */
+// The below-lg circular trigger for the hidden side panel (owner rule):
+// a teal FAB at the bottom right, only while the sheet is closed.
 function PanelFab(p: { onPress: () => void; label: string; icon: string; badge?: () => number }) {
   const count = () => (p.badge ? p.badge() : 0);
   return (
@@ -371,13 +398,16 @@ function PanelFab(p: { onPress: () => void; label: string; icon: string; badge?:
   );
 }
 
-/** Set by the Books window: back to Home. Cards leave it unset, so they show no arrow. */
+// Set by the Books window: back to Home. Cards leave it unset, so they show no arrow.
 let goBack: (() => void) | null = null;
 
-/** The page header: a green band with the way back, the title, and buttons on the right. */
+// The page header: a green band with the way back, the title, and buttons on the right.
 function Head(p: { title: string; sub?: string; children?: Any; home?: boolean }) {
   return (
-    <View class="flex-row items-center gap-2.5 flex-wrap rounded-xl px-3.5 py-2.5" style={{ backgroundColor: acc() }}>
+    <View
+      class={`flex-row items-center gap-2.5 flex-wrap rounded-xl px-4 py-3 ${accent() === "green" ? C.emeraldBar : ""}`}
+      style={accent() === "green" ? undefined : { backgroundColor: accShade(7) }}
+    >
       <If when={Boolean(goBack) && !p.home}>
         <View
           accessibilityLabel="Back to Home"
@@ -398,7 +428,7 @@ function Head(p: { title: string; sub?: string; children?: Any; home?: boolean }
   );
 }
 
-/** One bar of a KPI panel: label, a percent track, the amount. */
+// One bar of a KPI panel: label, a percent track, the amount.
 function Bar(p: { label: string; pct: Any; shown: string; tone: string }) {
   return (
     <View class="flex-row items-center gap-2">
@@ -417,7 +447,7 @@ function Dot(p: { color: string }) {
   return <View class="w-2 h-2 rounded-[2px]" style={{ backgroundColor: p.color || "#888888" }} />;
 }
 
-/** A label above a value or a control (the sheet's fields). */
+// A label above a value or a control (the sheet's fields).
 function Field(p: { label: string; children?: Any; grow?: boolean; plain?: boolean }) {
   return (
     <View class={`gap-1 ${p.grow ? "flex-1" : ""}`}>
@@ -436,24 +466,29 @@ function TextBox(p: { value: string; onChange: (v: string) => void; placeholder?
       onChange={(e: Any) => p.onChange(typeof e === "string" ? e : e.value)}
       class={p.transferAmount
         ? "w-28 h-8 text-right text-xl font-semibold text-white tabular-nums bg-transparent border-none outline-none placeholder:text-white/40 focus:ring-0"
-        : `placeholder:text-[#8e8e93] transition-colors ${p.entry ? "rounded-md" : "rounded-lg"} border px-2.5 ${p.big ? "h-10 text-[18px] font-mono" : "h-8 text-[13px]"} focus:outline-none focus:ring-1 focus:ring-[#2a9d8f] focus:border-[#2a9d8f] ${p.entry ? "bg-white dark:bg-slate-700 border-[#e2e8f0] dark:border-slate-600 text-[#0f172a] dark:text-slate-100" : `${C.bg} ${C.line} ${C.ink}`}`}
+        : `placeholder:text-[#8e8e93] transition-colors ${p.entry ? "rounded-md" : "rounded-lg"} border px-2.5 ${p.big ? "h-10 text-[18px] font-mono" : "h-8 text-[13px]"} focus:outline-none focus:ring-1 focus:ring-[#2a9d8f] focus:border-[#2a9d8f] ${p.entry ? "bg-white dark:bg-[#1c1d22] border-[#e5e7eb] dark:border-[#27282f] text-[#111318] dark:text-[#f4f5f7]" : `${C.bg} ${C.line} ${C.ink}`}`}
     />
   );
 }
 
-/** A picker: the current choice; a press opens the list under it.
- *
- *  `optionSaid`: for a list of people, or of words a person typed. Each option then has these fixed words as its
- *  accessibility label and its text as its accessibility value. A button whose label differs from its text reaches
- *  the Bot's assistant unnamed (app/src/agent_hub/filter.rs), so the names stay out of what it reads, and it can't
- *  press those options; a screen reader still says the name. Lists of accounts and categories leave it out: the
- *  assistant picks those to fill a draft. */
+// A picker: the current choice; a press opens the list under it.
+//
+// `optionSaid`: for a list of people, or of words a person typed. Each option then has these fixed words as its
+// accessibility label and its text as its accessibility value. A button whose label differs from its text reaches
+// the Bot's assistant unnamed (app/src/agent_hub/filter.rs), so the names stay out of what it reads, and it can't
+// press those options; a screen reader still says the name. Lists of accounts and categories leave it out: the
+// assistant picks those to fill a draft.
 function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; placeholder?: string; label?: string; optionSaid?: string }) {
   const open = signal(false);
   const current = computed(() => (p.options || []).find((o: Any) => o.ticket === p.value));
   return (
     <View class="gap-1">
-      <View accessibilityLabel={p.label} class={`flex-row items-center rounded-lg border px-2.5 h-8 transition-colors ${C.bg} ${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]`} onPress={() => open.set(!open())}>
+      <View
+        accessibilityLabel={p.label}
+        class={`flex-row items-center rounded-lg border px-2.5 h-8 transition-colors ${C.bg} ${open() ? "border-[#2a9d8f] dark:border-[#2dd4bf]" : `${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]`}`}
+        onPress={() => open.set(!open())}
+        activeStyle={{ opacity: 0.7 }}
+      >
         <Text accessibilityElementsHidden={Boolean(p.label)} class={`flex-1 text-[13px] ${current() ? C.ink : C.dim} truncate`}>
           {current() ? current().label || current().name : p.placeholder || "Pick one"}
         </Text>
@@ -461,6 +496,9 @@ function Pick(p: { value: string; options: Any[]; onPick: (o: Any) => void; plac
       </View>
       <If when={open()}>
         <View class={`rounded-lg border max-h-[180px] ${C.panel} ${C.line}`}>
+          <If when={(p.options || []).length === 0}>
+            <Text class={`px-2.5 py-1.5 text-[12.5px] ${C.dim}`}>No options</Text>
+          </If>
           <Scroll class="max-h-[178px]">
             <Each of={p.options || []} key={rowKey}>
               {(o: Any) => (
@@ -498,9 +536,9 @@ function BooksCombo(p: {
   placeholder?: string;
   label?: string;
   group?: string;
-  /** "chip": the reference's rounded, bordered field with a leading icon
-   *  (tag for category, user for party, building for department, pin for
-   *  location) and a trailing chevron, instead of a bare filter input. */
+  // "chip": the reference's rounded, bordered field with a leading icon
+  // (tag for category, user for party, building for department, pin for
+  // location) and a trailing chevron, instead of a bare filter input.
   trigger?: "chip";
   icon?: string;
 }) {
@@ -543,11 +581,11 @@ function BooksCombo(p: {
   // stays inline so open() re-evaluates it; a hoisted string freezes at mount.
   return (
     <View
-      class={chip ? "relative w-full" : `flex-col justify-center w-full min-h-11 sm:min-h-0 px-3 py-2 rounded-lg transition-colors ${open() ? "border-2 border-[#2a9d8f] dark:border-[#2dd4bf]" : "border border-gray-200 hover:border-gray-300 dark:border-slate-600 dark:hover:border-slate-500"} bg-white dark:bg-slate-800`}
+      class={chip ? "relative w-full" : `flex-col justify-center w-full min-h-11 sm:min-h-0 px-3 py-2 rounded-lg transition-colors ${open() ? "border-2 border-[#2a9d8f] dark:border-[#2dd4bf]" : "border border-[#e5e7eb] hover:border-[#d1d5db] dark:border-[#27282f] dark:hover:border-[#383a44]"} bg-white dark:bg-[#1c1d22]`}
     >
       {chip && (
         <View
-          class={`absolute inset-0 flex-row items-center gap-2 rounded-lg border bg-white px-3 py-2 transition-colors cursor-pointer dark:bg-slate-800 ${open() ? "border-[#2a9d8f] dark:border-[#2dd4bf]" : "border-[#e5e7eb] hover:border-[#d1d5db] dark:border-slate-600 dark:hover:border-[#64748b]"}`}
+          class={`absolute inset-0 flex-row items-center gap-2 rounded-lg border bg-white px-3 py-2 transition-colors cursor-pointer dark:bg-[#1c1d22] ${open() ? "border-[#2a9d8f] dark:border-[#2dd4bf]" : "border-[#e5e7eb] hover:border-[#d1d5db] dark:border-[#27282f] dark:hover:border-[#383a44]"}`}
           onPress={() => open.set(!open())}
         >
           <If when={Boolean(p.icon && ICONS[p.icon || ""])}>
@@ -597,11 +635,11 @@ function BooksCombo(p: {
             ? `w-full py-2 text-sm ${p.icon ? "pl-[38px] pr-3" : "px-3"} ${typing() ? "text-[#1e293b] dark:text-slate-100" : "opacity-0"}`
             : `flex-1 min-w-0 text-sm text-[#1e293b] dark:text-slate-100 focus:outline-none${p.icon ? " pl-2" : ""}`
         }
-        popupClass={`rounded-xl border border-[#e2e8f0] bg-white shadow-xl overflow-hidden dark:border-slate-700 dark:bg-slate-800${chip ? " min-w-[240px]" : ""}`}
+        popupClass={`rounded-xl border border-[#e5e7eb] bg-white shadow-xl overflow-hidden dark:border-[#27282f] dark:bg-[#141519]${chip ? " min-w-[240px]" : ""}`}
       popupStartingClass="opacity-0"
       listClass="max-h-[280px]"
-      groupClass="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#94a3b8] bg-[#f8fafc] border-t border-[#e2e8f0] dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700"
-      itemClass="px-4 min-h-10 text-[13px] text-[#0f172a] focus:bg-[#f8fafc] selected:bg-[#eaf6f6] dark:text-slate-100 dark:focus:bg-slate-700 dark:selected:bg-teal-900/30"
+      groupClass="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#8b919d] bg-[#f8f9fb] border-t border-[#e5e7eb] dark:bg-[#111216] dark:text-[#6e727e] dark:border-[#27282f]"
+      itemClass="px-4 min-h-10 text-[13px] text-[#111318] focus:bg-[#f8f9fb] selected:bg-[#eaf6f6] dark:text-[#f4f5f7] dark:focus:bg-[#22232a] dark:selected:bg-teal-900/30"
       searchAccessibilityLabel={`Find ${p.label || p.placeholder || "account"}`}
       searchPlaceholder="Type to filter..."
       empty={<Text class="px-4 py-2.5 text-[13px] text-[#94a3b8]">No matches found</Text>}
@@ -671,13 +709,13 @@ function BooksCombo(p: {
   );
 }
 
-/** The date picker, 1:1 with the old app's ui/DayPicker.tsx. nsh Calendar's
- *  itemClass lands on every item (arrows, toggles, weekday labels, days), so
- *  the styling lives in renderItem per CalendarEntry.kind; `group` +
- *  `group-selected:`/`group-data-today:` carry the states (the item keeps its
- *  states as data attrs; the drawing is made once). The header's two toggles
- *  press into month/year views the old app lacks; the year toggle is hidden
- *  and the month toggle carries the "Month Year" title, pressed or not. */
+// The date picker, 1:1 with the old app's ui/DayPicker.tsx. nsh Calendar's
+// itemClass lands on every item (arrows, toggles, weekday labels, days), so
+// the styling lives in renderItem per CalendarEntry.kind; `group` +
+// `group-selected:`/`group-data-today:` carry the states (the item keeps its
+// states as data attrs; the drawing is made once). The header's two toggles
+// press into month/year views the old app lacks; the year toggle is hidden
+// and the month toggle carries the "Month Year" title, pressed or not.
 function BooksDate(p: { value: string; onChange: (value: string) => void; today?: string; variant?: "header" | "form" }) {
   const open = signal(false);
   const header = p.variant === "header";
@@ -690,10 +728,10 @@ function BooksDate(p: { value: string; onChange: (value: string) => void; today?
       accessibilityLabel="Date"
       dateFormat="%B %-d, %Y"
       presets={p.today ? [{ label: "Today", value: p.today }, { label: "Cancel", value: p.value || p.today }] : []}
-      popupClass="rounded-xl border border-[#e2e8f0] bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
+      popupClass="rounded-xl border border-[#e5e7eb] bg-white shadow-xl dark:border-[#27282f] dark:bg-[#141519]"
       popupStyle={{ width: 264 }}
       contentClass="flex flex-col-reverse"
-      presetsClass="flex-row items-center justify-between border-t border-[#e2e8f0] dark:border-slate-700 mt-3 mx-4 mb-4 pt-3"
+      presetsClass="flex-row items-center justify-between border-t border-[#e5e7eb] dark:border-[#27282f] mt-3 mx-4 mb-4 pt-3"
       presetClass="text-xs font-medium transition-colors first:text-[#27ae60] first:dark:text-[#2ecc71] first:hover:underline last:px-4 last:py-1.5 last:text-[#64748b] last:dark:text-slate-400 last:hover:text-[#334155] last:dark:hover:text-slate-200"
       calendarClass="p-4"
       headerClass="mb-2"
@@ -763,7 +801,7 @@ function BooksDate(p: { value: string; onChange: (value: string) => void; today?
       }}
       trigger={
         header ? (
-          <View class="flex-row items-center justify-center gap-1.5 rounded-md bg-black/20 px-3 py-1.5 hover:bg-black/30">
+          <View class="flex-row items-center justify-center gap-1.5 rounded-md bg-black/20 px-3 py-1.5 transition-colors hover:bg-black/30">
             <Text class="text-sm font-medium text-white/90">{longDate(p.value || p.today || "Select date")}</Text>
             <Avatar src={ICONS.calendar} class="w-3.5 h-3.5" imageClass="tint-white/90" fallbackDelay={Infinity} accessibilityLabel="" />
           </View>
@@ -778,7 +816,7 @@ function BooksDate(p: { value: string; onChange: (value: string) => void; today?
   );
 }
 
-/** Loading, error and retry for a page's resource. */
+// Loading, error and retry for a page's resource.
 function Loading(p: { res: Any }) {
   return (
     <View class="gap-2">

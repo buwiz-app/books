@@ -70,6 +70,11 @@ pub const STATEMENT_IMPORT: &str = "books_app_statement_import";
 pub const STATEMENT_ACCEPT: &str = "books_app_statement_accept";
 pub const STATEMENT_ADD: &str = "books_app_statement_add_line";
 pub const STATEMENT_FINISH: &str = "books_app_statement_finish";
+pub const STATEMENT_UNMATCH: &str = "books_app_statement_unmatch";
+pub const STATEMENT_LINK: &str = "books_app_statement_link";
+pub const STATEMENT_REMOVE: &str = "books_app_statement_remove";
+pub const STATEMENT_COMMENT: &str = "books_app_statement_comment_add";
+pub const STATEMENT_ACTION: &str = "books_app_statement_action";
 pub const RECATEGORIZE: &str = "books_app_recategorize";
 pub const MONTH_CLOSE: &str = "books_app_month_close";
 pub const MONTH_REOPEN: &str = "books_app_month_reopen";
@@ -166,7 +171,9 @@ fn ledger_schema() -> Value {
             "month": { "type": "string", "description": "YYYY-MM; this month when absent." },
             "account": { "type": "string", "description": "An account ticket or chart number; every account when absent." },
             "filter": { "type": "string", "enum": ["all", "review", "draft", "posted", "checks"] },
-            "search": { "type": "string", "description": "Narrows rows before the 200-row cap. Payee and memo match app calls only." }
+            "search": { "type": "string", "description": "Narrows the rows before they are paged. Payee and memo match app calls only." },
+            "terms": { "type": "array", "maxItems": 20, "items": { "type": "string" }, "description": "More search terms; a row has to match every one, and `search` too." },
+            "cursor": { "type": "string", "description": "`next_cursor` from the last answer, for the next page of up to 200 rows." }
         }
     })
 }
@@ -184,7 +191,9 @@ fn accounts_schema() -> Value {
         "type": "object",
         "properties": {
             "book": { "type": "string" },
-            "group": { "type": "string", "enum": ["all", "Assets", "Liabilities", "Equity", "Revenue", "Expenses"] }
+            "group": { "type": "string", "enum": ["all", "Assets", "Liabilities", "Equity", "Revenue", "Expenses"] },
+            "from": { "type": "string", "description": "Optional period start date (YYYY-MM-DD) for movement balances." },
+            "to": { "type": "string", "description": "Optional period end date (YYYY-MM-DD); defaults to today." }
         }
     })
 }
@@ -371,6 +380,38 @@ fn statement_write() -> Value {
     })
 }
 
+fn statement_comment_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "account", "body"],
+        "properties": {
+            "client_request_id": { "type": "string" }, "book": { "type": "string" },
+            "account": { "type": "string" }, "month": { "type": "string" },
+            "body": { "type": "string", "description": "The note, 1 to 500 characters." }
+        }
+    })
+}
+
+fn statement_action_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["client_request_id", "account", "action"],
+        "properties": {
+            "client_request_id": { "type": "string" }, "book": { "type": "string" },
+            "account": { "type": "string" }, "month": { "type": "string" },
+            "action": { "type": "string", "enum": ["unmatch", "link", "remove", "comment", "accept", "add_line"] },
+            "line": { "type": ["string", "integer"] },
+            "entry": { "type": "string" },
+            "body": { "type": "string" },
+            "draft": { "type": "string" },
+            "exclude": { "type": "array", "items": { "type": "integer" } },
+            "closing": { "type": "string" },
+            "dismiss": { "type": "boolean" },
+            "category": { "type": "string" }
+        }
+    })
+}
+
 fn recategorize_schema() -> Value {
     json!({ "type": "object", "required": ["client_request_id", "entry", "category"], "properties": { "client_request_id": { "type": "string" }, "book": { "type": "string" }, "entry": { "type": "string" }, "category": { "type": "string" } } })
 }
@@ -499,8 +540,16 @@ fn statement_draft_schema() -> Value {
         "account": { "type": "string", "description": "The bank, cash or card account's ticket." },
         "month": { "type": "string", "description": "YYYY-MM" },
         "evidence": { "type": "string", "description": "The attached statement's evidence ticket." },
+        "document_upload": { "type": "string", "description": "The statement's PDF, PNG or JPEG sent in parts with `books_app_upload_part`: kept as the read's document in place of `evidence`." },
+        "document_mime": { "type": "string", "enum": ["application/pdf", "image/png", "image/jpeg"] },
         "pages": { "type": "array", "minItems": 1, "maxItems": 500, "items": { "type": ["string", "null"] }, "description": "When the statement came as one picture for each page: each page's evidence ticket (PNG or JPEG), in page order, so the app shows every page behind its lines. `null` for a page with no picture." },
         "closing": { "type": "string", "description": "The ending balance, two-place text." },
+        "areas": { "type": "array", "maxItems": 50, "items": { "type": "object", "required": ["kind", "label", "page", "bbox"], "properties": {
+            "kind": { "type": "string", "enum": ["title", "date"], "description": "Which part of the page the box names." },
+            "label": { "type": "string", "maxLength": 120, "description": "The area's text, such as the statement title." },
+            "page": { "type": "integer", "minimum": 1, "maximum": 500 },
+            "bbox": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 1000 }, "minItems": 4, "maxItems": 4, "description": "left, top, right, bottom in thousandths of the page." } } },
+            "description": "Named page areas the read boxed, such as the statement's title and its period or date, for the window to highlight." },
         "lines": { "type": "array", "minItems": 1, "maxItems": 2000, "items": { "type": "object", "required": ["date", "amount"], "properties": {
             "date": { "type": "string", "description": "YYYY-MM-DD" },
             "description": { "type": "string", "maxLength": 80 },
@@ -589,7 +638,8 @@ fn account_create_schema() -> Value {
             "number": { "type": "string" },
             "name": { "type": "string" },
             "kind": { "type": "string", "description": "A kind id of the catalogue, mixed or unsure." },
-            "type": { "type": "string" }
+            "type": { "type": "string" },
+            "parent": { "type": "string", "description": "Optional parent account ticket or number for nested COA rollups." }
         }
     })
 }
@@ -633,7 +683,7 @@ pub const TOOLS: &[Tool] = &[
         reach: Reach::Everyone,
         write: false,
         schema: ledger_schema,
-        description: "A month of ledger entries, for one account or all: date, status, category and amount, each with an entry ticket. The assistant sees no payees or memos.",
+        description: "A month of ledger entries, for one account or all: date, status, category and amount, each with an entry ticket. Up to 200 rows a call; `total` counts them all and `next_cursor` asks for the next page. The assistant sees no payees or memos.",
     },
     Tool {
         name: ENTRY_GET,
@@ -831,6 +881,41 @@ pub const TOOLS: &[Tool] = &[
         write: true,
         schema: crate::statement_flags::finish_schema,
         description: "Finish a month when every line matches and the difference is 0.00, or reopen a finished one (`reopen`) with the user's reason.",
+    },
+    Tool {
+        name: STATEMENT_UNMATCH,
+        reach: Reach::App,
+        write: true,
+        schema: statement_write,
+        description: "Unmatch a matched statement line back to unsettled after the user's click (`line`, a row's `no` or its ticket).",
+    },
+    Tool {
+        name: STATEMENT_LINK,
+        reach: Reach::App,
+        write: true,
+        schema: statement_write,
+        description: "Match one unsettled statement line to a posted entry the user picked, after the click: `line` (a row's `no` or its ticket) and `entry` (an entry ticket).",
+    },
+    Tool {
+        name: STATEMENT_REMOVE,
+        reach: Reach::App,
+        write: true,
+        schema: statement_write,
+        description: "Remove an unfinalized statement with its lines, pages, areas, feed and notes after the user's click. A finished statement must be reopened first.",
+    },
+    Tool {
+        name: STATEMENT_COMMENT,
+        reach: Reach::App,
+        write: true,
+        schema: statement_comment_schema,
+        description: "Leave a note on a statement after the user's click (`body`, 1 to 500 characters).",
+    },
+    Tool {
+        name: STATEMENT_ACTION,
+        reach: Reach::App,
+        write: true,
+        schema: statement_action_schema,
+        description: "Run one statement action after the user's click (`action`: `unmatch`, `link`, `remove`, or `comment`).",
     },
     Tool {
         name: RECATEGORIZE,
@@ -1412,6 +1497,40 @@ pub fn call(
         STATEMENT_FINISH => write(books, name, origin, arguments, |tx| {
             crate::statement_flags::finish_or_reopen(tx, arguments)
         }),
+        STATEMENT_UNMATCH => write(books, name, origin, arguments, |tx| {
+            reconcile::statement_unmatch(tx, arguments)
+        }),
+        STATEMENT_LINK => write(books, name, origin, arguments, |tx| {
+            reconcile::statement_link(tx, arguments)
+        }),
+        STATEMENT_REMOVE => write(books, name, origin, arguments, |tx| {
+            reconcile::statement_remove(tx, arguments)
+        }),
+        STATEMENT_COMMENT => write(books, name, origin, arguments, |tx| {
+            reconcile::statement_comment(tx, arguments)
+        }),
+        STATEMENT_ACTION => write(books, name, origin, arguments, |tx| {
+            match arguments.get("action").and_then(Value::as_str) {
+                Some("unmatch") => reconcile::statement_unmatch(tx, arguments),
+                Some("link") => reconcile::statement_link(tx, arguments),
+                Some("remove") => reconcile::statement_remove(tx, arguments),
+                Some("comment") => reconcile::statement_comment(tx, arguments),
+                Some("accept") => {
+                    if arguments.contains_key("draft") {
+                        return statement_read::accept(tx, arguments);
+                    }
+                    if crate::match_assist::is_one_line(arguments) {
+                        return crate::match_assist::accept_one(tx, arguments);
+                    }
+                    reconcile::statement_accept(tx, arguments)
+                }
+                Some("add_line") => reconcile::statement_add(tx, arguments),
+                _ => Err(Refusal::new(
+                    "invalid_input",
+                    "action must be one of: unmatch, link, remove, comment, accept, add_line.",
+                )),
+            }
+        }),
         RECATEGORIZE => write(books, name, origin, arguments, |tx| {
             reconcile::recategorize(tx, arguments)
         }),
@@ -1578,9 +1697,25 @@ pub fn call(
         EVIDENCE_REVIEW => read(books, arguments, |store, _book, args| {
             document_review::review(store.conn(), args)
         }),
-        STATEMENT_DRAFT_LINES => write(books, name, origin, arguments, |tx| {
-            statement_read::draft_lines(tx, arguments, origin)
-        }),
+        STATEMENT_DRAFT_LINES => {
+            // a statement document sent in parts becomes the read's evidence,
+            // inside the same write, so a repeat replays one stored result.
+            if let Some(upload) = service::text(arguments, "document_upload") {
+                let mut uploads = std::mem::take(&mut books.uploads);
+                let out = write(books, name, origin, arguments, |tx| {
+                    let bytes = uploads.take(upload)?;
+                    let doc = reconcile::statement_document(tx, arguments, &bytes)?;
+                    let mut args = arguments.clone();
+                    args.insert("evidence".into(), doc["document"].clone());
+                    statement_read::draft_lines(tx, &args, origin)
+                });
+                books.uploads = uploads;
+                return Some(out);
+            }
+            write(books, name, origin, arguments, |tx| {
+                statement_read::draft_lines(tx, arguments, origin)
+            })
+        }
         RECONCILE_DOCUMENT => {
             if !origin.is_app() {
                 return Some(fail("forbidden", "Only the app may open this page."));

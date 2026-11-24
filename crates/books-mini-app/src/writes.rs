@@ -602,6 +602,13 @@ pub fn account_create(conn: &Connection, args: &Map<String, Value>) -> Answer {
                 .replace("A book name", "An account name"),
         )
     })?;
+    let parent = match text(args, "parent")
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        Some(r) => Some(account_in(conn, &book, r)?),
+        None => None,
+    };
     let kind = KindRef::parse(service::required(args, "kind")?)
         .ok_or_else(|| Refusal::invalid("`kind` is a kind id, mixed or unsure."))?;
     let ty = match &kind {
@@ -614,9 +621,11 @@ pub fn account_create(conn: &Connection, args: &Map<String, Value>) -> Answer {
         Some(t) => {
             AccountType::parse(t).ok_or_else(|| Refusal::invalid("Unknown account type."))?
         }
-        None => ty.ok_or_else(|| {
-            Refusal::invalid("`type` is needed for an account that is not one kind.")
-        })?,
+        None => ty
+            .or_else(|| parent.as_ref().map(|p| p.account_type))
+            .ok_or_else(|| {
+                Refusal::invalid("`type` is needed for an account that is not one kind.")
+            })?,
     };
     if kind.accrual_only() && book.basis == Basis::Cash {
         return Err(Refusal::new(
@@ -624,12 +633,29 @@ pub fn account_create(conn: &Connection, args: &Map<String, Value>) -> Answer {
             "A cash book has no receivable or payable accounts.",
         ));
     }
+    // A parent's subtree balance nets its children by debit and credit, so
+    // a child from another group (a loan under Cash) would move it with no
+    // meaning. A contra account is in its parent's group and nets as meant.
+    if let Some(p) = &parent
+        && p.account_type.group() != ty.group()
+    {
+        return Err(Refusal::new(
+            "parent_group",
+            format!(
+                "A sub-account is in its parent's group: {} is under {}, and this account would be under {}.",
+                p.name,
+                p.account_type.group(),
+                ty.group()
+            ),
+        ));
+    }
     if books::account_by_number(conn, book.id, number)?.is_some() {
         return Err(Refusal::new("exists", "That account number is taken."));
     }
+    let parent_id = parent.as_ref().map(|p| p.id);
     conn.execute(
-        "INSERT INTO account (book_id, number, name, type, kind, source) VALUES (?1, ?2, ?3, ?4, ?5, 'user')",
-        params![book.id, number, name, ty.as_str(), kind.as_str()],
+        "INSERT INTO account (book_id, number, name, type, kind, source, parent_account_id) VALUES (?1, ?2, ?3, ?4, ?5, 'user', ?6)",
+        params![book.id, number, name, ty.as_str(), kind.as_str(), parent_id],
     )
     .map_err(books_store::StoreError::from)?;
     let id = conn.last_insert_rowid();

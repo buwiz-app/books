@@ -174,6 +174,11 @@ pub fn attach(books: &mut Books, name: &str, origin: Origin, args: &Map<String, 
                         kind,
                     },
                 )?;
+                // only a statement's pages are ever drawn in the window; a
+                // receipt or an invoice is not rendered on its way in
+                if mime == "application/pdf" && kind == "statement" {
+                    crate::page_pictures::keep(tx, id)?;
+                }
                 let token = plumbing::ticket_for(tx, "evidence", id)?;
                 let e = evidence::get(tx, id)?
                     .ok_or_else(|| Refusal::new("not_found", "Evidence missing."))?;

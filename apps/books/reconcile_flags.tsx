@@ -1,7 +1,7 @@
 // Reconcile flags and reopen: display-only notes about a
 // statement's lines, and the reasoned reopen of a finished month.
 
-/** An amber panel listing the statement's flags; they never block Finish. */
+// An amber panel listing the statement's flags; they never block Finish.
 function FlagsNote(p: { flags: Any[] }) {
   return (
     <Panel pad class="gap-1 border-[#a2650f]">
@@ -15,7 +15,7 @@ function FlagsNote(p: { flags: Any[] }) {
   );
 }
 
-/** Reopen a finished month's statement, with the user's reason. */
+// Reopen a finished month's statement, with the user's reason.
 function ReopenFooter(p: { onReopen: (reason: string) => void }) {
   const reason = signal("");
   return (

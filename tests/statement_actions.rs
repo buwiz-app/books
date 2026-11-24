@@ -1,0 +1,609 @@
+//! Statement actions for the reconciliation detail page: the ledger
+//! entries beside the lines, unmatch, manual link, remove, and the
+//! comments + activity feed behind the sidebar tabs.
+
+use books_mini_app::demo;
+use books_mini_app::service::{Books, Origin};
+use books_mini_app::tools;
+use books_store::{Paths, TempDir};
+use serde_json::{Map, Value, json};
+
+const DEMO: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../fixtures/demo/buwiz-trading-2026.json"
+);
+const STATEMENT: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../fixtures/demo/bank-4021-2026-10.csv"
+);
+const ACCT: &str = "11010";
+const MONTH: &str = "2026-10";
+
+fn run(books: &mut Books, origin: Origin, name: &str, args: Value) -> Value {
+    let args: Map<String, Value> = args.as_object().unwrap().clone();
+    tools::call(name, &args, origin, books).unwrap()
+}
+fn ok(books: &mut Books, origin: Origin, name: &str, args: Value) -> Value {
+    let out = run(books, origin, name, args);
+    assert_eq!(out["isError"], false, "{name}: {out}");
+    out["structuredContent"].clone()
+}
+fn app(books: &mut Books, name: &str, args: Value) -> Value {
+    ok(books, Origin::App, name, args)
+}
+fn refused(books: &mut Books, name: &str, args: Value) -> String {
+    let out = run(books, Origin::App, name, args);
+    assert_eq!(out["isError"], true, "{name}: {out}");
+    out["structuredContent"]["code"]
+        .as_str()
+        .unwrap()
+        .to_string()
+}
+fn get(books: &mut Books, origin: Origin) -> Value {
+    ok(
+        books,
+        origin,
+        tools::STATEMENT_GET,
+        json!({ "account": ACCT, "month": MONTH }),
+    )
+}
+fn write_args(crid: &str) -> Value {
+    json!({ "client_request_id": crid, "account": ACCT, "month": MONTH })
+}
+
+/// Seed and import the October CSV; returns the books with a draft
+/// statement that has one suggested line and one missing line.
+fn seeded(dir: &TempDir) -> Books {
+    books_core::date::pin_today(books_core::date::Date::new(2026, 10, 29));
+    let mut b = Books::new(Paths::in_dir(dir.0.join("store")));
+    let book: Value = serde_json::from_str(&std::fs::read_to_string(DEMO).unwrap()).unwrap();
+    demo::seed(&mut b, &book).unwrap();
+    let csv = std::fs::read(STATEMENT).unwrap();
+    app(
+        &mut b,
+        "books_app_statement_import",
+        json!({ "client_request_id": "sa-import", "account": ACCT,
+            "csv_base64": books_mini_app::b64::encode(&csv), "file_name": "bank-4021-2026-10.csv" }),
+    );
+    b
+}
+
+fn row_of(view: &Value, match_kind: &str) -> Option<Value> {
+    view["statement"]["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["match"] == match_kind)
+        .cloned()
+}
+
+/// The row `accept` stores a match for. A row can also read "m" when the
+/// ledger only computes an exact match — it stores nothing until Finish.
+fn suggested(view: &Value) -> Value {
+    row_of(view, "s").expect("a suggested row")
+}
+
+#[test]
+fn sa_ledger_entries_list_the_months_movements_with_their_matches() {
+    let dir = TempDir::new("sa-ledger");
+    let mut b = seeded(&dir);
+    let view = get(&mut b, Origin::App);
+    let ledger = view["statement"]["ledger_entries"].as_array().unwrap();
+    assert!(!ledger.is_empty());
+    // every row carries the ledger-list fields
+    for e in ledger {
+        for f in [
+            "ticket",
+            "no",
+            "date",
+            "date_short",
+            "form",
+            "status",
+            "category",
+            "amount_shown",
+            "matched",
+            "linked_line_ticket",
+            "linked_line_no",
+            "match_kind",
+            "flags",
+        ] {
+            assert!(e.get(f).is_some(), "ledger entry lacks `{f}`: {e}");
+        }
+    }
+    // the entry the suggested line points at appears, unmatched for now
+    let s = suggested(&view);
+    let entry = s["books"]["ticket"].as_str().unwrap().to_string();
+    let accepted = app(
+        &mut b,
+        "books_app_statement_accept",
+        write_args("sa-accept"),
+    );
+    assert_eq!(accepted["accepted"], 1);
+    let view = get(&mut b, Origin::App);
+    let ledger = view["statement"]["ledger_entries"].as_array().unwrap();
+    let twin = ledger
+        .iter()
+        .find(|e| e["ticket"] == entry)
+        .expect("the matched entry is in the ledger list");
+    assert_eq!(twin["matched"], true);
+    assert_eq!(twin["linked_line_no"], s["no"]);
+    assert_eq!(twin["match_kind"], "accepted");
+    // the model sees no payee or memo
+    let agent = get(&mut b, Origin::Agent);
+    let ledger = agent["statement"]["ledger_entries"].as_array().unwrap();
+    assert!(!ledger.is_empty());
+    assert!(ledger[0].get("payee").is_none());
+    assert!(ledger[0].get("memo").is_none());
+    assert!(ledger[0].get("title").is_none());
+}
+
+#[test]
+fn sa_unmatch_clears_and_link_restores() {
+    let dir = TempDir::new("sa-link");
+    let mut b = seeded(&dir);
+    let view = get(&mut b, Origin::App);
+    let s = suggested(&view);
+    let entry = s["books"]["ticket"].as_str().unwrap().to_string();
+    let no = s["no"].as_i64().unwrap();
+    let sline = s["ticket"].as_str().unwrap().to_string();
+    app(
+        &mut b,
+        "books_app_statement_accept",
+        write_args("sa-accept-2"),
+    );
+
+    // unmatch by row number
+    let out = app(
+        &mut b,
+        "books_app_statement_unmatch",
+        json!({ "client_request_id": "sa-unmatch-1", "account": ACCT, "month": MONTH, "line": no }),
+    );
+    assert_eq!(out["unmatched"], true);
+    let view = get(&mut b, Origin::App);
+    let row = &view["statement"]["rows"].as_array().unwrap()[usize::try_from(no - 1).unwrap()];
+    assert_ne!(row["match"], "m");
+    let ledger = view["statement"]["ledger_entries"].as_array().unwrap();
+    let twin = ledger.iter().find(|e| e["ticket"] == entry).unwrap();
+    assert_eq!(twin["matched"], false);
+
+    // unmatch again is a quiet no-op
+    let out = app(
+        &mut b,
+        "books_app_statement_unmatch",
+        json!({ "client_request_id": "sa-unmatch-2", "account": ACCT, "month": MONTH, "line": sline }),
+    );
+    assert_eq!(out["unmatched"], false);
+
+    // manual link: the same line back to the same entry, by ticket
+    let out = app(
+        &mut b,
+        "books_app_statement_link",
+        json!({ "client_request_id": "sa-link-1", "account": ACCT, "month": MONTH,
+            "line": sline, "entry": entry }),
+    );
+    assert_eq!(out["matched"], true);
+    let view = get(&mut b, Origin::App);
+    let row = &view["statement"]["rows"].as_array().unwrap()[usize::try_from(no - 1).unwrap()];
+    assert_eq!(row["match"], "m");
+    assert_eq!(row["books"]["ticket"], entry);
+}
+
+#[test]
+fn sa_link_refuses_a_taken_entry_and_a_taken_line() {
+    let dir = TempDir::new("sa-taken");
+    let mut b = seeded(&dir);
+    let view = get(&mut b, Origin::App);
+    let s = suggested(&view);
+    let entry = s["books"]["ticket"].as_str().unwrap().to_string();
+    let no = s["no"].as_i64().unwrap();
+    app(
+        &mut b,
+        "books_app_statement_accept",
+        write_args("sa-accept-3"),
+    );
+    // the line is taken
+    assert_eq!(
+        refused(
+            &mut b,
+            "books_app_statement_link",
+            json!({ "client_request_id": "sa-link-t1", "account": ACCT, "month": MONTH,
+                "line": no, "entry": entry }),
+        ),
+        "already_matched"
+    );
+    // the entry is taken: unmatch the line, then try a different line
+    app(
+        &mut b,
+        "books_app_statement_unmatch",
+        json!({ "client_request_id": "sa-unmatch-3", "account": ACCT, "month": MONTH, "line": no }),
+    );
+    let view = get(&mut b, Origin::App);
+    let other = view["statement"]["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["no"].as_i64() != Some(no) && r["match"] != "m")
+        .expect("another unsettled line");
+    let code = refused(
+        &mut b,
+        "books_app_statement_link",
+        json!({ "client_request_id": "sa-link-t2", "account": ACCT, "month": MONTH,
+            "line": other["no"].as_i64().unwrap(), "entry": entry }),
+    );
+    assert_eq!(code, "entry_not_matchable", "{code}");
+}
+
+#[test]
+fn sa_remove_drops_a_never_finished_statement_and_one_with_history_stays() {
+    let dir = TempDir::new("sa-remove");
+    let mut b = seeded(&dir);
+    app(
+        &mut b,
+        "books_app_statement_accept",
+        write_args("sa-accept-4"),
+    );
+    let missing = get(&mut b, Origin::App)["statement"]["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["match"] == "x")
+        .unwrap()["ticket"]
+        .clone();
+    app(
+        &mut b,
+        "books_app_statement_add_line",
+        json!({ "client_request_id": "sa-add-line-01", "account": ACCT, "month": MONTH, "line": missing }),
+    );
+    let view = get(&mut b, Origin::App);
+    assert_eq!(view["statement"]["can_finish"], true);
+    app(
+        &mut b,
+        "books_app_statement_finish",
+        write_args("sa-finish"),
+    );
+    // a finished statement refuses unmatch and remove; comments still work
+    let view = get(&mut b, Origin::App);
+    let no = view["statement"]["rows"].as_array().unwrap()[0]["no"]
+        .as_i64()
+        .unwrap();
+    assert_eq!(
+        refused(
+            &mut b,
+            "books_app_statement_unmatch",
+            json!({ "client_request_id": "sa-unmatch-fn", "account": ACCT, "month": MONTH, "line": no }),
+        ),
+        "already_finished"
+    );
+    assert_eq!(
+        refused(
+            &mut b,
+            "books_app_statement_remove",
+            write_args("sa-remove-fin"),
+        ),
+        "already_finished"
+    );
+    // reopened, it still keeps its finish and reopen history with the
+    // reason: remove is refused, and nothing of the statement goes
+    app(
+        &mut b,
+        "books_app_statement_finish",
+        json!({ "client_request_id": "sa-reopen", "account": ACCT, "month": MONTH,
+            "reopen": true, "reason": "Reviewing the match again" }),
+    );
+    assert_eq!(
+        refused(
+            &mut b,
+            "books_app_statement_remove",
+            write_args("sa-remove-001"),
+        ),
+        "statement_history"
+    );
+    let view = get(&mut b, Origin::App);
+    assert_eq!(view["statement"]["status"], "open");
+    let feed = view["statement"]["activity"].as_array().unwrap();
+    for kind in ["finish", "reopen"] {
+        assert!(feed.iter().any(|e| e["event"] == kind), "{kind}: {feed:?}");
+    }
+    let events: i64 = b
+        .store()
+        .unwrap()
+        .conn()
+        .query_row("SELECT count(*) FROM statement_event", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(events, 2);
+}
+
+#[test]
+fn sa_remove_drops_a_statement_that_was_never_finished() {
+    let dir = TempDir::new("sa-remove-open");
+    let mut b = seeded(&dir);
+    comment(&mut b, "sa-comment-rm1", "A synthetic note");
+    let out = app(
+        &mut b,
+        "books_app_statement_remove",
+        write_args("sa-remove-002"),
+    );
+    assert_eq!(out["status"], "removed");
+    let view = get(&mut b, Origin::App);
+    assert!(view["statement"].is_null());
+}
+
+#[test]
+fn sa_comments_and_the_activity_feed() {
+    let dir = TempDir::new("sa-feed");
+    let mut b = seeded(&dir);
+    // an empty comment is refused; a real one lands
+    assert_eq!(
+        refused(
+            &mut b,
+            "books_app_statement_comment_add",
+            json!({ "client_request_id": "sa-comment-00", "account": ACCT, "month": MONTH, "body": "  " }),
+        ),
+        "invalid_args"
+    );
+    let out = app(
+        &mut b,
+        "books_app_statement_comment_add",
+        json!({ "client_request_id": "sa-comment-01", "account": ACCT, "month": MONTH,
+            "body": "Check this against the vendor invoice" }),
+    );
+    assert!(out["comment"].is_string());
+    app(
+        &mut b,
+        "books_app_statement_accept",
+        write_args("sa-accept-5"),
+    );
+    let view = get(&mut b, Origin::App);
+    let comments = view["statement"]["comments"].as_array().unwrap();
+    assert_eq!(comments.len(), 1);
+    assert_eq!(comments[0]["body"], "Check this against the vendor invoice");
+    // the feed shows what happened, oldest first
+    let feed = view["statement"]["activity"].as_array().unwrap();
+    let events: Vec<&str> = feed.iter().map(|e| e["event"].as_str().unwrap()).collect();
+    assert_eq!(events[0], "import", "{events:?}");
+    assert!(events.contains(&"comment"), "{events:?}");
+    assert!(events.contains(&"match"), "{events:?}");
+    // the model never sees the notes
+    let agent = get(&mut b, Origin::Agent);
+    assert!(agent["statement"].get("comments").is_none());
+}
+
+fn comment(b: &mut Books, crid: &str, body: &str) -> Value {
+    app(
+        b,
+        "books_app_statement_comment_add",
+        json!({ "client_request_id": crid, "account": ACCT, "month": MONTH, "body": body }),
+    )
+}
+
+#[test]
+fn sa_a_comment_ticket_names_its_comment_and_each_feed_row_stands() {
+    let dir = TempDir::new("sa-comment-ids");
+    let mut b = seeded(&dir);
+    // the import is already in the feed, so the feed's rows and the
+    // comments are numbered apart
+    let first = comment(&mut b, "sa-comment-id1", "First synthetic note");
+    let second = comment(&mut b, "sa-comment-id2", "Second synthetic note");
+    assert_ne!(first["comment"], second["comment"]);
+    let view = get(&mut b, Origin::App);
+    let comments = view["statement"]["comments"].as_array().unwrap();
+    assert_eq!(comments.len(), 2);
+    assert_eq!(comments[0]["ticket"], first["comment"]);
+    assert_eq!(comments[1]["ticket"], second["comment"]);
+    // two comments are two rows of the feed, however close together
+    let feed = view["statement"]["activity"].as_array().unwrap();
+    assert_eq!(
+        feed.iter().filter(|e| e["event"] == "comment").count(),
+        2,
+        "{feed:?}"
+    );
+}
+
+#[test]
+fn sa_a_finish_and_a_reopen_are_in_the_feed_once() {
+    let dir = TempDir::new("sa-feed-once");
+    let mut b = seeded(&dir);
+    app(
+        &mut b,
+        "books_app_statement_accept",
+        write_args("sa-accept-6"),
+    );
+    let missing = get(&mut b, Origin::App)["statement"]["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["match"] == "x")
+        .unwrap()["ticket"]
+        .clone();
+    app(
+        &mut b,
+        "books_app_statement_add_line",
+        json!({ "client_request_id": "sa-add-line-02", "account": ACCT, "month": MONTH, "line": missing }),
+    );
+    app(
+        &mut b,
+        "books_app_statement_finish",
+        write_args("sa-finish-02"),
+    );
+    app(
+        &mut b,
+        "books_app_statement_finish",
+        json!({ "client_request_id": "sa-reopen-02", "account": ACCT, "month": MONTH,
+            "reopen": true, "reason": "Reviewing the match again" }),
+    );
+    let view = get(&mut b, Origin::App);
+    let feed = view["statement"]["activity"].as_array().unwrap();
+    for kind in ["finish", "reopen"] {
+        assert_eq!(
+            feed.iter().filter(|e| e["event"] == kind).count(),
+            1,
+            "{kind}: {feed:?}"
+        );
+    }
+}
+
+#[test]
+fn sa_a_match_books_only_computes_is_matched_on_both_lists_and_stores_nothing() {
+    let dir = TempDir::new("sa-computed");
+    let mut b = seeded(&dir);
+    let view = get(&mut b, Origin::App);
+    let rows = view["statement"]["rows"].as_array().unwrap();
+    // same date and amount as a posted entry: matched, with no stored link
+    let exact = rows
+        .iter()
+        .find(|r| r["match"] == "m" && r["stored"] == false)
+        .expect("a line Books matches by date and amount alone");
+    let entry = exact["books"]["ticket"].clone();
+    let ledger = view["statement"]["ledger_entries"].as_array().unwrap();
+    let twin = ledger
+        .iter()
+        .find(|e| e["ticket"] == entry)
+        .expect("its entry is in the ledger list");
+    assert_eq!(twin["matched"], true, "{twin}");
+    assert_eq!(twin["stored"], false, "{twin}");
+    assert_eq!(twin["linked_line_no"], exact["no"], "{twin}");
+    assert_eq!(twin["linked_line_ticket"], exact["ticket"], "{twin}");
+    // there is nothing stored to clear: the line stays matched, and the
+    // answer says nothing was unmatched
+    let out = app(
+        &mut b,
+        "books_app_statement_unmatch",
+        json!({ "client_request_id": "sa-unmatch-cx", "account": ACCT, "month": MONTH, "line": exact["no"] }),
+    );
+    assert_eq!(out["unmatched"], false);
+    let again = get(&mut b, Origin::App);
+    let row = again["statement"]["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["no"] == exact["no"])
+        .unwrap();
+    assert_eq!(row["match"], "m");
+    // an accepted suggestion is a stored match on both lists
+    let s = suggested(&again);
+    app(
+        &mut b,
+        "books_app_statement_accept",
+        write_args("sa-accept-7"),
+    );
+    let after = get(&mut b, Origin::App);
+    let row = after["statement"]["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["no"] == s["no"])
+        .unwrap();
+    assert_eq!(row["stored"], true);
+    let twin = after["statement"]["ledger_entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["ticket"] == s["books"]["ticket"])
+        .unwrap();
+    assert_eq!(twin["stored"], true);
+}
+
+#[test]
+fn sa_link_refuses_a_line_of_another_statement() {
+    let dir = TempDir::new("sa-foreign-line");
+    let mut b = seeded(&dir);
+    // a second statement on the same account, a month earlier
+    app(
+        &mut b,
+        "books_app_statement_import",
+        json!({ "client_request_id": "sa-import-sep", "account": ACCT, "closing": "0.00",
+            "csv_text": "Date,Description,Debit,Credit,Balance\n2026-09-15,SERVICE CHARGE,150.00,,\n" }),
+    );
+    let other = ok(
+        &mut b,
+        Origin::App,
+        tools::STATEMENT_GET,
+        json!({ "account": ACCT, "month": "2026-09" }),
+    );
+    let foreign = other["statement"]["rows"][0]["ticket"].clone();
+    assert!(foreign.is_string(), "{other}");
+    let view = get(&mut b, Origin::App);
+    let entry = suggested(&view)["books"]["ticket"].clone();
+    // its ticket names no row of October's statement, not row 1
+    assert_eq!(
+        refused(
+            &mut b,
+            "books_app_statement_link",
+            json!({ "client_request_id": "sa-link-frn", "account": ACCT, "month": MONTH,
+                "line": foreign, "entry": entry }),
+        ),
+        "not_found"
+    );
+    let view = get(&mut b, Origin::App);
+    assert_eq!(view["statement"]["rows"][0]["stored"], false);
+}
+
+#[test]
+fn sa_the_ledger_rows_say_what_is_matched_and_what_the_bank_added() {
+    let dir = TempDir::new("sa-ledger-rows");
+    let mut b = seeded(&dir);
+    let view = get(&mut b, Origin::App);
+    let accepted = suggested(&view)["books"]["ticket"].clone();
+    let missing = row_of(&view, "x").expect("a missing line")["ticket"].clone();
+    app(
+        &mut b,
+        "books_app_statement_accept",
+        write_args("sa-accept-8"),
+    );
+    let added = app(
+        &mut b,
+        "books_app_statement_add_line",
+        json!({ "client_request_id": "sa-add-line-03", "account": ACCT, "month": MONTH, "line": missing }),
+    )["entry"]
+        .clone();
+    let list = app(&mut b, tools::LEDGER_LIST, json!({ "month": MONTH }));
+    let rows = list["rows"].as_array().unwrap();
+    let row = |t: &Value| rows.iter().find(|r| &r["ticket"] == t).unwrap();
+    // posted from the bank's own line
+    assert_eq!(row(&added)["matched"], true);
+    assert_eq!(row(&added)["source"], "bank");
+    // an entry a person keyed, then matched to the bank
+    assert_eq!(row(&accepted)["matched"], true);
+    assert_ne!(row(&accepted)["source"], "bank");
+    // and the rest of the month is not matched by a stored link
+    assert!(rows.iter().any(|r| r["matched"] == false), "{rows:?}");
+    assert!(
+        rows.iter()
+            .all(|r| ["manual", "bank", "document"].contains(&r["source"].as_str().unwrap()))
+    );
+}
+
+#[test]
+fn sa_unmatch_refuses_a_line_books_would_match_again_by_itself() {
+    let dir = TempDir::new("sa-unmatch-exact");
+    let mut b = seeded(&dir);
+    // Add posts the entry on the line's own date for its own amount: with
+    // the stored match gone, Books matches the two again from those alone
+    let view = get(&mut b, Origin::App);
+    let missing = row_of(&view, "x").expect("a missing line");
+    app(
+        &mut b,
+        "books_app_statement_add_line",
+        json!({ "client_request_id": "sa-add-line-04", "account": ACCT, "month": MONTH, "line": missing["ticket"] }),
+    );
+    assert_eq!(
+        refused(
+            &mut b,
+            "books_app_statement_unmatch",
+            json!({ "client_request_id": "sa-unmatch-ex", "account": ACCT, "month": MONTH, "line": missing["no"] }),
+        ),
+        "exact_match"
+    );
+    // nothing changed, and the feed records no unmatch that did not happen
+    let view = get(&mut b, Origin::App);
+    let row = view["statement"]["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["no"] == missing["no"])
+        .unwrap();
+    assert_eq!(row["match"], "m");
+    assert_eq!(row["stored"], true);
+    let feed = view["statement"]["activity"].as_array().unwrap();
+    assert!(feed.iter().all(|e| e["event"] != "unmatch"), "{feed:?}");
+}

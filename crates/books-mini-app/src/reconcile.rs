@@ -227,6 +227,9 @@ pub fn statement_view(
             "date_short": l.line.date.short(),
             "amount_shown": signed(l.line.amount),
             "match": kind,
+            // a match a person made or the month kept, not one Books sees
+            // from the date and amount alone: only that one can be unmatched
+            "stored": l.matched_entry_id.is_some(),
             "books": books_side,
         });
         if origin == crate::service::Origin::App {
@@ -278,6 +281,105 @@ pub fn statement_view(
     )?;
     crate::reconcile_document::snapshot_fields(store, &s, &lines, &mut out["statement"])?;
     crate::statement_flags::extend(store, &book, &s, &lines, origin, &mut out["statement"])?;
+    // the ledger list beside the lines: every posted or voided entry that
+    // moved the account in the statement's month, with its match back
+    let conn = store.conn();
+    // an entry Books matches by date and amount alone has no stored link
+    // yet: it is matched here as it is in the lines above
+    let seen: std::collections::HashMap<i64, (i64, usize)> = lines
+        .iter()
+        .zip(&found)
+        .enumerate()
+        .filter_map(|(i, (l, m))| match m {
+            Match::Exact(e) => Some((*e, (l.id, i + 1))),
+            _ => None,
+        })
+        .collect();
+    let mut ledger_rows = Vec::new();
+    for le in months::ledger_entries(conn, book.id, account.id, s.id, &month)? {
+        let stored = le.matched_line_id.is_some();
+        let computed = seen.get(&le.entry_id).filter(|_| !stored);
+        let line_id = le.matched_line_id.or(computed.map(|c| c.0));
+        let line_no = le
+            .matched_line_no
+            .or(computed.and_then(|c| i64::try_from(c.1).ok()));
+        let linked = match line_id {
+            Some(id) => json!(ticket(store, "sline", id)?),
+            None => Value::Null,
+        };
+        let category = match le.counter_account_id {
+            Some(id) => chart(store, &book, &mut accounts)?
+                .by_id
+                .get(&id)
+                .map(|a| format!("{} {}", a.number, a.name)),
+            None => None,
+        };
+        let mut row = json!({
+            "ticket": ticket(store, "entry", le.entry_id)?,
+            "no": le.entry_no,
+            "date": le.date.to_string(),
+            "date_short": le.date.short(),
+            "form": le.form,
+            "status": le.status,
+            "category": category,
+            "amount_shown": signed(le.moved),
+            "debit_shown": if le.debit > 0 { money::display(le.debit) } else { String::new() },
+            "credit_shown": if le.credit > 0 { money::display(le.credit) } else { String::new() },
+            "matched": line_id.is_some(),
+            "stored": stored,
+            "linked_line_ticket": linked,
+            "linked_line_no": line_no,
+            "match_kind": le.match_kind.or(computed.map(|_| "exact".to_string())),
+            "match_confidence": le.match_confidence,
+            "flags": [],
+        });
+        if origin == crate::service::Origin::App {
+            row["payee"] = json!(le.payee);
+            row["memo"] = json!(le.memo);
+            row["title"] = json!(le.payee.or(le.memo).unwrap_or_else(|| {
+                match le.form.as_str() {
+                    "money_in" => "Money in",
+                    "money_out" => "Money out",
+                    "transfer" => "Transfer",
+                    "reversal" => "Reversal",
+                    _ => "Journal",
+                }
+                .to_string()
+            }));
+        }
+        ledger_rows.push(row);
+    }
+    out["statement"]["ledger_entries"] = json!(ledger_rows);
+    // the Activity Log: the feed rows, each its own event, in time order.
+    // A finish or reopen writes the feed and `statement_event` both; one
+    // from before the feed is in `statement_event` alone. So of each kind
+    // the oldest events the feed does not account for join it, no others.
+    let acts = months::activities(conn, s.id)?;
+    let mut feed: Vec<Value> = acts
+        .iter()
+        .map(|a| json!({ "event": a.event, "detail": a.detail, "at": a.at }))
+        .collect();
+    let kept = books_store::statement_lock::events(conn, s.id)?;
+    for kind in ["finish", "reopen"] {
+        let in_feed = acts.iter().filter(|a| a.event == kind).count();
+        let of_kind: Vec<&(String, String)> = kept.iter().filter(|(e, _)| e == kind).collect();
+        for (event, at) in of_kind.iter().take(of_kind.len().saturating_sub(in_feed)) {
+            feed.push(json!({ "event": event, "detail": Value::Null, "at": at }));
+        }
+    }
+    feed.sort_by(|a, b| a["at"].as_str().cmp(&b["at"].as_str()));
+    out["statement"]["activity"] = json!(feed);
+    if origin == crate::service::Origin::App {
+        let mut notes = Vec::new();
+        for c in months::comments(conn, s.id)? {
+            notes.push(json!({
+                "ticket": ticket(store, "scomment", c.id)?,
+                "body": c.body,
+                "at": c.at,
+            }));
+        }
+        out["statement"]["comments"] = json!(notes);
+    }
     Ok(out)
 }
 
@@ -349,6 +451,39 @@ fn sline_in(conn: &Connection, args: &Map<String, Value>) -> Result<i64, Refusal
         _ => Err(Refusal::new(
             "not_found",
             "That statement line ticket is not one Books issued.",
+        )),
+    }
+}
+
+/// `line` as a line ticket or a row `no`, to a line id on this statement.
+fn line_id_in(
+    conn: &Connection,
+    book: &Book,
+    account_id: i64,
+    key: &str,
+    args: &Map<String, Value>,
+) -> Result<i64, Refusal> {
+    match args.get("line") {
+        Some(v) if v.is_string() => sline_in(conn, args),
+        Some(v) => {
+            let no = v.as_i64().ok_or_else(|| {
+                Refusal::invalid("`line` is a row number or a statement line ticket.")
+            })?;
+            let (_s, lines) =
+                months::statement(conn, book.id, account_id, key)?.ok_or_else(|| {
+                    Refusal::new(
+                        "not_found",
+                        "There is no statement for that account and month.",
+                    )
+                })?;
+            usize::try_from(no - 1)
+                .ok()
+                .and_then(|i| lines.get(i))
+                .map(|l| l.id)
+                .ok_or_else(|| Refusal::new("not_found", "That statement has no such line."))
+        }
+        None => Err(Refusal::invalid(
+            "`line` is a row number or a statement line ticket.",
         )),
     }
 }
@@ -469,6 +604,79 @@ pub fn statement_finish(conn: &Connection, args: &Map<String, Value>) -> Answer 
     months::finish(conn, &book, account.id, &key)?;
     Ok(with_subject(
         json!({ "status": "finished", "month": key }),
+        "account",
+        account.id,
+    ))
+}
+
+/// `books_app_statement_unmatch`: clear one line's match.
+pub fn statement_unmatch(conn: &Connection, args: &Map<String, Value>) -> Answer {
+    let (book, account, key) = account_month(conn, args)?;
+    let line = line_id_in(conn, &book, account.id, &key, args)?;
+    let cleared = months::unmatch_line(conn, &book, account.id, &key, line)?;
+    Ok(with_subject(
+        json!({ "unmatched": cleared }),
+        "account",
+        account.id,
+    ))
+}
+
+/// `books_app_statement_link`: match one line to a posted entry the user
+/// picked (the reconcile mode's click on a ledger row, then a row or box).
+pub fn statement_link(conn: &Connection, args: &Map<String, Value>) -> Answer {
+    let (book, account, key) = account_month(conn, args)?;
+    let line = line_id_in(conn, &book, account.id, &key, args)?;
+    let (_s, lines) = months::statement(conn, book.id, account.id, &key)?.ok_or_else(|| {
+        Refusal::new(
+            "not_found",
+            "There is no statement for that account and month.",
+        )
+    })?;
+    // a ticket for a line of another statement names no row here
+    let no = lines
+        .iter()
+        .position(|l| l.id == line)
+        .ok_or_else(|| Refusal::new("not_found", "That line is not on this statement."))?
+        + 1;
+    let entry = writes::entry_in(conn, &book, service::required(args, "entry")?)?.id;
+    let chosen = books_store::match_history::accept_line(
+        conn,
+        &book,
+        account.id,
+        &key,
+        i64::try_from(no).unwrap_or(0),
+        Some(entry),
+    )?;
+    Ok(with_subject(
+        json!({ "matched": true, "entry": plumbing::ticket_for(conn, "entry", chosen)? }),
+        "account",
+        account.id,
+    ))
+}
+
+/// `books_app_statement_remove`: delete an unfinalized statement.
+pub fn statement_remove(conn: &Connection, args: &Map<String, Value>) -> Answer {
+    let (book, account, key) = account_month(conn, args)?;
+    months::remove_statement(conn, &book, account.id, &key)?;
+    Ok(with_subject(
+        json!({ "status": "removed", "month": key }),
+        "account",
+        account.id,
+    ))
+}
+
+/// `books_app_statement_comment_add`: leave a note on a statement.
+pub fn statement_comment(conn: &Connection, args: &Map<String, Value>) -> Answer {
+    let (book, account, key) = account_month(conn, args)?;
+    let id = months::comment_add(
+        conn,
+        &book,
+        account.id,
+        &key,
+        service::required(args, "body")?,
+    )?;
+    Ok(with_subject(
+        json!({ "comment": plumbing::ticket_for(conn, "scomment", id)? }),
         "account",
         account.id,
     ))

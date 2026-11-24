@@ -131,7 +131,7 @@ function PersonPicker(p: { onPick: (ticket: string) => void }) {
           <List>
             <Each of={d()?.rows || []} key={rowKey}>
               {(x: Any) => (
-                <View onPress={() => p.onPick(x().ticket)} activeStyle={{ opacity: 0.6 }}>
+                <View onPress={() => p.onPick(x().ticket)} class="transition-colors hover:bg-[#f5f5f5] dark:hover:bg-[#2a2a2a]" activeStyle={{ opacity: 0.6 }}>
                   <Row label={x().name || ""} sub={x().sub || ""} right={<Text class={`text-[13px] ${C.mute}`}>›</Text>} />
                 </View>
               )}

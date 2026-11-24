@@ -43,14 +43,14 @@ function go(id: string, filter?: string) {
 }
 goBack = () => go("today");
 
-/** Add an entry: the full page, in one of its four modes. */
+// Add an entry: the full page, in one of its four modes.
 function newEntry(mode: string) {
   drawerEntry.set("");
   sheetMode.set(mode);
   page.set("new");
 }
 
-/** First run: name the book and pick its basis. */
+// First run: name the book and pick its basis.
 function Setup() {
   const label = signal("");
   const basis = signal("cash");
@@ -68,9 +68,10 @@ function Setup() {
   };
   const Opt = (q: { id: string; title: string; sub: string }) => (
     <View
-      class={`flex-1 rounded-[10px] border p-3 gap-1 ${C.bg} ${C.line}`}
+      class={`flex-1 rounded-[10px] border p-3 gap-1 transition-colors ${C.bg} ${C.line} hover:border-[#cbd5e1] dark:hover:border-[#3f3f46]`}
       style={picked(basis() === q.id)}
       onPress={() => basis.set(q.id)}
+      activeStyle={{ opacity: 0.7 }}
     >
       <Text class={`text-[13.5px] font-bold ${C.ink}`}>{q.title}</Text>
       <Text class={`text-[12px] ${C.mute}`}>{q.sub}</Text>
@@ -154,7 +155,10 @@ export default function Books() {
         <If when={page() === "tags"}>
           <TagsPage go={go} />
         </If>
-        <If when={page() !== "new" && page() !== "accounts" && page() !== "category" && page() !== "inbox" && page() !== "tags" && page() !== "transactions"}>
+        <If when={page() === "reports"}>
+          <ReportsPage go={go} />
+        </If>
+        <If when={page() !== "new" && page() !== "accounts" && page() !== "category" && page() !== "inbox" && page() !== "tags" && page() !== "transactions" && page() !== "reports"}>
           <Scroll class="flex-1">
             <View class="p-6 gap-5">
               <If when={page() === "today"}>
@@ -168,9 +172,6 @@ export default function Books() {
               </If>
               <If when={page() === "settings"}>
                 <SettingsPage go={go} />
-              </If>
-              <If when={page() === "reports"}>
-                <ReportsPage go={go} />
               </If>
               <If when={page() === "people"}>
                 <PeoplePage go={go} />

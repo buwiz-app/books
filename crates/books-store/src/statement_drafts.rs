@@ -11,6 +11,15 @@ use crate::{Result, error, now_iso};
 /// A box on a page, in thousandths of the page: `[x0, y0, x1, y1]`.
 pub type Bbox = [i64; 4];
 
+/// A named area of a page the assistant boxed: the title, the date.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DraftArea {
+    pub kind: String,
+    pub label: String,
+    pub page: i64,
+    pub bbox: Bbox,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DraftLine {
     pub line_no: i64,
@@ -36,6 +45,8 @@ pub struct Draft {
     pub lines: Vec<DraftLine>,
     /// Each page's own picture: `(page, evidence id)`, in page order.
     pub pages: Vec<(i64, i64)>,
+    /// The page's named areas (title, date), in order.
+    pub areas: Vec<DraftArea>,
 }
 
 /// Where a stored statement line sits on its page.
@@ -57,6 +68,8 @@ pub struct NewDraft<'a> {
     pub lines: &'a [DraftLine],
     /// Each page's own picture: `(page, evidence id)`.
     pub pages: &'a [(i64, i64)],
+    /// The page's named areas (title, date).
+    pub areas: &'a [DraftArea],
 }
 
 /// A box is four thousandths with `x0 < x1` and `y0 < y1`.
@@ -142,6 +155,23 @@ pub fn insert(conn: &Connection, d: &NewDraft<'_>) -> Result<i64> {
             params![id, page, evidence],
         )?;
     }
+    for (i, a) in d.areas.iter().enumerate() {
+        conn.execute(
+            "INSERT INTO statement_draft_area (draft_id, ord, kind, label, page, bx0, by0, bx1, by1)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params![
+                id,
+                i64::try_from(i).unwrap_or(0),
+                a.kind,
+                a.label,
+                a.page,
+                a.bbox[0],
+                a.bbox[1],
+                a.bbox[2],
+                a.bbox[3]
+            ],
+        )?;
+    }
     Ok(id)
 }
 
@@ -166,6 +196,7 @@ pub fn get(conn: &Connection, id: i64) -> Result<Option<Draft>> {
                     status: r.get(7)?,
                     lines: Vec::new(),
                     pages: Vec::new(),
+                    areas: Vec::new(),
                 })
             },
         )
@@ -206,6 +237,19 @@ pub fn get(conn: &Connection, id: i64) -> Result<Option<Draft>> {
     )?;
     d.pages = stmt
         .query_map([id], |r| Ok((r.get(0)?, r.get(1)?)))?
+        .collect::<rusqlite::Result<_>>()?;
+    let mut stmt = conn.prepare(
+        "SELECT kind, label, page, bx0, by0, bx1, by1 FROM statement_draft_area WHERE draft_id = ?1 ORDER BY ord",
+    )?;
+    d.areas = stmt
+        .query_map([id], |r| {
+            Ok(DraftArea {
+                kind: r.get(0)?,
+                label: r.get(1)?,
+                page: r.get(2)?,
+                bbox: [r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?],
+            })
+        })?
         .collect::<rusqlite::Result<_>>()?;
     Ok(Some(d))
 }
@@ -308,6 +352,48 @@ pub fn pages(conn: &Connection, statement_id: i64) -> Result<Vec<(i64, i64)>> {
         "SELECT page, evidence_id FROM statement_page WHERE statement_id = ?1 ORDER BY page",
     )?;
     let rows = stmt.query_map([statement_id], |r| Ok((r.get(0)?, r.get(1)?)))?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
+
+/// Keep a statement's named areas (title, date), in place of any kept before.
+pub fn keep_areas(conn: &Connection, statement_id: i64, areas: &[DraftArea]) -> Result<()> {
+    conn.execute(
+        "DELETE FROM statement_area WHERE statement_id = ?1",
+        [statement_id],
+    )?;
+    for (i, a) in areas.iter().enumerate() {
+        conn.execute(
+            "INSERT INTO statement_area (statement_id, ord, kind, label, page, bx0, by0, bx1, by1)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params![
+                statement_id,
+                i64::try_from(i).unwrap_or(0),
+                a.kind,
+                a.label,
+                a.page,
+                a.bbox[0],
+                a.bbox[1],
+                a.bbox[2],
+                a.bbox[3]
+            ],
+        )?;
+    }
+    Ok(())
+}
+
+/// A statement's named areas, in order.
+pub fn areas(conn: &Connection, statement_id: i64) -> Result<Vec<DraftArea>> {
+    let mut stmt = conn.prepare(
+        "SELECT kind, label, page, bx0, by0, bx1, by1 FROM statement_area WHERE statement_id = ?1 ORDER BY ord",
+    )?;
+    let rows = stmt.query_map([statement_id], |r| {
+        Ok(DraftArea {
+            kind: r.get(0)?,
+            label: r.get(1)?,
+            page: r.get(2)?,
+            bbox: [r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?],
+        })
+    })?;
     Ok(rows.collect::<rusqlite::Result<_>>()?)
 }
 

@@ -1328,3 +1328,438 @@ fn a_noncash_journal_naming_a_person_on_both_sides_shows_its_amount_once() {
     assert_eq!(recent.len(), 1, "{detail}");
     assert_eq!(recent[0]["amount"], "500.00", "{detail}");
 }
+
+#[test]
+fn ledger_list_groups_accounts_and_rows_carry_account_debit_credit() {
+    // The grouped ledger: with no account picked, `groups` aggregates each
+    // account the month's entries touch (debit, credit, count, normal
+    // balance); with one picked, each row carries that account's debit and
+    // credit for the entry.
+    let dir = TempDir::new("ledger-groups");
+    let mut bot = Bot::new(&dir);
+    data(&bot.app(
+        "books_app_book_create",
+        json!({ "client_request_id": "book-groups-001", "label": "Group Shop" }),
+    ));
+    // Supplies out of the bank: 11000 credit 1,350.00, 67200 debit 1,350.00.
+    let first = data(&bot.app(
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "post-groups-001", "form": "money_out", "date": "2026-10-18",
+            "amount": "1350.00", "account": "11000", "category": "67200"
+        }),
+    ))
+    .clone();
+    // A second bank entry so its count reads 2.
+    data(&bot.app(
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "post-groups-002", "form": "money_in", "date": "2026-10-19",
+            "amount": "200.00", "account": "11000", "category": "41000"
+        }),
+    ));
+    let list = app_data(&mut bot, "books_ledger_list", json!({ "month": "2026-10" }));
+    let groups = list["groups"].as_array().expect("group aggregates");
+    let find = |number: &str| {
+        groups
+            .iter()
+            .find(|g| g["number"] == number)
+            .unwrap()
+            .clone()
+    };
+    let bank = find("11000");
+    assert_eq!(bank["debit_shown"], "200.00");
+    assert_eq!(bank["credit_shown"], "1,350.00");
+    assert_eq!(bank["count"], 2);
+    // an asset's balance is debit minus credit: −1,150.00
+    assert_eq!(bank["balance_shown"], "\u{2212}1,150.00");
+    assert_eq!(bank["type"], "asset");
+    let expense = find("67200");
+    assert_eq!(expense["debit_shown"], "1,350.00");
+    assert_eq!(expense["count"], 1);
+    assert_eq!(find("41000")["credit_shown"], "200.00");
+
+    // one account picked: rows carry that account's own debit and credit
+    let account = bank["ticket"].as_str().unwrap().to_string();
+    let one = app_data(
+        &mut bot,
+        "books_ledger_list",
+        json!({ "month": "2026-10", "account": account }),
+    );
+    assert!(one["groups"].as_array().unwrap().is_empty());
+    let rows = one["rows"].as_array().unwrap();
+    let row = |t| rows.iter().find(|r| r["ticket"] == t).unwrap();
+    let row1 = row(first["entry"].as_str().unwrap());
+    assert_eq!(row1["debit_shown"], "");
+    assert_eq!(row1["credit_shown"], "1,350.00");
+    let row2 = &rows[0];
+    assert!(
+        row2["debit_shown"].as_str().is_some_and(|s| !s.is_empty())
+            || row2["credit_shown"].as_str().is_some_and(|s| !s.is_empty())
+    );
+}
+
+#[test]
+fn nested_coa_subtrees_roll_up_with_double_entry_polarity_and_period_filter() {
+    let dir = TempDir::new("nested-coa-subtrees");
+    let mut bot = Bot::new(&dir);
+    let book = app_data(
+        &mut bot,
+        "books_app_book_create",
+        json!({ "client_request_id": "nested-coa-book-01", "label": "Nested COA Shop" }),
+    )["book"]
+        .as_str()
+        .unwrap()
+        .to_string();
+
+    // Create two sub-accounts under 41000 (Sales Revenue): one normal revenue child
+    // and one contra child (Refunds & Discounts). Double-entry polarity nets them
+    // automatically on 41000's subtree_balance without any manual +/- sign.
+    app_data(
+        &mut bot,
+        "books_app_account_create",
+        json!({
+            "client_request_id": "nested-child-sales",
+            "book": book,
+            "number": "41010",
+            "name": "Synthetic Government Sales",
+            "kind": "sales_revenue",
+            "parent": "41000"
+        }),
+    );
+    app_data(
+        &mut bot,
+        "books_app_account_create",
+        json!({
+            "client_request_id": "nested-child-contra",
+            "book": book,
+            "number": "41090",
+            "name": "Synthetic Sales Discounts",
+            "kind": "refunds_and_discounts",
+            "parent": "41000"
+        }),
+    );
+
+    // Post Q3 revenue on 41010 (credit 500.00), Q3 contra discount on 41090 (debit 75.00),
+    // and Q4 revenue on 41000 directly (credit 200.00).
+    app_data(
+        &mut bot,
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "nested-q3-sale",
+            "book": book,
+            "form": "journal",
+            "date": "2026-08-15",
+            "lines": [
+                { "account": "11000", "debit": "500.00", "credit": "0.00" },
+                { "account": "41010", "debit": "0.00", "credit": "500.00" }
+            ]
+        }),
+    );
+    app_data(
+        &mut bot,
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "nested-q3-discount",
+            "book": book,
+            "form": "journal",
+            "date": "2026-08-20",
+            "lines": [
+                { "account": "41090", "debit": "75.00", "credit": "0.00" },
+                { "account": "11000", "debit": "0.00", "credit": "75.00" }
+            ]
+        }),
+    );
+    app_data(
+        &mut bot,
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "nested-q4-sale",
+            "book": book,
+            "form": "journal",
+            "date": "2026-10-05",
+            "lines": [
+                { "account": "11000", "debit": "200.00", "credit": "0.00" },
+                { "account": "41000", "debit": "0.00", "credit": "200.00" }
+            ]
+        }),
+    );
+
+    // Q3 filter: 41000 own = 0.00, 41010 = 500.00, 41090 = -75.00 -> 41000 subtree = 425.00
+    let q3 = app_data(
+        &mut bot,
+        "books_accounts_list",
+        json!({ "book": book, "group": "Revenue", "from": "2026-07-01", "to": "2026-09-30" }),
+    );
+    let q3_rows = q3["rows"].as_array().unwrap();
+    fn find<'a>(rows: &'a [Value], num: &str) -> &'a Value {
+        rows.iter().find(|r| r["number"] == num).unwrap()
+    }
+    let parent_q3 = find(q3_rows, "41000");
+    assert_eq!(parent_q3["child_count"], 2);
+    assert_eq!(parent_q3["balance"], "0.00");
+    assert_eq!(parent_q3["subtree_balance"], "425.00");
+    assert_eq!(parent_q3["debit_normal"], false);
+
+    let child_q3 = find(q3_rows, "41010");
+    assert_eq!(child_q3["parent_number"], "41000");
+    assert_eq!(child_q3["balance"], "500.00");
+    assert_eq!(child_q3["subtree_balance"], "500.00");
+
+    // Full range includes Q4 200.00 on 41000 -> subtree = 625.00
+    let all = app_data(
+        &mut bot,
+        "books_accounts_list",
+        json!({ "book": book, "group": "Revenue", "from": "2026-01-01", "to": "2026-12-31" }),
+    );
+    let all_rows = all["rows"].as_array().unwrap();
+    let parent_all = find(all_rows, "41000");
+    assert_eq!(parent_all["balance"], "200.00");
+    assert_eq!(parent_all["subtree_balance"], "625.00");
+}
+
+/// What the host counts against its 1 MiB result limit: every text content
+/// plus the structuredContent JSON.
+fn host_bytes(result: &Value) -> usize {
+    let text: usize = result["content"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|c| c["text"].as_str())
+        .map(str::len)
+        .sum();
+    text + result["structuredContent"].to_string().len()
+}
+
+#[test]
+fn ledger_list_pages_and_its_group_figures_cover_every_entry_but_no_draft() {
+    // A busy month of split entries: more than one page of four-account
+    // journals with long memos. Each entry is sent once, the answer fits the
+    // host's limit, a cursor reaches the rest, and a group's figures cover
+    // every matching entry but count no money for a draft.
+    const N: usize = 205;
+    let dir = TempDir::new("ledger-paging");
+    let mut bot = Bot::new(&dir);
+    data(&bot.app(
+        "books_app_book_create",
+        json!({ "client_request_id": "book-paging-01", "label": "Paging Shop" }),
+    ));
+    let chart = app_data(&mut bot, "books_accounts_list", json!({}));
+    let expenses: Vec<String> = chart["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|a| a["tag"] == "ex" && a["off"] == false)
+        .take(3)
+        .map(|a| a["number"].as_str().unwrap().to_string())
+        .collect();
+    assert_eq!(expenses.len(), 3, "{chart}");
+    let memo = format!("MEMO-SYNTH-{}", "split entry ".repeat(16));
+    let journal = |crid: String| {
+        json!({
+            "client_request_id": crid, "form": "journal", "date": "2026-10-12", "memo": memo,
+            "lines": [
+                { "account": expenses[0], "debit": "1.00" },
+                { "account": expenses[1], "debit": "1.00" },
+                { "account": expenses[2], "debit": "1.00" },
+                { "account": "11000", "credit": "3.00" }
+            ]
+        })
+    };
+    for i in 0..N {
+        data(&bot.app(
+            "books_app_post_entry",
+            journal(format!("post-paging-{i:04}")),
+        ));
+    }
+    let first = bot.app("books_ledger_list", json!({ "month": "2026-10" }));
+    assert!(
+        host_bytes(&first) <= 1024 * 1024,
+        "the all-accounts ledger is {} bytes",
+        host_bytes(&first)
+    );
+    let first = data(&first).clone();
+    assert_eq!(first["total"], N);
+    assert_eq!(first["next_cursor"], "200");
+    let rows = first["rows"].as_array().unwrap();
+    assert_eq!(rows.len(), 200);
+    let bank = |list: &Value| {
+        list["groups"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|g| g["number"] == "11000")
+            .unwrap()
+            .clone()
+    };
+    // the figures cover all 205 entries, not this page's 200
+    let group = bank(&first);
+    assert_eq!(group["count"], N);
+    assert_eq!(group["credit_shown"], "615.00");
+    // a group names its rows by their place in `rows`: no row is sent twice
+    let refs = group["rows"].as_array().unwrap();
+    assert_eq!(refs.len(), 200);
+    assert!(
+        refs.iter().all(|r| r.get("ticket").is_none()),
+        "{}",
+        refs[0]
+    );
+    assert_eq!(refs[0]["row"], 0);
+    assert_eq!(refs[0]["credit_shown"], "3.00");
+    assert_eq!(refs[0]["debit_shown"], "");
+    assert_eq!(first["groups"].as_array().unwrap().len(), 4);
+
+    // the cursor reaches the rest, with the same figures
+    let second = app_data(
+        &mut bot,
+        "books_ledger_list",
+        json!({ "month": "2026-10", "cursor": "200" }),
+    );
+    assert_eq!(second["rows"].as_array().unwrap().len(), N - 200);
+    assert!(second["next_cursor"].is_null());
+    assert_eq!(bank(&second)["count"], N);
+    assert_eq!(bank(&second)["credit_shown"], "615.00");
+    assert_eq!(bank(&second)["rows"].as_array().unwrap().len(), N - 200);
+    assert_eq!(
+        code(&bot.app(
+            "books_ledger_list",
+            json!({ "month": "2026-10", "cursor": "soon" })
+        )),
+        "invalid_args"
+    );
+    // one account picked: the same paging
+    let one = app_data(
+        &mut bot,
+        "books_ledger_list",
+        json!({ "month": "2026-10", "account": "11000" }),
+    );
+    assert_eq!(one["total"], N);
+    assert_eq!(one["next_cursor"], "200");
+
+    // a draft is listed and counted, and moves no figure until it is posted
+    let draft = app_data(
+        &mut bot,
+        "books_entry_draft",
+        journal("draft-paging-0001".to_string()),
+    );
+    assert_eq!(draft["status"], "draft");
+    let with_draft = app_data(&mut bot, "books_ledger_list", json!({ "month": "2026-10" }));
+    assert_eq!(with_draft["total"], N + 1);
+    let group = bank(&with_draft);
+    assert_eq!(group["count"], N + 1);
+    assert_eq!(group["credit_shown"], "615.00");
+    assert_eq!(group["balance_shown"], "\u{2212}615.00");
+
+    // every term has to match, in any order
+    for terms in [json!(["draft", "journal"]), json!(["journal", "draft"])] {
+        let found = app_data(
+            &mut bot,
+            "books_ledger_list",
+            json!({ "month": "2026-10", "terms": terms }),
+        );
+        assert_eq!(found["total"], 1, "{terms}");
+        assert_eq!(found["rows"][0]["ticket"], draft["entry"]);
+    }
+}
+
+#[test]
+fn ledger_rows_carry_the_tags_on_their_lines() {
+    let dir = TempDir::new("ledger-row-tags");
+    let mut bot = Bot::new(&dir);
+    data(&bot.app(
+        "books_app_book_create",
+        json!({ "client_request_id": "book-rowtags-1", "label": "Tag Shop" }),
+    ));
+    let mut tag = |crid: &str, kind: &str, name: &str| {
+        app_data(
+            &mut bot,
+            "books_app_tag_create",
+            json!({ "client_request_id": crid, "kind": kind, "name": name }),
+        )["tag"]
+            .as_str()
+            .unwrap()
+            .to_string()
+    };
+    let store = tag("rowtags-dept-1", "department", "Synthetic Store");
+    let office = tag("rowtags-dept-2", "department", "Synthetic Office");
+    let cebu = tag("rowtags-loc-01", "location", "Synthetic Cebu");
+    // a split entry carries more than one department
+    let split = app_data(
+        &mut bot,
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "rowtags-post-1", "form": "money_out", "date": "2026-10-18",
+            "amount": "100.00", "account": "11000",
+            "allocations": [
+                { "category": "67200", "amount": "60.00", "department": store, "location": cebu },
+                { "category": "67200", "amount": "40.00", "department": office }
+            ]
+        }),
+    )["entry"]
+        .clone();
+    let plain = app_data(
+        &mut bot,
+        "books_app_post_entry",
+        json!({
+            "client_request_id": "rowtags-post-2", "form": "money_out", "date": "2026-10-19",
+            "amount": "5.00", "account": "11000", "category": "67200"
+        }),
+    )["entry"]
+        .clone();
+    let list = app_data(&mut bot, "books_ledger_list", json!({ "month": "2026-10" }));
+    let rows = list["rows"].as_array().unwrap();
+    let row = |t: &Value| rows.iter().find(|r| &r["ticket"] == t).unwrap();
+    assert_eq!(
+        row(&split)["departments"],
+        json!(["Synthetic Store", "Synthetic Office"])
+    );
+    assert_eq!(row(&split)["locations"], json!(["Synthetic Cebu"]));
+    assert_eq!(row(&plain)["departments"], json!([]));
+    assert_eq!(row(&plain)["locations"], json!([]));
+    assert_eq!(row(&plain)["matched"], false);
+    assert_eq!(row(&plain)["source"], "manual");
+}
+
+#[test]
+fn a_sub_account_is_in_its_parents_group() {
+    let dir = TempDir::new("coa-parent-group");
+    let mut bot = Bot::new(&dir);
+    data(&bot.app(
+        "books_app_book_create",
+        json!({ "client_request_id": "book-parent-01", "label": "Parent Shop" }),
+    ));
+    // a revenue account under Cash would net into the asset's subtree
+    let across = bot.app(
+        "books_app_account_create",
+        json!({
+            "client_request_id": "parent-across-1", "number": "41010",
+            "name": "Synthetic Sales", "kind": "sales_revenue", "parent": "11000"
+        }),
+    );
+    assert_eq!(code(&across), "parent_group");
+    // and so would an explicit type that leaves the parent's group
+    let typed = bot.app(
+        "books_app_account_create",
+        json!({
+            "client_request_id": "parent-across-2", "number": "11015",
+            "name": "Synthetic Loan", "kind": "mixed", "type": "liability", "parent": "11000"
+        }),
+    );
+    assert_eq!(code(&typed), "parent_group");
+    let chart = app_data(&mut bot, "books_accounts_list", json!({}));
+    let rows = chart["rows"].as_array().unwrap();
+    assert!(
+        rows.iter()
+            .all(|a| a["number"] != "41010" && a["number"] != "11015")
+    );
+    // the same group is fine, and takes the parent's type when it names none
+    let within = app_data(
+        &mut bot,
+        "books_app_account_create",
+        json!({
+            "client_request_id": "parent-within-1", "number": "11016",
+            "name": "Synthetic Petty Cash", "kind": "mixed", "parent": "11000"
+        }),
+    );
+    assert!(within["account"].is_string(), "{within}");
+}
